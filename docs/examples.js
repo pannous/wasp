@@ -1,6 +1,7 @@
 let exampleCode = {
     hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
     math: `√π^2`,
+    function: `square := it*it; square 3`,
     lists: `a = [1, 2, 3]; a[1] == a#2`,
     lists2: `a = [1, 2] + [3, 4]; a[2] == a#3 == 3`,
     strings: `a = "Hello " +"🌎"; a#7 == '🌎'`,

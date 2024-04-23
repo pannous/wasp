@@ -427,9 +427,8 @@ void emitSmartPointer(smart_pointer_64 p) {
 Code emitWaspString(Node &node, Function &context) {
 	// emit node as serialized wasp string
 	const String &string = node.serialize();
-	sourceMap[node.lineNumber] = data_index_end; // todo how to keep track of growing code?
-//	code.position = {.line = node.lineNumber, .column = node.column};
 	const Code &code = emitString(*new Node(string), context);
+	context.track(node, code, 0);
 	return code;
 }
 
@@ -2420,6 +2419,7 @@ Code emitSetter(Node &node, Node &value, Function &context) {
 //    }
 	if (variable_type != void_block)
 		last_type = variable_type;// still the type of the local, not of the value. example: float x=7
+	context.track(node, setter, 0);
 	return setter;
 }
 
@@ -2461,6 +2461,7 @@ Code emitIf(Node &node, Function &context) {
 		code.add(zeroConst(returnType));
 	}
 	code.addByte(end_block);
+	context.track(node, code, 0);
 	return code;
 }
 
@@ -2557,7 +2558,7 @@ Code encodeString(chars str) {
 	return code;//.push(0);
 };
 
-
+int last_code_byte = 0;
 [[nodiscard]]
 Code emitBlock(Node &node, Function &context) {
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
@@ -2566,6 +2567,8 @@ Code emitBlock(Node &node, Function &context) {
 //	char code_data[] = {0/*locals_count*/,i32_auto,21,return_block,end_block};// 0x00 == unreachable as block header !?
 //	Code(code_data,sizeof(code_data)); // todo : memcopy, else stack value is LOST
 	Code block;
+//	block.position
+	context.track(node, block, last_code_byte);// start sourceMap empty
 //	Map<int, String>
 //	collect_locals(node, context);// DONE IN analyze
 //	int locals_count = current_local_names.size();
@@ -2719,6 +2722,7 @@ Code emitBlock(Node &node, Function &context) {
 // to check if all parts of wasp are working flawlessly we may drop the return_block
 	block.addByte(return_block);
 	block.addByte(end_block);
+	last_code_byte = block.length;
 	return block;
 }
 

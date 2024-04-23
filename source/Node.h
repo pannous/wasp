@@ -205,6 +205,7 @@ public:
 	int lineNumber;
 	int column;
     String *line = 0;// debug! EXPENSIVE for non ast node_pointer!
+	String *file = 0;
 #endif
 
 // TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:

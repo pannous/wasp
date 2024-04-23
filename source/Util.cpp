@@ -166,6 +166,20 @@ bool contains(List<S> list, S match) {
     return list.has(match);
 }
 
+bool contains(bytes list, bytes match, int len, int match_len) {
+	for (int i = 0; i < len; i++)
+		if (list[i] == match[0]) {
+			bool ok = true;
+			for (int j = 1; j < match_len; j++)
+				if (list[i + j] != match[j]) {
+					ok = false;
+					break;
+				}
+			if (ok)return true;
+		}
+	return false;
+}
+
 template<class S>
 // list HAS TO BE 0 terminated! Dangerous C!! ;)
 bool contains(S list[], S match) {

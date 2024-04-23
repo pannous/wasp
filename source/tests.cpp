@@ -25,6 +25,10 @@
 void testDwarf();
 void testSourceMap();
 
+void testVectorShim() {
+	assert_emit("v=[1 2 3];w=[2 3 4];v*w", 2 + 6 + 12);
+}
+
 void testHtmlWasp() {
 	eval("html{bold{Hello}}"); // => <html><body><bold>Hello</bold></body></html> via appendChild bold to body
 //	eval("html{bold($myid style=red){Hello}}"); // => <bold id=myid style=red>Hello</bold>

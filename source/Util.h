@@ -221,3 +221,5 @@ int64 powi(int a, unsigned int b);
 //extern long double powi(long double, long double);
 
 char *base64_encode(const char *data);
+
+bool contains(bytes list, bytes match, int len, int match_len);
