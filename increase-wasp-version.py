@@ -1,17 +1,15 @@
 #!/usr/bin/python3
-import re
-import os
-from io import BytesIO
-from distutils.errors import DistutilsError
-from subprocess import check_output
 import os.path
-import sys
+import re
+from io import BytesIO
+from subprocess import check_output
 
 
 def simple_call(cmd):
 	return check_output(cmd.split(" "))
 
-file="source/Config.h"
+
+file = "/Users/me/dev/apps/wasp/source/Config.h"
 if not os.path.exists(file): raise Exception("no file")
 
 print("update_version in ",file)

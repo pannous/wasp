@@ -508,6 +508,9 @@ Module &read_wasm(bytes buffer, int size0) {
 }
 #endif
 
+#if !MY_WASM
+// see wasm_helpers.cpp line ≈ 170
 extern "C" char *run(chars code) {
 	return eval(code).serialize(); // can't return cause async wasp.js tests
 }
+#endif
