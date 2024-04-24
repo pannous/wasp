@@ -1345,6 +1345,10 @@ public:
 //        sourceMap[node.lineNumber] = data_index_end; // todo how to keep track of growing code?
 //	code.position = {.line = node.lineNumber, .column = node.column};
 	}
+
+	Function *clone() {
+		return new Function(*this);
+	}
 };
 
 

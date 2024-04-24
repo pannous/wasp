@@ -18,7 +18,7 @@ endif ()
 #set(VERBOSE 1)
 #set(DEBUG 1)
 #set(TRACE 1)
-set(STRICT 1) # ALL WARNINGS, AS ERRORS
+set(STRICT 1)
 #set(SDL 1) # Graphics
 #set(WASM 1) # SET VIA TOOLCHAIN!
 #set(INCLUDE_MERGER 0) # include wasm_linker.cpp
@@ -28,8 +28,6 @@ set(STRICT 1) # ALL WARNINGS, AS ERRORS
 #ADD_DEFINITIONS(-DWINDOWS)
 #ADD_COMPILE_DEFINITIONS(-DWINDOWS)
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
-
-message(CMAKE_TOOLCHAIN_FILE)
 
 if (APPLE)
     message("APPLE")
@@ -41,11 +39,9 @@ else ()
 endif ()
 
 if (X86_64)
-    if (LINUX)
-        LINK_DIRECTORIES(bin/linux/lib.x86)
-    else ()
-        LINK_DIRECTORIES(bin/mac/lib.x86)
-    endif ()
+    LINK_DIRECTORIES(bin/mac/lib.x86)
+    #elseif (LINUX) # ok, other extension .so
+    #    LINK_DIRECTORIES(lib/linux)
 else ()
     LINK_DIRECTORIES(lib/)
     #    LINK_DIRECTORIES(bin/mac/lib)
@@ -61,27 +57,20 @@ if (EMSCRIPTEN)
     ADD_DEFINITIONS(-DEMSCRIPTEN)
 endif ()
 
-if (WASM)
-    #    if (NOT RUNTIME_ONLY)
-    #    if(NOT PURE_WASM)
-    #        set(MY_WASM 1) # host extensions like run_wasm()! todo remove for standalone wasmtime wasp.wasm => write to file
-    #    endif ()
-endif ()
-
 
 if (NOT WASM)
-    set(CONSOLE 1) # can't get readline to work in wasm
+    set(CONSOLE 1)
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
-        #                SET(WASMEDGE 0)
+        #        SET(WASMEDGE 0)
         # SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-        #          SET(V8 1) # 2024-04 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
+        #  SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
         #  set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #  set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         #  set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
@@ -118,17 +107,15 @@ if (WASM)
     if (DEBUG)
         message("WASM DEBUG with DWARF!")
         ADD_COMPILE_FLAG(-g3)
-        ADD_COMPILE_FLAG(-gdwarf-4)
-        #        ADD_COMPILE_FLAG(-gdwarf-5) # /opt/homebrew/bin/wasmtime -D debug-info=y --dir . wasp.wasm --allow-unknown-exports test
-        #        ADD_COMPILE_FLAG(-gembed-source)
+        ADD_COMPILE_FLAG(-gdwarf-5)
+        ADD_COMPILE_FLAG(-gembed-source)
         ADD_COMPILE_FLAG(-fforce-dwarf-frame)
-        #        Stripping the “name” section: In large projects, especially those with a lot of C++ template usage, the WebAssembly “name” section can be very large. In our example it's only a tiny fraction of the overall file size (see the output of llvm-objdump above) but in some cases it can be very significant. If the “name” section of your application is very large, and the dwarf debug information is sufficient for your debugging needs, it can be advantageous to strip the “name” section:
     endif ()
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
     #    ADD_DEFINITIONS(-DRUNTIME_ONLY) # no wasm reader != NO_TESTS
     if (MY_WASM)
         #        execute_process(COMMAND node clean.js WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-        message("MY_WASM! wasp compiler/runtime plus browser imports")
+        message("MY_WASM!")
         ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
     endif ()
     if (NOT WASI AND NOT MY_WASI)
@@ -308,13 +295,9 @@ endif ()
 set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp
         source/Wasp.cpp source/wasm_helpers.cpp source/Code.cpp source/NodeTypes.cpp source/smart_types.cpp)
 
-set(SOURCE_FILES ${SOURCE_FILES} main.c) # hack to set wasm breakpoint in wasp_main(
-
 
 if (CONSOLE)
     message(CONSOLE)
-    #    add CMAKE_MODULE_PATH for readline:
-
     ADD_DEFINITIONS(-DCONSOLE)
     ADD_DEFINITIONS(-DUSE_READLINE)
     link_libraries(readline)
@@ -332,7 +315,6 @@ if (CURL)
     include_directories(${CURL_INCLUDE_DIRS})
     set(SOURCE_FILES ${SOURCE_FILES} source/Fetch.cpp)
     #    only 800 bytes via -lcurl !
-    #    target_link_libraries(wasp PUBLIC -lcurl)
 endif ()
 
 if (NO_TESTS)
@@ -351,7 +333,6 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_emitter.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/DwarfEmitter.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/WitReader.h)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp)
 endif ()
@@ -473,6 +454,7 @@ endif ()
 #
 # DIFFERENT TARGETS :
 if (WASM) # OR WASI)
+    MESSAGE("USING PURE WASM")
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
     if (EMSCRIPTEN)
@@ -480,7 +462,6 @@ if (WASM) # OR WASI)
         set(__aarch64__ 1)
         ADD_DEFINITIONS(-D__aarch64__)
     else ()
-        MESSAGE("USING PURE WASM without emscripten")
         include(wasm.toolchain.cmake)
         SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
     endif ()
@@ -537,7 +518,7 @@ if (WASM) # OR WASI)
     endif ()
     if (DEBUG)
         ADD_COMPILE_FLAG("-O0")
-        #        ADD_COMPILE_FLAG("-g") # DWARF redundant above
+        ADD_COMPILE_FLAG("-g")
         #        ADD_COMPILE_FLAG("-Oz") # makes wasm Linking SLOOW! OK keeps variable names! DWARF only in emcc
         #        ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
         #        the DWARF section information/references are invalid after wasm-pack, wasm-opt or any other tools,
@@ -580,12 +561,9 @@ if (WASM) # OR WASI)
     if (RUNTIME_ONLY)
         add_executable(wasp-runtime.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
     elseif (WASP_FULL)
-        add_executable(wasp-full.wasm ${SOURCE_FILES})
-    elseif (MY_WASM)
-        #        add_executable(wasp-hosted.wasm ${SOURCE_FILES})
-        add_executable(wasp.wasm ${SOURCE_FILES})
-    else () # todo
-        add_executable(wasp-standalone.wasm ${SOURCE_FILES}) # custom WASI vs emcc WASI:
+        add_executable(wasp-full.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+    else ()
+        add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
     endif ()
 elseif (WASI)
     MESSAGE("USING PURE WASI")
@@ -644,7 +622,6 @@ elseif (MICRO) # wasm-micro-vm:
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
 
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
-    add_dependencies(wasp run_version_script)
 
 
     #    add_custom_target(BuildEmitter ALL DEPENDS wasp) #.exe
@@ -689,6 +666,7 @@ elseif (WASMEDGE)
     target_include_directories(wasp PUBLIC Frameworks/wasmedge/include/api/)
 
     #    target_include_directories(wasp PUBLIC Frameworks/wasmedge_api)
+    target_link_libraries(wasp PUBLIC -lcurl)
     target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB -> now 5MB ok
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
@@ -717,7 +695,6 @@ elseif (WEBAPP)
         target_link_libraries(wasp-app PUBLIC -lcurl)
     endif ()
 elseif (WASM3)
-    MESSAGE("USING WASM3 - bombed by russians")
     MESSAGE(wasm3 VM)
     ADD_DEFINITIONS(-DWASM3)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
@@ -741,10 +718,8 @@ elseif (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
 elseif (V8)
-    MESSAGE("USING V8")
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
-    set(SOURCE_FILES source/wasm_runner_v8.cpp ${SOURCE_FILES}
-            main.c)
+    set(SOURCE_FILES source/wasm_runner_v8.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/v8/include/)
@@ -778,33 +753,15 @@ endif ()
 
 # todo CONSOLE checke above!?
 if (CONSOLE AND NOT WEBAPP)
-
+    find_package(Readline)
     find_library(readline NAMES Readline)
-
-    # Include the Readline headers
-
     if (WASM)
-        #            set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/FindReadline.cmake")
-        #            set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/ReadlineConfig.cmake")
-        #            find_package(Readline)
-        #        target_include_directories(wasp.wasm PRIVATE ${READLINE_INCLUDE_DIR})
-        TARGET_LINK_LIBRARIES(wasp.wasm PRIVATE readline) # => libreadline
-    else ()
-        find_package(Readline)
-        target_include_directories(wasp PRIVATE ${READLINE_INCLUDE_DIR})
         TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
     endif ()
 endif ()
 
 if (SDL)
     target_link_libraries(wasp SDL2::SDL2)
-endif ()
-
-
-if (CURL)
-    if (NOT APP)
-        target_link_libraries(wasp PUBLIC -lcurl)
-    endif ()
 endif ()
 
 #set(CMAKE_SUPPRESS_REGENERATION)
@@ -814,12 +771,4 @@ endif ()
 # CLion SET cidr.asynchronous.refresh.after.build = false (in Find-Action -> Registry )
 
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
-
-
-set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/increase-wasp-version.py)
-
-# Custom target to always run the python script
-add_custom_target(run_version_script ALL
-        COMMAND ${PYTHON_EXECUTABLE} ${VERSION_SCRIPT}
-        COMMENT "Running Version increment script")
 

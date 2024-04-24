@@ -22,8 +22,8 @@
 
 #define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
 
-void testDwarf();
-void testSourceMap();
+//void testDwarf();
+//void testSourceMap();
 
 void testVectorShim() {
 	assert_emit("v=[1 2 3];w=[2 3 4];v*w", 2 + 6 + 12);
@@ -3361,8 +3361,8 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 void testCurrent() {
-	testDwarf();
-	return;
+//	testDwarf();
+//	return;
 //	testFibonacci();
 //	initTypes();
 //	check_eq(types["u8"],types["byte"]);

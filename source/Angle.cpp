@@ -893,8 +893,8 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 //	String &name = fun.name;
 //	silent_assert(not is_operator(name[0]));
 //	trace_assert(not is_operator(name[0]));
-	if (is_operator(name[0]))// todo ^^
-	todo("is_operator!");// remove if it doesn't happen
+	if (is_operator(name[0]) and name != ":=")// todo ^^
+	todo("is_operator!"s + name);// remove if it doesn't happen
 
 	if (name and not function_operators.has(name)) {
 		if (context.name != "wasp_main") todo("inner functions");
@@ -1594,9 +1594,14 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 #endif
 	if (contains(funclet_list, name)) {
 #if WASM
-		//      auto funclet = getWaspFunclet(name);// todo get library function signature from wasp
-				todo("getWaspFunclet get library function signature from wasp");
-				return 0;
+		warn("WASP function "s + name + " getWaspFunclet todo");
+		auto pFunction = getWaspFunction(name).clone();
+		pFunction->import();
+		return use_required(pFunction);
+
+//		      auto funclet = getWaspFunclet(name);// todo get library function signature from wasp
+//				todo("getWaspFunclet get library function signature from wasp");
+//				return 0;
 #else
 		Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));
