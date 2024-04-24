@@ -58,7 +58,7 @@ void testDownload() {
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
 //    testDownload(); // not on localhost
-
+	assert_emit("square := it*it; square 3", 9);
 	assert_emit("2+2", 4);
 //	assert_emit("2*2", 4);
 //	assert_emit("2^2", 4);
