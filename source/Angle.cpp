@@ -1316,7 +1316,7 @@ Node &groupKebabMinus(Node &node, Function &context) {
 }
 
 Module &loadRuntime() {
-#if MY_WASM
+#if MY_WASM or WASM
 	static Module wasp;
 //    Module &wasp=*module_cache["wasp"s.hash()];
 //    wasp.functions["powi"].signature.returns(int32);
@@ -1579,6 +1579,8 @@ void addLibraryFunctionAsImport(Function &func) {
 		functions.add(func.name, import);
 #endif
 }
+
+Function getWaspFunction(String name);
 
 bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: libraries.has(library)
 
@@ -2081,9 +2083,9 @@ void addGlobal(Node &node) {
 
 List<String> demangle_args(String &fun);
 
-Function getWaspFunction(String name) {
-	if ("floor"s == name)error1("use builtin floor!");
 
+Function getWaspFunction(String name) { // signature only, code must be loaded from wasm or imported and linked
+	if ("floor"s == name)error1("use builtin floor!");
 
 	auto runtime = loadRuntime();
 	if (runtime.functions.has(name)) {
@@ -2156,6 +2158,7 @@ Function getWaspFunction(String name) {
 		else if (name == "putd")f.signature.add(float64);
 		else if (name == "putp")f.signature.add(pointer);
 		else if (name == "putl")f.signature.add(longs);
+		else if (name == "puti")f.signature.add(int32);
 		else if (name == "printf")f.signature.add(charp);// todo …
 		else if (name == "printNode")f.signature.add(node_pointer);
 		else if (name == "put_chars")f.signature.add(charp);
@@ -2174,6 +2177,7 @@ Function getWaspFunction(String name) {
 		else if (name == "system")f.signature.add(charp).returns(int32);
 		else if (name == "testCurrent");
 		else if (name == "run_wasm_file")f.signature.add(charp).returns(smarti64);
+		else if (name == "run_wasm")f.signature.add(charp).add(int32).returns(smarti64);
 		else if (name == "panic");
 			// IGNORE js bridges :
 		else if (name == "registerWasmFunction");

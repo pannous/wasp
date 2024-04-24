@@ -58,7 +58,7 @@ void testDownload() {
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
 //    testDownload(); // not on localhost
-	assert_emit("square := it*it; square 3", 9);
+//	assert_emit("square := it*it; square 3", 9);
 	assert_emit("2+2", 4);
 //	assert_emit("2*2", 4);
 //	assert_emit("2^2", 4);
@@ -77,9 +77,9 @@ extern "C" void testRun() {
 //    assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works
 //    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
 
-//    testAllWasm();
-//    testAllEmit();
-//    testAllAngle();
+	testAllWasm();
+	testAllEmit();
+	testAllAngle();
 //    heap_end=__initial_heap_end+0x100000;// reset on each run!
     print("testRun SUCCEEDED");
 }

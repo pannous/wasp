@@ -3359,7 +3359,7 @@ void pleaseFix() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
-// ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
+// ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
 //	testDwarf();
 //	return;
