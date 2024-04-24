@@ -580,9 +580,12 @@ if (WASM) # OR WASI)
     if (RUNTIME_ONLY)
         add_executable(wasp-runtime.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
     elseif (WASP_FULL)
-        add_executable(wasp-full.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
-    else ()
-        add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+        add_executable(wasp-full.wasm ${SOURCE_FILES})
+    elseif (MY_WASM)
+        #        add_executable(wasp-hosted.wasm ${SOURCE_FILES})
+        add_executable(wasp.wasm ${SOURCE_FILES})
+    else () # todo
+        add_executable(wasp-standalone.wasm ${SOURCE_FILES}) # custom WASI vs emcc WASI:
     endif ()
 elseif (WASI)
     MESSAGE("USING PURE WASI")
@@ -641,6 +644,7 @@ elseif (MICRO) # wasm-micro-vm:
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
 
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
+    add_dependencies(wasp run_version_script)
 
 
     #    add_custom_target(BuildEmitter ALL DEPENDS wasp) #.exe
@@ -812,12 +816,10 @@ endif ()
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
 
 
-set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/version_increment.py)
+set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/increase-wasp-version.py)
 
 # Custom target to always run the python script
 add_custom_target(run_version_script ALL
         COMMAND ${PYTHON_EXECUTABLE} ${VERSION_SCRIPT}
         COMMENT "Running Version increment script")
 
-# Add a dependency to the version script to the build target
-add_dependencies(wasp run_version_script)
