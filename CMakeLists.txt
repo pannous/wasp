@@ -116,11 +116,10 @@ if (WASM)
     if (MY_WASM)
         #        execute_process(COMMAND node clean.js WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
         message("MY_WASM!")
-        ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
+        ADD_DEFINITIONS(-DMY_WASM) # use custom host functions run_wasm() put() panic() ... !
     endif ()
     if (NOT WASI AND NOT MY_WASI)
         ADD_DEFINITIONS(-DPURE_WASM)
-        ADD_DEFINITIONS(-DMY_WASM) # use put() panic() ... !
     endif ()
 endif ()
 
@@ -145,7 +144,6 @@ endif ()
 if (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     ADD_DEFINITIONS(-DGRAFIX)
-    ADD_DEFINITIONS(-DMY_WASM)
     SET(WASM 0)
     set(WASI 0)
     set(CONSOLE 0)

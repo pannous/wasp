@@ -472,16 +472,16 @@ extern "C" size_t strlen(const char *x) {
 }
 
 
-#if not MY_WASM
-extern "C" int64 run_wasm(bytes buffer, int buf_size) {
-	print("⚠️ run_wasm not available. wasp built without runtime and not embedded in a host which exposes the following function:");
-	print("extern int64 run_wasm(uint8* buffer, size_t buffer_length)");
-	print("Please vote here to make this a WASI standard: https://github.com/WebAssembly/WASI/issues/477");
-	error("⚠️ run_wasm not available. You can use wasp-full.wasm which comes with wasm-runtime builtin.");
-//    breakpoint_helper
-	return 0;
-}
-#endif
+//#if not MY_WASM
+//extern "C" int64 run_wasm(bytes buffer, int buf_size) {
+//	print("⚠️ run_wasm not available. wasp built without runtime and not embedded in a host which exposes the following function:");
+//	print("extern int64 run_wasm(uint8* buffer, size_t buffer_length)");
+//	print("Please vote here to make this a WASI standard: https://github.com/WebAssembly/WASI/issues/477");
+//	error("⚠️ run_wasm not available. You can use wasp-full.wasm which comes with wasm-runtime builtin.");
+////    breakpoint_helper
+//	return 0;
+//}
+//#endif
 
 
 extern "C" char *serialize(Node *n) {
