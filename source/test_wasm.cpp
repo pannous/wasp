@@ -1359,6 +1359,8 @@ void testLogarithm2() {
 
 
 void testAllWasm() {
+	assert_emit("42", 42);
+	assert_emit("42+1", 43);
     testStringConcatWasm();
 	testWasmGC();
 //	data_mode = false;

@@ -115,9 +115,13 @@ double powd(double x, double y) {
 }
 
 extern "C" void put_chars(chars c, size_t len) {
-    printf("%s", c);
+#if MY_WASM // and …
+	printf("%s", c); // console.log adds newline
+#else
+	printf("%s\n", c);
+#endif
 #if WEBAPP
-	console_log(c);
+	console_log(c); // log to browser console AND to app stdout
 #endif
 }
 

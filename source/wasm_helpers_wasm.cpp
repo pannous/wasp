@@ -325,6 +325,12 @@ int puti(int i) {
 
 #endif
 
+int puti(int i) {
+	put_chars(formatLong(i), 0);
+	return i;
+}
+
+
 int64 putl(int64 l) {
 	put_chars(formatLong(l), 0);
 //    printf("%lld", l);
@@ -436,8 +442,11 @@ extern "C" void _start() {
 //    trace(__memory_base);
 
 	auto args = arguments();
-//    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
-//    print(smartNode(result));
+	print("args:");
+	print(args.size());
+	print(args);
+	smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
+	print(smartNode(result));
 #if RUNTIME_ONLY
 	print("Wasp runtime not meant to be executed. Use native wasp or wasp.wasm \n");
 	// todo interpreter? // we can still use runtime for minimal parsing tasks?
@@ -472,16 +481,16 @@ extern "C" size_t strlen(const char *x) {
 }
 
 
-//#if not MY_WASM
-//extern "C" int64 run_wasm(bytes buffer, int buf_size) {
-//	print("⚠️ run_wasm not available. wasp built without runtime and not embedded in a host which exposes the following function:");
-//	print("extern int64 run_wasm(uint8* buffer, size_t buffer_length)");
-//	print("Please vote here to make this a WASI standard: https://github.com/WebAssembly/WASI/issues/477");
-//	error("⚠️ run_wasm not available. You can use wasp-full.wasm which comes with wasm-runtime builtin.");
-////    breakpoint_helper
-//	return 0;
-//}
-//#endif
+#if not MY_WASM
+extern "C" int64 run_wasm(bytes buffer, int buf_size) {
+	print("⚠️ run_wasm not available. wasp built without runtime and not embedded in a host which exposes the following function:");
+	print("extern int64 run_wasm(uint8* buffer, size_t buffer_length)");
+	print("Please vote here to make this a WASI standard: https://github.com/WebAssembly/WASI/issues/477");
+	error("⚠️ run_wasm not available. You can use wasp-full.wasm which comes with wasm-runtime builtin.");
+//    breakpoint_helper
+	return 0;
+}
+#endif
 
 
 extern "C" char *serialize(Node *n) {
