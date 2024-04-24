@@ -5,7 +5,8 @@
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
 * */
 let Wasp = {}
-let WASP_COMPILER = 'wasp.wasm'
+// let WASP_COMPILER = 'wasp.wasm' // without tests
+let WASP_COMPILER = 'wasp-hosted.wasm' // with tests and shortcuts
 let WASP_RUNTIME = 'wasp-runtime.wasm'
 
 var runtime_bytes = null // for reflection or linking
@@ -830,7 +831,7 @@ function load_release_runtime() {
             memory = runtime_exports.memory || runtime_exports._memory || memory
             buffer = new Uint8Array(memory.buffer, 0, memory.length);
             main = runtime_instance.start || runtime_exports.teste || runtime_exports.main || runtime_exports.wasp_main || runtime_exports._start
-            main = runtime_instance._Z11testCurrentv || main
+            // main = runtime_instance._Z11testCurrentv || main  via wasp_tests()
             if (main) {
                 console.log("got main")
                 result = main()
@@ -923,12 +924,13 @@ async function run_wasm(buf_pointer, buf_size) {
             expect_test_result = 0
             if (resume) setTimeout(resume, 1);
         }
-        results.value = result // JSON.stringify( Do not know how to serialize a BigInt
+        if (typeof results != "undefined")
+            results.value = result // JSON.stringify( Do not know how to serialize a BigInt
         return result; // useless, returns Promise!
-    } catch (error) {
-        throw new Error(`Error in run_wasm: ${error.message}\nStack: ${error.stack}`);
-        // console.error(ex)
-        //     throw ex
+    } catch (ex) {
+        //throw new Error(`Error in run_wasm: ${error.message}\nStack: ${error.stack}`);
+        console.error(ex)
+        throw ex
         //     // error(ex)
     }
 }

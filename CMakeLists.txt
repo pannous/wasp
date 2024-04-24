@@ -18,7 +18,7 @@ endif ()
 #set(VERBOSE 1)
 #set(DEBUG 1)
 #set(TRACE 1)
-set(STRICT 1)
+set(STRICT 1) # ALL WARNINGS, AS ERRORS
 #set(SDL 1) # Graphics
 #set(WASM 1) # SET VIA TOOLCHAIN!
 #set(INCLUDE_MERGER 0) # include wasm_linker.cpp
@@ -39,9 +39,11 @@ else ()
 endif ()
 
 if (X86_64)
+    if (LINUX)
+        LINK_DIRECTORIES(bin/linux/lib.x86)
+    else ()
     LINK_DIRECTORIES(bin/mac/lib.x86)
-    #elseif (LINUX) # ok, other extension .so
-    #    LINK_DIRECTORIES(lib/linux)
+    endif ()
 else ()
     LINK_DIRECTORIES(lib/)
     #    LINK_DIRECTORIES(bin/mac/lib)
@@ -59,7 +61,7 @@ endif ()
 
 
 if (NOT WASM)
-    set(CONSOLE 1)
+    set(CONSOLE 1) # can't get readline to work in wasm
     if (NOT RUNTIME_ONLY)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
@@ -70,7 +72,7 @@ if (NOT WASM)
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-        #  SET(V8 1) # 2022-10 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
+        #  SET(V8 1) # 2024-04 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
         #  set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #  set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         #  set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
@@ -107,8 +109,9 @@ if (WASM)
     if (DEBUG)
         message("WASM DEBUG with DWARF!")
         ADD_COMPILE_FLAG(-g3)
-        ADD_COMPILE_FLAG(-gdwarf-5)
-        ADD_COMPILE_FLAG(-gembed-source)
+        ADD_COMPILE_FLAG(-gdwarf-4)
+        #        ADD_COMPILE_FLAG(-gdwarf-5) # /opt/homebrew/bin/wasmtime -D debug-info=y --dir . wasp.wasm --allow-unknown-exports test
+        #        ADD_COMPILE_FLAG(-gembed-source)
         ADD_COMPILE_FLAG(-fforce-dwarf-frame)
     endif ()
     #    set(RUNTIME_ONLY 1) NO, we want compiler version too!
@@ -331,6 +334,7 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_emitter.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} source/DwarfEmitter.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} source/WitReader.h)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp)
 endif ()
@@ -460,6 +464,7 @@ if (WASM) # OR WASI)
         set(__aarch64__ 1)
         ADD_DEFINITIONS(-D__aarch64__)
     else ()
+        MESSAGE("USING PURE WASM without emscripten")
         include(wasm.toolchain.cmake)
         SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
     endif ()
@@ -556,12 +561,18 @@ if (WASM) # OR WASI)
         endif ()
     endif ()
     #    add_library(wasp.wasm SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
-    if (RUNTIME_ONLY)
+    if (RUNTIME_ONLY) # not tests, compiler, ... 100kb as of 2024-04
         add_executable(wasp-runtime.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
-    elseif (WASP_FULL)
-        add_executable(wasp-full.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
-    else ()
-        add_executable(wasp.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+    elseif (WASP_FULL) # including merger
+        add_executable(wasp-full.wasm ${SOURCE_FILES})
+    elseif (MY_WASM) # hosted
+        add_executable(wasp-hosted.wasm ${SOURCE_FILES}) # run_wasm() put() panic() ...
+        #        add_executable(wasp.wasm ${SOURCE_FILES})
+    elseif (WASI OR PURE_WASM)
+        add_executable(wasp-standalone.wasm ${SOURCE_FILES}) # custom WASI without host vs emcc WASI:
+    else () # normal release
+        #        add_executable(wasp-standalone.wasm ${SOURCE_FILES}) # custom WASI without host vs emcc WASI:
+        add_executable(wasp.wasm ${SOURCE_FILES}) # release: 188kb as of 2024-04 … 3.7MB debug
     endif ()
 elseif (WASI)
     MESSAGE("USING PURE WASI")
@@ -620,6 +631,7 @@ elseif (MICRO) # wasm-micro-vm:
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
 
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
+    add_dependencies(wasp run_version_script)
 
 
     #    add_custom_target(BuildEmitter ALL DEPENDS wasp) #.exe
@@ -693,6 +705,7 @@ elseif (WEBAPP)
         target_link_libraries(wasp-app PUBLIC -lcurl)
     endif ()
 elseif (WASM3)
+    MESSAGE("USING WASM3 - bombed by russians")
     MESSAGE(wasm3 VM)
     ADD_DEFINITIONS(-DWASM3)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
@@ -716,6 +729,7 @@ elseif (WASMX)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
 elseif (V8)
+    MESSAGE("USING V8")
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
     set(SOURCE_FILES source/wasm_runner_v8.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
@@ -754,6 +768,14 @@ if (CONSOLE AND NOT WEBAPP)
     find_package(Readline)
     find_library(readline NAMES Readline)
     if (WASM)
+        #            set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/FindReadline.cmake")
+        #            set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/ReadlineConfig.cmake")
+        #            find_package(Readline)
+        #        target_include_directories(wasp.wasm PRIVATE ${READLINE_INCLUDE_DIR})
+        TARGET_LINK_LIBRARIES(wasp.wasm PRIVATE readline) # => libreadline
+    else ()
+        find_package(Readline)
+        target_include_directories(wasp PRIVATE ${READLINE_INCLUDE_DIR})
         TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
     endif ()
 endif ()
@@ -769,4 +791,12 @@ endif ()
 # CLion SET cidr.asynchronous.refresh.after.build = false (in Find-Action -> Registry )
 
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
+
+
+set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/increase-wasp-version.py)
+
+# Custom target to always run the python script
+add_custom_target(run_version_script ALL
+        COMMAND ${PYTHON_EXECUTABLE} ${VERSION_SCRIPT}
+        COMMENT "Running Version increment script")
 

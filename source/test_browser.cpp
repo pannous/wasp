@@ -57,9 +57,18 @@ void testDownload() {
 
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
+	print("NOW RUNNING all async emit TESTS!");
+#if not WASM
+	print("not WASM (handled differently in WASM)");
+#endif
+#if MY_WASM
+	print("MY_WASM");
+#endif
+
 //    testDownload(); // not on localhost
 //	assert_emit("square := it*it; square 3", 9);
-	assert_emit("2+2", 4);
+	assert_emit("2+3", 5);
+//	assert_emit("2+2", 4);
 //	assert_emit("2*2", 4);
 //	assert_emit("2^2", 4);
 //	assert_emit("√9", 3);

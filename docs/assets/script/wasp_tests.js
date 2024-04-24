@@ -119,14 +119,17 @@ async function testRunAsync() {
     }
 }
 
+// ⚠️ this is a SINGLE CALL to wasm.testRun()!
+// for reentry use testAll (=> testRunAsync) instead!
 function testRun() {
     try {
         // resume = testRun // comeback here after first, 2ⁿᵈ … testRun
+        expect_test_result = false // clear old
         print("testRun")
         compiler_exports.testRun();// going from one test to the next WITHIN WASP!
     } catch (x) {
         if (x instanceof YieldThread) {
-            // print("test thread yielded, re-entering after run_wasm finished")
+            print("⚠️ this was a SINGLE CALL to wasm.testRun(), for reentry use testAll instead!")
         } else throw x;
     }
 }
@@ -173,7 +176,7 @@ async function testRun1() {
 
 async function wasp_tests() {
     // console.log(new node(exports.testNodeJS())); // lives in wasp.wasm
-    await testRun() // result lives in emit.wasm!
+    // await testRun() // result lives in emit.wasm!
     // await testRun1() // result lives in emit.wasm!
     // return;
     console.log("wasp_tests")
@@ -185,7 +188,7 @@ async function wasp_tests() {
     // testMemoryDiff();
     compiler_exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
 
-    let runmode = 2
+    let runmode = 3
     switch (runmode) {
         case 0:
             return console.log("testRun disabled");

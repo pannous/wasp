@@ -730,10 +730,6 @@ void print(char c) {
 
 void print(char const *s) {
 	put_chars(s, strlen(s));
-#if not WASM
-	newline();// console.log adds newline
-#endif
-
 }
 
 void print(String *s) {

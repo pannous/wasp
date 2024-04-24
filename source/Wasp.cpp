@@ -2044,10 +2044,6 @@ int main(int argc, char **argv) {
 	String path = argv[0];
 	print("🐝 Wasp "s + wasp_version);
 //   String arg=extractArg(argv,argc);
-#if WASM
-	testCurrent();
-//    debugWASM();
-#endif
 #if ErrorHandler
 	register_global_signal_exception_handler();
 #endif
