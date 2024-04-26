@@ -103,3 +103,4 @@ dwarf
 main.wasm.map
 main.wasm.json
 *.map
+:=.md
