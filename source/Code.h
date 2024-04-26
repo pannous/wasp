@@ -1269,7 +1269,7 @@ struct Local { // todo: use
     String name;
 //    Valtype type = unknown_type;
 //    Primitive grrr
-    Type type;// = unknown_type;
+    Type type = unknown_type;
     Node *typeXX; // todo: REMOVE!
     Node *ref;// why still needed?
     int data_pointer = 0;// compile time handling of reference data, e.g. after emitData()

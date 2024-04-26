@@ -910,7 +910,7 @@ List<String> readLines(const char *string) {
 	return content.split("\n");
 }
 
-void testSourceMap() {
+void testSourceMapHardCoded() {
 	List<String> names = {"ø" /* index zero = NO NAME, skip optional name index */, "j", "x", "tttt", "main"};
 	List<SourceMapping> mappings = {
 			{0x0,  0, 0, 0,  0},
@@ -932,11 +932,16 @@ void testSourceMap() {
 }
 
 
+void testSourceMap() {
+//    testSourceMapHardCoded();
+    assert_emit("int tttt(int j){x=j+1;x};tttt(3)", 4);
+}
+
+
 void testDwarf() {
 #if WASM
 	return;
 #endif
-	testSourceMap();
 //	DwarfReader reader("samples/test.wasm");
 //	reader.read();
 //	reader.print();

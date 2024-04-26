@@ -548,6 +548,7 @@ bool isGlobal(Node &node, Function &function) {
     return false;
 }
 
+
 bool isPrimitive(Node &node) {
     // should never be cloned so always compare by reference ok?
     if (&node == &IntegerType)return true;
@@ -771,6 +772,18 @@ bool compatibleTypes(Type type1, Type type2) {
     if (type1 == type2)return true;
     if (type1 == string_struct and type2 == strings)return true;
     return false;
+}
+
+// todo ambiguous [2 x] [2,x] so only without space, BUT 2 km??
+// do it in parser cause otherwise lists [2,x] would be interpreted as 2*x
+Node &groupImplicitMultiplication(Node &node, Function &function) {
+    Node *left = &node;
+    Node *right = node.next;
+    Node *op = new Node("*");
+    op->setType(operators);
+    op->add(left);
+    op->add(right);
+    return *op;
 }
 
 Node &groupGlobal(Node &node, Function &function) {

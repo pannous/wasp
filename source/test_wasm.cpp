@@ -86,10 +86,13 @@ void testEmitter() {
 #endif
 }
 
+void test_implicit_multiplication(){
+    assert_emit("x=3;2x", 6);
+    assert_emit("2π", 2 * pi);
+}
 
 void testGlobals() {
-    assert_emit("π", pi);
-    assert_emit("2π", 2 * pi);
+    assert_emit("2*π", 2*pi);
     assert_emit("dub:=it*2;dub(π)", 2 * pi);
 }
 

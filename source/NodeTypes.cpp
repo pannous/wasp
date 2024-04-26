@@ -270,7 +270,9 @@ extern "C" chars kindName(::Kind t) {
 chars typeName(Kind t, bool throws) {
     switch (t) {
         case 0:
-            return "ø"; // unknown ?
+            return "ø"; // undefined or void
+        case unknown:
+            return "unknown";
         case objects:
             return "object";
         case groups:
@@ -316,8 +318,6 @@ chars typeName(Kind t, bool throws) {
             return "bool";
         case nils:
             return "nil";
-        case unknown :
-            return "unknown";
         case call:
             return "call";// function
         case declaration:
@@ -419,7 +419,12 @@ Valtype mapTypeToWasm(Type t) {
     }
     if (isArrayType(t))
         return mapTypeToWasm(array); // wasm_pointer
-    Node *type_node = (Node *) t.value;
+#if WASM
+    Node *type_node = (Node *) (long) t.value;
+#else
+    Node *type_node = (Node *) (long) t.value;
+    error("Type32 can't hold pointer on 64bit systems");
+#endif
     warn("Insecure mapTypeToWasm %x %d as Node*"s % t.value % t.value);
     if (type_node->node_header == node_header_32)
         return mapTypeToWasm(*type_node);// might crash
