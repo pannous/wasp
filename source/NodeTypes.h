@@ -173,6 +173,7 @@ enum Kind {// todo: merge Node.kind with Node.class(?)
     // todo do we really need strict schema separation from normal 'schema' of node{kind=clazz} ?
 
     reference, // variable identifier name x
+    global, // global variable
 
     symbol, // one / plus / Jesus
     operators, // TODO: semantic types don't belong here! they interfere with internal structural types key etc!!

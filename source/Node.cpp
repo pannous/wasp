@@ -138,6 +138,9 @@ Node &Node::operator[](String *s) {
 
 //Node &Node::operator[](String s) {
 Node &Node::operator[](chars s) {
+    if (s[0] == '@') {
+        return metas()[s + 1];
+    }
 	Node *found = has(s);
 	if (s[0] == '.') {
 		s++;
@@ -1247,11 +1250,14 @@ Node &Node::setType(Kind kin, bool check) {
 		return *this;// todo   import host: host-funcs     module{.name=host}.value=host-funcs
 	if (kind == 0)check = false;
 	if (kind == operators and kin == expression)return *this;
+
+    // todo remove these check = false hacks and call setType() with check = false !
 	if (kind == codepoint1 and kin == operators)check = false;// and name==(codepoint)value.longy
 	if (kind == groups and (kin == expression or kin == functor))check = false;
 	if (kind == reference and kin == key)check = false;
 	if (kind == referencex and kin == key)check = false; // careful we lose $ semantics!
-	if (kind == groups and kin == key)check = false;
+    if (kind == groups and kin == key)check = false;
+//	if (kind == groups and kin == global)check = false;
 	if (kind == expression and kin == declaration)check = false;
 	if (kind == declaration and kin == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
 	if (check) {
