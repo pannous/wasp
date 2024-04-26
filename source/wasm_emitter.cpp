@@ -728,7 +728,8 @@ Code emitArray(Node &node, Function &context) {
 	short itemSize = arrayElementSize(node);
 	wasm_node_index typ_index = 0;
 	if (!node.type) /*node.type=*/addTypeFromSize(node, itemSize);
-	if (node.type) typ_index = emitNodeBinary(*node.type, context);// danger! Byte now lives inside wasm!
+	if (node.type) // save meta information about (generic) type!
+        typ_index = emitNodeBinary(*node.type, context);// danger! Byte now lives inside wasm!
 
 	let code = Code();
 	emitPaddingAlignment(8);
@@ -1628,6 +1629,8 @@ Code emitOperator(Node &node, Function &context) {
 		const Code &lhs_code = emitExpression(lhs, context);
 		Type lhs_type = last_type;
 		arg_type = last_type;// needs to be visible to array index [1,2,3]#1 gets FUCKED up in rhs operations!!
+        if(isGeneric(last_type))
+            arg_type = last_type.generics.value_type;
 		const Code &rhs_code = emitExpression(rhs, context);
 		Type rhs_type = last_type;
 		Type common_type = commonType(lhs_type, rhs_type);// 3.1 + 3 => 6.1 etc
@@ -1691,6 +1694,8 @@ Code emitOperator(Node &node, Function &context) {
 			code.addByte(i64_reinterpret_f64);// f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
 		code.addByte(i64_eqz);
 		last_type = i32t;// bool'ish
+    } else if (name == "*" and isArrayType(last_type)) {
+        code.add(emitCall(*new Node("matrix_multiply"), context)); // gpu / vector shim
 	} else if (name == "++" or name == "--") {
 		Node increased = Node(name[0]).setType(operators);
 		increased.add(first); // if not first emitted
@@ -2331,6 +2336,7 @@ Code cast(Type from, Type to) {
 	if (from == charp and to == i32t)return nop;// assume i32 is a pointer here. todo?
 	if (from == array and to == i32)return nop;// pray / assume i32 is a pointer here. todo!
 	if (from == charp and to == strings)return nop;
+    if(isGeneric(from) and isGeneric(to))return nop;
 	if (from == codepoint1 and to == i64t)
 		return Code(i64_extend_i32_s);
 	if (from == array and to == i64)return Code(i64_extend_i32_u);;// pray / assume i32 is a pointer here. todo!

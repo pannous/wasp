@@ -713,6 +713,9 @@ private:
 //			error("Bad number");
 //		} else {
 		if (base != 10) todo("base "s + base);
+        if(is_identifier(ch))
+            print("IMPLICIT MULTIPLICATION!?"); // now what?
+//            ch!=' ' and not is_operator(ch) and not isWhiteSpace(ch) and not is_bracket(ch) and not is_grouper(ch) and not  and not is_operator(ch) and isDigit(ch)
 		return *new Node(number0); // {number0}; //wow cPP
 //		}
 	};

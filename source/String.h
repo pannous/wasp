@@ -1243,7 +1243,7 @@ void print(String);
 
 void print(Type);
 
-void print(Type32);
+void print(Type);
 
 void println(Node &s);
 

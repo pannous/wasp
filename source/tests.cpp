@@ -36,6 +36,9 @@ void testVectorShim() {
 	assert_emit("v=[1 2 3];w=[2 3 4];v*w", 2 + 6 + 12);
 }
 
+
+
+
 void testHtmlWasp() {
 	eval("html{bold{Hello}}"); // => <html><body><bold>Hello</bold></body></html> via appendChild bold to body
 //	eval("html{bold($myid style=red){Hello}}"); // => <bold id=myid style=red>Hello</bold>
@@ -2429,7 +2432,6 @@ void testStringConcatenation() {
 }
 
 void testString() {
-
 	String *a = new String("abc");
 	String b = String("abc");
 	String c = *a;
@@ -2929,6 +2931,8 @@ void testBUG();
 
 void testEmitBasics();
 
+void testSourceMap();
+
 void testNodeDataBinaryReconstruction() {
 	check_is(parse("y:{x:2 z:3}").serialize(), "y{x:2 z:3}");// todo y:{} vs y{}
 	assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}"));// looks trivial but is epitome of binary (de)serialization!
@@ -3161,7 +3165,9 @@ void assurances() {
 #if WASM
 	//	check(sizeof(Type32) == 4) // todo:
 #else
-	check(sizeof(Type) == 8) // otherwise all header structs fall apart
+//    check(sizeof(Type32) == 4) // otherwise all header structs fall apart
+	check(sizeof(Type64) == 8) // otherwise all header structs fall apart
+//    check(sizeof(Type) == 8) // otherwise all header structs fall apart
 #endif
 //    check(sizeof(void*)==4) // otherwise all header structs fall apart TODO adjust in 64bit wasm / NORMAL arm64 !!
 	check(sizeof(int64) == 8)
@@ -3368,11 +3374,14 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
-//    assert_emit("dub:=it*2;dub(3)", 6);
-    assert_emit("dub:=it*2;dub(π)", 2 * pi);
+//    test_implicit_multiplication(); todo in parser how?
 //    testGlobals();
 //    testTypeConfusion();
-    return;
+    assert_is("1 2 3", Node(1, 2, 3, 0))
+
+//    testVectorShim();// use GPU even before wasm vector extension is available
+//    testSourceMap();
+//    return;
 
 //	testDwarf();
 //	testFibonacci();
@@ -3430,4 +3439,5 @@ void testCurrent() {
 #endif
 	print("CURRENT TESTS PASSED");
 }
+
 // valgrind --track-origins=yes ./wasp

@@ -56,9 +56,9 @@ negative_mask_64 = 0xFF00000000000000L,
 // 3 * sizeof(int32)  header, kind, length before *DATA !
 // sizeof(List) - sizeof(S*)
 
-union Type32;
+union Type;
 
-const char *typeName(const Type32 *t);
+const char *typeName(const Type *t);
 
 // for Opcodes see Code.h
 
@@ -152,7 +152,7 @@ extern Node StringType;
 // todo dangerous overlap with Valtype in Type!? OK only accessible via mapTypeToWasm
 // needs to be stable: Kind is returned in multivalue and thus needs to be parsed by js!
 // todo change naming scheme: remove false plural 's' where inappropiate: 'strings' groups … … …
-enum Kind {// todo: merge Node.kind with Node.class(?)
+enum Kind /* 32 bit*/ {// todo: merge Node.kind with Node.class(?)
     // todo smartType4bit first 16 values!!
     // plurals because of namespace clash
     // TODO add subtypes of Class:Node Variable:Node etc ^^^
@@ -382,12 +382,14 @@ typedef int Address;
 //enum Valtype;// c++ forbids forward references to enums
 // todo generic types Array<Type> … via type & array_mask
 // todo complicated types Array<struct{…}> … via mask and index into types map à la  >>> ref(type_index) <<<
-union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ranges:
+// todo ⚠️ 64 bit due to pointer!
+union Type {// 64 bit due to pointer! todo: Type32 i32 union, 4 bytes with special ranges:
     /* this union is partitioned in the int space:
      0x0000 - Ill defined
      0x0001 - 0x1000 : Kinds of Node MUST NOT CLASH with Valtype!?
      0x1000 - 0x10000: Classes (just the builtin ones) smarty32 " todo 150_000 classes should be enough for anyone ;)"
      // todo memory offset ok? (data 0x1000 …)
+// ⚠️ type.value >= 0x10000 means Generics! OR Pointer ??
      0x10000 - … 2^60    : Addresses (including pointers to any Node including Node{type=clazz}
      //todo endianness?
 
@@ -396,25 +398,26 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
     */
 
     // todo: this union is BAD because we can not READ it safely, instead we need mapType / extractors for all combinations!
-    uint64 value = 0; // one of:
-//    SmartPointer64 smarty;
+    unsigned int value = 0;
+//    uint64 value = 0;
+    // one of:
 //    SmartPointer32 smarty;// when separating Types from values we don't need smart pointers
     Kind kind; // Node of this type
     Generics generics;
-//	Valtype valtype; // doesn't make sense here but try to avoid(guarantee?) overlap with type enum for future compatibility?
     Primitive type;// c_string int_array long_array float_array etc, can also be type of value.data in boxed Node
-//    Node *clazz;// same as // 64 bit on normal systems!!!!
     Address address;// pointer to Node
+//    Node *clazz;// same as Address // 64 bit on normal systems!!!!
+//	Valtype valtype; // doesn't make sense here but try to avoid(guarantee?) overlap with type enum for future compatibility?
 
-    Type32() {
+    Type() {
     }
 
 
-    Type32(Type32 *o) {
+    Type(Type *o) {
         value = o->value;
     }
 
-    Type32(Node *o) {
+    Type(Node *o) {
         if (!o) {
             this->kind = Kind::nils;
             return;
@@ -438,20 +441,20 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
 //        error("TODO    Type32(const Node &o)");
 //    }
 
-    Type32(unsigned int value) {
+    Type(unsigned int value) {
         this->value = value;
     }
 
-    Type32(Generics generics) {
+    Type(Generics generics) {
         this->generics = generics;
     }
 
-    Type32(Primitive primitive) {
+    Type(Primitive primitive) {
         type = primitive;
     }
 
 
-    Type32(Kind kind) {
+    Type(Kind kind) {
         this->kind = kind;
         if ((int) kind > 0x1000)
             error("erroneous or unsafe Type construction");
@@ -490,7 +493,7 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
 
     explicit operator const char *() const { return typeName(this); }
 
-    bool operator==(Type32 other) {
+    bool operator==(Type other) {
         return value == other.value;
     }
 
@@ -519,15 +522,17 @@ union Type32 {// 64 bit due to pointer! todo: i32 union, 4 bytes with special ra
     }
 };
 
-typedef Type32 Type;
+//if (type.value >= 0x10000) means Generics!
+//typedef Type32 Type;
+//typedef Type64 Type;
 
 Type valueType(Type type);
 
 Type genericType(Type type, Type value_type);
 
 union Generics64 {
-    Type32 kind;
-    Type32 value_type;
+    Type kind;
+    Type value_type;
 };
 
 // on 64bit systems pointers (to types)
