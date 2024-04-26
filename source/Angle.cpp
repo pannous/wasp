@@ -537,10 +537,14 @@ bool isVariable(Node &node) {
     return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'A';// todo;
 }
 
-bool isGlobal(Node &node, Function function) {
-    if (globals.has(node.name))return true;
-    if (builtin_constants.contains(node.name)) return true;
-    if (node.first().name == "global")return true;
+bool isGlobal(Node &node, Function &function) {
+    if (node.name.empty())return false;
+    if (globals.has(node.name))
+        return true;
+    if (builtin_constants.contains(node.name))
+        return true;
+    if (node.first().name == "global")
+        return true;
     return false;
 }
 
@@ -769,7 +773,7 @@ bool compatibleTypes(Type type1, Type type2) {
     return false;
 }
 
-Node &groupGlobal(Node &node, Function function) {
+Node &groupGlobal(Node &node, Function &function) {
     // todo: turn wasp_main variables into global variables
     if (node.length > 1) {
         if (node[0].name == "global")
@@ -1877,7 +1881,9 @@ Node &analyze(Node &node, Function &function) {
         addLocal(function, name, node.value.node ? mapType(node.value.node) : none, false);
     }
 
-    if (isGlobal(node, function)) return groupGlobal(node, function);
+    if (isGlobal(node, function))
+        return groupGlobal(node, function);
+//        return node.setType(global, false);
     if (isPrimitive(node)) {
         if (isVariable(node))
             addLocal(function, name, mapType(node), false);
@@ -1897,12 +1903,14 @@ Node &analyze(Node &node, Function &function) {
     if (analyzed[grouped.hash()])return grouped;// done!
     analyzed.insert_or_assign(grouped.hash(), 1);
 
+//    Node& last;
     if (isGroup(type)) {
         if (grouped.length > 0)
             for (Node &child: grouped) { // children of lists analyzed individually
                 if (!child.name.empty() and wit_keywords.contains(child.name) and child.kind != strings /* TODO … */)
                     return witReader.analyzeWit(node);// can't MOVE there:
                 child = analyze(child, function);// REPLACE ref with their ast ok?
+//                last.next = child;
             }
     }
     return grouped;

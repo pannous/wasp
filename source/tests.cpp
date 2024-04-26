@@ -3368,6 +3368,7 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+//    assert_emit("dub:=it*2;dub(3)", 6);
     assert_emit("dub:=it*2;dub(π)", 2 * pi);
 //    testGlobals();
 //    testTypeConfusion();
