@@ -89,6 +89,8 @@
         });
         editor.on('change', function () {
             compile_and_run(editor.getValue())
+          // editor.save();
+          editor.focus();
         });
     </script>
 

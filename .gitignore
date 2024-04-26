@@ -104,3 +104,4 @@ main.wasm.map
 main.wasm.json
 *.map
 :=.md
+wiki/:=.md
