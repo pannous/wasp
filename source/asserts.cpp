@@ -16,23 +16,6 @@
 // todo assert_is ≠ assert_run == assert_emit_with_wasm_runtime!
 
 
-#if EMSCRIPTEN
-#define assert_is(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_isx(α,β)){printf("%s != %s",#α,#β);backtrace_line();}
-#elif MY_WASM and not EMSCRIPTEN // todo WHY does if MY_WASM not work??
-#define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
-#else
-//// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
-#define assert_is(wasp, result) \
-printf("TEST %s==%s\n",#wasp,#result); \
-debug_line();\
-ok=assert_isx(wasp,result);\
-if(ok)printf("PASSED %s==%s\n",#wasp,#result);\
-else{printf("FAILED %s==%s\n",#wasp,#result); \
-backtrace_line()}
-#endif
-
-#define assert_eval assert_is
-
 bool assert_equals_x(String a, String b, chars context) {
     if (a == b) printf(" OK %s==%s %s\n", a.data, b.data, context);
     else printf("FAILED assert_equals!\n %s should be %s %s\n", a.data, b.data, context);
@@ -279,11 +262,6 @@ bool assert_isx(chars mark, bool expect) {
 //#define assert_parses(wasp) result=assert_parsesx(wasp);if(result==NIL){print("%s:%d\n",__FILE__,__LINE__);proc_exit(1);}
 // ⚠️ CAREFUL parses in DATA_MODE !
 
-#if WASM
-#define skip(test)
-#else
-#define skip(test) print("SKIPPING");print(#test);debug_line();
-#endif
 #define todo_emit(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
 #define skip_wasm(ɣ) if(not eval_via_emit){ɣ;}else printf("skipping emit case %s",#ɣ);
 //print("SKIPPING %s\n%s:%d\n",#test,__FILE__,__LINE__);
@@ -332,3 +310,21 @@ void assertSerialize(const char *input) {
 }
 
 
+Node assert_parsesx(chars mark) {
+    try {
+        result = parse(mark, ParserOptions{.data_mode=true});
+        return result;
+    } catch (chars err) {
+        print("TEST FAILED WITH ERROR\n");
+        printf("%s\n", err);
+    } catch (String &err) {
+        print("TEST FAILED WITH ERRORs\n");
+        printf("%s\n", err.data);
+    } catch (SyntaxError &err) {
+        print("TEST FAILED WITH SyntaxError\n");
+        printf("%s\n", err.data);
+    } catch (...) {
+        print("TEST FAILED WITH UNKNOWN ERROR (maybe POINTER String*)? \n");
+    }
+    return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
+}

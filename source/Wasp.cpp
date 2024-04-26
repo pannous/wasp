@@ -2292,23 +2292,4 @@ Node &parse(chars source) {
 	return wasp_parser.parse(source, {});
 }
 
-extern Node &result;
 
-Node assert_parsesx(chars mark) {
-	try {
-		result = wasp_parser.parse(mark, ParserOptions{.data_mode=true});
-		return result;
-	} catch (chars err) {
-		print("TEST FAILED WITH ERROR\n");
-		printf("%s\n", err);
-	} catch (String &err) {
-		print("TEST FAILED WITH ERRORs\n");
-		printf("%s\n", err.data);
-	} catch (SyntaxError &err) {
-		print("TEST FAILED WITH SyntaxError\n");
-		printf("%s\n", err.data);
-	} catch (...) {
-		print("TEST FAILED WITH UNKNOWN ERROR (maybe POINTER String*)? \n");
-	}
-	return ERROR;// DANGEEER 0 wrapped as Node(int=0) !!!
-}
