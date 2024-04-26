@@ -15,6 +15,34 @@ extern "C" void assert_expect(Node*){} // dummies
 extern "C" void async_yield() {}
 #endif
 
+
+extern Node &result;
+
+#if WASM
+#define skip(test)
+#else
+#define skip(test) print("SKIPPING");print(#test);debug_line();
+#endif
+
+
+#if EMSCRIPTEN
+#define assert_is(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_isx(α,β)){printf("%s != %s",#α,#β);backtrace_line();}
+#elif MY_WASM and not EMSCRIPTEN // todo WHY does if MY_WASM not work??
+#define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
+#else
+//// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
+#define assert_is(wasp, result) \
+printf("TEST %s==%s\n",#wasp,#result); \
+debug_line();\
+ok=assert_isx(wasp,result);\
+if(ok)printf("PASSED %s==%s\n",#wasp,#result);\
+else{printf("FAILED %s==%s\n",#wasp,#result); \
+backtrace_line()}
+#endif
+
+#define assert_eval assert_is
+
+
 //#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
 
 //#if WASM

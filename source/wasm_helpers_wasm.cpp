@@ -313,18 +313,6 @@ int put_s(String *s) {
 	return 0;//(int) s;// stdio
 }
 
-#if not MY_WASM
-
-int puti(int i) {
-	put_chars(">>>>");
-	put_chars(formatLong(i), 0);
-//    newline();
-//    printf("%d", i);
-	return i;
-}
-
-#endif
-
 int puti(int i) {
 	put_chars(formatLong(i), 0);
 	return i;
