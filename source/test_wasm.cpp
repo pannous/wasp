@@ -81,14 +81,15 @@ void testEmitter() {
     clearEmitterContext();
     Node node = Node(42);
     Code &code = emit(node, "42");
-    int result = code.run();
-    check(result == 42);
+    int resulti = code.run();
+    check(resulti == 42);
 #endif
 }
 
 
 void testGlobals() {
     assert_emit("π", pi);
+    assert_emit("2π", 2 * pi);
 }
 
 void test_get_local() {
