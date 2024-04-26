@@ -90,6 +90,7 @@ void testEmitter() {
 void testGlobals() {
     assert_emit("π", pi);
     assert_emit("2π", 2 * pi);
+    assert_emit("dub:=it*2;dub(π)", 2 * pi);
 }
 
 void test_get_local() {

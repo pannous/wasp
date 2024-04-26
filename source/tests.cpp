@@ -25,6 +25,13 @@
 //void testDwarf();
 //void testSourceMap();
 
+void testTypeConfusion() {
+    assert_throws("x=1;x='ok'");
+    assert_throws("x=1;x=1.0");
+    assert_throws("double:=it*2");// double is type i64!
+    // todo: get rid of stupid type name double, in C it's float64 OR int64 anyway
+}
+
 void testVectorShim() {
 	assert_emit("v=[1 2 3];w=[2 3 4];v*w", 2 + 6 + 12);
 }
@@ -179,7 +186,7 @@ void testTypedFunctions() {
 	result = analyze(parse("int tee(float b, string c){b}"));
 	check_is(result.kind, Kind::declaration);
 	check_is(result.name, "tee");
-	auto signature_node = result["signature"];
+    auto signature_node = result["@signature"];
 //	auto signature_node = result.metas()["signature"];
 	if (not signature_node.value.data)error("no signature");
 	Signature &signature = *(Signature *) signature_node.value.data;
@@ -205,7 +212,7 @@ void testEmptyTypedFunctions() {
 	result = analyze(parse("int a(){}"));
 	check_is(result.kind, Kind::declaration);
 	check_is(result.name, "a");
-	auto signature_node = result["signature"];
+    auto signature_node = result["@signature"];
 	Signature signature = *(Signature *) signature_node.value.data;
 	check_is(signature.functions.first()->name, "a")
 	let names2 = signature.functions.map(+[](Function *f) {
@@ -3361,8 +3368,12 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    assert_emit("dub:=it*2;dub(π)", 2 * pi);
+//    testGlobals();
+//    testTypeConfusion();
+    return;
+
 //	testDwarf();
-//	return;
 //	testFibonacci();
 //	initTypes();
 //	check_eq(types["u8"],types["byte"]);
@@ -3406,7 +3417,9 @@ void testCurrent() {
 //    tests();// make sure all still ok before changes
 //    todos();
 	tests();// make sure all still ok after messing with memory
+
 #if not WASM
+// ⚠️ in WASM these tests are called via async trick
 	testAngle();// fails in WASM why?
 	testMergeGlobal();
 	testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)

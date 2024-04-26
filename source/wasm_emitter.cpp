@@ -1963,6 +1963,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 			break;
 		}
 		reference:
+        case global:
 		case reference: {
 			if (name.empty()) {
 //				error("empty reference!");
