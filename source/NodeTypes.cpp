@@ -92,7 +92,8 @@ Type mapType(Node &arg) {
             if (globals.has(arg.name))
                 return globals[arg.name].type;
             else
-                error("global not found "s + arg.name);
+                return Primitive::unknown_type;
+//                error("global not found "s + arg.name);
         case variants:
         case records:
         case constructor:

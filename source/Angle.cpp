@@ -31,8 +31,15 @@ WitReader witReader;
 List<String> aliases(String name);
 
 List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
-List<String> class_keywords = {"struct", "type", "class", "prototype",
-        /*"trait", "impl"*/};// "interface", record see wit -> module
+
+List<String> class_keywords = {"struct", "type", "class",
+                               "prototype", /*"trait", "impl"*/};// "interface", record see wit -> module
+
+// functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
+chars control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
+
+List<String> extra_reserved_keywords = {"func"};// EXTRA!  // use bool isKeyword(String) !!
+
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
 //Map<String, Function> functions; // todo Maps don't free memory and cause SIGKILL after some time <<<
@@ -58,12 +65,53 @@ Function *use_required(Function *function);
 
 void addLibrary(Module *modul);
 
-
-// functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
-chars control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
-
 // 'private header'
 bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
+
+Node &groupOperators(Node &expression, Function &context);
+
+Node &groupKebabMinus(Node &node, Function &function);
+
+Node extractModifiers(Node &node);
+
+// currently only used for WitReader. todo: merge with addGlobal
+void addGlobal(Node &node) {
+    String &name = node.name;
+    if (isKeyword(name))
+        error("Can't add reserved keyword "s + name);
+    if (globals.has(name)) {
+        warn("global %s already a registered symbol: %o "s % name % globals[name].value);
+    } else {
+        Type type = mapType(node.type);
+        globals.add(name, Global{/*id*/globals.count(), name, type, node.clone(), /*mutable=*/ true});
+    }
+}
+
+// todo: merge ^^
+bool addGlobal(Function &context, String name, Type type, bool is_param, Node &value) {
+    if (isKeyword(name))
+        error("keyword as global name: "s + name);
+    if (name.empty()) {
+        warn("empty reference in "s + context);
+        return true;// 'done' ;)
+    }
+    if (builtin_constants.has(name))
+        error(name + " is already a builtin constant"s);
+    if (context.signature.has(name))
+        error(name + " already declared as parameter for function "s + context.name);
+    if (globals.has(name)) // ok ?
+        error(name + " already declared as global"s);
+//        return true;// already declared
+    if (context.locals.has(name))
+        error(name + " already declared as local variable"s);
+    if (isFunction(name, true))
+        error(name + " already declared as function"s);
+//    if(type == int32)
+//        type = int64t; // can't grow later after global init
+    Global global{.index=globals.count(), .name=name, .type=type, .value=value.clone(), .is_mutable=true};
+    globals[name] = global;
+    return true;
+}
 
 void addWasmArrayType(Type value_type) {
     if (isGeneric(value_type)) {
@@ -389,10 +437,14 @@ List<chars> return_keywords = {"return", "yield", "as", "=>", ":", "->"}; // "co
 List<chars> function_operators = {":="};//, "=>", "->" ,"<-"};
 List<chars> function_keywords = {"def", "defn", "define", "to", "ƒ", "fn", "fun", "func", "function", "method",
                                  "proc", "procedure"};
-List<String> function_modifiers = {"public", "static", "export", "import", "extern", "C"};
+List<String> function_modifiers = {"public", "static", "export", "import", "extern", "external", "C", "global",
+                                   "inline", "virtual",
+                                   "override", "final", "abstract", "private", "protected", "internal", "const",
+                                   "constexpr", "volatile", "mutable", "thread_local", "synchronized", "transient",
+                                   "native"};
 
-List<chars> closure_operators = {"::", ":>", "=>", "->"}; // <- =: reserved for right assignment
-List<chars> key_pair_operators = {":"};
+List<chars> closure_operators = {"::", ":>", "=>", "->"}; // |…| { … in } <- =: reserved for right assignment
+List<chars> key_pair_operators = {":"};// -> =>
 List<chars> declaration_operators = {":=", "=",
                                      "::=" /*until global keyword*/}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
 
@@ -538,11 +590,12 @@ bool isVariable(Node &node) {
 }
 
 bool isGlobal(Node &node, Function &function) {
-    if (node.name.empty())return false;
-    if (globals.has(node.name))
-        return true;
-    if (builtin_constants.contains(node.name))
-        return true;
+    if (not node.name.empty()) {
+        if (globals.has(node.name))
+            return true;
+        if (builtin_constants.contains(node.name))
+            return true;
+    }
     if (node.first().name == "global")
         return true;
     return false;
@@ -789,15 +842,27 @@ Node &groupImplicitMultiplication(Node &node, Function &function) {
 Node &groupGlobal(Node &node, Function &function) {
     // todo: turn wasp_main variables into global variables
     if (node.length > 1) {
-        if (node[0].name == "global")
+        if (node.first().name == "global")
             node = node.from(1);
         node = node.flat();
+        if (node.first().kind == reference)
+            node.first().setType(global, false);
+        else
+            error("global declaration not a reference "s + node.first());
+        Node &grouped = groupOperators(node, function).flat();
+//        Node &grouped = analyze(node, function).flat();
+        if (grouped.kind != operators)
+            error("global declaration not an assignment "s + grouped);
+//        Node *type = grouped[1].type;
+        Type type = mapType(grouped[1]);
+        addGlobal(function, grouped[0].name, type, false, grouped[1]);
+        return grouped;
     }
-    if (node.length > 1) todo("groupGlobal");
 //    node.setType(global,false);
     node.setType(reference, false);
     return node;
 }
+
 
 // return: done?
 // todo return clear enum known, added, ignore ?
@@ -976,13 +1041,6 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     return decl;
 }
 
-Node &groupOperators(Node &expression, Function &context);
-
-Node extractModifiers(Node &node);
-
-
-Node &groupKebabMinus(Node &node, Function &function);
-
 Node extractModifiers(Node &expression) {
     Node modifieres;
     for (auto child: expression) {
@@ -1136,6 +1194,7 @@ bool isKeyword(String &op) {
     if (function_operators.has(op))return true;
     if (prefixOperators.has(op))return true;
     if (suffixOperators.has(op))return true;
+    if (extra_reserved_keywords.contains(op))return true;
     if (contains(functor_list, op))return true;
     if (contains(control_flows, op))return true;
     return false;
@@ -1283,7 +1342,9 @@ Node &groupOperators(Node &expression, Function &context) {
                     // x=7 and x*=7
                     // todo can remove hack?
                     Type inferred_type = preEvaluateType(next, context);
-                    if (addLocal(context, var, inferred_type, false)) {
+                    if (var.kind == global) {
+                        addGlobal(context, var, inferred_type, false, *next.clone());
+                    } else if (addLocal(context, var, inferred_type, false)) {
                         if (op.length > 1 and op.endsWith("=") and not op.startsWith(":")) // x+=1 etc
                             error("self modifier on unknown reference "s + var);
                     } else {
@@ -2109,22 +2170,6 @@ float precedence(Node &operater) {
     if (empty(name))return 0;// no precedence
     return precedence(name);
 }
-
-List<String> reserved_keywords = {"func"};// todo…
-void addGlobal(Node &node) {
-    String &name = node.name;
-    if (reserved_keywords.has(name) or contains(import_keywords, name))
-        error("Can't add reserved keyword "s + name);
-    if (not globals.has(name)) {
-        globals.add(name, Global{/*id*/globals.count(), name, mapType(node.type), node.clone(), /*mutable=*/ true});
-    } else {
-        warn("global %s already a registered symbol: %o "s % name % globals[name].value);
-    }
-}
-
-
-List<String> demangle_args(String &fun);
-
 
 Function getWaspFunction(String name) { // signature only, code must be loaded from wasm or imported and linked
     if ("floor"s == name)error1("use builtin floor!");

@@ -94,6 +94,8 @@ void test_implicit_multiplication(){
 void testGlobals() {
     assert_emit("2*π", 2*pi);
     assert_emit("dub:=it*2;dub(π)", 2 * pi);
+    assert_emit("global x=7", 7);
+    assert_emit("global x;x=7;x", 7);
 }
 
 void test_get_local() {

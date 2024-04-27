@@ -116,6 +116,7 @@ enum Valtype {
     i64 = 0x7E, // signed or unsigned? we don't care
     i64t = 0x7E,
     i64s = 0x7E,
+    int64t = 0x7E,
     int64s = 0x7E,  // symbol now used as
 
     i8 = 0x7A, // == vec_i8 ⚠️ONLY in GC types array, struct, etc
