@@ -1974,7 +1974,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
         case global:
         case reference: {
             if (name.empty()) {
-//				error("empty reference!");
+                warn("empty reference!");
                 return Code();
             }
 //			Map<int, String>
@@ -1988,6 +1988,8 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
                 else if (globals.has(name)) {
                     if (context.name == "global")
                         return emitValue(node, context);
+                    if (node.isSetter())
+                        return emitSetter(node, node, context);
                     return emitGetGlobal(node);
                 } else if (name == "ℯ")
                     return emitValue(*new Node(2.7182818284590), context);

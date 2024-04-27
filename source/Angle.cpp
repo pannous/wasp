@@ -1382,7 +1382,7 @@ Node &groupOperators(Node &expression, Function &context) {
                 node.add(next);
 
                 if (op.length > 1 and op.endsWith("=") and op[0] != ':')
-                    // Complicated way to express *= += -= … self assignments
+                    // express *= += -= … self assignments
                     if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {
                         // *= += etc
                         node.name = String(op.data[0]);

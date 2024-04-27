@@ -3380,8 +3380,7 @@ void testCurrent() {
 
 //    test_implicit_multiplication(); todo in parser how?
 
-
-    testGlobals();
+//    testGlobals();
 //    testTypeConfusion();
 
 //    testVectorShim();// use GPU even before wasm vector extension is available

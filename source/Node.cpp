@@ -1145,6 +1145,7 @@ bool Node::isSetter() {
 	if (kind == strings and name == value.string) return false;  // todo x="x" '123'="123" redundancy bites us here
 	if (kind == strings and value.data)
 		return true;
+    if (kind == global and value.data) return true;
 	if (kind == reference and value.data) return true;
 	return length > 0;// i:4
 }
