@@ -363,6 +363,11 @@ struct Generics /*32 bit*/{
     ushort value_type;
 };
 
+struct Generics64 {
+    Kind kind;
+    Primitive value_type;
+};
+
 typedef int Address;
 
 
@@ -404,6 +409,7 @@ union Type {// 64 bit due to pointer! todo: Type32 i32 union, 4 bytes with speci
 //    SmartPointer32 smarty;// when separating Types from values we don't need smart pointers
     Kind kind; // Node of this type
     Generics generics;
+//    Generics64 generics;
     Primitive type;// c_string int_array long_array float_array etc, can also be type of value.data in boxed Node
     Address address;// pointer to Node
 //    Node *clazz;// same as Address // 64 bit on normal systems!!!!
@@ -446,7 +452,13 @@ union Type {// 64 bit due to pointer! todo: Type32 i32 union, 4 bytes with speci
     }
 
     Type(Generics generics) {
-        this->generics = generics;
+        this->generics = generics; // Generics32
+//        this->generics = {(Kind)generics.kind, (Primitive) generics.value_type};
+    }
+
+    Type(Generics64 generics) {
+//        this->generics = generics; // Generics64
+        this->generics = {(ushort) generics.kind, (ushort) generics.value_type};
     }
 
     Type(Primitive primitive) {
@@ -466,8 +478,11 @@ union Type {// 64 bit due to pointer! todo: Type32 i32 union, 4 bytes with speci
     explicit
     operator Kind() const { return this->kind; }
 
+//
     explicit
     operator Generics() const { return this->generics; }
+//    explicit
+//    operator Generics64() const { return this->generics; }
 
     explicit
     operator Primitive() const { return this->type; }
@@ -530,10 +545,6 @@ Type valueType(Type type);
 
 Type genericType(Type type, Type value_type);
 
-union Generics64 {
-    Type kind;
-    Type value_type;
-};
 
 // on 64bit systems pointers (to types)
 union Type64 {//  i64 union, 8 bytes with special ranges:

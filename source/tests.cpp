@@ -3377,6 +3377,8 @@ void testCurrent() {
 //    test_implicit_multiplication(); todo in parser how?
 //    testGlobals();
 //    testTypeConfusion();
+    assert_is("x=(1 4 3);x#2", 4);
+
     assert_is("1 2 3", Node(1, 2, 3, 0))
 
 //    testVectorShim();// use GPU even before wasm vector extension is available
