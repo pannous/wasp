@@ -3177,7 +3177,8 @@ void assurances() {
 void testAllEmit() {
 	// WASM emit tests under the hood:
 	assert_emit("42", 42);// basics
-	assert_emit("√ π ²", pi);
+    assert_emit("√ π ²", pi);
+    assert_emit("√π²", pi);
 
 	testEmitBasics();
 	testSinus();
@@ -3374,21 +3375,15 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
-//    test_implicit_multiplication(); todo in parser how?
-    assert_emit("global x=7", 7);
-    assert_emit("global x=1+2", 3);
-//    return;
-    assert_emit("global x=1+π",
-                1 + pi); // only the most primitive expressions are allowed in global initializers => move to main!
-    assert_emit("global x;x=7;x", 7);
-    assert_emit("global x=1;x=7;x", 7);
-    assert_emit("global x=π;x=7;x", 7);
-    assert_emit("global x;x=7;x+=1", 8);
-    assert_emit("global x;x=7;x+=1;x+1", 9);
-    return;
+//    assert_emit("√ π ²", pi);
+//    assert_emit("√π²", pi);
 
-    testGlobals();
+//    test_implicit_multiplication(); todo in parser how?
+
+
+//    testGlobals();
 //    testTypeConfusion();
+    assert_emit("i=10007.0;x=i%10000.0", 7);
 
 //    testVectorShim();// use GPU even before wasm vector extension is available
 //    testSourceMap();
