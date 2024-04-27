@@ -74,21 +74,9 @@ Node &groupKebabMinus(Node &node, Function &function);
 
 Node extractModifiers(Node &node);
 
-// currently only used for WitReader. todo: merge with addGlobal
-void addGlobal(Node &node) {
-    String &name = node.name;
-    if (isKeyword(name))
-        error("Can't add reserved keyword "s + name);
-    if (globals.has(name)) {
-        warn("global %s already a registered symbol: %o "s % name % globals[name].value);
-    } else {
-        Type type = mapType(node.type);
-        globals.add(name, Global{/*id*/globals.count(), name, type, node.clone(), /*mutable=*/ true});
-    }
-}
 
 // todo: merge ^^
-bool addGlobal(Function &context, String name, Type type, bool is_param, Node &value) {
+bool addGlobal(Function &context, String name, Type type, bool is_param, Node *value) {
     if (isKeyword(name))
         error("keyword as global name: "s + name);
     if (name.empty()) {
@@ -108,17 +96,31 @@ bool addGlobal(Function &context, String name, Type type, bool is_param, Node &v
         error(name + " already declared as function"s);
 //    if(type == int32)
 //        type = int64t; // can't grow later after global init
-    Node *init_value = 0;
-    if (value.kind == expression) {
+    if (value and value->kind == expression) {
         warn("only the most primitive expressions are allowed in global initializers => move to wasp_main!");
-        init_value = new Node(0); // todo reals, strings, arrays, structs, …
+//        value = new Node(0); // todo reals, strings, arrays, structs, …
+    } else if (not value) {
+//        value = new Node(0);
     } else {
 //        if(type==int64t)type=int32t;// todo: dirty hack for global x=1+2 because we can't cast
-        init_value = value.clone();
     }
-    Global global{.index=globals.count(), .name=name, .type=type, .value=init_value, .is_mutable=true};
+    Global global{.index=globals.count(), .name=name, .type=type, .value=value, .is_mutable=true};
     globals[name] = global;
     return true;
+}
+
+
+// currently only used for WitReader. todo: merge with addGlobal
+void addGlobal(Node &node) {
+    String &name = node.name;
+    if (isKeyword(name))
+        error("Can't add reserved keyword "s + name);
+    if (globals.has(name)) {
+        warn("global %s already a registered symbol: %o "s % name % globals[name].value);
+    } else {
+        Type type = mapType(node.type);
+        globals.add(name, Global{/*id*/globals.count(), name, type, node.clone(), /*mutable=*/ true});
+    }
 }
 
 void addWasmArrayType(Type value_type) {
@@ -864,11 +866,12 @@ Node &groupGlobal(Node &node, Function &function) {
 //        Node *type = grouped[1].type;
 //        Type type = mapType(grouped[1]);
         Type type = preEvaluateType(grouped[1], function);
-        addGlobal(function, grouped[0].name, type, false, grouped[1]);
+        addGlobal(function, grouped[0].name, type, false, grouped[1].clone());
         return grouped;
     } else {
         if (not globals.has(node.name) and not builtin_constants.contains(node.name))
-            addGlobal(function, node.name, unknown_type, false, node);
+            addGlobal(function, node.name, unknown_type, false, 0);
+        // todo update type later
     }
     node.setType(global, false);
 //    node.setType(reference, false);
@@ -1104,8 +1107,8 @@ Node &groupFunctionDeclaration(Node &expression, Function &context) {
 }
 
 Node &groupDeclarations(Node &expression, Function &context) {
-//    if (expression.kind == groups) // handle later!
-//        return expression;
+    if (expression.kind == groups) // handle later!
+        return expression;
 //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
     if (expression.contains(":=")) {
         return groupFunctionDeclaration(expression, context);
@@ -1351,39 +1354,28 @@ Node &groupOperators(Node &expression, Function &context) {
                 expression.replace(i - 1, i + 1, node);// replace ALL REST
                 expression.remove(i, -1);
             } else {
-//                if (op.endsWith("=") and not op.startsWith("::") and (prev.kind == reference or prev.kind==global)) {
-//                    // x=7 and x*=7 x+=7 etc
-//                    // todo can remove hack?
-//                    Type inferred_type = preEvaluateType(next, context);
-//                    if (var.kind == global) {
-//                        addGlobal(context, var, inferred_type, false, *next.clone());
-//                    } else if (addLocal(context, var, inferred_type, false)) {
-//                        if (op.length > 1 and op.endsWith("=") and not op.startsWith(":")) // x+=1 etc
-//                            error("self modifier on unknown reference "s + var);
-//                    } else {
-//                        Local &local = function.locals[var];
-//                        // variable is known but not typed yet, or type again?
-//                        if (local.type == unknown_type) {
-//                            local.type = inferred_type;// mapType(next);
-//                        }
-//                    }
-//                }
                 auto var = prev.name;
                 if ((op == "=" or op == ":=") and (prev.kind == reference or prev.kind == global)) {
                     // ONLY ASSIGNMENT! self modification handled later
                     Type inferred_type = preEvaluateType(next, context);
-                    if (var.kind == global) {
-                        addGlobal(context, var, inferred_type, false, *next.clone());
+                    if (prev.kind == global) {
+                        if (globals.has(var)) {
+                            Global &global = globals[var];
+                            global.type = inferred_type; // todo upgrade?
+                            if (not global.value)
+                                global.value = next.clone();
+                        } else { // later
+//                            addGlobal(context, var, inferred_type, false, *next.clone());
+                        }
                     } else if (addLocal(context, var, inferred_type, false)) {
-
+                        // ok
                     } else {
                         // variable is known but not typed yet, or type again?
                         Local &local = function.locals[var];
                         if (local.type == unknown_type)
                             local.type = inferred_type;// mapType(next);
                     }
-                }
-                //#endif
+                } // end of '=' assignment logic
                 if (not(op == "#" and prev.empty() and prev.kind != reference)) // ok for #(1,2,3) == len
                     node.add(prev);
 
@@ -2323,4 +2315,8 @@ extern "C" void registerWasmFunction(chars name, chars mangled) {
 //    if (!functions.has(name))functions.add(name, getWaspFunction(name));
 //    if (!loadRuntime().functions.has(mangled))
 //	    loadRuntime().functions.add(mangled, getWaspFunction(name));
+}
+
+bool knownSymbol(String name, Function &context) {
+    return context.locals.has(name) || globals.has(name) || builtin_constants.has(name);
 }
