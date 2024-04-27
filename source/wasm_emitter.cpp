@@ -1359,7 +1359,9 @@ Code emitValue(Node &node, Function &context) {
             break;
         case longs:
             // todo: ints vs longs!!!
-            if (node.value.longy <= 0x10000000 and node.value.longy > -0x100000000) { // room for smart pointers
+            if (context.name == "global") { // hack to allow bigger values later because we can't cast in global init!
+                code.addByte((byte) i64_const);
+            } else if (node.value.longy <= 0x10000000 and node.value.longy > -0x100000000) { // room for smart pointers
                 last_type = i32t;
                 code.addByte((byte) i32_const);
             } else {
@@ -3209,23 +3211,30 @@ Code emitGlobalSection() {
             warn("missing value for global "s + global_name);
             global_node = new Node();// dummy
         }
-        if (global.is_import or (*global_node)["import"])continue;
+        if (global.is_import or global_node->has("import"))
+            continue;
+        if (global_node->kind == expression) {
+            error("only the most primitive expressions are allowed in global initializers => move to wasp_main!");
+            // 1+2 is ok 1+π not
+        }
 //        check_is(type, valtype);
-        check_is(type, mapType(*global_node));
+//        check_is(type, mapType(*global_node));
+//        if (valtype == i64)valtype = int32;// dirty hack for global x = 1 + 2
         globalsList.addByte(valtype);
         globalsList.addByte(global.is_mutable);// 1:mutable todo: default? not π ;)
         // expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
         Function fun{.name="global"};
         last_type = valtype;
-        if (global_node->kind == expression) {
-            const Code &globalInit = emitExpression(global_node, fun);// todo ⚠️ global is not a context!
-            globalsList.add(globalInit);// todo names in global context!?
-        } else if (global_node->kind == longs) { // todo: just use emitExpression but keep i64 not i32!
-            Code globalInit;
-            globalInit.addByte((byte) i64_const);
-            globalInit.push(global_node->value.longy);
-            globalsList.add(globalInit);// todo names in global context!?
-        }
+//        const Code &globalInit = emitExpression(global_node, fun);// todo ⚠️ global is not a context!
+        const Code &globalInit = emitValue(*global_node, fun);// todo ⚠️ global is not a context!
+        globalsList.add(globalInit);// todo names in global context!?
+//        }
+//        else if (global_node->kind == longs) { // todo: just use emitExpression but keep i64 not i32!
+//            Code globalInit;
+//            globalInit.addByte((byte) i64_const);
+//            globalInit.push(global_node->value.longy);
+//            globalsList.add(globalInit);// todo names in global context!?
+//        }
 //        globalsList.add(cast(last_type, valtype));// instruction not valid in initializer expression: i64.extend_i32_s
         globalsList.addByte(end_block);
         /*

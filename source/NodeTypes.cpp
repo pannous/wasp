@@ -94,6 +94,9 @@ Type mapType(Node &arg) {
             else
                 return Primitive::unknown_type;
 //                error("global not found "s + arg.name);
+
+        case expression:
+//            return preEvaluateType(arg, nullptr); // too late
         case variants:
         case records:
         case constructor:
@@ -108,7 +111,6 @@ Type mapType(Node &arg) {
         case symbol:
         case operators:
         case functor:
-        case expression:
         case declaration:
         case assignment: todo("how to map "s + typeName(arg.kind) + " to (wasm) Type?");
             break;

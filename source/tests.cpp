@@ -3376,7 +3376,15 @@ void pleaseFix() {
 void testCurrent() {
 //    test_implicit_multiplication(); todo in parser how?
     assert_emit("global x=7", 7);
+    assert_emit("global x=1+2", 3);
+//    return;
+    assert_emit("global x=1+π",
+                1 + pi); // only the most primitive expressions are allowed in global initializers => move to main!
     assert_emit("global x;x=7;x", 7);
+    assert_emit("global x=1;x=7;x", 7);
+    assert_emit("global x=π;x=7;x", 7);
+    assert_emit("global x;x=7;x+=1", 8);
+    assert_emit("global x;x=7;x+=1;x+1", 9);
     return;
 
     testGlobals();
