@@ -3383,6 +3383,7 @@ void testCurrent() {
 //    testGlobals();
 //    testTypeConfusion();
 
+
 //    testVectorShim();// use GPU even before wasm vector extension is available
 //    testSourceMap();
 //    return;
