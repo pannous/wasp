@@ -766,7 +766,7 @@ bool isGroup(Kind type) {
 // todo: use SINGLE BIT to denote a generic type, and the rest for the value type and other flags
 uint generics_mask = 0xF0FF0000;// ⚠️ preserve 4 bits for not generics flags ( static mutable … )
 Type valueType(Type type) {
-    if (type.value & generics_mask)
+    if (isGeneric(type))
         return type.generics.value_type;
     error("not a generic type "s + typeName(type));
     return none;
@@ -774,9 +774,14 @@ Type valueType(Type type) {
 
 Type genericType(Type type, Type value_type) {
     warn("genericType "s + typeName(type) + " for " + typeName(value_type));
-    if (type.value >= 0x10000 or value_type.value >= 0x10000)
+    if (isGeneric(type))
+        error("already a generic type "s + typeName(type) + " for " + typeName(value_type));
+    if (isGeneric(value_type))
         error("not a generic type holder "s + typeName(type) + " for " + typeName(value_type));
-    return Type(Generics{.kind = (ushort) type.value, .value_type = (ushort) value_type.value});
+//    if (type.value >= 0x10000 or value_type.value >= 0x10000)
+//        error("not a generic type holder "s + typeName(type) + " for " + typeName(value_type));
+//    return Type(Generics{.kind = (ushort) type.value, .value_type = (ushort) value_type.value});
+    return Type(Generics64{.kind = type.kind, .value_type = value_type.type});
 }
 
 bool isArrayType(Type type) {
@@ -784,7 +789,8 @@ bool isArrayType(Type type) {
 }
 
 bool isGeneric(Type type) {
-    return type.value & generics_mask;// >=0x10000;
+    return type.generics.value_type > 0; // Generics64
+//    return type.value & generics_mask;// >=0x10000; // Generics32
 }
 
 void print(Kind k) {
