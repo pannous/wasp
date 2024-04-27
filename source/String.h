@@ -598,6 +598,10 @@ public:
 		return d;
 	}
 
+    String operator+(Node &c) {
+        return *this + toString(c);
+    }
+
 	String operator%(Node &c) {
 		String b = this->clone();
 		const String &serial = toString(c);
@@ -831,6 +835,10 @@ public:
 		if (!s or !s->data)return *this;
 		return this->operator+(s->data);
 	}
+
+//    String operator+(Node* i) { // incomplete type 'Node'
+//        return this->operator+(i->serialized());
+//    }
 
 	String operator++() {
 		if (length <= 0)return "";

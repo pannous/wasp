@@ -506,7 +506,10 @@ enum Opcodes {
     set_local = 0x21,// set and pop
     tee_local = 0x22,// set and leave on stack
 
+    get_global = 0x23,
     global_get = 0x23,
+
+    set_global = 0x24,
     global_set = 0x24,
 
     //	 Anyref/externref≠funcref tables, Table.get and Table.set (for Anyref only).
