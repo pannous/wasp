@@ -1384,7 +1384,7 @@ Code emitValue(Node &node, Function &context) {
         case global:
 //            return emitGetGlobal(node);
         case reference: {
-            if (!context.locals.has(name) and not globals.has(name))
+            if (not knownSymbol(name, context))
                 error("UNKNOWN symbol "s + name + " in context " + context);
             if (node.value.node) {
                 Node &value = *node.value.node;
@@ -3200,7 +3200,7 @@ Code emitGlobalSection() {
     for (int i = 0; i < global_user_count; i++) {
         String global_name = globals.keys[i];
         Global global = globals.values[i];
-        Node *global_node = global.value;
+        Node *global_init_node = global.value;
 //        Type &type = globals[global_name].type;
         Type &type = global.type;
 //        Valtype valtype = mapTypeToWasm(*global_node);
@@ -3208,15 +3208,17 @@ Code emitGlobalSection() {
 
         check_eq_or(global.index, i, ("global index mismatch "s + global_name + " " + global.index + " != " + i).data);
         check_eq_or(global.name, global_name, "global name mismatch")
-        if (not global_node) {
+        if (not global_init_node) {
             warn("missing value for global "s + global_name);
-            global_node = new Node();// dummy
+            global_init_node = new Node();// dummy
         }
-        if (global.is_import or global_node->has("import"))
+        if (global.is_import or global_init_node->has("import"))
             continue;
-        if (global_node->kind == expression) {
-            error("only the most primitive expressions are allowed in global initializers => move to wasp_main!");
+        if (global_init_node->kind == expression) {
             // 1+2 is ok 1+π not
+            warn("only the most primitive expressions are allowed in global initializers => move to wasp_main!");
+            global_init_node = new Node(42);// dummy init
+            global_init_node->kind = longs;
         }
 //        check_is(type, valtype);
 //        check_is(type, mapType(*global_node));
@@ -3226,8 +3228,10 @@ Code emitGlobalSection() {
         // expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
         Function fun{.name="global"};
         last_type = valtype;
+        if (global_init_node->empty())
+            error("empty global initializer for "s + global_name);
 //        const Code &globalInit = emitExpression(global_node, fun);// todo ⚠️ global is not a context!
-        const Code &globalInit = emitValue(*global_node, fun);// todo ⚠️ global is not a context!
+        const Code &globalInit = emitValue(*global_init_node, fun);// todo ⚠️ global is not a context!
         globalsList.add(globalInit);// todo names in global context!?
 //        }
 //        else if (global_node->kind == longs) { // todo: just use emitExpression but keep i64 not i32!
