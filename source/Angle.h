@@ -142,6 +142,7 @@ struct ParserOptions { // not just for parser but also for serialize!!
 };
 
 //extern Map<String, Module *> module_cache;
+Type preEvaluateType(Node &node, Function *context);
 Type preEvaluateType(Node &node, Function &context);
 
 Type commonElementType(Node &array);

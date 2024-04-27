@@ -108,7 +108,15 @@ bool addGlobal(Function &context, String name, Type type, bool is_param, Node &v
         error(name + " already declared as function"s);
 //    if(type == int32)
 //        type = int64t; // can't grow later after global init
-    Global global{.index=globals.count(), .name=name, .type=type, .value=value.clone(), .is_mutable=true};
+    Node *init_value = 0;
+    if (value.kind == expression) {
+        warn("only the most primitive expressions are allowed in global initializers => move to wasp_main!");
+        init_value = new Node(0); // todo reals, strings, arrays, structs, …
+    } else {
+//        if(type==int64t)type=int32t;// todo: dirty hack for global x=1+2 because we can't cast
+        init_value = value.clone();
+    }
+    Global global{.index=globals.count(), .name=name, .type=type, .value=init_value, .is_mutable=true};
     globals[name] = global;
     return true;
 }
@@ -841,9 +849,9 @@ Node &groupImplicitMultiplication(Node &node, Function &function) {
 
 Node &groupGlobal(Node &node, Function &function) {
     // todo: turn wasp_main variables into global variables
+    if (node.first().name == "global")
+        node = node.from(1);
     if (node.length > 1) {
-        if (node.first().name == "global")
-            node = node.from(1);
         node = node.flat();
         if (node.first().kind == reference)
             node.first().setType(global, false);
@@ -851,15 +859,19 @@ Node &groupGlobal(Node &node, Function &function) {
             error("global declaration not a reference "s + node.first());
         Node &grouped = groupOperators(node, function).flat();
 //        Node &grouped = analyze(node, function).flat();
-        if (grouped.kind != operators)
-            error("global declaration not an assignment "s + grouped);
+//        if (grouped.kind != operators)
+//            error("global declaration not an assignment "s + grouped);
 //        Node *type = grouped[1].type;
-        Type type = mapType(grouped[1]);
+//        Type type = mapType(grouped[1]);
+        Type type = preEvaluateType(grouped[1], function);
         addGlobal(function, grouped[0].name, type, false, grouped[1]);
         return grouped;
+    } else {
+        if (not globals.has(node.name) and not builtin_constants.contains(node.name))
+            addGlobal(function, node.name, unknown_type, false, node);
     }
-//    node.setType(global,false);
-    node.setType(reference, false);
+    node.setType(global, false);
+//    node.setType(reference, false);
     return node;
 }
 
@@ -1092,6 +1104,8 @@ Node &groupFunctionDeclaration(Node &expression, Function &context) {
 }
 
 Node &groupDeclarations(Node &expression, Function &context) {
+    if (expression.kind == groups) // handle later!
+        return expression;
 //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
     if (expression.contains(":=")) {
         return groupFunctionDeclaration(expression, context);
@@ -1142,7 +1156,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
                 continue;
         }
         if (node.kind == reference or (node.kind == key and isVariable(node))) {// only constructors here!
-            if (not globals.has(op) and not isFunction(node)) {
+            if (not globals.has(op) and not isFunction(node) and not builtin_constants.contains(op)) {
                 Type evaluatedType = unknown_type;
                 if (use_wasm_arrays)
                     evaluatedType = preEvaluateType(node, context);// todo turns sin π/2 into 1.5707963267948966 ;)
@@ -1426,7 +1440,6 @@ Module &loadRuntime() {
 #endif
 }
 
-
 Type preEvaluateType(Node &node, Function &context) {
     // todo: some kind of Interpret eval?
     // todo: combine with compile time eval! <<<<<
@@ -1467,6 +1480,14 @@ Type preEvaluateType(Node &node, Function &context) {
             return preEvaluateType(node.first(), context);
     }
     return mapType(node);
+}
+
+
+//Type preEvaluateType(Node &node, Function &context) {
+Type preEvaluateType(Node &node, Function *context0) {
+    if (!context0)context0 = new Function{.name="ad-hoc"};
+    Function &context = *context0;
+    return preEvaluateType(node, context);
 }
 
 

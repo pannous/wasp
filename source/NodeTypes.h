@@ -126,6 +126,7 @@ enum Valtype {
 //    typedef int64 int64
 
     int32 = 0X7F,
+    int32t = 0X7F,
     i32t = 0x7f,
     i32 = 0x7f,
     i32s = 0x7f,
@@ -634,3 +635,11 @@ bool isGeneric(Type type);
 bool isArrayType(Type type); // ^^ or generic (wasm) array
 
 void print(Kind k);
+
+#ifndef  _READLINE_H_
+
+class Function;
+
+Type preEvaluateType(Node &node, Function *context0);
+
+#endif
