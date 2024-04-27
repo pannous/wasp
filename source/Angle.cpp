@@ -1104,8 +1104,8 @@ Node &groupFunctionDeclaration(Node &expression, Function &context) {
 }
 
 Node &groupDeclarations(Node &expression, Function &context) {
-    if (expression.kind == groups) // handle later!
-        return expression;
+//    if (expression.kind == groups) // handle later!
+//        return expression;
 //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
     if (expression.contains(":=")) {
         return groupFunctionDeclaration(expression, context);
@@ -1276,7 +1276,7 @@ Node &groupOperators(Node &expression, Function &context) {
                 continue;// ok -1 part of number, ‖3‖ closing ?=>if
             i = expression.index(op, last_position, fromRight);// try again for debug
             expression.print();
-            error("operator missing: "s + op);
+            error("operator missing: "s + op + " in " + expression.serialize());
         }
         op = checkCanonicalName(op);
 
@@ -1338,6 +1338,7 @@ Node &groupOperators(Node &expression, Function &context) {
 //				analyzed.insert_or_assign(node.hash(), true);
                 expression.replace(i - 1, i, node);
                 i--;
+//                continue;
             } else if (op.in(function_list)) {// handled above!
                 while (i++ < node.length)
                     node.add(expression.children[i]);
@@ -1349,39 +1350,46 @@ Node &groupOperators(Node &expression, Function &context) {
                 node.add(args);
                 expression.replace(i - 1, i + 1, node);// replace ALL REST
                 expression.remove(i, -1);
-
             } else {
+//                if (op.endsWith("=") and not op.startsWith("::") and (prev.kind == reference or prev.kind==global)) {
+//                    // x=7 and x*=7 x+=7 etc
+//                    // todo can remove hack?
+//                    Type inferred_type = preEvaluateType(next, context);
+//                    if (var.kind == global) {
+//                        addGlobal(context, var, inferred_type, false, *next.clone());
+//                    } else if (addLocal(context, var, inferred_type, false)) {
+//                        if (op.length > 1 and op.endsWith("=") and not op.startsWith(":")) // x+=1 etc
+//                            error("self modifier on unknown reference "s + var);
+//                    } else {
+//                        Local &local = function.locals[var];
+//                        // variable is known but not typed yet, or type again?
+//                        if (local.type == unknown_type) {
+//                            local.type = inferred_type;// mapType(next);
+//                        }
+//                    }
+//                }
                 auto var = prev.name;
-                if (op.endsWith("=") and not op.startsWith("::") and prev.kind == reference) {
-                    // x=7 and x*=7
-                    // todo can remove hack?
+                if ((op == "=" or op == ":=") and (prev.kind == reference or prev.kind == global)) {
+                    // ONLY ASSIGNMENT! self modification handled later
                     Type inferred_type = preEvaluateType(next, context);
                     if (var.kind == global) {
                         addGlobal(context, var, inferred_type, false, *next.clone());
                     } else if (addLocal(context, var, inferred_type, false)) {
-                        if (op.length > 1 and op.endsWith("=") and not op.startsWith(":")) // x+=1 etc
-                            error("self modifier on unknown reference "s + var);
+
                     } else {
-                        Local &local = function.locals[var];
                         // variable is known but not typed yet, or type again?
-                        if (local.type == unknown_type) {
+                        Local &local = function.locals[var];
+                        if (local.type == unknown_type)
                             local.type = inferred_type;// mapType(next);
-                        }
                     }
                 }
                 //#endif
                 if (not(op == "#" and prev.empty() and prev.kind != reference)) // ok for #(1,2,3) == len
                     node.add(prev);
+
                 node.add(next);
 
-                if (op == "::=") {
-                    if (prev.kind != reference)error("only references can be assigned global (::=)"s + var);
-//					if(function.locals.has(prev.name))error("global already known as local "s +prev.name);// let's see what happens;)
-                    if (globals.has(var))error("global already set "s + var);// todo reassign ok if …
-                    globals.add(var, Global{.index=globals.size(), .name=var, .type=unknown, .value=next.clone()});
-                    // type set in globalSection, after emitExpression
-                    // don't forget to emit
-                } else if (op.length > 1 and op.endsWith("=") and op[0] != ':')
+                if (op.length > 1 and op.endsWith("=") and op[0] != ':')
                     // Complicated way to express *= += -= … self assignments
                     if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {
                         // *= += etc
@@ -1391,6 +1399,15 @@ Node &groupOperators(Node &expression, Function &context) {
                         setter->value.node = node.clone();
                         node = *setter;
                     }
+
+                if (op == "::=") {
+                    if (prev.kind != reference)error("only references can be assigned global (::=)"s + var);
+//					if(function.locals.has(prev.name))error("global already known as local "s +prev.name);// let's see what happens;)
+                    if (globals.has(var))error("global already set "s + var);// todo reassign ok if …
+                    globals.add(var, Global{.index=globals.size(), .name=var, .type=unknown, .value=next.clone()});
+                    // type set in globalSection, after emitExpression
+                    // don't forget to emit
+                }
                 if (node.name == "?")
                     node = groupIf(node, context);// consumes prev and next
 //				analyzed.add(node.hash(), true);

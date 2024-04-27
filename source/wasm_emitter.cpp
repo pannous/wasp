@@ -1381,6 +1381,8 @@ Code emitValue(Node &node, Function &context) {
 //			code.push(ieee754(node.value.real), 8);
             break;
 //		case identifier:
+        case global:
+//            return emitGetGlobal(node);
         case reference: {
             if (!context.locals.has(name) and not globals.has(name))
                 error("UNKNOWN symbol "s + name + " in context " + context);
@@ -1388,7 +1390,6 @@ Code emitValue(Node &node, Function &context) {
                 Node &value = *node.value.node;
                 warn("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!");// todo FIX!!
                 code.add(emitSetter(node, value, context));
-
             } else {
                 auto local = context.locals[name];
                 code.addByte(get_local);// todo skip repeats
