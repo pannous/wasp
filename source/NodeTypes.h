@@ -358,15 +358,17 @@ enum Primitive /*32*/ {
 
 // e.g. array<int> or array<stringref> or struct<id> array<struct_id>
 // ⚠️ 32 bit wasp generics condense to 16+ bit wasm types!
-struct Generics /*32 bit*/{
+struct Generics32 /*32 bit*/{
     ushort kind; // kind is padded to 32 bit so cant use directly
     ushort value_type;
 };
 
 struct Generics64 {
-    Kind kind;
+    Kind kind; // padded to 32 bit ok
     Primitive value_type;
 };
+
+typedef Generics32 Generics;
 
 typedef int Address;
 
@@ -452,12 +454,14 @@ union Type {// 64 bit due to pointer! todo: Type32 i32 union, 4 bytes with speci
     }
 
     Type(Generics generics) {
-        this->generics = generics; // Generics32
-//        this->generics = {(Kind)generics.kind, (Primitive) generics.value_type};
+        this->generics = generics;
     }
 
+//    Type(Generics32 generics) {
+//        this->generics = {(Kind)generics.kind, (Primitive) generics.value_type};
+//    }
+
     Type(Generics64 generics) {
-//        this->generics = generics; // Generics64
         this->generics = {(ushort) generics.kind, (ushort) generics.value_type};
     }
 
