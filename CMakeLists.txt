@@ -696,6 +696,8 @@ elseif (WASMTIME)
     target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
+    # on Windows 11 Developers and end-users must have the WebView2 runtime installed!
+    # for standalone for Windows version check choc_WebView.h (1 MB)
     include(source/WebView.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/WebApp.cpp source/WebServer.cpp)
     add_executable(wasp-app ${SOURCE_FILES})
