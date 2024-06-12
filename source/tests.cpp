@@ -25,6 +25,16 @@
 //void testDwarf();
 //void testSourceMap();
 
+void testNoBlock() { // fixed
+    assert_parses(R"(
+#see math.wasp !
+τ=π*2
+#assert τ≈6.2831853
+#τ≈6.2831853
+#τ==6.2831853
+    )");
+}
+
 void testTypeConfusion() {
     assert_throws("x=1;x='ok'");
     assert_throws("x=1;x=1.0");
@@ -3255,6 +3265,7 @@ void tests() {
 	testLists();
 	testEval();
 	testParent();
+    testNoBlock(); // fixed
 	testSubGroupingFlatten();
 	testNodeConversions();
 	testUpperLowerCase();
@@ -3375,6 +3386,7 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+
 //    assert_emit("√ π ²", pi);
 //    assert_emit("√π²", pi);
 
