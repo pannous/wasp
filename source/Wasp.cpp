@@ -864,7 +864,7 @@ private:
 				return false;
 			if (empty(next) or previous == '\n' or previous == '\r' or previous == 0)
 				inlineComment();
-			if (next == '*' or next == '#')
+            else if (next == '*' or next == '#')
 				blockComment();
 			else
 				return false;
@@ -2069,7 +2069,7 @@ int main(int argc, char **argv) {
 			print("wasp compiled without webview");
 #endif
 		}
-		if (args.endsWith(".wasp")) {
+        if (args.endsWith(".wasp") or args.endsWith(".angle")) {
 			String wasp_code = load(args);
 			return eval(wasp_code).value.longy;
 		}
