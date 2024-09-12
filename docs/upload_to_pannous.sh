@@ -1,0 +1,1 @@
+ssh pannous.com "cd wasp && git pull"
