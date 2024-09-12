@@ -728,12 +728,28 @@ private:
 		return String((char) (uffff));// itoa0(uffff);
 	}
 
-	Node string(codepoint delim = '"') {
+    void parserError(String message) {
+        String msg = message;
+        msg += position();
+        auto error = new SyntaxError(msg);
+        error->at = at;
+        error->lineNumber = lineNumber;
+        error->columnNumber = at - columnStart;
+        error->file = file.data;
+        err(msg);
+    }
+
+    bool end_of_text() {
+        return at >= text.length;
+    }
+
+    Node quote(codepoint delim = '"') {
 		proceed();
 		int start = at;
 		while (ch and ch != delim and previous != '\\')
 			proceed();
-//		const String &substring = text.substring(start, at - 1);
+        if (end_of_text())
+            parserError("Unterminated string");
 		String substring = text.substring(start, at);
 		proceed();
 		return Node(substring).setType(strings);// DONT do "3"==3 (here or ever)!
@@ -1679,9 +1695,9 @@ private:
 					matches = matches or (close == u'”' and ch == u'“');
 					if (!matches) { // open string
 						if (actual.last().kind == expression)
-							actual.last().addSmart(string(closer));
+                            actual.last().addSmart(quote(closer));
 						else
-							actual.add(string(closer).clone());
+                            actual.add(quote(closer).clone());
 						break;
 					}
 					Node id = Node(text.substring(start, at));

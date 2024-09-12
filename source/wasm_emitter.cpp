@@ -219,6 +219,8 @@ unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
         if (eq(s, "*"))return f64_mul; // f64.mul
         if (eq(s, "/"))return f64_div; // f64.div
         if (eq(s, "=="))return f64_eq; // f64.eq
+        if (eq(s, "~"))return f64_eq; // f32.eq Todo
+        if (eq(s, "≈"))return f64_eq; // f32.eq Todo
         if (eq(s, ">"))return f64_gt; // f64.gt
         if (eq(s, ">="))return f64_ge; // f64.ge
         if (eq(s, "<"))return f64_lt; // f64.lt
@@ -248,12 +250,14 @@ unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
         if (eq(s, "not"))return f32_eqz; // f32.eqz  // f32.eqz  // HACK: no such thing!
         if (eq(s, "¬"))return f32_eqz; // f32.eqz  // HACK: no such thing!
         if (eq(s, "!"))return f32_eqz; // f32.eqz  // HACK: no such thing!
-
         if (eq(s, "+"))return f32_add; // f32.add
         if (eq(s, "-"))return f32_sub; // f32.sub
         if (eq(s, "*"))return f32_mul; // f32.mul
         if (eq(s, "/"))return f32_div; // f32.div
+        if (eq(s, "="))return f32_eq; // f32.eq
         if (eq(s, "=="))return f32_eq; // f32.eq
+        if (eq(s, "~"))return f32_eq; // f32.eq Todo
+        if (eq(s, "≈"))return f32_eq; // f32.eq Todo
         if (eq(s, ">"))return f32_gt; // f32.gt
         if (eq(s, ">="))return f32_ge; // f32.ge
         if (eq(s, "<"))return f32_lt; // f32.lt
@@ -319,6 +323,7 @@ enum ExportType { // todo == ExternalKind
     global_export = 0x03
 };
 
+
 // http://webassembly.github.io/spec/core/binary/types.html#context-types
 char functionType = 0x60;
 
@@ -373,6 +378,14 @@ bool isProperList(Node &node) {
             return false;
     }
     return true;
+}
+
+Code emitSimilar(Node &node, Function &context) {
+    Code code;
+    // a ≈ b <> | a - b | < ε
+//    code.add(emitCall(*new Node("similar"), context));
+    todow("emitSimilar a ≈ b <> | a - b | < ε    e.g. π≈3.14159");
+    return code;
 }
 
 // append padding bytes to wasm data memory
@@ -1768,6 +1781,8 @@ Code emitOperator(Node &node, Function &context) {
             return code.add(emitCall(Node("modulo_double").setType(call), context));// mod_d
     } else if (name == "?") {
         return emitIf(node, context);
+    } else if (name == "≈") {
+        return emitSimilar(node, context);
     } else if (name == "ⁿ") {
         if (node.length == 1) {
             code.add(cast(last_type, float64));// todo all casts should be auto-cast (in emitCall) now, right?

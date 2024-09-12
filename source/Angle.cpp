@@ -741,6 +741,9 @@ Node &groupTypes(Node &expression, Function &context) {
         expression.remove(i, i);// move type to type field of instance
 
         Node *typed = 0;
+        if (is_operator(expression.children[i].name[0])) {
+            i++;
+        }
         if (i < expression.length and not is_operator(expression.children[i].name[0])) {
             typed = &expression.children[i];
         } else if (i > 1) { // special reverse syntax a int, jeff as int
@@ -823,9 +826,11 @@ void updateLocal(Function &context, String name, Type type) {
                 local.type = genericType(array, type);
             }
         } else {
-            if (!compatibleTypes(oldType, type))
-                warn("local "s + name + " in context %s already known "s % context.name + " with type " +
+            if (!compatibleTypes(oldType, type)) {
+//                warn
+                error("local "s + name + " in context %s already known "s % context.name + " with type " +
                      typeName(oldType) + ", ignoring new type " + type_name);
+            }
         }
     }
     // ok, could be cast'able!
@@ -834,6 +839,7 @@ void updateLocal(Function &context, String name, Type type) {
 bool compatibleTypes(Type type1, Type type2) {
     if (type1 == type2)return true;
     if (type1 == string_struct and type2 == strings)return true;
+    if (type1 == wasm_int32 and type2 == wasm_int64)return true; // upcast
     return false;
 }
 

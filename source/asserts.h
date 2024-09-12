@@ -88,7 +88,7 @@ static List<String> done;
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
 #endif
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
-
+#define  check_emit assert_emit
 #if RUNTIME_ONLY or MY_WASM
 #define assert_run(a, b) skip(a)
 // use assert_emit if runtime is not needed!! much easier to debug
