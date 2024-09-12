@@ -1,54 +1,62 @@
 <!DOCTYPE html>
 <html xmlns:https="http://www.w3.org/1999/xhtml">
 <head>
-<!-- ⚠️⚠️⚠️ https://wasp.pannous.com/ points to GITHUB page!! ⚠️⚠️⚠️ -->
-    <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
-    <!-- <meta http-equiv="Content-Security-Policy" content="default-src script-src 'self' 'unsafe-inline'  file://*"/> -->
-    <!-- <script src='wasp.js?v=nocache'></script> -->
-    <script>
-<!--      WTF js 2024 ???-->
-      const script = document.createElement('script');
-      script.src = 'wasp.js?v=' + new Date().getTime();
-      document.head.appendChild(script);
-    </script>
-    <script src='examples.js'></script>
-    <script src='assets/script/wasp_tests.js'></script>
-    <!--    todo remove in production -->
+  <!-- ⚠️⚠️⚠️ https://wasp.pannous.com/ points to GITHUB page!! ⚠️⚠️⚠️ -->
+  <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
+  <!-- <meta http-equiv="Content-Security-Policy" content="default-src script-src 'self' 'unsafe-inline'  file://*"/> -->
+  <!-- <script src='wasp.js?v=nocache'></script> -->
+  <script>
+    <!--      WTF js 2024 ???-->
+    const script = document.createElement('script');
+    script.src = 'wasp.js?v=' + new Date().getTime();
+    document.head.appendChild(script);
+  </script>
+  <script src='examples.js'></script>
+  <script src='assets/script/wasp_tests.js'></script>
+  <!--    todo remove in production -->
 
-    <script src="assets/script/demangle.js" type="text/javascript"></script>
-    <!-- todo get rid of this dependency -->
+  <script src="assets/script/demangle.js" type="text/javascript"></script>
+  <!-- todo get rid of this dependency -->
 
-    <!-- Include CodeMirror CSS & JS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/mode/simple.js"></script>
-<!--    <script src="https://codemirror.net/5/addon/mode/simple.js"></script>-->
-    <script src='codemirror-wasp-mode.js'></script> <!--    INCLUDE wast syntax!! -->
+  <!-- Include CodeMirror CSS & JS -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/mode/simple.js"></script>
+  <!--    <script src="https://codemirror.net/5/addon/mode/simple.js"></script>-->
+  <script src='codemirror-wasp-mode.js'></script> <!--    INCLUDE wast syntax!! -->
+  <style>
+      /* Make the CodeMirror container resizable */
+      .CodeMirror {
+          resize: both; /* This enables resizing */
+          overflow: auto;
+          min-height: 100px; /* Minimum height for the editor */
+          min-width: 200px; /* Minimum width for the editor */
+      }
+  </style>
+  <!--    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" rel="stylesheet">-->
+  <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>-->
+  <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>-->
 
-    <!--    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" rel="stylesheet">-->
-    <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>-->
-    <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>-->
+  <script src="https://webassembly.github.io/wabt/demo/libwabt.js"></script>
+  <script>
+    WabtModule().then(function (wabt) {
+      window.wabt = wabt;
+      console.log('Wabt loaded');
+      // _wabt_write_text_module = wabt.writeTextModule;
+      // _wabt_read_binary = wabt.readBinary;
+      // _wabt_read_binary_module = wabt.readBinaryModule;
+      // _wabt_write_binary_spec_script = wabt.writeBinarySpecScript;
+    });
 
-    <script src="https://webassembly.github.io/wabt/demo/libwabt.js"></script>
-    <script>
-        WabtModule().then(function (wabt) {
-            window.wabt = wabt;
-            console.log('Wabt loaded');
-            // _wabt_write_text_module = wabt.writeTextModule;
-            // _wabt_read_binary = wabt.readBinary;
-            // _wabt_read_binary_module = wabt.readBinaryModule;
-            // _wabt_write_binary_spec_script = wabt.writeBinarySpecScript;
-        });
-
-        // for (var i = 0; i < examples.length; ++i) {
-        //     var example = examples[i];
-        //     var option = document.createElement('option');
-        //     option.textContent = example.name;
-        //     selectEl.appendChild(option);
-        // }
-        // selectEl.selectedIndex = 1;
-        // setExample(selectEl.selectedIndex);
-    </script>
+    // for (var i = 0; i < examples.length; ++i) {
+    //     var example = examples[i];
+    //     var option = document.createElement('option');
+    //     option.textContent = example.name;
+    //     selectEl.appendChild(option);
+    // }
+    // selectEl.selectedIndex = 1;
+    // setExample(selectEl.selectedIndex);
+  </script>
 
 </head>
 <body style="background: floralwhite">
@@ -57,53 +65,53 @@
 <!--<body style="background: azure">-->
 
 <div>
-    <h1>🐝 <a href="https://github.com/pannous/wasp">Wasp</a></h1>
-    <h2>A new programming language for wasm</h2>
-    <label for="examples">Choose a Wasp example:</label>
-    <select id="examples" onchange="editor.setValue(exampleCode[value]);compile_and_run(editor.getValue())">
-        <option value="math">Math</option>
-        <option value="hello">Hello World</option>
-        <option value="lists">Lists</option>
-        <option value="fibonacci">Fibonacci</option>
-        <option value="paint2d">Paint 2D</option>
-        <option value="scene3d">Scene 3D</option>
-    </select>
+  <h1>🐝 <a href="https://github.com/pannous/wasp">Wasp</a></h1>
+  <h2>A new programming language for wasm</h2>
+  <label for="examples">Choose a Wasp example:</label>
+  <select id="examples" onchange="editor.setValue(exampleCode[value]);compile_and_run(editor.getValue())">
+    <option value="math">Math</option>
+    <option value="hello">Hello World</option>
+    <option value="lists">Lists</option>
+    <option value="fibonacci">Fibonacci</option>
+    <option value="paint2d">Paint 2D</option>
+    <option value="scene3d">Scene 3D</option>
+  </select>
 
-    <br/>
-    <textarea id="code" onkeyup="compile_and_run(editor.getValue())">√3^2</textarea>
-    <br/>
-    <input id="input_file" onchange="readFile()" type="file"/>
-    <button onclick="compile_and_run(editor.getValue())">RUN!</button>
-    <button onclick="results.value=''">CLEAR</button>
-    <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾 wasp</button>
-    <button onclick="download_file(wasm_buffer, 'emit.wasm', 'wasm')" title="download wasm">💾 wasm</button>
-    <br/>
-    <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="8">
+  <br/>
+  <textarea id="code" onkeyup="compile_and_run(editor.getValue())">√3^2</textarea>
+  <br/>
+  <input id="input_file" onchange="readFile()" type="file"/>
+  <button onclick="compile_and_run(editor.getValue())">RUN!</button>
+  <button onclick="results.value=''">CLEAR</button>
+  <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾 wasp</button>
+  <button onclick="download_file(wasm_buffer, 'emit.wasm', 'wasm')" title="download wasm">💾 wasm</button>
+  <br/>
+  <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="8">
     </textarea>
 
 
-    <script>
-        for (let key in exampleCode) {
-            const optionExists = (val) => Array.from(examples.options).some(option => option.value === val);
-            if (!optionExists(key)) {
-                const newOption = document.createElement('option');
-                newOption.value = key;
-                newOption.text = key; // use exampleCode[key] on select!!
-                examples.appendChild(newOption);
-            }
-        }
+  <script>
+    for (let key in exampleCode) {
+      const optionExists = (val) => Array.from(examples.options).some(option => option.value === val);
+      if (!optionExists(key)) {
+        const newOption = document.createElement('option');
+        newOption.value = key;
+        newOption.text = key; // use exampleCode[key] on select!!
+        examples.appendChild(newOption);
+      }
+    }
 
-        var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-            lineNumbers: true,
-            mode: "wasp",
-            extraKeys: {"Ctrl-Space": "autocomplete"}
-        });
-        editor.on('change', function () {
-            compile_and_run(editor.getValue())
-          // editor.save();
-          editor.focus();
-        });
-    </script>
+    var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+      lineNumbers: true,
+      mode: "wasp",
+      extraKeys: {"Ctrl-Space": "autocomplete"}
+    });
+    editor.on('change', function () {
+      compile_and_run(editor.getValue())
+      // editor.save();
+      editor.focus();
+    });
+  </script>
 
 </div>
 <canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
