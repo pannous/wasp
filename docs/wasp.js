@@ -6,9 +6,9 @@
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
 * */
 let Wasp = {}
-// let WASP_COMPILER = 'wasp.wasm' // without tests
-let WASP_COMPILER = 'assets/wasp-hosted.wasm' // with tests and shortcuts
-let WASP_RUNTIME = 'assets/wasp-runtime.wasm'
+let WASP_COMPILER = 'wasp.wasm' // without tests
+// let WASP_COMPILER = 'wasp-hosted.wasm' // with tests and shortcuts
+// let WASP_RUNTIME = 'wasp-runtime.wasm'
 let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
