@@ -8,12 +8,13 @@ let Wasp = {}
 // let WASP_COMPILER = 'wasp.wasm' // without tests
 let WASP_COMPILER = 'wasp-hosted.wasm' // with tests and shortcuts
 let WASP_RUNTIME = 'wasp-runtime.wasm'
+let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
-var runtime_bytes = null // for reflection or linking
-var needs_runtime = false;
-var use_big_runtime = true; // use compiler as runtime for now
-var run_tests = true; // todo NOT IN PRODUCTION!
-var app_module
+let runtime_bytes = null; // for reflection or linking
+let needs_runtime = false;
+const use_big_runtime = true; // use compiler as runtime for now
+const run_tests = true; // todo NOT IN PRODUCTION!
+let app_module;
 let kinds = {}
 
 // MAX_MEM is NOT affected by -Wl,--initial-memory=117964800 NOR by this: HOW THEN??
@@ -50,13 +51,12 @@ function format(object) {
 }
 
 function error(msg) {
-  if (typeof results !== 'undefined')
-    results.value += "\n⚠️ ERROR: " + msg + "\n";
+  // if (typeof results !== 'undefined')
   if (msg instanceof WebAssembly.CompileError) {
-    results.value += "\n⚠️ COMPILE ERROR:\n";
-    results.value += msg.stack + "\n";
-    ; // ignore as it indicates that wasp has invalid syntax
+    // results.value += "\n⚠️ COMPILE ERROR:\n";
+    results.value += "\n"+ msg.stack + "\n";
   } else if (msg instanceof Error) {
+    results.value += "\n⚠️ ERROR: " + msg + "\n";
     results.value += msg.stack + "\n";
     throw msg
   }
@@ -70,10 +70,10 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
   while (iovs_count-- > 0) {
     let text = string(c_io_vector);
     if (fd === 0)
-      error(text || "\n");
+      error(text + "\n");
     else {
-      results.value += text || "\n";
-      console.log(text || "\n");
+      results.value += text + "\n";
+      console.log(text + "\n");
     }
     c_io_vector += 8
   }
@@ -100,7 +100,7 @@ function createHtml(parent, innerHtml) {
   return element;
 }
 
-var resume; // callback function resuming after run_wasm finished
+let resume; // callback function resuming after run_wasm finished
 class YieldThread { // unwind wasm, reenter through resume() after run_wasm finished
 }
 
@@ -468,7 +468,7 @@ class node {
     this.name = string(pointer, mem);
     // post processing
     this[this.name] = this; // make a:1 / {a:1} indistinguishable
-    for (var child of this.children()) {
+    for (let child of this.children()) {
       if (child.kind === kinds.key)
         this[child.name] = child.Value() // flat values
       else if (child.kind === kinds.long)
@@ -546,7 +546,7 @@ class node {
     console.log(this);
     console.log(this.children());
     console.log(this.name, ":",)
-    for (var childe of this.children()) {
+    for (let childe of this.children()) {
       console.log(childe.name)
     }
   }
@@ -555,11 +555,11 @@ class node {
 
 // Function to download data to a file
 function download_file(data, filename, type) {
-  var file = new Blob([data], {type: type});
+  const file = new Blob([data], {type: type});
   if (window.navigator.msSaveOrOpenBlob) // IE10+
     window.navigator.msSaveOrOpenBlob(file, filename);
   else { // Others
-    var a = document.createElement("a"),
+    const a = document.createElement("a"),
       url = URL.createObjectURL(file);
     a.href = url;
     a.download = filename;
@@ -686,7 +686,7 @@ function binary_diff(old_mem, new_mem) {
   new_mem = new Uint8Array(new_mem, 0, new_mem.length)
   if (old_mem.length != new_mem.length)
     console.log("old_mem.length!=new_mem.length", old_mem.length, new_mem.length);
-  var badies = 0
+  let badies = 0;
   for (let i = 0; i < old_mem.length && badies < 1000; i++) {
     let x = old_mem[i];
     let y = new_mem[i];
@@ -710,13 +710,14 @@ function copy_runtime_bytes_to_compiler() {
 
 // minimal demangler for wasm functions does not offer full reflection
 getArguments = function (func) {
-  var symbols = func.toString(), start, end, register;
+  const symbols = func.toString();
+  let start, end, register;
   // console.log("getArguments",func,symbols)
   // start = symbols.indexOf('function');
   // if (start !== 0 && start !== 1) return undefined;
   start = symbols.indexOf('(', start);
   end = symbols.indexOf(')', start);
-  var args = [];
+  const args = [];
   symbols.substr(start + 1, end - start - 1).split(',').forEach(function (argument) {
     args.push(argument);
   });
@@ -756,7 +757,7 @@ function addSynonyms(exports) {
         // if (!exports[demangled]) {
         exports[demangled] = func
         Wasp[demangled] = func // keep signature for polymorphic calls
-        var short = demangled.substr(0, demangled.lastIndexOf("("))
+        const short = demangled.substr(0, demangled.lastIndexOf("("));
         Wasp[short] = func
       }
     }
@@ -935,7 +936,8 @@ async function run_wasm(buf_pointer, buf_size) {
       if (resume) setTimeout(resume, 1);
     }
     if (typeof results != "undefined")
-      results.value = result // JSON.stringify( Do not know how to serialize a BigInt
+      results.value = result
+      results.value += "\n" // JSON.stringify( Do not know how to serialize a BigInt
     return result; // useless, returns Promise!
   } catch (ex) {
     //throw new Error(`Error in run_wasm: ${error.message}\nStack: ${error.stack}`);
@@ -962,7 +964,7 @@ function wasm_to_wat(buffer) {
       memory64: true,
     }
 
-    var module = wabt.readWasm(buffer, {readDebugNames: true}, wabtFeatures);
+    const module = wabt.readWasm(buffer, {readDebugNames: true}, wabtFeatures);
     module.generateNames();
     module.applyNames();
     const result = module.toText({foldExprs: true, inlineExport: true});
