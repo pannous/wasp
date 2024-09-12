@@ -15,8 +15,7 @@ let exampleCode = {
     alert: 'script: alert("Hello, World!")',
     javascript: `html: div id="app"; app.innerHTML = "Hello, World!"`,
     draw_sine: `// sine wave\nfor i in 0..1000\n  ctx.lineTo(i, 100 + Math.sin(i / 10) * 50)\nctx.stroke()`,
-    sine: `
-    double sin(double x){
+  sine: `double sin(double x){
     double
     S1  = -1.66666666666666324348e-01, 
     S2  =  8.33333333332248946124e-03, 

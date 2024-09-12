@@ -35,6 +35,7 @@
           overflow: auto;
           min-height: 100px; /* Minimum height for the editor */
           min-width: 200px; /* Minimum width for the editor */
+          border: 1px solid #ddd;
       }
   </style>
   <!--    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" rel="stylesheet">-->
@@ -67,10 +68,13 @@
 <!--<body style="background: cornsilk">-->
 <!--<body style="background: aliceblue">-->
 <!--<body style="background: azure">-->
-
+<a href="https://github.com/pannous/wasp/" style="position: absolute; top: 20px; right: 20px;" target="_blank">
+  <img alt="GitHub Logo" height="60" src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+       style="box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5); border-radius: 8px;" width="60">
+</a>
 <div>
   <h1>🐝 <a href="https://github.com/pannous/wasp">Wasp</a></h1>
-  <h2>A new programming language for wasm</h2>
+  <h2>A new programming language for Wasm</h2>
   <label for="examples">Choose a Wasp example:</label>
   <select id="examples"
           onchange="results.value='';editor.setValue(exampleCode[value]);compile_and_run(editor.getValue())">
@@ -85,11 +89,14 @@
   <br/>
   <textarea id="code" onkeyup="compile_and_run(editor.getValue())">√3^2</textarea>
   <br/>
-  <input id="input_file" onchange="readFile()" type="file"/>
+  <!--  <input id="input_file" onchange="readFile()" type="file"/>-->
+  <input checked id="check" type="checkbox"/> auto
   <button onclick="compile_and_run(editor.getValue())">RUN!</button>
   <button onclick="results.value=''">CLEAR</button>
-  <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾 wasp</button>
-  <button onclick="download_file(wasm_buffer, 'emit.wasm', 'wasm')" title="download wasm">💾 wasm</button>
+  <!--  spacer -->
+  <div style="width: 250px;display: inline-block; "></div>
+  <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾 source.wasp</button>
+  <button onclick="download_file(wasm_buffer, 'compiled.wasm', 'wasm')" title="download wasm">💾 compiled.wasm</button>
   <br/>
   <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="8">
     </textarea>

@@ -25,6 +25,18 @@
 //void testDwarf();
 //void testSourceMap();
 
+void testInclude() {
+//    assert_emit("include test-include.wasp", 42);
+//    assert_emit("use test-include.wasm", 42);
+    assert_emit("include test/lib.wasp", 42);
+//    assert_emit("include test/lib.wast", 42);
+    assert_emit("use test/lib.wasm; test", 42);
+//    assert_emit("use https://pannous.com/files/lib.wasm; test", 42);
+//    assert_emit("use git://pannous/waps/test/lib.wasm; test", 42);
+//    assert_emit("use system:test/lib.wasm; test", 42); // ^^
+
+}
+
 void testExceptions() {
 //    assert_emit("(unclosed bracket",123);
 
@@ -3405,6 +3417,7 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    testInclude();
 //    check_is("τ≈6.2831853",true);
 //    assert_emit("τ≈6.2831853",1);
     testExceptions();

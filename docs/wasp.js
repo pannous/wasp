@@ -911,7 +911,7 @@ async function run_wasm(buf_pointer, buf_size) {
     if (needs_runtime) {
       app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
       // app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
-      print("app loaded")
+      print("compiled wasm app/script loaded")
     } else {
       let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
       app = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
