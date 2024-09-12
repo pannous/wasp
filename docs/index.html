@@ -3,7 +3,12 @@
 <head>
     <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
     <!-- <meta http-equiv="Content-Security-Policy" content="default-src script-src 'self' 'unsafe-inline'  file://*"/> -->
-    <script src='wasp.js'></script>
+    <!-- <script src='wasp.js?v=nocache'></script> -->
+    <script>
+      const script = document.createElement('script');
+      script.src = 'wasp.js?v=' + new Date().getTime();
+      document.head.appendChild(script);
+    </script>
     <script src='examples.js'></script>
     <script src='assets/script/wasp_tests.js'></script>
     <!--    todo remove in production -->
