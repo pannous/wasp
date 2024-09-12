@@ -2,7 +2,7 @@
 <html xmlns:https="http://www.w3.org/1999/xhtml">
 <head>
   <!-- ⚠️⚠️⚠️ https://wasp.pannous.com/ points to GITHUB page!! ⚠️⚠️⚠️ -->
-  <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"></META>
+  <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"/>
   <!-- <meta http-equiv="Content-Security-Policy" content="default-src script-src 'self' 'unsafe-inline'  file://*"/> -->
   <!-- <script src='wasp.js?v=nocache'></script> -->
   <script>
@@ -68,7 +68,8 @@
   <h1>🐝 <a href="https://github.com/pannous/wasp">Wasp</a></h1>
   <h2>A new programming language for wasm</h2>
   <label for="examples">Choose a Wasp example:</label>
-  <select id="examples" onchange="editor.setValue(exampleCode[value]);compile_and_run(editor.getValue())">
+  <select id="examples"
+          onchange="results.value='';editor.setValue(exampleCode[value]);compile_and_run(editor.getValue())">
     <option value="math">Math</option>
     <option value="hello">Hello World</option>
     <option value="lists">Lists</option>
