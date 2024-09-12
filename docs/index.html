@@ -3,14 +3,18 @@
 <head>
   <!-- ⚠️⚠️⚠️ https://wasp.pannous.com/ points to GITHUB page!! ⚠️⚠️⚠️ -->
   <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"/>
+  <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control">
+  <meta content="no-cache" http-equiv="Pragma">
+  <meta content="0" http-equiv="Expires">
   <!-- <meta http-equiv="Content-Security-Policy" content="default-src script-src 'self' 'unsafe-inline'  file://*"/> -->
-  <!-- <script src='wasp.js?v=nocache'></script> -->
-  <script>
-    <!--      WTF js 2024 ???-->
-    const script = document.createElement('script');
-    script.src = 'wasp.js?v=' + new Date().getTime();
-    document.head.appendChild(script);
-  </script>
+  <script src='wasp.js'></script>
+  <!--  <script src='wasp.js?v=nocache'></script> -->
+  <!--  <script>-->
+  <!--    &lt;!&ndash;      WTF js 2024 ???&ndash;&gt;-->
+  <!--    const script = document.createElement('script');-->
+  <!--    script.src = 'wasp.js?v=' + new Date().getTime();-->
+  <!--    document.head.appendChild(script);-->
+  <!--  </script>-->
   <script src='examples.js'></script>
   <script src='assets/script/wasp_tests.js'></script>
   <!--    todo remove in production -->
