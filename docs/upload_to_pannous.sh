@@ -1,3 +1,5 @@
+echo '⚠️ https://wasp.pannous.com/ points to GITHUB page!!'
+
 increase-package-version.py wasp.js 
 git -c color.ui=false commit -a -m '' --allow-empty-message
 git push
