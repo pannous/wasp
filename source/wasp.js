@@ -51,11 +51,15 @@ function format(object) {
 
 function error(msg) {
   if (typeof results !== 'undefined')
-    results.value = "⚠️ ERROR: " + msg + "\n";
-  if (msg instanceof WebAssembly.CompileError)
+    results.value += "\n⚠️ ERROR: " + msg + "\n";
+  if (msg instanceof WebAssembly.CompileError) {
+    results.value += "\n⚠️ COMPILE ERROR:\n";
+    results.value += msg.stack + "\n";
     ; // ignore as it indicates that wasp has invalid syntax
-  else if (msg instanceof Error)
+  } else if (msg instanceof Error) {
+    results.value += msg.stack + "\n";
     throw msg
+  }
   else
     throw new Error("⚠️ ERROR: " + msg)
 }
@@ -64,10 +68,13 @@ let nop = x => 0 // careful, some wasi shim needs 0!
 
 const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
   while (iovs_count-- > 0) {
+    let text = string(c_io_vector);
     if (fd === 0)
-      console.error(string(c_io_vector) || "\n");
-    else
-      console.log(string(c_io_vector) || "\n");
+      error(text || "\n");
+    else {
+      results.value += text || "\n";
+      console.log(text || "\n");
+    }
     c_io_vector += 8
   }
   return -1; // todo

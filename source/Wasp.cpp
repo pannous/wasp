@@ -72,13 +72,14 @@ bool use_wasm_arrays = false; // array in wat
 
 #endif
 
+#define err(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
+#define parserError(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
 
 bool isalpha0(codepoint c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
 
-#define err(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
 
 bool data_mode = true;// todo ! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
 
@@ -268,7 +269,7 @@ codepoint closingBracket(codepoint bracket) {
 
 
 //	List<String> operators; // reuse functions!
-//	if(is_grapheme_modifier(ch))error("multi codepoint graphemes not");
+//	if(is_grapheme_modifier(ch))parseError("multi codepoint graphemes not");
 // everything that is not an is_identifier is treated as operator/symbol/identifier?
 // NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
 bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
@@ -349,6 +350,16 @@ class Wasp {
 #define INDENT 0x0F // 	SI 	␏ 	^O 		Shift In
 #define DEDENT 0x0E //  SO 	␎ 	^N 		Shift Out
 
+//    void parserError(String message) {
+//        String msg = message;
+//        msg += position();
+//        auto error = new SyntaxError(msg);
+//        error->at = at;
+//        error->lineNumber = lineNumber;
+//        error->columnNumber = at - columnStart;
+//        error->file = file.data;
+//        err(msg);
+//    }
 	//	indent 􀋵 (increase.indent) ☞ 𒋰 𒐂 ˆ ˃
 	int indentation() {
 		if (is_grouper(lastNonWhite)) {
@@ -369,21 +380,22 @@ class Wasp {
 		if (text[offset] == '\n' or text[offset] == '\r')offset++;
 		while (text[offset] == '\t') {
 			if (indentation_level > 0 and not indentation_by_tabs)
-				proceed() ? err("mixing tabs and spaces for indentation") : "";
+                if (proceed())
+                    parserError("mixing tabs and spaces for indentation");
 			indentation_by_tabs = true;
 			tabs++;
 			offset++;
 		}
 		if (tabs > 0 and text[offset] == ' ')
-			err("ambiguous indentation, mixing tabs and spaces");
+            parserError("ambiguous indentation, mixing tabs and spaces");
 		while (text[offset] == ' ') {
 			if (indentation_level > 0 and indentation_by_tabs)
-				proceed() ? err("mixing tabs and spaces for indentation") : "";
+                if (proceed()) parserError("mixing tabs and spaces for indentation");
 			indentation_by_tabs = false;
 			tabs = tabs + 1. / spaces_per_tab;
 			offset++;
 		}
-		if (tabs > 0 and text[offset] == '\t')err("ambiguous indentation, mixing tabs and spaces");
+        if (tabs > 0 and text[offset] == '\t')parserError("ambiguous indentation, mixing tabs and spaces");
 //		while(next==' ' or next=='\t')proceed();// but keep last ch as INDENT!
 		if (text[offset] == '\n')
 			return indentation_level; // careful empty lines if next indentation == last one : just hangover spacer!
@@ -479,7 +491,7 @@ public:
 		if (ch and ch != -1 and ch != DEDENT) {
 			printf("UNEXPECTED CHAR %c", ch);
 			print(position());
-			error("Expect end of input");
+            parserError("Expect end of input");
 			result = ERROR;
 		}
 		// Mark does not support the legacy JSON reviver function todo ??
@@ -528,9 +540,9 @@ private:
 	String position() {
 		auto columnNumber = at - columnStart;
 		String msg;
-		msg = msg + " in line " + lineNumber + " column " + columnNumber + " (char#" + at + ")";
-		msg = msg + line + "";
-		msg = msg + (s(" ").times(columnNumber - 1)) + "^";
+        msg = msg + " in line " + lineNumber + " column " + columnNumber + " (char#" + at + ")\n";
+        msg = msg + line + "\n";
+        msg = msg + (s(" ").times(columnNumber - 1)) + "^^^";
 		if (not file.empty()) msg = msg + "" + file + ":" + lineNumber;
 //		print(msg);
 		return msg;
@@ -569,7 +581,7 @@ private:
 	// one char at a time, NO JUMPING OVER ' ' here!
 	char proceed(char c = 0) {
 		if (not ch and at >= 0) {
-			warn("end of code");
+            parserError("end of code");
 			return ch;
 		}
 		// If a c parameter is provided, verify that it matches the current character.
@@ -615,7 +627,7 @@ private:
 	String identifier() {
 		// identifiers must start with a letter, _ or $.
 		if (!is_identifier(ch))
-			err("Unexpected identifier character "s + renderChar(ch));
+            parserError("Unexpected identifier character "s + renderChar(ch));
 		int start = at;
 		// subsequent characters can contain ANYTHING except operators
 		while ((proceed() and is_identifier(ch)) or isDigit(ch) or isKebabBridge())
@@ -670,7 +682,7 @@ private:
 //			const Node &ok =
 			word();
 //			bool ok = word();
-//			if (!ok) { error('expected word to be NaN'); }
+//			if (!ok) { parseError('expected word to be NaN'); }
 			// ignore sign as -NaN also is NaN
 			return Nan;
 		}
@@ -710,7 +722,7 @@ private:
 			number0 = +parseLong(string.data);
 		}
 //		if (!isFinite(number)) {
-//			error("Bad number");
+//			parseError("Bad number");
 //		} else {
 		if (base != 10) todo("base "s + base);
         if(is_identifier(ch))
@@ -727,17 +739,6 @@ private:
 	String fromCharCode(int64 uffff) {// todo UTF
 		return String((char) (uffff));// itoa0(uffff);
 	}
-
-    void parserError(String message) {
-        String msg = message;
-        msg += position();
-        auto error = new SyntaxError(msg);
-        error->at = at;
-        error->lineNumber = lineNumber;
-        error->columnNumber = at - columnStart;
-        error->file = file.data;
-        err(msg);
-    }
 
     bool end_of_text() {
         return at >= text.length;
@@ -819,7 +820,7 @@ private:
 //				}
 //			}
 //		}
-//		err("Bad string");
+//		parseError()("Bad string");
 //		return NIL;
 //	};
 
@@ -829,7 +830,7 @@ private:
 		// be the second / character in the // pair that begins this inline comment.
 		// To finish the inline comment, we look for a newline or the end of the text.
 		if (ch != '/' and ch != '#') {
-			err("Not an inline comment");
+            parserError("Not an inline comment");
 		}
 		do {
 			proceed();
@@ -847,7 +848,7 @@ private:
 		// To finish the block comment, we look for an ending */ pair of characters,
 		// but we also watch for the end of text before the comment is terminated.
 //		if (ch != '*') {
-//			err("Not a block comment");
+//			parseError()("Not a block comment");
 //		}
 		do {
 			proceed();
@@ -859,7 +860,7 @@ private:
 				}
 			}
 		} while (ch);
-		err("Unterminated block comment");
+        parserError("Unterminated block comment");
 	};
 
 	// Parse a comment
@@ -887,7 +888,7 @@ private:
 			previous = lastNonWhite = preserveLast;
 			return true;
 		}
-		if (ch != '/') err("Not a comment");
+        if (ch != '/') parserError("Not a comment");
 		if (next == '/') {
 			proceed('/');
 			inlineComment();
@@ -901,7 +902,7 @@ private:
 		} else {
 			return false; // not a comment
 			// division handled elsewhere
-//			error("Unrecognized comment");
+//			parseError("Unrecognized comment");
 		}
 	};
 
@@ -1035,7 +1036,7 @@ private:
 			return operatorr();
 		if (is_identifier(ch))
 			return *resolve(Node(identifier(), true)).clone();// or op
-		error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
+        parserError("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
 		      String((char) text[at + 2]));
 		return (Node &) NIL;
 	}
@@ -1130,7 +1131,7 @@ private:
 		}
 		if (token("one")) { return True; }
 		if (token("two")) { return Node(2); }
-		error("Unexpected character "s + renderChar(text.charAt(at - 1)));// throws, but WASM still needs:
+        parserError("Unexpected character "s + renderChar(text.charAt(at - 1)));// throws, but WASM still needs:
 		return ERROR;
 	};
 
@@ -1150,7 +1151,7 @@ private:
 //			proceed();
 //		}
 //
-//		error(UNEXPECT_END);
+//		parseError(UNEXPECT_END);
 //	};
 
 //	value,  // Place holder for the value function.
@@ -1172,7 +1173,7 @@ private:
 			}
 				// ES5 and Mark allow omitted elements in arrays, e.g. [,] and [,null]. JSON don't allow this.
 //			if (ch == ',') {
-//				error("Missing array element");
+//				parseError("Missing array element");
 //			}
 			else {
 				Node val = valueNode();// copy by value!
@@ -1187,7 +1188,7 @@ private:
 				white();
 			}
 		}
-		err("Expecting ]");
+        parserError("Expecting ]");
 		return ERROR;
 	};
 
@@ -1222,14 +1223,14 @@ private:
 
 		// code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
 		auto end = text.indexOf('}', at + 1);  // scan binary end
-		if (end < 0) { err("Missing ascii85 end delimiter"); }
+        if (end < 0) { parserError("Missing ascii85 end delimiter"); }
 
 		// first run decodes into base85 int values, and skip the spaces
 		auto p = 0;
 		byte base[end - at + 3];  // 3 extra bytes of padding
 		while (at < end) {
 			auto code = lookup85[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
-			if (code > 85) { err("Invalid ascii85 character"); }
+            if (code > 85) { parserError("Invalid ascii85 character"); }
 			if (code < 85) { base[p++] = code; }
 			// else skip spaces
 			at++;
@@ -1237,7 +1238,7 @@ private:
 		at = end + 2;
 		proceed();  // skip '~}'
 		// check length
-		if (p % 5 == 1) { err("Invalid ascii85 stream length"); }
+        if (p % 5 == 1) { parserError("Invalid ascii85 stream length"); }
 
 		// second run decodes into actual binary data
 		auto dataLength = p, padding = (dataLength % 5 == 0) ? 0 : 5 - dataLength % 5;
@@ -1276,7 +1277,7 @@ private:
 	Node decodeBase64(String text) {
 
 		auto end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
-		if (end < 0) { err("Missing base64 end delimiter"); }
+        if (end < 0) { parserError("Missing base64 end delimiter"); }
 
 		// Use a lookup table to find the index.
 		byte lookup64[128];
@@ -1310,7 +1311,7 @@ private:
 		auto p = 0;
 		while (at < bufEnd) {
 			auto code = lookup64[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
-			if (code > 64) { err("Invalid base64 character"); }
+            if (code > 64) { parserError("Invalid base64 character"); }
 			if (code < 64) { base[p++] = code; }
 			// else skip spaces
 			at++;
@@ -1319,7 +1320,7 @@ private:
 		proceed();  // skip '}'
 		// check length
 		if ((pad and (p + pad) % 4 != 0) or (!pad and p % 4 == 1)) {
-			err("Invalid base64 stream length");
+            parserError("Invalid base64 stream length");
 		}
 
 		// second run decodes into actual binary data
@@ -1439,7 +1440,7 @@ private:
 			case '<':
 				return generics;
 		}
-		err("unknown bracket type "s + bracket);
+        parserError("unknown bracket type "s + bracket);
 		return errors;
 	}
 
@@ -1503,9 +1504,11 @@ private:
 					// keep ';' ',' ' ' for further analysis (?)
 				else // drop brackets
 					proceed(); // what else??
+                close = 0; // ok, we are done
 				break;
 			}// todo: merge <>
 			if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
+                close = 0; // ok, we are done
 				break;
 			}// inner match ok
 
@@ -1645,7 +1648,7 @@ private:
 				case ')':
 				case ']':// ..
 //					break loop;// not in c++
-					err("wrong closing bracket");
+                    parserError("wrong closing bracket");
 //				case '+': // todo WHO writes +1 ?
 				case '-':
 					if (parserOptions.arrow and next == '>') {
@@ -1663,7 +1666,7 @@ private:
 						continue;
 					}
 					if (isKebabBridge())
-						error("kebab case should be handled in identifier");
+                        parserError("kebab case should be handled in identifier");
 					if (next == '>') {// -> => ⇨
 						next = u'⇨';
 						proceed();
@@ -1699,7 +1702,9 @@ private:
 						else
                             actual.add(quote(closer).clone());
 						break;
-					}
+                    } else {
+                        close = 0; // ok, we are done
+                    }
 					Node id = Node(text.substring(start, at));
 					id.setType(Kind::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
 					actual.add(id);
@@ -1873,6 +1878,9 @@ private:
 				}
 			}
 		}
+        if (close and close != ' ' and close != '\n' and close != ';' and close != ',') {
+            parserError("unclosed pair "s + close);
+        }
 		return actual.flat();
 	};
 
@@ -1899,7 +1907,7 @@ float group_precedence(char group) {
 	if (group == ',')return 4;
 	if (group == ' ')return 5;
 	if (group == '_')return 6;
-//	error("unknown precedence for symbol: "s+group);
+//	parseError("unknown precedence for symbol: "s+group);
 	return 999;
 }
 

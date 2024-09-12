@@ -5,6 +5,8 @@ Frameworks/wasm-c-api
 */wapm
 .idea/
 .idea/*
+.idea/**
+.idea/**/*
 node_modules/
 tmp/
 coverage/
