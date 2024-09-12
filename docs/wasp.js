@@ -858,7 +858,7 @@ function load_release_runtime() {
 }
 
 function load_compiler_as_runtime() {
-  if (typeof runtime_exports !== 'undefined') return
+  if (typeof compiler_exports !== 'undefined') return
   WASP_COMPILER_BYTES = fetch(WASP_COMPILER)
   WebAssembly.instantiateStreaming(WASP_COMPILER_BYTES, imports).then(obj => {
       compiler_instance = obj.instance
