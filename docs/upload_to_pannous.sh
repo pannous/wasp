@@ -4,4 +4,4 @@ git push
 ssh pannous.com "cd wasp && git pull"
 scp ../cmake-build-wasm-hosted/wasp-hosted.wasm pannous.com:~/wasp/ &
 scp ../cmake-build-wasm-runtime/wasp-runtime.wasm pannous.com:~/wasp/ &
-scp ../cmake-build-wasm-debug/wasp-debug.wasm pannous.com:~/wasp/ &
+scp ../cmake-build-wasm-debug/wasp.wasm pannous.com:~/wasp/wasp-debug.wasm &

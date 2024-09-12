@@ -1,6 +1,6 @@
 /* 
 * WASP: WebAssembly Programming Language API/ABI
-* version="1.0.19",
+* version="1.0.20",
 * This file contains the javascript counterpoint to the WASP runtime,
 * offering host functions to wasi/wasp modules, like download() and run_wasm()
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
@@ -829,6 +829,7 @@ function load_runtime() {
   else load_compiler_as_runtime()
 }
 
+// obsolete? see WASP_COMPILER compiler_exports
 function load_release_runtime() {
   fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
     runtime_bytes = buffer
