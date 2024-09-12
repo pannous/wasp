@@ -26,6 +26,8 @@
 //void testSourceMap();
 
 void testExceptions() {
+//    assert_emit("(unclosed bracket",123);
+
     assert_throws("x:int=1;x='ok'");
     assert_throws("x:int=1;x=1.1");
 //    assert_emit("x:int=1;x=1.0",1); // might be cast by compiler
@@ -3438,7 +3440,9 @@ void testCurrent() {
 //	exit(1);
 //	testOldRandomBugs();
 
-//	assert_emit("3^2", 9);
+//    assert_emit("3^2", 9);
+//	assert_emit("3**2", 9);
+//    exit(1);
 //	assert_emit("n=3;2ⁿ", 8);
 //	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
 //	assert_emit("'αβγδε'#3", U'γ');
