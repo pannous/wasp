@@ -25,6 +25,19 @@
 //void testDwarf();
 //void testSourceMap();
 
+void testExceptions() {
+    assert_throws("x:int=1;x='ok'");
+    assert_throws("x:int=1;x=1.1");
+//    assert_emit("x:int=1;x=1.0",1); // might be cast by compiler
+//    assert_emit("x=1;x='ok';x=1", 1); // untyped x can be reassigned
+    assert_throws("'unclosed quote");
+    assert_throws("\"unclosed quote");
+    assert_throws("unclosed quote'");
+    assert_throws("unclosed quote\"");
+    assert_throws("unclosed bracket)");
+    assert_throws("(unclosed bracket");
+}
+
 void testNoBlock() { // fixed
     assert_parses(R"(
 #see math.wasp !
@@ -1804,7 +1817,11 @@ void testMathExtra() {
 	assert_is("15÷5", 3);
 	assert_emit("15÷5", 3);
 	assert_emit("3⋅5", 15);
-	assert_emit("3×5", 15);
+    assert_emit("3×5", 15);
+    assert_emit("3^3", 27);
+    assert_emit("3**3", 27);
+    assert_emit("√3**2", 3);
+    assert_emit("√3^2", 3);
 	assert_is("one plus two times three", 7);
 }
 
@@ -3386,7 +3403,9 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
-
+//    check_is("τ≈6.2831853",true);
+//    assert_emit("τ≈6.2831853",1);
+    testExceptions();
 //    assert_emit("√ π ²", pi);
 //    assert_emit("√π²", pi);
 

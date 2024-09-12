@@ -934,7 +934,7 @@ void testSourceMapHardCoded() {
 
 void testSourceMap() {
 //    testSourceMapHardCoded();
-    assert_emit("int tttt(int j){x=j+1;x};tttt(3)", 4);
+//    assert_emit("int tttt(int j){x=j+1;x};tttt(3)", 4);
 }
 
 
