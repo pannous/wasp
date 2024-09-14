@@ -1,7 +1,7 @@
 //#include "DwarfEmitter.h"
 #include "dwarf.h"
 #include "Code.h"
-#include "asserts.h"
+//#include "asserts.h"
 
 // wasm-tools addr2line main.wasm 0x50
 

@@ -1925,6 +1925,12 @@ Node &groupWhile(Node &n, Function &context) {
 
 Node &groupOperatorCall(Node &node, Function &function);
 
+/*
+ * ☢️ ⚛ Nuclear Core ⚠️ 🚧
+ * turning some knobs might yield some great powers
+ * touching anything can result in disaster
+ * should be replaced with elegant modular solar panels
+ */
 Node &analyze(Node &node, Function &function) {
     String &context = function.name;
     if (context != "global" and !functions.has(context)) {

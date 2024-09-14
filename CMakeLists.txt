@@ -1,7 +1,8 @@
 # REMOVE CMakeCache.txt after switching between mac and linux / " Cannot generate into … " errors
-
 cmake_minimum_required(VERSION 3.10)
 project(wasp)
+
+include(FetchContent) # external projects like webview
 
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
@@ -42,7 +43,7 @@ if (X86_64)
     if (LINUX)
         LINK_DIRECTORIES(bin/linux/lib.x86)
     else ()
-    LINK_DIRECTORIES(bin/mac/lib.x86)
+        LINK_DIRECTORIES(bin/mac/lib.x86)
     endif ()
 else ()
     LINK_DIRECTORIES(lib/)
@@ -66,10 +67,10 @@ if (NOT WASM)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         #        SET(WASMEDGE 0)
         # SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
-        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #  SET(V8 1) # 2024-04 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
@@ -695,13 +696,25 @@ elseif (WASMTIME)
     target_link_libraries(wasp PRIVATE wasm)
     target_link_libraries(wasp PRIVATE wasmtime)
 elseif (WEBAPP)
+    message(WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     # on Windows 11, developers and end-users must have the WebView2 runtime installed!
     # for standalone for Windows version check choc_WebView.h (1 MB)
-    include(source/WebView.cmake)
+    #    include(source/WebView.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/WebApp.cpp source/WebServer.cpp)
     add_executable(wasp-app ${SOURCE_FILES})
-    target_link_libraries(wasp-app PUBLIC webview)
+
+    FetchContent_Declare(webview GIT_REPOSITORY https://github.com/webview/webview.git)
+    FetchContent_MakeAvailable(webview)
+    find_library(WEBVIEW webview HINTS ${webview_SOURCE_DIR}/core)
+    target_link_libraries(wasp-app PUBLIC ${WEBVIEW})
+    target_include_directories(wasp-app PUBLIC ${webview_SOURCE_DIR}/core/include)
+    FIND_LIBRARY(OBJC_LIBRARY objc)
+    TARGET_LINK_LIBRARIES(wasp-app PRIVATE ${OBJC_LIBRARY})
+
+    #    target_link_libraries(wasp-app PUBLIC webview)
+    #    target_include_directories(wasp-app PUBLIC ${webview_SOURCE_DIR}/core/include)
+
     if (CURL)
         target_link_libraries(wasp-app PUBLIC ${CURL_LIBRARIES})
         target_link_libraries(wasp-app PUBLIC -lcurl)

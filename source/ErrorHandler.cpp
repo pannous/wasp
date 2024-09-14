@@ -146,7 +146,7 @@ static void signal_segv(int signum, siginfo_t *info, void *ptr) {
 //istead of _Unwind_Backtrace(tracer, &state);
 
 static void handler(int sig, siginfo_t *si, void *context) {
-	printf("Got SIGSEGV at address: 0x%lx\n", (int64) si->si_addr);
+    printf("Got SIGSEGV at address: 0x%lx\n", (unsigned long) si->si_addr);
     printf("Implements the handler only\n");
 //	Backtrace();
 }
