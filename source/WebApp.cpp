@@ -385,4 +385,5 @@ int64 open_webview(String url = "") {
 
 extern "C" int64 init_graphics() {
 	open_webview();
+    return 0;// returns data offset OUTSIDE wasm: pointer to RGBA surface
 }
