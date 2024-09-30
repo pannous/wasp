@@ -70,6 +70,7 @@ int isalnum0(int c) {
 [[noreturn]]
 //#endif
 void error1(chars message, chars file, int line) {
+
 #ifdef _Backtrace_
 	//	Backtrace(2);// later, in raise
 #endif
@@ -89,10 +90,12 @@ void error1(chars message, chars file, int line) {
 	if (file)printf("\n%s:%d\n", file, line);
 	raise(message);
 #endif
-//#if not WEBAPP
+#if not WEBAPP
 //	if (throwing)
 	throw message; // [[noreturn]] should not return
-//#endif
+#else
+    proc_exit(-1);
+#endif
 }
 
 

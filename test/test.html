@@ -8,7 +8,11 @@
 </head>
 <!--onclick='test().then(_=>terminate0())' -->
 <body onload="test()" style='height: 1000px;'>
-<script src='webgl.js'></script><!--not allowed to access local resource--> <!-- start wasp in server mode!-->
+<script src='../samples/webgl.js'></script><!--not allowed to access local resource-->
+<!-- start wasp in server mode!-->
+<!--<script src='../docs/wasp.js'></script>-->
+<!--<script src='https://wasp.pannous.com/wasp.js'></script>-->
+
 
 <!-- http://dataurl.net/#dataurlmaker -->
 
@@ -94,6 +98,7 @@ function print(...x) {
     $ = id => document.getElementById(id), // .bind(document); for debugging
         ignore = x => x
     nop = x => ignore(x)
+    const string_mask_64 = 0xFF10000000000000n // n means BigInt("…")
     const string_header_64 = 0x0010000000000000n // n means BigInt("…")
     const double_mask_64 = 0x7F00000000000000n
     const negative_mask_64 = 0xFF00000000000000n
@@ -105,14 +110,13 @@ function print(...x) {
     // let table_size = 294
 
     let memory = new WebAssembly.Memory({initial: memory_size, maximum: 65336});
+    const hex = x => x >= 0 ? x.toString(16) : `0x${((BigInt(1) << BigInt(64)) + BigInt(x)).toString(16)}`
 
-    // todo negative bigint!
-    let hex = x => x >= 0 ? x.toString(16) : (BigInt(0xFFFFFFFF) + BigInt(x) + BigInt(1)).toString(16);
-
+    // (BigInt(1) << (BigInt(x.toString(2).length))) + BigInt(x).toString(16);
     function is_smart_pointer(result) {
         let got_smart_pointer = Number.isInteger(result) && (result >= 0x10000000 || result <= -0x10000000);
-        if (typeof result === "bigint") got_smart_pointer = result >= BigInt(0x4000000000000000)
-        if (typeof result === "bigint") got_smart_pointer ||= (result & string_header_64)
+      if (typeof result === "bigint") got_smart_pointer = result >= BigInt(0x4000000000000000) && result <= BigInt(0x7FFFFFFFFFFFFFFF);
+      if (typeof result === "bigint") got_smart_pointer ||= ((result & string_mask_64) == string_header_64)
         if (typeof result === "bigint" || got_smart_pointer)
             console.log(">>> 0x", hex(result), got_smart_pointer ? " SMART " : "");
         if (Array.isArray(result)) got_smart_pointer = true;// multivalue of length 2 always assumed smart pair
@@ -278,6 +282,7 @@ function print(...x) {
             // let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
             let imports = {
                 wasi_unstable: {proc_exit: terminate, fd_write: log, fd_read: nop, fd_seek: nop, fd_close: nop},
+              wasi_snapshot_preview1: {proc_exit: terminate, fd_write: log, fd_read: nop, fd_seek: nop, fd_close: nop},
                 env: {
                     memory,
                     // table,

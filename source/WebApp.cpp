@@ -272,7 +272,7 @@ int64 open_webview(String url = "") {
 
 	// add [w] to closure to make it local
 	view.set_title("Example");
-	view.set_html("<script>alert('js injected into every page')</script>");
+//	view.set_html("<script>alert('js injected into every page')</script>");
 //    w.value("alert('js injected into every page')");
 	view.set_size(480 * 4, 320 * 4, WEBVIEW_HINT_NONE);// default
 	view.set_size(480, 320, WEBVIEW_HINT_MIN);// minimum size, also: MAX, FIXED
@@ -296,10 +296,10 @@ int64 open_webview(String url = "") {
 		teste.detach();
 		return s;
 	});
-	view.bind("close", [](std::string s) -> std::string {
-		view.terminate();
-		exit(0);
-	});
+//	view.bind("close", [](std::string s) -> std::string {
+//		view.terminate();
+//		exit(0);
+//	});
 	view.bind("destroy", [](std::string s) -> std::string {
 		view.terminate();
 		return s;

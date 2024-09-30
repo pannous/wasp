@@ -17,7 +17,8 @@
 #define debug_line() printf("\nfile://%s\n%s:%d\n",__FILE__,__FILE__,__LINE__);
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
 #else
-#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
+#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);}
+//exit(0);
 
 #define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
 #endif
@@ -108,9 +109,9 @@ typedef byte *bytes;
 #include "String.h" // AFTER defines!
 #include "smart_types.h"
 
-//#if …// sometimes needed sometimes not !?
+#if not WEBAPP
+#endif
 [[noreturn]]
-//#endif
 extern void error1(chars message, chars file = 0, int line = 0);
 
 extern void info(chars);

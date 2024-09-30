@@ -19,7 +19,7 @@ if (NOT webview_POPULATED)
     # We have to do it ourselves
     FetchContent_Populate(webview)
     add_library(webview INTERFACE)
-    target_sources(webview INTERFACE ${webview_SOURCE_DIR}/webview.h)
+    target_sources(webview INTERFACE ${webview_SOURCE_DIR}/core/include/webview.h)
     target_include_directories(webview INTERFACE ${webview_SOURCE_DIR})
 
     # Set compile options

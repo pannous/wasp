@@ -2,14 +2,15 @@
 cmake_minimum_required(VERSION 3.10)
 project(wasp)
 
-include(FetchContent) # external projects like webview
-
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
 #set(CROSSCOMPILE x86) # needs more work / just use different docker images
 if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
     set(X86_64 1)
 endif ()
+
+include(FetchContent) # external projects like webview
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib") # save libwebview to lib ?
 
 # ⚠️ SET these configurations VIA TOOLCHAIN: via CLion Preferences… Build->CMake->Profiles
 #  MANUALLY force set these only for urgent debugging
@@ -64,13 +65,16 @@ endif ()
 if (NOT WASM)
     set(CONSOLE 1) # can't get readline to work in wasm
     if (NOT RUNTIME_ONLY)
+        # In addition to the compiler,
+        # The WASP runtime can be bundled with WASM runtimes:
+
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-        #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         #        SET(WASMEDGE 0)
         # SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
-        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps.
+        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #  SET(V8 1) # 2024-04 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
@@ -700,20 +704,12 @@ elseif (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     # on Windows 11, developers and end-users must have the WebView2 runtime installed!
     # for standalone for Windows version check choc_WebView.h (1 MB)
-    #    include(source/WebView.cmake)
+    include(source/WebView.cmake)
     set(SOURCE_FILES ${SOURCE_FILES} source/WebApp.cpp source/WebServer.cpp)
     add_executable(wasp-app ${SOURCE_FILES})
-
-    FetchContent_Declare(webview GIT_REPOSITORY https://github.com/webview/webview.git)
-    FetchContent_MakeAvailable(webview)
-    find_library(WEBVIEW webview HINTS ${webview_SOURCE_DIR}/core)
-    target_link_libraries(wasp-app PUBLIC ${WEBVIEW})
+    target_link_libraries(wasp-app PUBLIC webview)
+    target_include_directories(wasp-app PUBLIC Frameworks/webview)
     target_include_directories(wasp-app PUBLIC ${webview_SOURCE_DIR}/core/include)
-    FIND_LIBRARY(OBJC_LIBRARY objc)
-    TARGET_LINK_LIBRARIES(wasp-app PRIVATE ${OBJC_LIBRARY})
-
-    #    target_link_libraries(wasp-app PUBLIC webview)
-    #    target_include_directories(wasp-app PUBLIC ${webview_SOURCE_DIR}/core/include)
 
     if (CURL)
         target_link_libraries(wasp-app PUBLIC ${CURL_LIBRARIES})
