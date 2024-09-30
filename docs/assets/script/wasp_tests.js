@@ -26,7 +26,8 @@ onerror = (err) => {
 
 function check(ok) {
     if (!ok) backtrace_line("⚠️ TEST FAILED")
-    if (!ok) throw "⚠️ TEST FAILED"
+  if (!ok)
+    throw "⚠️ TEST FAILED"
 }
 
 

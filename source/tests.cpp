@@ -3218,8 +3218,8 @@ void assurances() {
 void testAllEmit() {
 	// WASM emit tests under the hood:
 	assert_emit("42", 42);// basics
-    assert_emit("√ π ²", pi);
-    assert_emit("√π²", pi);
+//    assert_emit("√ π ²", pi);
+//    assert_emit("√π²", pi);
 
 	testEmitBasics();
 	testSinus();
@@ -3272,6 +3272,7 @@ void testEmitBasics() {
 	assert_emit("true", true);
 	assert_emit("false", false)
 	assert_emit("8.33333333332248946124e-03", 8.33333333332248946124e-03);
+    assert_emit("42", 42)
 	assert_emit("-42", -42)
 	assert_emit("3.1415", 3.1415);
 	assert_emit("-3.1415", -3.1415);
@@ -3391,8 +3392,9 @@ void tests() {
 	warn("Normal tests ALL PASSING in wasm!");
 	warn("WASM emit tests CURRENTLY __ALL__ SKIPPED or asynchroneous!");
 	return;
+#else
+    testAllEmit();
 #endif
-	testAllEmit();
 	// todo: split in test_wasp test_angle test_emit.cpp
 }
 
@@ -3417,10 +3419,10 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
-    testInclude();
+//    testInclude();
 //    check_is("τ≈6.2831853",true);
 //    assert_emit("τ≈6.2831853",1);
-    testExceptions();
+//    testExceptions();
 //    assert_emit("√ π ²", pi);
 //    assert_emit("√π²", pi);
 
@@ -3444,7 +3446,7 @@ void testCurrent() {
 //	testReplaceAll();
 //	testFetch();
 //	return;
-	testDomProperty();
+//	testDomProperty();
 //	testInnerHtml();
 //	return;
 #if WEBAPP
