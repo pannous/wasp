@@ -73,9 +73,6 @@ void testVectorShim() {
 	assert_emit("v=[1 2 3];w=[2 3 4];v*w", 2 + 6 + 12);
 }
 
-
-
-
 void testHtmlWasp() {
 	eval("html{bold{Hello}}"); // => <html><body><bold>Hello</bold></body></html> via appendChild bold to body
 //	eval("html{bold($myid style=red){Hello}}"); // => <bold id=myid style=red>Hello</bold>
@@ -170,11 +167,11 @@ void testDom() {
 inline void print(Primitive l) {
 	print(typeName(l));
 }
+
 void testDomProperty() {
 #ifndef WEBAPP
 	return;
 #endif
-
 	result = eval("getExternRefPropertyValue($canvas,'width')"); // ok!!
 	check_is(result.value.longy, 300); // only works because String "300" gets converted to BigInt 300
 //	result = eval("width='width';$canvas.width");
@@ -261,7 +258,6 @@ void testEmptyTypedFunctions() {
 	check_is(names2.size(), 1);
 	check_is(names2.first(), "a");
 
-
 	result = analyze(parse("int a();"));
 	check_is(result.kind, Kind::declaration);// header signature
 	check_is(result.type, IntegerType);
@@ -269,10 +265,9 @@ void testEmptyTypedFunctions() {
 }
 
 void testPolymorphism() {
-
 	// debug:
-	auto debug_node = parse("string aaa(string a){return a};\nfloat bbb(float b){return b+1}");
-	auto debug_fun = analyze(debug_node);
+//	auto debug_node = parse("string aaa(string a){return a};\nfloat bbb(float b){return b+1}");
+//	auto debug_fun = analyze(debug_node);
 	auto node = parse("string test(string a){return a};\nfloat test(float b){return b+1}");
 	auto fun = analyze(node);
 	auto function = functions["test"];
@@ -315,14 +310,13 @@ void testPolymorphism2() {
 void testGenerics() {
 	auto type = Type(Generics{.kind = array, .value_type = int16});
 //    auto header= type.value & array;
-//    auto header= type.value & 0xFFFF0000;
-	auto header = type.value & 0x0000FFFF;
+//    auto header= type.value & 0xFFFF0000; // todo <<
+    auto header = type.value & 0x0000FFFF; //todo ??
 	check_eq(header, array);
 }
 
-
 void testNumbers() {
-	Number n = 1;
+    Number n = 1;// as comfortable BigInt Object used inside wasp
 	check(n == 1.0);
 	check(n / 2 == 0.5);
 	check(((n * 2) ^ 10) == 1024);
@@ -435,7 +429,6 @@ void testMaps1() {
 	check_is(functions.size(), 2);
 	check(functions["abcd"].name == "abcd");
 	check(functions["efg"].name == "efg");
-// ok
 }
 
 void testMaps2() {
@@ -451,7 +444,6 @@ void testMaps2() {
 	print(functions["abcd"].name);
 	check(functions["abcd"].name == "abcd");
 	check(functions["efg"].name == "efg");
-// ok
 }
 
 void testMaps() {
@@ -467,17 +459,20 @@ void testHex() {
 	assert_equals(hex(18966001896603L), "0x113fddce4c9b");
 	assert_is("42", 42);
 	assert_is("0xFF", 255);
-	assert_is("0x100", 256);
+    assert_is("0x100", 256);
+    assert_is("0xdce4c9b", 0xdce4c9b);
+//    assert_is("0x113fddce4c9b", 0x113fddce4c9bl); todo
+//	assert_is("0x113fddce4c9b", 0x113fddce4c9bL);
 }
 
-void test_fd_write() {
+void test_fd_write() { // built-in wasi function
 	//    assert_emit("x='hello';fd_write(1,20,1,8)", (int64) 0);// 20 = &x+4 {char*,len}
 //    assert_emit("puts 'ok';proc_exit(1)\nputs 'no'", (int64) 0);
 //    assert_emit("quit",0);
 	assert_emit("x='hello';fd_write(1,x,1,8)", (int64) 0);// &x+4 {char*,len}
 //    assert_run("len('123')", 3); // Map::len
 //    quit()
-	assert_emit("puts 'ok'", (int64) 0);
+    assert_emit("puts 'ok'", (int64) 0); // connect to wasi fd_write
 	loadModule("wasp");
 	assert_emit("puts 'ok'", (int64) 0);
 	assert_emit("puti 56", 56);
@@ -531,7 +526,7 @@ void testClass() {
 //    "var (f, l) = person;                        // positional deconstruction"
 }
 
-void testStruct() {
+void testStruct() { // builtin with struct/record
 	assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
 	return;
 	assert_emit("struct a{x:int y:float};a{1 3.2}.y", 3.2);
@@ -545,7 +540,7 @@ record person {
     name: string,
     age: u32,
     has-lego-action-figure: bool,
-}; x=person{age:22}; x.age)", 22);
+}; x=person{age:22}; x.age)", 22); // todo require optional fields marked as such with '?'
 }
 
 
@@ -569,7 +564,6 @@ void test_c_numbers() {
 //    signed int biggest = 0x7FFFFFFF;
 //    signed int smallest = 0x80000000;// "implementation defined" so might not always pass
 	signed int z = -1;
-
 	check(x == y)
 	check(x == z)
 	check(z == y)
@@ -583,7 +577,7 @@ void testArraySize() {
 	assert_emit("pixel=[1 2 4];pixel size", 3);
 	assert_emit("pixel=[1 2 4];pixel length", 3);
 	assert_emit("pixel=[1 2 4];pixel count", 3);
-	assert_emit("pixel=[1 2 4];pixel number", 3);// ambivalence type!
+    assert_emit("pixel=[1 2 4];pixel number", 3);// ambivalence with type number!
 	assert_emit("pixel=[1 2 4];pixel.size", 3);
 	assert_emit("pixel=[1 2 4];pixel.length", 3);
 	assert_emit("pixel=[1 2 4];pixel.count", 3);
