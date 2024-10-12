@@ -66,9 +66,9 @@ int isalnum0(int c) {
 }
 
 // todo put to util
-//#if not WEBAPP
+#if not WEBAPP
 [[noreturn]]
-//#endif
+#endif
 void error1(chars message, chars file, int line) {
 
 #ifdef _Backtrace_
