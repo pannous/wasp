@@ -6,15 +6,17 @@
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
 * */
 let Wasp = {}
-// let WASP_COMPILER = 'wasp.wasm' // without tests
-let WASP_COMPILER = 'assets/wasp-hosted.wasm' // with tests and shortcuts
+// let WASP_COMPILER = 'wasp.wasm' // 200-400 kb without tests …
+// let WASP_COMPILER = 'wasp-hosted.wasm' // 4MB with tests and shortcuts
+let WASP_COMPILER = 'assets/wasp-hosted.wasm' // 4MB with tests and shortcuts
+// let WASP_COMPILER = 'assets/wasp-debug.wasm' // 4MB with tests and shortcuts
 // let WASP_RUNTIME = 'wasp-runtime.wasm'
 let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false;
 const use_big_runtime = true; // use compiler as runtime for now
-const run_tests = true; // todo NOT IN PRODUCTION!
+const run_tests = false; // todo NOT IN PRODUCTION!
 let app_module;
 let kinds = {}
 
@@ -860,7 +862,7 @@ function load_release_runtime() {
       addSynonyms(runtime_exports)
       HEAP = runtime_exports.__heap_base; // ~68000
       DATA_END = runtime_exports.__data_end
-      HEAP_END = HEAP || DATA_END;
+      HEAP_END = HEAP || DATA_END || runtime_exports.__heap_end;
       HEAP_END += 0x100000
       memory = runtime_exports.memory || runtime_exports._memory || memory
       buffer = new Uint8Array(memory.buffer, 0, memory.length);
@@ -893,7 +895,7 @@ function load_compiler_as_runtime() {
       runtime_exports = compiler_exports
       HEAP = compiler_exports.__heap_base; // ~68000
       DATA_END = compiler_exports.__data_end
-      HEAP_END = HEAP || DATA_END;
+      HEAP_END = HEAP || DATA_END || runtime_exports.__heap_end;
       HEAP_END += 0x100000
       memory = compiler_exports.memory || compiler_exports._memory || memory
       buffer = new Uint8Array(memory.buffer, 0, memory.length);
