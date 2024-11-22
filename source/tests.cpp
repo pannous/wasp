@@ -3212,7 +3212,7 @@ void assurances() {
 // todo: merge with testAllWasm, move these to test_wasm.cpp
 void testAllEmit() {
 	// WASM emit tests under the hood:
-    assert_emit("√3^2", 3);// basics
+    assert_emit("√3^2", 3);// basics 2
 //	assert_emit("42", 42);// basics
 //    exit(42);
 //    assert_emit("√ π ²", pi);
