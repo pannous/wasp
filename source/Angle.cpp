@@ -651,7 +651,7 @@ Node CodepointType("CodepointType", clazz);
 // todo: see NodeTypes.h for overlap with numerical returntype integer …
 // these are all boxed class types, for primitive types see Type and Kind
 void initTypes() {
-    if (types.size() > 10)return;
+    if (types.size() > 3)return;
     types.add("i8", &ByteType);// use in u8.load etc
     types.add("u8", &ByteType);// use in u8.load etc
     types.add("int8", &ByteType);// use in u8.load etc
