@@ -1,6 +1,9 @@
 echo '⚠️ https://wasp.pannous.com/ points to GITHUB page!!'
 
 increase-package-version.py wasp.js 
+
+cp ../cmake-build-wasm-hosted/wasp-hosted.wasm assets/wasp-hosted.wasm
+
 git -c color.ui=false commit -a -m '' --allow-empty-message
 git push
 ssh pannous.com "cd wasp && git pull"

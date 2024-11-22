@@ -21,7 +21,7 @@ static chars function_list[] = {/*"abs"  f64.abs operator! ,*/ "norm", "square",
                                                                "write",
                                                                "$" /* getElementById */,
 //                                                               FUNCLETS via runtime for now:
-                                                               "pow", "powi", "pow_long", "log", "log10", "log2",
+//                                                               "pow", "powi", "pow_long", "log", "log10", "log2",
                                                                "lowerCaseUTF",
                                                                0, 0, 0};// MUST END WITH 0, else BUG
 

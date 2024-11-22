@@ -2319,6 +2319,8 @@ Function getWaspFunction(String name) { // signature only, code must be loaded f
             // IGNORE js bridges :
         else if (name == "registerWasmFunction");
         else if (name.startsWith("test"));
+        else if (name == "powi")f.signature.add(int64s).add(int64s).returns(int64s);// as import?
+        else if (name == "pow")f.signature.add(float64).add(float64).returns(float64);// as import?
         else todo("getWaspFunction "s + name);
     }
     if (!runtime.functions.has(f.name)) {

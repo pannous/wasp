@@ -482,8 +482,12 @@ if (WASM) # OR WASI)
         set(CMAKE_SYSROOT "") # via -DCMAKE_TOOLCHAIN_FILE=wasm.toolchain.cmake
         ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
     else ()
-        ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
-        ADD_COMPILE_FLAG("-nostdlib -march=wasm") #-v
+        ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
+#        ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
+#        set(CMAKE_CXX_STANDARD 20)
+#        set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#        ADD_COMPILE_FLAG("-march=wasm") unsupported option '-march=' for target 'wasm32-unknown-unknown-wasm'
+        ADD_COMPILE_FLAG("-nostdlib") #-v
         ADD_LINK_OPTIONS("-Wl,--no-entry") # if as library
     endif ()
 
@@ -532,15 +536,23 @@ if (WASM) # OR WASI)
         #        ADD_COMPILE_FLAG("-save-temps=all") # keep intermediates   c stuff not wasm yet
         #        the DWARF section information/references are invalid after wasm-pack, wasm-opt or any other tools,
     endif ()
-    if (NOT RELEASE)
-        ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
-    endif ()
+    ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
     if (RELEASE)
+#        ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # preserve functions even if optimized
+#        ADD_COMPILE_FLAG("-fno-lto")
+#        ADD_COMPILE_FLAG("-fno-binaryen")
+#        ADD_COMPILE_FLAG("-fno-post-opt")
+        ADD_COMPILE_FLAG("-Wl,--gc-sections")
+        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
+
+# https://github.com/llvm-project-tlp/llvm-project/commit/680315cd43d17e51e66181f045b7e993e39bfd48
+#        ADD_COMPILE_FLAG("--no-wasm-opt") # removes library functions!!
+
         if (RUNTIME_ONLY)
             ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
             # wasmtime bug can't handle with exported globals
         else ()
-            ADD_COMPILE_FLAG("-Wl,--export=_start") # deletes all unused functions!
+#            ADD_COMPILE_FLAG("-Wl,--export=_start") # deletes all unused functions!
         endif ()
         #        ADD_COMPILE_FLAG("-Wl,--export-dynamic") #   Put symbols in the dynamic symbol table
         ADD_COMPILE_FLAG("-v")
@@ -553,10 +565,8 @@ if (WASM) # OR WASI)
         ADD_COMPILE_FLAG("-Wl,--compress-relocations") # incompatible with output debug information. Please pass --strip-debug
         ADD_COMPILE_FLAG("-Wl,--strip-debug") # DEBUG-RELEASE
         set(SOURCE_FILES ${SOURCE_FILES} source/exceptions.cpp)
-        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
         #    --no-validation   --debug
         ADD_COMPILE_FLAG("-Oz -Qn")
-        ADD_COMPILE_FLAG("-Wl,--gc-sections")
         ADD_COMPILE_FLAG("-Wl,-O4")
         ADD_COMPILE_FLAG("-O4")
         # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
