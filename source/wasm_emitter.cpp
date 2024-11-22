@@ -1751,16 +1751,16 @@ Code emitOperator(Node &node, Function &context) {
 //        code.add(emitCall(*new Node("pow"), context));
 //		if(last_value==0)code.addConst(1);
 //		if(last_value==1)return code;
-#if MY_WASM
-        getWaspFunction("pow");
-        code.add(emitCall(*new Node("pow"), context));
-#else
+//#if MY_WASM
+//        getWaspFunction("pow");
+//        code.add(emitCall(*new Node("pow"), context));
+//#else
         if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
         else if (last_type == float32) code.add(emitCall(*new Node("powf"), context));
         else if (last_type == float64) code.add(emitCall(*new Node("pow"), context));
         else if (last_type == int64s) code.add(emitCall(*new Node("pow_long"), context));
         else code.add(emitCall(*new Node("powi"), context));
-#endif
+//#endif
 //        else todo("^ power with type "s + typeName(last_type));
 //         'powi' is a builtin with type 'long double (long double, long double)'
     } else if (name.startsWith("-")) {
@@ -2723,7 +2723,10 @@ Code emitBlock(Node &node, Function &context) {
             todo("last_type ref");
         } else if (last_type == float64 and context.name == start) {
             // hack smart pointers as main return: f64 has range which is never hit by int
-            block.addByte(i64_reinterpret_f64);
+            block.addByte(
+                    i64_reinterpret_f64); // todo: not for _start in wasmtime... or 'unwrap' / print smart pointers via builtin
+//            block.add(emitCall(*new Node("print_smarty"), context)); // _Z5printd putf putd
+//            block.add(emitCall(*new Node("_Z5printd"), context));
             last_type = i64;
         } else if (last_type == byte_char or last_type == codepoint1) {
             block.addByte(i64_extend_i32_u);

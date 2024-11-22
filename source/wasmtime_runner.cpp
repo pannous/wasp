@@ -5,16 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wasm.h>
-//#include <wasmtime.h>
 #include "Util.h"
 #include <math.h>
 
-//#undef assert // assert.h:92 not as good!
-//#define assert(condition) try{\
-//if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
-//}catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(1);}
-
-
+//#include <wasmtime.h>
 #include "wasmtime.h"
 #include "wasm_reader.h"
 #include <assert.h>
@@ -23,6 +17,12 @@
 #include <wasm.h>
 #include "Util.h"
 #include <math.h>
+
+//#pragma clang diagnostic push
+//#pragma clang diagnostic ignored "-Wvla-cxx-extension"
+
+// wasm-c-api/src/wasm-v8.cc:    extern bool FLAG_expose_gc;
+// include/wasmtime/conf.h:#define WASMTIME_FEATURE_GC
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
 
@@ -90,15 +90,15 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     Module &meta = read_wasm(data, size);
     int import_count = meta.import_count;
     wasmtime_extern_t imports[import_count];
-    int i = 0;
 
+    int import_nr = 0;
     for (const String &import_name: meta.import_names) {
         if (import_name.empty()) break;
         wasmtime_func_t func;
         const wasm_functype_t *type0 = funcType(meta.functions[import_name].signature);
         wasmtime_func_new(context, type0, link_import(import_name), NULL, NULL, &func);
         wasmtime_extern_t import = { .kind = WASMTIME_EXTERN_FUNC, .of.func = func };
-        imports[i++] = import;
+        imports[import_nr++] = import;
 //        wasm_functype_delete(type0);
     }
 
@@ -344,7 +344,7 @@ void test_lambda() {
 #define wrap_fun(fun) [](void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
 
 wasm_wrap *link_import(String name) {
-// own WASI mock
+// own WASI mock instead of https://docs.wasmtime.dev/c-api/wasi_8h.html
     if (name == "fd_write") return &wrap_fd_write;
     if (name == "args_get")return &wrap_args_get;
     if (name == "args_sizes_get")return &wrap_args_sizes_get;
@@ -546,3 +546,5 @@ const wasm_functype_t *funcType(Signature &signature) {
     error("missing signature mapping"s + signature.format());
     return 0;
 }
+
+//#pragma clang diagnostic pop

@@ -71,16 +71,17 @@ if (NOT WASM)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
+        # NO engine has (c-api) support for wit / component model as of 2024-12
         #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
-        SET(WASMEDGE 0) # no wit / component model as of 2024-10
+        SET(WASMEDGE 0)
         SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
-        #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
+        #  set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #  SET(V8 1) # 2024-04 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
         #  set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #  set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        #  set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong!
+        #  set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong! Hates GC…
         # others: WAVM WAMR
         if (WEBAPP)
             set(INCLUDE_MERGER 1) # should work !?
