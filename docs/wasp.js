@@ -1,6 +1,6 @@
 /* 
 * WASP: WebAssembly Programming Language API/ABI
-* version="1.0.23",
+* version="1.0.24",
 * This file contains the javascript counterpoint to the WASP runtime,
 * offering host functions to wasi/wasp modules, like download() and run_wasm()
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
