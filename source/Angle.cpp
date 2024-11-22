@@ -1692,11 +1692,12 @@ void addLibraryFunctionAsImport(Function &func) {
 //	auto function_known = functions.has(func.name);
 
     // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
-#if WASM
-    Function& import=*new Function;
-#else
+    bool function_known = functions.has(func.name);
+//#if WASM
+//    Function& import=*new Function;
+//#else
     Function & import=functions[func.name];// copy function info from library/runtime to main module
-#endif
+//#endif
 //	if(function_known)
 //        import = functions[func.name];
     if (import.is_declared)return;
@@ -1707,11 +1708,10 @@ void addLibraryFunctionAsImport(Function &func) {
     import.is_import = true;
     import.is_used = true;
 
-#if WASM
-    bool function_known = functions.has(func.name);
-    if(not !function_known)
-        functions.add(func.name, import);
-#endif
+//#if WASM
+//    if(not function_known)
+//        functions.add(func.name, import);
+//#endif
 }
 
 Function getWaspFunction(String name);
@@ -1750,6 +1750,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         libraries.add(&loadModule("wasp-runtime.wasm"));// on demand
 
 //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
+// todo in WASM
     for (Module *library: libraries) {//} module_cache.valueList()) {
         // todo : multiple signatures! concat(bytes, chars, …) eq(…)
         int position = library->functions.position(name);
@@ -2084,6 +2085,11 @@ void preRegisterFunctions() {
     functions["createHtml"].import();
     functions["createHtml"].signature.add(externref, "parent").add(charp, "innerHtml").returns(externref);
     functions["addScript"].import().signature.add(charp, "js");
+
+//#if WASM // no funclets in browser (yet?)
+    functions["pow"].import();//.builtin();
+    functions["pow"].signature.add(float64).add(float64).returns(float64);
+
 
     functions["getElementById"].import();//.builtin();
     functions["getElementById"].signature.add(charp).returns(externref /*!!*/);

@@ -6,8 +6,8 @@
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
 * */
 let Wasp = {}
-let WASP_COMPILER = 'wasp.wasm' // without tests
-// let WASP_COMPILER = 'wasp-hosted.wasm' // with tests and shortcuts
+// let WASP_COMPILER = 'wasp.wasm' // without tests
+let WASP_COMPILER = 'wasp-hosted.wasm' // with tests and shortcuts
 // let WASP_RUNTIME = 'wasp-runtime.wasm'
 let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
@@ -237,7 +237,12 @@ let imports = {
     },
 
     exit: terminate, // should be wasi.proc_exit!
+    // pow: Math.pow,
     pow: (x, y) => x ** y,
+    pow: (x, y) => {
+      console.log("POW", x, y);
+      return x ** y
+    },
     print: x => console.log(string(x)),
     puti: x => console.log(x), // allows debugging of ints without format String allocation!
     js_demangle: x => x,
@@ -550,7 +555,7 @@ class node {
   serialize() {
     if (!this.pointer) todo("only wasp nodes can be serialized");
     if (!this.memory == memory)
-      todo("needs to serialize inside the correct memory!") // funclet.serialize()
+      todo("needs to serialize inside the correct memory!") // app.serialize()
     return chars(runtime_exports.serialize(this.pointer));
   }
 
@@ -939,7 +944,7 @@ async function run_wasm(buf_pointer, buf_size) {
     // console.log("GOT raw ", result)
     if (result < -0x100000000 || result > 0x100000000) {
       if (!app.memory)
-        error("NO funclet.memory")
+        error("NO app.memory")
       result = smartNode(result, 0, app.memory)
       //  result lives in emit.wasm!
       // console.log("GOT nod ", nod)

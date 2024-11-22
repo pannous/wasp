@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:https="http://www.w3.org/1999/xhtml">
+<html>
 <head>
   <!-- ⚠️⚠️⚠️ https://wasp.pannous.com/ points to GITHUB page!! ⚠️⚠️⚠️ -->
   <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"/>
@@ -42,26 +42,8 @@
   <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>-->
   <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>-->
 
-  <script src="https://webassembly.github.io/wabt/demo/libwabt.js"></script>
-  <script>
-    WabtModule().then(function (wabt) {
-      window.wabt = wabt;
-      console.log('Wabt loaded');
-      // _wabt_write_text_module = wabt.writeTextModule;
-      // _wabt_read_binary = wabt.readBinary;
-      // _wabt_read_binary_module = wabt.readBinaryModule;
-      // _wabt_write_binary_spec_script = wabt.writeBinarySpecScript;
-    });
-
-    // for (var i = 0; i < examples.length; ++i) {
-    //     var example = examples[i];
-    //     var option = document.createElement('option');
-    //     option.textContent = example.name;
-    //     selectEl.appendChild(option);
-    // }
-    // selectEl.selectedIndex = 1;
-    // setExample(selectEl.selectedIndex);
-  </script>
+  <!--  <script src="https://webassembly.github.io/wabt/demo/libwabt.js"></script>-->
+  <!--  <script> WabtModule().then(function (wabt) {-->
 
 </head>
 <body style="background: floralwhite">
@@ -87,10 +69,10 @@
   </select>
 
   <br/>
-  <textarea id="code" onkeyup="compile_and_run(editor.getValue())">√3^2</textarea>
+  <textarea id="code" onkeyup="compile_and_run(editor.getValue())" placeholder="wasp code">√3^2</textarea>
   <br/>
   <!--  <input id="input_file" onchange="readFile()" type="file"/>-->
-  <input checked id="check" type="checkbox"/> auto
+  <label for="check">auto</label><input checked id="check" type="checkbox"/>
   <button onclick="compile_and_run(editor.getValue())">RUN!</button>
   <button onclick="results.value=''">CLEAR</button>
   <!--  spacer -->
@@ -98,8 +80,7 @@
   <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾 source.wasp</button>
   <button onclick="download_file(wasm_buffer, 'compiled.wasm', 'wasm')" title="download wasm">💾 compiled.wasm</button>
   <br/>
-  <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="8">
-    </textarea>
+  <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="8"></textarea>
 
 
   <script>
