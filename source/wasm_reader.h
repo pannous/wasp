@@ -52,6 +52,9 @@ public:
     Code global_names;
     Code data_names;
     Code function_names;
+    Code type_names; // GC!
+    Code field_names; // GC struct.field
+
     int start_index;
     List<Global> globals;
     List<String> import_names;
@@ -66,6 +69,7 @@ public:
     void file(const char *string);
 
     void save(const char *file);
+
 };
 
 Module &read_wasm(String file);

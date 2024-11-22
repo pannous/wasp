@@ -15,9 +15,129 @@
 //}catch(chars m){printf("\n%s\n%s\n%s:%d\n",m,#condition,__FILE__,__LINE__);exit(1);}
 
 
+#include "wasmtime.h"
+#include "wasm_reader.h"
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <wasm.h>
+#include "Util.h"
+#include <math.h>
+
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
 
+static wasm_engine_t *engine = NULL;
+static wasmtime_store_t *store = NULL;
+static wasmtime_context_t *context = NULL;
+//static uint8_t *wasm_memory = NULL;
+static bool initialized = false;
+
+void init_wasmtime() {
+    if (initialized) return; // Prevent re-initialization
+    engine = wasm_engine_new();
+    assert(engine != NULL);
+    store = wasmtime_store_new(engine, NULL, NULL);
+    assert(store != NULL);
+    context = wasmtime_store_context(store);
+    initialized = true;
+}
+
+void add_wasmtime_memory() {
+    wasm_limits_t limits = {.min = 1, .max = 0}; // Configured memory limits
+    wasm_memorytype_t *memtype = wasm_memorytype_new(&limits);
+    wasmtime_memory_t memory0;
+    wasmtime_error_t *error = wasmtime_memory_new(context, memtype, &memory0);
+    wasm_memorytype_delete(memtype);
+    if (error != NULL) {
+        wasmtime_error_delete(error);
+        fprintf(stderr, "Error creating Wasmtime memory\n");
+        exit(1);
+    }
+    wasm_memory = wasmtime_memory_data(context, &memory0);
+}
+
+static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap) {
+    fprintf(stderr, "Error: %s\n", message);
+    if (error != NULL) {
+        wasm_byte_vec_t error_message;
+        wasmtime_error_message(error, &error_message);
+        fprintf(stderr, "%.*s\n", (int) error_message.size, error_message.data);
+        wasm_byte_vec_delete(&error_message);
+        wasmtime_error_delete(error);
+    } else if (trap != NULL) {
+        wasm_byte_vec_t trap_message;
+        wasm_trap_message(trap, &trap_message);
+        fprintf(stderr, "%.*s\n", (int) trap_message.size, trap_message.data);
+        wasm_byte_vec_delete(&trap_message);
+        wasm_trap_delete(trap);
+    }
+    exit(1);
+}
+
+typedef wasm_trap_t *(wasm_wrap)(void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t);
+
 const wasm_functype_t *funcType(Signature &signature);
+
+wasm_wrap *link_import(String name);
+
+extern "C" int64_t run_wasm(unsigned char *data, int size) {
+    if (!initialized) init_wasmtime();
+
+    wasmtime_module_t *module0 = NULL;
+    wasmtime_error_t *error = wasmtime_module_new(engine, data, size, &module0);
+    if (error != NULL) exit_with_error("Failed to compile module", error, NULL);
+
+    Module &meta = read_wasm(data, size);
+    int import_count = meta.import_count;
+    wasmtime_extern_t imports[import_count];
+    int i = 0;
+
+    for (const String &import_name: meta.import_names) {
+        if (import_name.empty()) break;
+        wasmtime_func_t func;
+        const wasm_functype_t *type0 = funcType(meta.functions[import_name].signature);
+        wasmtime_func_new(context, type0, link_import(import_name), NULL, NULL, &func);
+        wasmtime_extern_t import = { .kind = WASMTIME_EXTERN_FUNC, .of.func = func };
+        imports[i++] = import;
+//        wasm_functype_delete(type0);
+    }
+
+    wasmtime_instance_t instance;
+    wasm_trap_t *trap = NULL;
+    error = wasmtime_instance_new(context, module0, imports, import_count, &instance, &trap);
+    wasmtime_module_delete(module0);
+    if (error != NULL || trap != NULL) exit_with_error("Failed to instantiate module", error, trap);
+
+    wasmtime_extern_t run;
+    bool ok = wasmtime_instance_export_get(context, &instance, "wasp_main", strlen("wasp_main"), &run);
+    if (!ok || run.kind != WASMTIME_EXTERN_FUNC) {
+        ok = wasmtime_instance_export_get(context, &instance, "main", strlen("main"), &run);
+    }
+    if (!ok || run.kind != WASMTIME_EXTERN_FUNC) {
+        exit_with_error("Failed to retrieve function export wasp_main", NULL, NULL);
+    }
+
+    wasmtime_extern_t memory_export;
+    if (wasmtime_instance_export_get(context, &instance, "memory", strlen("memory"), &memory_export)) {
+        if (memory_export.kind == WASMTIME_EXTERN_MEMORY) {
+            wasmtime_memory_t memory0 = memory_export.of.memory;
+            wasm_memory = wasmtime_memory_data(context, &memory0);
+        }
+    }
+
+    wasmtime_val_t results;
+    error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, 1, &trap);
+    if (error != NULL || trap != NULL) exit_with_error("Failed to call function", error, trap);
+
+    int64_t result = results.of.i64;
+    return result;
+}
+
+
+
+static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
+
+
 
 // ⚠️  'fun' needs to be a Locally accessible symbol (via include, ...)
 #define wrap_any(fun) static wasm_trap_t *wrap_##fun( void *env,\
@@ -36,7 +156,6 @@ wasmtime_val_t *results,\
 size_t nresults\
 )
 
-typedef wasm_trap_t *(wasm_wrap)(void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t);
 //typedef wasm_trap_t *(wasm_wrap)(void *env, wasmtime_caller_t *caller, const wasmtime_val_t *args, size_t nargs, wasmtime_val_t *results, size_t nresults);
 
 
@@ -297,193 +416,24 @@ wasm_wrap *link_import(String name) {
     return 0;
 }
 
-static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap) {
-//	error(message);
-    fprintf(stderr, "error: %s\n", message);
-    wasm_byte_vec_t error_message;
-    if (error != NULL) {
-        wasmtime_error_message(error, &error_message);
-        wasmtime_error_delete(error);
-    } else {
-        wasm_trap_message(trap, &error_message);
-        wasm_trap_delete(trap);
-    }
-    fprintf(stderr, "%.*s\n", (int) error_message.size, error_message.data);
-//    wasm_byte_vec_delete(&error_message);
-    // let Wasp handle this :
-    throw Error((char *) message);// todo copy sprintf error_message backtrace;
-}
+//static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap) {
+////	error(message);
+//    fprintf(stderr, "error: %s\n", message);
+//    wasm_byte_vec_t error_message;
+//    if (error != NULL) {
+//        wasmtime_error_message(error, &error_message);
+//        wasmtime_error_delete(error);
+//    } else {
+//        wasm_trap_message(trap, &error_message);
+//        wasm_trap_delete(trap);
+//    }
+//    fprintf(stderr, "%.*s\n", (int) error_message.size, error_message.data);
+////    wasm_byte_vec_delete(&error_message);
+//    // let Wasp handle this :
+//    throw Error((char *) message);// todo copy sprintf error_message backtrace;
+//}
 
 bool done = 0;
-wasm_engine_t *engine;
-wasmtime_store_t *store;
-wasmtime_context_t *context;
-
-void init_wasmtime() {
-    engine = wasm_engine_new();
-    assert(engine != NULL);
-    store = wasmtime_store_new(engine, NULL, NULL);
-    assert(store != NULL);
-//	wasmtime_context_get_data(context);// get some_meta_data
-    context = wasmtime_store_context(store);
-    done = 1;// can we really reuse these or does it result in errors like:
-//	thread '<unnamed>' panicked at 'object used with the wrong store', /opt/wasm/wasmtime/crates/wasmtime/src/func.rs:682:9
-//	fatal runtime error: failed to initiate panic, error 5
-//  Process finished with exit code 134 (interrupted by signal 6: SIGABRT)
-
-// done = 0 doesn't help:
-//	UndefinedBehaviorSanitizer:DEADLYSIGNAL
-//	==59468==ERROR: UndefinedBehaviorSanitizer: BUS on unknown address (pc 0x00019e9b3b6c bp 0x00016f6f7940 sp 0x00016f6f7930 T1023049)
-//	==59468==The signal is caused by a UNKNOWN memory access.
-
-//	void free_wasmtime(){
-    //	wasmtime_store_delete(store);
-    //	wasm_engine_delete(engine);
-}
-
-void add_wasmtime_memory() {
-    wasm_limits_t limits = {
-            .min = 0,//100, SIGBUS / EXC_BAD_ACCESS if too small / out of bounds access (naturally)
-//			.max = 0x7FFFFFFF,//  assertion failed: … <= absolute_max
-    };
-    const wasm_memorytype_t *memtype = wasm_memorytype_new(&limits);
-    wasmtime_memory_t wasmtimeMemory{.store_id=1, .index=0}; // filled later:
-    auto ok = wasmtime_memory_new(context, memtype, &wasmtimeMemory);
-    if (!ok)error("wasmtime_memory_new failed");
-    uint8_t *memory_data = wasmtime_memory_data(context, &wasmtimeMemory);
-    wasm_memory = memory_data;// todo: keep old?
-}
-
-
-extern "C" int64 run_wasm(unsigned char *data, int size) {
-    if (!done)
-        init_wasmtime();
-    wasmtime_error_t *error;
-    wasmtime_module_t *modul = NULL;
-
-    error = wasmtime_module_new(engine, (uint8_t *) data, size, &modul);
-    if (error != NULL)exit_with_error("failed to compile module", error, NULL);
-
-    wasm_trap_t *trap = NULL;// (wasm_trap_t *) malloc(10000); //wasm_trap_new((wasm_store_t *)store, NULL); //"Error?"
-    wasmtime_instance_t instance;
-
-    // UNCACHED because each main.wasm is different
-    Module &meta = read_wasm(data, size);// wasmtime module* sucks so we read it ourselves!
-    int importCount = meta.import_count;
-    wasmtime_extern_t imports[1 + importCount * 2];
-    int i = 0;
-    // LINK IMPORTS!
-    for (String &import_name: meta.import_names) {
-        if (import_name.empty())break;
-        if (import_name == "memory")continue;// todo filter before
-//        printf("import: %s\n", import_name.data);
-        wasmtime_extern_t import;
-        wasmtime_func_t link;
-//		Signature &signature = meta.signatures[import_name];
-        if (!meta.functions.has(import_name))
-            error("impossible");
-        Function &function = meta.functions[import_name];
-        function.name = import_name;
-        Signature &signature = function.signature;
-        if (import_name == "proc_exit") {
-            signature.return_types.clear();
-            signature.wasm_return_type = none;
-        }
-//        function.name = signature.debug_name = import_name;
-        const wasm_functype_t *type = funcType(signature);
-        wasm_wrap (*callback) = link_import(import_name);
-        wasmtime_func_new(context, type, callback, NULL, NULL, &link);
-        import.kind = WASMTIME_EXTERN_FUNC;
-        import.of.func = link;
-        imports[i++] = import;
-    }
-
-    error = wasmtime_instance_new(context, modul, imports, importCount, &instance, &trap);
-    if (error != NULL || trap != NULL) exit_with_error("failed to instantiate", error, trap);
-
-    wasmtime_extern_t run;
-    wasmtime_extern_t memory_export;
-    // WDYM?? 	thread '<unnamed>' panicked at 'index out of bounds: the len is 447 but the index is 4294967295'
-    // wasmtime::instance::Instance::_get_export::h5e31a076a79e322b
-    bool ok = wasmtime_instance_export_get(context, &instance, "wasp_main", 4, &run);
-//	assert(ok);
-//	assert(run.kind == WASMTIME_EXTERN_FUNC);
-    ok = wasmtime_instance_export_get(context, &instance, "memory", 6, &memory_export);
-//	assert(ok);
-//	assert(memory_export.kind == WASMTIME_EXTERN_MEMORY);
-    if (ok) {
-        wasmtime_memory_t wasmtimeMemory = memory_export.of.memory;
-        uint8_t *memory_data = wasmtime_memory_data(context, &wasmtimeMemory);
-        if (memory_data)
-            wasm_memory = memory_data;
-        else
-            warn("wasm module exports no memory");
-    } else
-        warn("wasm module exports no memory");
-
-//	else error("wasmtime_instance_export_get failed");
-
-
-//	wasmtime_memory_t memory(store_id:0/*store.id*/, 0);
-//wasmtime_store
-
-//	wasm_extern_vec_t exports;
-//	const wasm_instance_t* instance2= reinterpret_cast<const wasm_instance_t *>(&instance);
-//	wasm_instance_exports(instance2, &exports);
-//	size_t ix = 0;
-//	wasm_memory_t* memory = get_export_memory(&exports, ix++);// wrong api
-
-//	check(wasm_memory_size(memory) == 2);
-//	check(wasm_memory_data_size(memory) == 0x20000);
-//	check(wasm_memory_data(memory)[0] == 0);
-//	wasm_memory_data(memory);
-//	byte_t* memory_data=wasm_memory_data((wasm_memory_t*)&memory);
-
-
-
-
-    wasmtime_val_t results;
-    wasmtime_func_t wasmtimeFunc = run.of.func;
-
-//    Undefined symbols for architecture arm64:
-//  "_wasmtime_error_delete", referenced from:
-    // todo wasmtime 4.0 api?
-
-//	int nresults = wasm_func_result_arity(wasmFunc); // needs workaround in wasmtime
-//	WDYM??? thread '<unnamed>' panicked at 'object used with the wrong store', /opt/wasm/wasmtime/crates/wasmtime/src/func.rs:682:9
-//    auto functypeResults = wasm_functype_results(funcType); // workaround stopped working
-//    int nresults = functypeResults->size;
-//    if (nresults > 1)
-//        print("Using multi-value!");
-//	else
-//		print("Using single-value (smart pointer)");
-//	wasm_func_t* wasmFunc = (wasm_func_t*)&wasmtimeFunc;
-//	nargs=wasm_func_param_arity if nargs>0 args =[…]
-    int nresults = 1;// todo how, wasmtime?
-    error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, nresults, &trap);
-    // object used with the wrong store WDYM??
-    if (error != NULL || trap != NULL)exit_with_error("failed to call function", error, trap);
-    int64_t result = results.of.i64;
-    if (results.kind == WASMTIME_I32)
-        result = results.of.i32;
-    result = smartNode(result)->toSmartPointer();// COPY potential RESULT DATA from wasm memory to HOST!!
-
-//    printf("%lld", result);
-    if (nresults > 1) {
-        wasmtime_val_t results2 = *(&results + 1);
-        auto type = results2.of.i32;
-//      wasm multi-value ABI swaps stack order, so no need to swap here
-//		wasmtime_val_t results2 = *(&results + 1);
-//		result = results2.of.i64;
-//		auto type = results.of.i32;
-        if (type >= undefined and type <= last_kind) {
-//            if(tracing)
-            printf("TYPE: %s\n", typeName(type));
-        } else printf("Unknown type 0x%x\n", (unsigned int) type);
-    }
-    wasmtime_module_delete(modul);
-    return result;
-}
 
 #define own
 

@@ -570,7 +570,8 @@ void test_c_numbers() {
 	check((int) -1 == (unsigned int) 0xFFFFFFFF)
 }
 
-void testArraySize() {
+void testArraySize() { // todo!
+    // There should be one-- and preferably only one --obvious way to do it.
 	// requires struct lookup and aliases
 	assert_emit("pixel=[1 2 4];#pixel", 3);
 //  assert_emit("pixel=[1 2 4];pixel#", 3);
@@ -590,7 +591,7 @@ void testArraySize() {
 }
 
 
-void testArrayOperations() {
+void testArrayOperations() { // todo!
 	testArraySize();
 	// todo 'do' notation to modify versus return different list!
 	assert_emit("pixel=[1 2 3];do add 4 to pixel; pixel", Node(1, 2, 3, 4, 0));
@@ -601,7 +602,7 @@ void testArrayOperations() {
 	assert_emit("pixel=[1 2 3];pixel + [4]", Node(1, 2, 3, 4, 0));
 	assert_emit("pixel=[1 2 3];pixel + 4", Node(1, 2, 3, 4, 0));
 	assert_emit("pixel=[1 2 3];pixel<<4", Node(1, 2, 3, 4, 0));
-	assert_emit("pixel=[1 2 3];4>>pixel", Node(1, 2, 3, 4, 0));
+    assert_emit("pixel=[1 2 3];4>>pixel", Node(4, 1, 2, 3, 0));
 	assert_emit("pixel=[1 2 3];add(pixel, 4)", Node(1, 2, 3, 4, 0));// julia style
 	assert_emit("pixel=[1 2 3];add 4 to pixel", Node(1, 2, 3, 4, 0));
 	assert_emit("pixel=[1 2 3];pixel.add 4", Node(1, 2, 3, 4, 0));

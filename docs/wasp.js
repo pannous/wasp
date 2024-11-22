@@ -137,7 +137,23 @@ function matrix_multiply(a, b, k = 1) {
   return result
 }
 
+
+const jsStringPolyfill = {
+  "charCodeAt": (s, i) => s.charCodeAt(i),
+  "compare": (s1, s2) => {
+    if (s1 < s2) return -1;
+    if (s1 > s2) return 1;
+    return 0;
+  },
+  "concat": (s1, s2) => s1 + s2,
+  "equals": (s1, s2) => s1 === s2,
+  "fromCharCode": (i) => String.fromCharCode(i),
+  "length": (s) => s.length,
+  "substring": (s, a, b) => s.substring(a, b),
+};
+
 let imports = {
+  "wasm:js-string": jsStringPolyfill, // ignored when provided as WebAssembly.compile(bytes, { builtins: ['js-string'] });
   vector: { // todo: use wasm vector proposal when available, using webgpu-blas as a shim
     dot: (a, b) => {
       matrix_multiply(a, b, 1)
@@ -642,7 +658,7 @@ async function link_runtime() {
   const memory = new WebAssembly.Memory({initial: 16384, maximum: 65536});
   const table = new WebAssembly.Table({initial: 2, element: "anyfunc"});
   try {
-    runtime_module = await WebAssembly.compile(runtime_bytes)
+    runtime_module = await WebAssembly.compile(runtime_bytes, {builtins: ['js-string']}) // todo: only once for all wasm apps?
     // runtime_imports= {env: {memory: memory, table: table}}
     runtime_imports = imports
     let runtime_instance = await WebAssembly.instantiate(runtime_module, runtime_imports) // , memory
@@ -899,7 +915,7 @@ async function run_wasm(buf_pointer, buf_size) {
     // wasm_to_wat(wasm_buffer)
     // download_file(wasm_buffer, "emit.wasm", "wasm")
 
-    app_module = await WebAssembly.compile(wasm_buffer)
+    app_module = await WebAssembly.compile(wasm_buffer, {builtins: ['js-string']})
     if (WebAssembly.Module.imports(app_module).length > 0) {
       needs_runtime = true // todo WASI or Wasp runtime?
       print(app_module) // visible in browser console, not in terminal
