@@ -314,25 +314,25 @@ Node eval(String code) {
 Signature &groupFunctionArgs(Function &function, Node &params) {
     //			left = analyze(left, name) NO, we don't want args to become variables!
     List<Arg> args;
-    Node nextType = DoubleType;
+    Node *nextType = &DoubleType;
     if (params.length == 0) {
         params = groupTypes(params, function);
         if (params.name != function.name)
-            args.add({function.name, params.name, params.type ? params.type : &nextType});
+            args.add({function.name, params.name, params.type ? params.type : nextType});
     }
     for (Node &arg: params) {
         if (arg.kind == groups) {
             arg = groupTypes(arg, function);
-            args.add({function.name, arg.name, arg.type ? arg.type : mapType(&nextType), params});
+            args.add({function.name, arg.name, arg.type ? arg.type : mapType(nextType), params});
             continue;
         }
         if (isType(arg)) {
             if (args.size() > 0 and args.last().type != unknown_type)
                 args.last().type = types[arg.name];
-            else nextType = arg;
+            else nextType = &arg;
         } else {
             if (arg.name != function.name)
-                args.add({function.name, arg.name, arg.type ? arg.type : mapType(&nextType), params});
+                args.add({function.name, arg.name, arg.type ? arg.type : mapType(nextType), params});
         }
     }
 
@@ -1109,6 +1109,8 @@ Node &groupFunctionDeclaration(Node &expression, Function &context) {
     auto left = expression.to(op);
     auto rest = expression.from(op);
     auto fun = left.first();
+    if (fun.name == ":=") // todo hack
+        fun = left;
     return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
 }
 

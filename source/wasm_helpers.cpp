@@ -70,11 +70,9 @@ int isalnum0(int c) {
 [[noreturn]]
 #endif
 void error1(chars message, chars file, int line) {
-
 #ifdef _Backtrace_
 	//	Backtrace(2);// later, in raise
 #endif
-
 	printf("%s", message);
 #if WEBAPP
 #endif

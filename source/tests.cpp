@@ -3418,6 +3418,7 @@ void pleaseFix() {
 void testCurrent() {
 //    testInclude();
 //    check_is("τ≈6.2831853",true);
+    assert_emit("square := it*it; square 3", 9)
 //    assert_emit("τ≈6.2831853",1);
 //    testExceptions();
 //    assert_emit("√ π ²", pi);
