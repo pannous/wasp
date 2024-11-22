@@ -71,9 +71,9 @@ if (NOT WASM)
         # TO EXECUTE wasm provide _run_wasm :
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
-        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
-        #        SET(WASMEDGE 0) # no wit / component model as of 2024-10
-        # SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
+        #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        SET(WASMEDGE 0) # no wit / component model as of 2024-10
+        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #        set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
@@ -688,17 +688,20 @@ elseif (WASMTIME)
     ADD_DEFINITIONS(-DWASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
+    #    BUILD_SHARED_LIBS is provided as a define if you would like to build a shared library instead.
+    #    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Frameworks/wasmtime/crates/c-api ${CMAKE_CURRENT_BINARY_DIR}/wasmtime)
+    target_include_directories(wasp PUBLIC wasmtime)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/wasm-c-api/include/)
-    if (X86_64)
-        target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-x86_64-macos-c-api/include/)
-        LINK_DIRECTORIES(Frameworks/wasmtime-dev-x86_64-macos-c-api/lib/)
+    if (LINUX)
+        target_link_libraries(wasp PUBLIC -ldl -lpthread -lm)
+    elseif (WINDOWS)
+        target_link_libraries(wasp PUBLIC ws2_32.lib advapi32.lib userenv.lib ntdll.lib shell32.lib ole32.lib bcrypt.lib)
     endif ()
-    #    target_include_directories(wasp PUBLIC Frameworks/wasmtime-dev-aarch64-macos-c-api/include)
-    #    LINK_DIRECTORIES(Frameworks/wasmtime-dev-aarch64-macos-c-api/lib)
-    target_link_libraries(wasp PRIVATE wasm)
-    target_link_libraries(wasp PRIVATE wasmtime)
+    target_link_libraries(wasp PUBLIC -lcurl)
+    #    target_link_libraries(wasp PRIVATE wasm)
+    target_link_libraries(wasp PUBLIC wasmtime)
 elseif (WEBAPP)
     message(WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)

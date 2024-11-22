@@ -280,6 +280,12 @@ void consumeNameSection(Code &data) {
             case data_names:
                 module->data_names = payload;
                 break;
+            case type_names: // gc!
+                module->type_names = payload;
+                break;
+            case field_names: //= 10, // GC struct.field
+                module->field_names = payload;
+                break;
             default:
                 error("INVALID NAME TYPE "s + type);
         }
