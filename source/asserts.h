@@ -85,7 +85,7 @@ static List<String> done;
 #elif (MY_WASM or WASM) and not EMSCRIPTEN
 #define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
 #else
-#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();exit(-1);}
 #endif
 //#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
 #define  check_emit assert_emit

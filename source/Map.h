@@ -120,7 +120,8 @@ public: // todo careful Map<char*,…> eq
 
     int add(S *key, T *value) {
         int found = position(key);
-        if (found >= 0) error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+        if (found >= 0)
+            error("DUPLICATE KEY: "s + key + " at " + found); // or use insert_or_assign
         if (keys == 0)
             error("how?");
         keys[_size] = key;

@@ -3416,9 +3416,15 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    assert_emit("√3^0", 1.0);
+    assert_emit("√3^0", 1);
+
 //    testInclude();
 //    check_is("τ≈6.2831853",true);
-    assert_emit("square := it*it; square 3", 9)
+//    assert_emit("square := it*it; square 3", 9);
+//    assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
+//    assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
+//    exit(42);
 //    assert_emit("τ≈6.2831853",1);
 //    testExceptions();
 //    assert_emit("√ π ²", pi);
