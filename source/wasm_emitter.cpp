@@ -1759,7 +1759,7 @@ Code emitOperator(Node &node, Function &context) {
         else if (last_type == float32) code.add(emitCall(*new Node("powf"), context));
         else if (last_type == float64) code.add(emitCall(*new Node("pow"), context));
         else if (last_type == int64s) code.add(emitCall(*new Node("pow_long"), context));
-        else code.add(emitCall(*new Node("powi"), context));
+        else code.add(emitCall(*new Node("pow_long"), context));
 //#endif
 //        else todo("^ power with type "s + typeName(last_type));
 //         'powi' is a builtin with type 'long double (long double, long double)'

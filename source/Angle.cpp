@@ -828,8 +828,8 @@ void updateLocal(Function &context, String name, Type type) {
         } else {
             if (!compatibleTypes(oldType, type)) {
 //                warn
-                error("local "s + name + " in context %s already known "s % context.name + " with type " +
-                     typeName(oldType) + ", ignoring new type " + type_name);
+                trace("local "s + name + " in context %s already known "s % context.name + " with type " +
+                      typeName(oldType) + ", ignoring new type " + type_name);
             }
         }
     }
@@ -1724,7 +1724,8 @@ bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: librari
 // todo: return the import, not the library function
 Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
-    if (functions.has(name))return use_required(&functions[name]);
+    if (functions.has(name))
+        return use_required(&functions[name]);// prevents read_wasm("lib")
 #if WASM
     if (loadRuntime().functions.has(name)){
         return use_required(&loadRuntime().functions[name]);
@@ -1794,6 +1795,7 @@ Function *use_required(Function *function) {
         addLibraryFunctionAsImport(variant);
     }
     for (String &alias: aliases(function->name)) {
+        if (alias == function->name)continue;
         auto ali = findLibraryFunction(alias, false);
         if (ali)addLibraryFunctionAsImport(*ali);
     }
@@ -1813,6 +1815,8 @@ List<String> aliases(String name) {
 #endif
 //	switch (name) // statement requires expression of integer type
     if (name == "pow") {
+        found.add("pow");
+        found.add("powf");
         found.add("powi");
         found.add("pow_long");
     }
@@ -2089,9 +2093,11 @@ void preRegisterFunctions() {
     functions["addScript"].import().signature.add(charp, "js");
 
 //#if WASM // no funclets in browser (yet?)
-    functions["pow"].import();//.builtin();
-    functions["pow"].signature.add(float64).add(float64).returns(float64);
+//    functions["pow"].import();//.builtin(); PREVENTS reading from pow.wasm file!
+//    functions["pow"].signature.add(float64).add(float64).returns(float64);
 
+    functions["print"].import();
+    functions["print"].signature.add(node).returns(voids);
 
     functions["getElementById"].import();//.builtin();
     functions["getElementById"].signature.add(charp).returns(externref /*!!*/);
