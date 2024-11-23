@@ -1178,7 +1178,7 @@ int Node::lastIndex(Node *node, int start) {
 	return -1;// throw "not found"
 }
 
-// inclusive from…to
+// inclusive from…to todo make to exclusive like py?
 // ⚠️ DANGER! any references pointing to children become INVALID!
 //[[modifying]]
 void Node::replace(int from, int to, Node *node) {

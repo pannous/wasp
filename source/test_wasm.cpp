@@ -379,8 +379,8 @@ void testMathOperatorsRuntime() {
     assert_emit("3^2", 9);
     assert_emit("3^1", 3);
     assert_emit("√3^2", 3);
-//    assert_emit("√3^0", 1.0);
-    assert_emit("√3^0", 0.971); // very rough power approximation
+    assert_emit("√3^0", 1.0);
+//    assert_emit("√3^0", 0.971); // very rough power approximation from where?
 
 //    assert_emit("√3^0", 1);
     assert_emit(("42^2"), 1764);// NO SUCH PRIMITIVE

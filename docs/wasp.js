@@ -7,8 +7,8 @@
 * */
 let Wasp = {}
 // let WASP_COMPILER = 'wasp.wasm' // 200-400 kb without tests …
-// let WASP_COMPILER = 'wasp-hosted.wasm' // 4MB with tests and shortcuts
-let WASP_COMPILER = 'assets/wasp-hosted.wasm' // 4MB with tests and shortcuts
+let WASP_COMPILER = 'wasp-hosted.wasm' // 4MB with tests and shortcuts
+// let WASP_COMPILER = 'assets/wasp-hosted.wasm' // 4MB with tests and shortcuts
 // let WASP_COMPILER = 'assets/wasp-debug.wasm' // 4MB with tests and shortcuts
 // let WASP_RUNTIME = 'wasp-runtime.wasm'
 let lib_folder_url = "https://pannous.github.io/wasp/lib/"

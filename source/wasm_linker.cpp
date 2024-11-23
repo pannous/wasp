@@ -1151,10 +1151,10 @@ void Linker::ResolveSymbols() {
                 Index func_index = func_map.FindIndex(name);
                 if (func_index == kInvalidIndex) {
                     if (not contains(wasi_function_list, name.data)) {
-//                        warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
-                        warn("unresolved import: %s  ( setting inactive due to wasi ) "s % name);
-                        import.active = false;
-                        binary->active_function_imports--;// never used!?
+                        warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
+//                        warn("unresolved import: %s  ( setting inactive due to wasi ) "s % name);
+//                        import.active = false;
+//                        binary->active_function_imports--;// never used!?
                     }
                     continue;
                 }

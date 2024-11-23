@@ -29,7 +29,6 @@
   <!--    <script src="https://codemirror.net/5/addon/mode/simple.js"></script>-->
   <script src='codemirror-wasp-mode.js'></script> <!--    INCLUDE wast syntax!! -->
   <style>
-      /* Make the CodeMirror container resizable */
       .CodeMirror {
           resize: both; /* This enables resizing */
           overflow: auto;
@@ -80,7 +79,7 @@
   <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾 source.wasp</button>
   <button onclick="download_file(wasm_buffer, 'compiled.wasm', 'wasm')" title="download wasm">💾 compiled.wasm</button>
   <br/>
-  <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="8"></textarea>
+  <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="14"></textarea>
 
 
   <script>
