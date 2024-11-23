@@ -116,14 +116,23 @@ double powd(double x, double y) {
 
 extern "C" void put_chars(chars c, size_t len) {
 #if MY_WASM // and …
-	printf("%s", c); // console.log adds newline
+    printf("%s", c); // console.log adds newline
 #else
-	printf("%s\n", c);
+    if (len and c[len] and len > 0 and len < 1000) { // not null terminated! E.g. in shared String
+        char copy[1000];
+        strcpy2(copy, c);
+        char x = c[len];// bad access!
+        copy[len] = 0;
+        printf("%s\n", copy);
+    } else {
+        printf("%s\n", c);
+    }
 #endif
 #if WEBAPP
-	console_log(c); // log to browser console AND to app stdout
+    console_log(c); // log to browser console AND to app stdout
 #endif
 }
+
 
 #if not WASM
 
@@ -135,6 +144,7 @@ void proc_exit(int x) {
     exit(x);
 #endif
 }
+
 #endif
 
 

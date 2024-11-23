@@ -62,13 +62,11 @@ Code &signedLEB128(int64 value);
 
 class Code {
 public:
-
-
     int header = array_header_32;// todo: code_header_32 if extra fields are needed beyond standard
     int kind = byte_i8;
     int length = 0;
     bytes data = 0;
-    int64 start = 0;// internal reader pointer
+    int start = 0;// internal reader pointer
     bool encoded = false;// first byte = size of vector
     bool needs_relocate = true; // unless specified
 	mutable bool shared = true; // can be changed in const clone()

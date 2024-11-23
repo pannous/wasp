@@ -3534,6 +3534,8 @@ void add_imports_and_builtins() {
             function.call_index = ++last_index;
             call_indices[sig] = last_index;
             info("using import "s + sig);
+            trace(function.name);
+            trace(function.signature.serialize());
             import_count++;
         }
     }

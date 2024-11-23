@@ -769,9 +769,9 @@ void print(Signature& signature) {
 }
     void print(String s) {
         put_chars(s.data, s.length);
-#if not WASM
-        newline();
-#endif
+//#if not WASM
+//        newline();
+//#endif
     }
 
     void println(String s) {

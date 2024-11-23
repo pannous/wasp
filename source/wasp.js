@@ -11,7 +11,8 @@ let WASP_COMPILER = 'wasp-hosted.wasm' // 4MB with tests and shortcuts
 // let WASP_COMPILER = 'assets/wasp-hosted.wasm' // 4MB with tests and shortcuts
 // let WASP_COMPILER = 'assets/wasp-debug.wasm' // 4MB with tests and shortcuts
 // let WASP_RUNTIME = 'wasp-runtime.wasm'
-let lib_folder_url = "https://pannous.github.io/wasp/lib/"
+// let lib_folder_url = "https://pannous.github.io/wasp/lib/"
+let lib_folder_url = "assets/lib/"
 
 let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false;
@@ -33,16 +34,27 @@ let string_header_32 = 0x10000000
 let array_header_32 = 0x40000000
 let node_header_32 = 0x80000000
 
+function binary_hack(binary_as_text) {
+  let binary = new Uint8Array(binary_as_text.length);
+  for (let i = 0; i < binary_as_text.length; i++) {
+    binary[i] = binary_as_text.charCodeAt(i);
+  }
+  return binary
+}
+
 function download(url, binary = false) {
   if (typeof url != "string") url = chars(url)
   // console.log("download", url)
   let xhr = new XMLHttpRequest();
+  // if (binary) xhr.responseType = 'arraybuffer'; // not allowed for sync requests
+  if (binary) xhr.overrideMimeType('text/plain; charset=x-user-defined'); // Prevent UTF-8 decoding
   xhr.open('GET', url, false);
   xhr.send();
   if (xhr.status === 200)
-    return binary ? bytes(new Uint8Array(xhr.response)) : chars(xhr.responseText.trim()) // to be used in WASM as string! use fetch() in JS
+    return binary ? bytes(binary_hack(xhr.response)) : chars(xhr.responseText.trim()) // to be used in WASM as string! use fetch() in JS
   else
-    return null;
+    throw new Error(`Failed to download: ${xhr.status} ${xhr.statusText}`);
+  return null;
 }
 
 function format(object) {
@@ -86,6 +98,7 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
 
 function getWasmFunclet(funclet_name, size_p) {
   [pointer, bytes_size] =  download(lib_folder_url + chars(funclet_name)+".wasm", binary = true)
+  console.log("getWasmFunclet", chars(funclet_name), pointer, bytes_size)
   set_int(size_p, bytes_size)
   return pointer
 }
@@ -246,7 +259,11 @@ let imports = {
     },
 
     exit: terminate, // should be wasi.proc_exit!
-    pow: (x, y) => x ** y,
+    // pow: (x, y) => x ** y, // via pow.wasm funclet => never called here
+    pow: (x, y) => {
+      console.log("pow", x, y);
+      return x ** y
+    },
     print: x => console.log(string(x)),
     puti: x => console.log(x), // allows debugging of ints without format String allocation!
     js_demangle: x => x,
@@ -352,10 +369,11 @@ function load_chars(pointer, length = -1, format = 'utf8', module_memory) {
 
 function bytes(data) {
   if (!data) return 0;// MAKE SURE!
-  buffer = new Uint8Array(memory.buffer, HEAP_END, data.length);
-  buffer.set(data, 0);
+  buffer = new Uint8Array(memory.buffer, HEAP_END, data.length); // wasm linear memory
+  buffer.set(data, 0); // copy data to wasm linear memory
   let c = HEAP_END
   HEAP_END += data.length;
+  // console.log("bytes", data.length, HEAP_END, buffer)
   return [c, data.length]
 }
 

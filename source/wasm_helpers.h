@@ -80,6 +80,7 @@ void memcpy1(bytes dest, bytes source, int i);
 // if MY_WASI make sure to IMPLEMENT THEM ALL via fd_write !!
 // todo: alias all to print
 extern "C" void put_chars(chars c, size_t len = 0);
+//extern "C" void put_chars(char* c, size_t len = 0);
 
 class String;
 

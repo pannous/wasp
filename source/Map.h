@@ -194,7 +194,7 @@ public: // todo careful Map<char*,…> eq
 //            trace("Key known");
             return values[position1];
         }
-        if (leave_blank) { // leaves deep fields uninitialized.
+        if (leave_blank /*false*/) { // leaves deep fields uninitialized.
             // Problematic for functions["exit"].signature.return_types …
             trace("leave_blank");
             keys[_size] = key;
@@ -208,9 +208,8 @@ public: // todo careful Map<char*,…> eq
         } else { // use default constructor
             keys[_size] = key;
             values[_size] = T();
-            _size++;
 //            insert_or_assign(key, T()); // creates intermediate stack value, or is c++ smart?
-            return last();
+            return values[_size++];
         }
         return last();
     }

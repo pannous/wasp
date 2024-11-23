@@ -4,6 +4,11 @@
 #include "Code.h"
 #include "wasm_reader.h"
 
+#if MY_WASM
+static bool hosted = true; // special functions for wasm
+#else
+static bool hosted = false;
+#endif
 
 static float function_precedence = 1000;
 

@@ -10,7 +10,8 @@
 
 #define POLYMORPH_function_index_marker -2
 #if MY_WASM and not WEBAPP
-bool build_module = false; // link via js
+//bool build_module = false; // link via js
+bool build_module = true; // for funclets … and wasm runtime merge?
 #else
 bool build_module = true;
 #endif
@@ -109,8 +110,8 @@ Code vec(Code &data, bool consume = true) {
 String &name(Code &wstring) {// Shared string view, so don't worry about trailing extra chars
     int64 len = unsignedLEB128(wstring);
     auto nam = (char *) wstring.data + wstring.start;
-//    while(nam[0]<=33)nam++;// WTH! hiding strange bug where there is a byte behind unsignedLEB128. NOT FULLY consumed
     String *string = new String(nam, len, true);
+//    String *string = new String(nam, len, false);
     wstring.start += len;// advance internally
 //	if (len > 40)put(string);
     return *string;
@@ -123,20 +124,29 @@ void parseFunctionNames(Code &payload) {
 //	put(module->functionIndices);// what we got so far?
     int function_count = unsignedLEB128(payload);
     int call_index = -1;
+    printf("function count: %d\n", function_count);
+    Map<String, Function> &functions = module->functions;
     for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
         call_index = unsignedLEB128(payload);
         int code_index = call_index - module->import_count;
         if (i != call_index)trace("i≠index => some functions not named (or other things named)");
         if (call_index < 0 or call_index > 100000)
             error("broken index"s + call_index);
-        String func = name(payload).clone();// needs to be 0-terminated now
-        Function &function = module->functions[func];
-        if (function.code_index >= 0 and function.code_index != code_index) {
-            trace("already has index: "s + func + " " + function.code_index + "≠" + code_index);
+        String &name1 = name(payload);
+        String func = name1.clone();// needs to be 0-terminated now
+        if (debug_reader)print("ƒ%d %s\n"s % call_index % func);
+        bool old = functions.contains(func);
+        if (old) {
+            trace("function already exists: "s + func);
+            Function &function = functions[func];
+        } else {
+            Function &function = *new Function();
+            if (function.code_index >= 0 and function.code_index != code_index)
+                trace("already has index: "s + func + " " + function.code_index + "≠" + code_index);
+            function.code_index = code_index;
+            function.name = func;
+            functions.add(func, function);
         }
-        function.code_index = code_index;
-        function.name = func;
-        if (debug_reader)print("ƒ%d %s\n"s % call_index % func.data);
     }
 //	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  export / import names != internal names
 //	for (int i = function_count; i < module->total_func_count; i++)
@@ -258,18 +268,22 @@ void consumeGlobalSection() {
 
 void consumeNameSection(Code &data) {
     if (debug_reader)print("names: …\n");
-    module->name_data = data.clone();
+    module->name_data = data;//.clone();
+//    module->name_data = data.clone();
     while (data.start < data.length) {
         int type = unsignedLEB128(data);
         Code payload = vec(data);// todo test!
+        print("name type: %d\n"s % type);
+        printf("length: %d\n", payload.length);
         switch (type) {
-            case module_name: {
+            case module_name: {// 0
                 module->name = name(payload);// wrapped in vector why?
             }
                 break;
-            case function_names:
+            case function_names:// 1
                 module->function_names = payload;
-                parseFunctionNames(payload.clone());
+                parseFunctionNames(payload);
+//                parseFunctionNames(payload.clone());
                 break;
             case local_names:
                 module->local_names = payload;
@@ -334,6 +348,9 @@ void consumeCustomSection() {
     Code customSectionDatas = vec();
     String type = name(customSectionDatas);
     Code payload = customSectionDatas.rest();
+    trace("custom section:");
+    trace(type);
+//    trace("custom section length: %d\n", payload.length);
     if (type == "names" or type == "name") {
         consumeNameSection(payload);
     } else if (type == "target_features")
@@ -676,6 +693,8 @@ Module &read_wasm(String file) {
     wasm.code.name = name;
     wasm.name = name;
     fclose(stream);
+    print("module->functions[pow]");
+    print(module->functions["pow"]);
     module_cache.add(name.hash(), &wasm);
     return wasm;
 #endif
