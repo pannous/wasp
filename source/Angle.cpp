@@ -1468,6 +1468,7 @@ Type preEvaluateType(Node &node, Function &context) {
         return mapType(node.name);
     }
     if (node.kind == operators) {
+        if(node.name == "√")return float64;// todo generalize
         Node &lhs = node[0];
         auto lhs_type = preEvaluateType(lhs, context);
         if (node.length == 1)
@@ -1732,22 +1733,28 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     }
 #endif
     if (contains(funclet_list, name)) {
-#if WASM
+
+#if MY_WASM
+        size_t byte_count = 0;
+        bytes funclet_bytes = getWasmFunclet(name,&byte_count);// load from host
+        Module &funclet_module = read_wasm(funclet_bytes, byte_count);
+        funclet_module.code.name = name;
+        funclet_module.name = name;
+        module_cache.add(name.hash(), &funclet_module);
+#elif WASM
+//				todo("getWaspFunclet get library function signature from wasp");
         warn("WASP function "s + name + " getWaspFunclet todo");
         auto pFunction = getWaspFunction(name).clone();
         pFunction->import();
         return use_required(pFunction);
-
-//		      auto funclet = getWaspFunclet(name);// todo get library function signature from wasp
-//				todo("getWaspFunclet get library function signature from wasp");
-//				return 0;
 #else
+        // todo simplify by using read_wasm in MY_WASM?
         Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));
+#endif
         auto funclet = funclet_module.functions[name];
         addLibrary(&funclet_module);
         return use_required(&funclet);
-#endif
     }
     if (name.in(function_list) and libraries.size() == 0)
         libraries.add(&loadModule("wasp-runtime.wasm"));// on demand

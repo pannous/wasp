@@ -1,6 +1,6 @@
 /* 
 * WASP: WebAssembly Programming Language API/ABI
-* version="1.0.26",
+* version="1.0.27",
 * This file contains the javascript counterpoint to the WASP runtime,
 * offering host functions to wasi/wasp modules, like download() and run_wasm()
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
@@ -33,14 +33,14 @@ let string_header_32 = 0x10000000
 let array_header_32 = 0x40000000
 let node_header_32 = 0x80000000
 
-function download(url) {
+function download(url, binary = false) {
   if (typeof url != "string") url = chars(url)
   // console.log("download", url)
   let xhr = new XMLHttpRequest();
   xhr.open('GET', url, false);
   xhr.send();
   if (xhr.status === 200)
-    return chars(xhr.responseText.trim()) // to be used in WASM as string! use fetch() in JS
+    return binary ? bytes(new Uint8Array(xhr.response)) : chars(xhr.responseText.trim()) // to be used in WASM as string! use fetch() in JS
   else
     return null;
 }
@@ -83,6 +83,12 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
   return -1; // todo
 };
 
+
+function getWasmFunclet(funclet_name, size_p) {
+  [pointer, bytes_size] =  download(lib_folder_url + chars(funclet_name)+".wasm", binary = true)
+  set_int(size_p, bytes_size)
+  return pointer
+}
 
 function parse(data) {
   let node_pointer = runtime_exports.Parse(chars(data))// also calls run()!
@@ -188,6 +194,7 @@ let imports = {
     },
     // HTML DOM JS functions
     download,
+    getWasmFunclet,
     init_graphics: nop, // canvas init by default
     requestAnimationFrame: nop, // todo
     getDocumentBody: () => document.body,
@@ -239,12 +246,7 @@ let imports = {
     },
 
     exit: terminate, // should be wasi.proc_exit!
-    // pow: Math.pow,
     pow: (x, y) => x ** y,
-    pow: (x, y) => {
-      console.log("POW", x, y);
-      return x ** y
-    },
     print: x => console.log(string(x)),
     puti: x => console.log(x), // allows debugging of ints without format String allocation!
     js_demangle: x => x,
@@ -348,15 +350,20 @@ function load_chars(pointer, length = -1, format = 'utf8', module_memory) {
   }
 }
 
+function bytes(data) {
+  if (!data) return 0;// MAKE SURE!
+  buffer = new Uint8Array(memory.buffer, HEAP_END, data.length);
+  buffer.set(data, 0);
+  let c = HEAP_END
+  HEAP_END += data.length;
+  return [c, data.length]
+}
+
 function chars(data) {
   if (!data) return 0;// MAKE SURE!
   if (typeof data != "string") return load_chars(data)
   const uint8array = new TextEncoder("utf-8").encode(data + "\0");
-  buffer = new Uint8Array(memory.buffer, HEAP_END, uint8array.length);
-  buffer.set(uint8array, 0);
-  let c = HEAP_END
-  HEAP_END += uint8array.length;
-  return c;
+  return bytes(uint8array)[0] // pointer without length
 }
 
 function set_int(address, val) {

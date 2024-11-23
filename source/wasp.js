@@ -1,19 +1,23 @@
 /* 
 * WASP: WebAssembly Programming Language API/ABI
+* version="1.0.27",
 * This file contains the javascript counterpoint to the WASP runtime,
 * offering host functions to wasi/wasp modules, like download() and run_wasm()
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
 * */
 let Wasp = {}
-// let WASP_COMPILER = 'wasp.wasm' // without tests
-let WASP_COMPILER = 'wasp-hosted.wasm' // with tests and shortcuts
-let WASP_RUNTIME = 'wasp-runtime.wasm'
+// let WASP_COMPILER = 'wasp.wasm' // 200-400 kb without tests …
+let WASP_COMPILER = 'wasp-hosted.wasm' // 4MB with tests and shortcuts
+// let WASP_COMPILER = 'assets/wasp-hosted.wasm' // 4MB with tests and shortcuts
+// let WASP_COMPILER = 'assets/wasp-debug.wasm' // 4MB with tests and shortcuts
+// let WASP_RUNTIME = 'wasp-runtime.wasm'
+let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
-var runtime_bytes = null // for reflection or linking
-var needs_runtime = false;
-var use_big_runtime = true; // use compiler as runtime for now
-var run_tests = true; // todo NOT IN PRODUCTION!
-var app_module
+let runtime_bytes = null; // for reflection or linking
+let needs_runtime = false;
+const use_big_runtime = true; // use compiler as runtime for now
+const run_tests = false; // todo NOT IN PRODUCTION!
+let app_module;
 let kinds = {}
 
 // MAX_MEM is NOT affected by -Wl,--initial-memory=117964800 NOR by this: HOW THEN??
@@ -29,14 +33,14 @@ let string_header_32 = 0x10000000
 let array_header_32 = 0x40000000
 let node_header_32 = 0x80000000
 
-function download(url) {
+function download(url, binary = false) {
   if (typeof url != "string") url = chars(url)
   // console.log("download", url)
   let xhr = new XMLHttpRequest();
   xhr.open('GET', url, false);
   xhr.send();
   if (xhr.status === 200)
-    return chars(xhr.responseText.trim()) // to be used in WASM as string! use fetch() in JS
+    return binary ? bytes(new Uint8Array(xhr.response)) : chars(xhr.responseText.trim()) // to be used in WASM as string! use fetch() in JS
   else
     return null;
 }
@@ -50,13 +54,12 @@ function format(object) {
 }
 
 function error(msg) {
-  if (typeof results !== 'undefined')
-    results.value += "\n⚠️ ERROR: " + msg + "\n";
+  // if (typeof results !== 'undefined')
   if (msg instanceof WebAssembly.CompileError) {
-    results.value += "\n⚠️ COMPILE ERROR:\n";
-    results.value += msg.stack + "\n";
-    ; // ignore as it indicates that wasp has invalid syntax
+    // results.value += "\n⚠️ COMPILE ERROR:\n";
+    results.value += "\n"+ msg.stack + "\n";
   } else if (msg instanceof Error) {
+    results.value += "\n⚠️ ERROR: " + msg + "\n";
     results.value += msg.stack + "\n";
     throw msg
   }
@@ -70,16 +73,22 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
   while (iovs_count-- > 0) {
     let text = string(c_io_vector);
     if (fd === 0)
-      error(text || "\n");
+      error(text + "\n");
     else {
-      results.value += text || "\n";
-      console.log(text || "\n");
+      results.value += text + "\n";
+      console.log(text + "\n");
     }
     c_io_vector += 8
   }
   return -1; // todo
 };
 
+
+function getWasmFunclet(funclet_name, size_p) {
+  [pointer, bytes_size] =  download(lib_folder_url + chars(funclet_name)+".wasm", binary = true)
+  set_int(size_p, bytes_size)
+  return pointer
+}
 
 function parse(data) {
   let node_pointer = runtime_exports.Parse(chars(data))// also calls run()!
@@ -100,7 +109,7 @@ function createHtml(parent, innerHtml) {
   return element;
 }
 
-var resume; // callback function resuming after run_wasm finished
+let resume; // callback function resuming after run_wasm finished
 class YieldThread { // unwind wasm, reenter through resume() after run_wasm finished
 }
 
@@ -136,7 +145,23 @@ function matrix_multiply(a, b, k = 1) {
   return result
 }
 
+
+const jsStringPolyfill = {
+  "charCodeAt": (s, i) => s.charCodeAt(i),
+  "compare": (s1, s2) => {
+    if (s1 < s2) return -1;
+    if (s1 > s2) return 1;
+    return 0;
+  },
+  "concat": (s1, s2) => s1 + s2,
+  "equals": (s1, s2) => s1 === s2,
+  "fromCharCode": (i) => String.fromCharCode(i),
+  "length": (s) => s.length,
+  "substring": (s, a, b) => s.substring(a, b),
+};
+
 let imports = {
+  "wasm:js-string": jsStringPolyfill, // ignored when provided as WebAssembly.compile(bytes, { builtins: ['js-string'] });
   vector: { // todo: use wasm vector proposal when available, using webgpu-blas as a shim
     dot: (a, b) => {
       matrix_multiply(a, b, 1)
@@ -169,6 +194,7 @@ let imports = {
     },
     // HTML DOM JS functions
     download,
+    getWasmFunclet,
     init_graphics: nop, // canvas init by default
     requestAnimationFrame: nop, // todo
     getDocumentBody: () => document.body,
@@ -324,15 +350,20 @@ function load_chars(pointer, length = -1, format = 'utf8', module_memory) {
   }
 }
 
+function bytes(data) {
+  if (!data) return 0;// MAKE SURE!
+  buffer = new Uint8Array(memory.buffer, HEAP_END, data.length);
+  buffer.set(data, 0);
+  let c = HEAP_END
+  HEAP_END += data.length;
+  return [c, data.length]
+}
+
 function chars(data) {
   if (!data) return 0;// MAKE SURE!
   if (typeof data != "string") return load_chars(data)
   const uint8array = new TextEncoder("utf-8").encode(data + "\0");
-  buffer = new Uint8Array(memory.buffer, HEAP_END, uint8array.length);
-  buffer.set(uint8array, 0);
-  let c = HEAP_END
-  HEAP_END += uint8array.length;
-  return c;
+  return bytes(uint8array)[0] // pointer without length
 }
 
 function set_int(address, val) {
@@ -468,7 +499,7 @@ class node {
     this.name = string(pointer, mem);
     // post processing
     this[this.name] = this; // make a:1 / {a:1} indistinguishable
-    for (var child of this.children()) {
+    for (let child of this.children()) {
       if (child.kind === kinds.key)
         this[child.name] = child.Value() // flat values
       else if (child.kind === kinds.long)
@@ -533,7 +564,7 @@ class node {
   serialize() {
     if (!this.pointer) todo("only wasp nodes can be serialized");
     if (!this.memory == memory)
-      todo("needs to serialize inside the correct memory!") // funclet.serialize()
+      todo("needs to serialize inside the correct memory!") // app.serialize()
     return chars(runtime_exports.serialize(this.pointer));
   }
 
@@ -546,7 +577,7 @@ class node {
     console.log(this);
     console.log(this.children());
     console.log(this.name, ":",)
-    for (var childe of this.children()) {
+    for (let childe of this.children()) {
       console.log(childe.name)
     }
   }
@@ -555,11 +586,11 @@ class node {
 
 // Function to download data to a file
 function download_file(data, filename, type) {
-  var file = new Blob([data], {type: type});
+  const file = new Blob([data], {type: type});
   if (window.navigator.msSaveOrOpenBlob) // IE10+
     window.navigator.msSaveOrOpenBlob(file, filename);
   else { // Others
-    var a = document.createElement("a"),
+    const a = document.createElement("a"),
       url = URL.createObjectURL(file);
     a.href = url;
     a.download = filename;
@@ -641,7 +672,7 @@ async function link_runtime() {
   const memory = new WebAssembly.Memory({initial: 16384, maximum: 65536});
   const table = new WebAssembly.Table({initial: 2, element: "anyfunc"});
   try {
-    runtime_module = await WebAssembly.compile(runtime_bytes)
+    runtime_module = await WebAssembly.compile(runtime_bytes, {builtins: ['js-string']}) // todo: only once for all wasm apps?
     // runtime_imports= {env: {memory: memory, table: table}}
     runtime_imports = imports
     let runtime_instance = await WebAssembly.instantiate(runtime_module, runtime_imports) // , memory
@@ -686,7 +717,7 @@ function binary_diff(old_mem, new_mem) {
   new_mem = new Uint8Array(new_mem, 0, new_mem.length)
   if (old_mem.length != new_mem.length)
     console.log("old_mem.length!=new_mem.length", old_mem.length, new_mem.length);
-  var badies = 0
+  let badies = 0;
   for (let i = 0; i < old_mem.length && badies < 1000; i++) {
     let x = old_mem[i];
     let y = new_mem[i];
@@ -710,13 +741,14 @@ function copy_runtime_bytes_to_compiler() {
 
 // minimal demangler for wasm functions does not offer full reflection
 getArguments = function (func) {
-  var symbols = func.toString(), start, end, register;
+  const symbols = func.toString();
+  let start, end, register;
   // console.log("getArguments",func,symbols)
   // start = symbols.indexOf('function');
   // if (start !== 0 && start !== 1) return undefined;
   start = symbols.indexOf('(', start);
   end = symbols.indexOf(')', start);
-  var args = [];
+  const args = [];
   symbols.substr(start + 1, end - start - 1).split(',').forEach(function (argument) {
     args.push(argument);
   });
@@ -756,7 +788,7 @@ function addSynonyms(exports) {
         // if (!exports[demangled]) {
         exports[demangled] = func
         Wasp[demangled] = func // keep signature for polymorphic calls
-        var short = demangled.substr(0, demangled.lastIndexOf("("))
+        const short = demangled.substr(0, demangled.lastIndexOf("("));
         Wasp[short] = func
       }
     }
@@ -827,6 +859,7 @@ function load_runtime() {
   else load_compiler_as_runtime()
 }
 
+// obsolete? see WASP_COMPILER compiler_exports
 function load_release_runtime() {
   fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
     runtime_bytes = buffer
@@ -836,7 +869,7 @@ function load_release_runtime() {
       addSynonyms(runtime_exports)
       HEAP = runtime_exports.__heap_base; // ~68000
       DATA_END = runtime_exports.__data_end
-      HEAP_END = HEAP || DATA_END;
+      HEAP_END = HEAP || DATA_END || runtime_exports.__heap_end;
       HEAP_END += 0x100000
       memory = runtime_exports.memory || runtime_exports._memory || memory
       buffer = new Uint8Array(memory.buffer, 0, memory.length);
@@ -856,7 +889,10 @@ function load_release_runtime() {
 }
 
 function load_compiler_as_runtime() {
-  if (typeof runtime_exports !== 'undefined') return
+  if (typeof compiler_exports !== 'undefined'){
+    console.log("compiler_exports already loaded")
+    return
+  }
   WASP_COMPILER_BYTES = fetch(WASP_COMPILER)
   WebAssembly.instantiateStreaming(WASP_COMPILER_BYTES, imports).then(obj => {
       compiler_instance = obj.instance
@@ -866,7 +902,7 @@ function load_compiler_as_runtime() {
       runtime_exports = compiler_exports
       HEAP = compiler_exports.__heap_base; // ~68000
       DATA_END = compiler_exports.__data_end
-      HEAP_END = HEAP || DATA_END;
+      HEAP_END = HEAP || DATA_END || runtime_exports.__heap_end;
       HEAP_END += 0x100000
       memory = compiler_exports.memory || compiler_exports._memory || memory
       buffer = new Uint8Array(memory.buffer, 0, memory.length);
@@ -882,7 +918,9 @@ function load_compiler_as_runtime() {
       console.log(result);
       wasp_ready()
     }
-  )
+  ).catch(err => {
+    console.error(err)
+  })
 }
 
 async function run_wasm(buf_pointer, buf_size) {
@@ -891,7 +929,7 @@ async function run_wasm(buf_pointer, buf_size) {
     // wasm_to_wat(wasm_buffer)
     // download_file(wasm_buffer, "emit.wasm", "wasm")
 
-    app_module = await WebAssembly.compile(wasm_buffer)
+    app_module = await WebAssembly.compile(wasm_buffer, {builtins: ['js-string']})
     if (WebAssembly.Module.imports(app_module).length > 0) {
       needs_runtime = true // todo WASI or Wasp runtime?
       print(app_module) // visible in browser console, not in terminal
@@ -903,7 +941,7 @@ async function run_wasm(buf_pointer, buf_size) {
     if (needs_runtime) {
       app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
       // app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
-      print("app loaded")
+      print("compiled wasm app/script loaded")
     } else {
       let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
       app = await WebAssembly.instantiate(wasm_buffer, imports, memory2) // todo: tweaked imports if it calls out
@@ -915,7 +953,7 @@ async function run_wasm(buf_pointer, buf_size) {
     // console.log("GOT raw ", result)
     if (result < -0x100000000 || result > 0x100000000) {
       if (!app.memory)
-        error("NO funclet.memory")
+        error("NO app.memory")
       result = smartNode(result, 0, app.memory)
       //  result lives in emit.wasm!
       // console.log("GOT nod ", nod)
@@ -935,7 +973,8 @@ async function run_wasm(buf_pointer, buf_size) {
       if (resume) setTimeout(resume, 1);
     }
     if (typeof results != "undefined")
-      results.value = result // JSON.stringify( Do not know how to serialize a BigInt
+      results.value = result
+      results.value += "\n" // JSON.stringify( Do not know how to serialize a BigInt
     return result; // useless, returns Promise!
   } catch (ex) {
     //throw new Error(`Error in run_wasm: ${error.message}\nStack: ${error.stack}`);
@@ -962,7 +1001,7 @@ function wasm_to_wat(buffer) {
       memory64: true,
     }
 
-    var module = wabt.readWasm(buffer, {readDebugNames: true}, wabtFeatures);
+    const module = wabt.readWasm(buffer, {readDebugNames: true}, wabtFeatures);
     module.generateNames();
     module.applyNames();
     const result = module.toText({foldExprs: true, inlineExport: true});
