@@ -23,6 +23,7 @@
 #endif
 #endif
 
+
 Module *module; // todo: use?
 bool use_interpreter = false;
 Node &result = *new Node();
@@ -1696,13 +1697,13 @@ void addLibraryFunctionAsImport(Function &func) {
 
     // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
     bool function_known = functions.has(func.name);
-//#if WASM
-//    Function& import=*new Function;
-//#else
+#if WASM
+    Function& import=*new Function();
+    if(function_known)
+        import = functions[func.name];
+#else
     Function & import=functions[func.name];// copy function info from library/runtime to main module
-//#endif
-//	if(function_known)
-//        import = functions[func.name];
+#endif
     if (import.is_declared)return;
     import.signature = func.signature;
     import.signature.type_index = -1;
@@ -1710,11 +1711,10 @@ void addLibraryFunctionAsImport(Function &func) {
     import.is_runtime = false;// because here it is an import!
     import.is_import = true;
     import.is_used = true;
-
-//#if WASM
-//    if(not function_known)
-//        functions.add(func.name, import);
-//#endif
+#if WASM
+    if(not function_known)
+        functions.add(func.name, import);
+#endif
 }
 
 Function getWaspFunction(String name);
@@ -1740,7 +1740,8 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         Module &funclet_module = read_wasm(funclet_bytes, byte_count);
         funclet_module.code.name = name;
         funclet_module.name = name;
-        module_cache.add(name.hash(), &funclet_module);
+        if (not module_cache.has(name.hash()))
+            module_cache.add(name.hash(), &funclet_module);
 #elif WASM
 //				todo("getWaspFunclet get library function signature from wasp");
         warn("WASP function "s + name + " getWaspFunclet todo");
@@ -1749,10 +1750,13 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         return use_required(pFunction);
 #else
         // todo simplify by using read_wasm in MY_WASM?
+        print("loading funclet "s + name);
         Module &funclet_module = read_wasm(findFile(name, "lib"));
 //        check(funclet_module.functions.has(name));
 #endif
         auto funclet = funclet_module.functions[name];
+        print("GOT funclet "s + name);
+        print(funclet.signature);
         addLibrary(&funclet_module);
         return use_required(&funclet);
     }

@@ -78,8 +78,12 @@ static bool I_know_what_I_am_doing = false;
 //static bool tracing = true;
 static bool tracing = false;  // todo
 #else
-static bool tracing = false;
+#if MY_WASM and DEBUG
+static bool tracing = true;
+#else
 //static bool tracing = true;
+static bool tracing = false;
+#endif
 #endif
 
 #if RELEASE
