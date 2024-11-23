@@ -280,6 +280,8 @@ List<String> arguments();
 
 #if MY_WASM
 extern "C" void registerWasmFunction(chars name, chars mangled);
+extern "C" void registerWasmFunclet(chars name, bytes funclet, size_t size);// called by host
+extern "C" bytes getWasmFunclet(chars name, size_t* size);// calling host
 extern "C" chars download(chars name);// curl wget sync download via js / runtime!
 #endif
 
