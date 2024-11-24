@@ -7,7 +7,7 @@
 
 #include <cstdlib> // OK in WASM!
 
-#define LIST_DEFAULT_CAPACITY 100 //
+#define LIST_DEFAULT_CAPACITY 100 // todo grow doesn't work, BREAKS SYSTEM!
 #define LIST_MAX_CAPACITY 0x1000000000l // debug only!
 
 #include "Util.h"
@@ -175,9 +175,11 @@ public:
 //        check_silent(new_size < LIST_MAX_CAPACITY);
         S *neu = (S *) alloc(new_size, sizeof(S));
         memcpy((void *) neu, (void *) items, capacity * sizeof(S));
-        if (items)free(items);
-//        warn("⚠️ List.grow memcpy messes with existing references! Todo: add List<items> / wrap S with shared_pointer<S> ?");
+        if (items)free(items); // EXC_BAD_ACCESS (code=2, address=0x250000002d)
+//        warn("⚠️ List.grow memcpy messes with existing references!
+//        Todo: add List<items> / wrap S with shared_pointer<S> ?");
 //      indeed List<int> FUCKS UP just by growing even without references
+//      malloc: Heap corruption detected, free list is damaged
         items = neu;
         capacity = new_size;
     }

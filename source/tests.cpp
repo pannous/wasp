@@ -3416,6 +3416,9 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    assert_emit("global x=7", 7);
+    assert_eval("if 0:3", false);
+
     read_wasm("lib/pow.wasm");
 //    read_wasm("lib/stdio.wasm");
 //    assert_emit("a=√3^2", 3);// todo 2 due to int type guess
