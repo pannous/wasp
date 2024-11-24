@@ -1446,7 +1446,7 @@ Node &groupKebabMinus(Node &node, Function &context) {
 }
 
 Module &loadRuntime() {
-#if MY_WASM or WASM
+#if WASM and not MY_WASM
     static Module wasp;
 //    Module &wasp=*module_cache["wasp"s.hash()];
 //    wasp.functions["powi"].signature.returns(int32);
@@ -1511,12 +1511,12 @@ Type preEvaluateType(Node &node, Function *context0) {
 
 
 Module &loadModule(String name) {
+    if (name == "wasp-runtime.wasm")
+        return loadRuntime();
 #if WASM
     todow("loadModule in WASM");
     return *new Module();
 #else
-    if (name == "wasp-runtime.wasm")
-        return loadRuntime();
     return read_wasm(name);// we need to read signatures!
 #endif
 }
@@ -1733,27 +1733,16 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     }
 #endif
     if (contains(funclet_list, name)) {
-
-#if MY_WASM
-        size_t byte_count = 0;
-        bytes funclet_bytes = getWasmFunclet(name,&byte_count);// load from host
-        Module &funclet_module = read_wasm(funclet_bytes, byte_count);
-        funclet_module.code.name = name;
-        funclet_module.name = name;
-        if (not module_cache.has(name.hash()))
-            module_cache.add(name.hash(), &funclet_module);
-#elif WASM
+#if WASM and not MY_WASM
 //				todo("getWaspFunclet get library function signature from wasp");
         warn("WASP function "s + name + " getWaspFunclet todo");
         auto pFunction = getWaspFunction(name).clone();
         pFunction->import();
         return use_required(pFunction);
-#else
-        // todo simplify by using read_wasm in MY_WASM?
+#endif
         print("loading funclet "s + name);
         Module &funclet_module = read_wasm(findFile(name, "lib"));
-//        check(funclet_module.functions.has(name));
-#endif
+        check(funclet_module.functions.has(name));
         auto funclet = funclet_module.functions[name];
         print("GOT funclet "s + name);
         print(funclet.signature);

@@ -1277,7 +1277,14 @@ struct Local { // todo: use
 };
 
 class Function {
+
 public:
+//    Function() = default;
+//    Function(const Function& other) = default;
+//    Function(Function&& other) noexcept = default;
+//    Function& operator=(const Function& other) = default;
+//    Function& operator=(Function&& other) noexcept = default;
+
     int code_index = -1;// todo: split into code_index and call_index (== code_index + import_count) ???
     int call_index = -1;// code_index + module.function_import.size()
     String name;
