@@ -485,20 +485,11 @@ void consumeExportSection() {
 //            breakpoint_helper;// don't make libraries 'main' visible, use own
         int status = 0; // for debugging:
         String demangled = demangle(func0);
-        // todo : remove this when wasm map[] is fixed
-        Function xx(func, "", Signature(), module, 0, 0, -1, -1, false, false, true, false, false, false, true);
-//        Function &funx = module->functions[func];// demangled
-        if (not module->functions.has(func))
-            printf("missing %s\n", func.data);
-//            module->functions.emplace(func, Function());
-//        if(not module->functions.has(func0))
-//            module->functions.emplace(func0, Function());
         Function &fun = module->functions[func];// demangled
         Function &fun0 = module->functions[func0];// mangled
         fun.module = module;
         fun0.module = module;
         // ⚠️ CAN BE THE SAME REFERENCE IF func==func0 !!! ⚠️
-
         fun.name = func;
         fun0.name = func0;
 
