@@ -271,7 +271,8 @@ let imports = {
     },
     print: x => console.log(string(x)),
     puti: x => console.log(x), // allows debugging of ints without format String allocation!
-    js_demangle: x => x,
+    js_demangle: x => chars(demangle(chars(x))),
+    __cxa_demangle: (name, buf, len, status_p) => chars(demangle(chars(name))),
     // _Z7compile6Stringb: nop, // todo bug! why is this called?
     // _Z9read_wasmPhi: nop, // todo bug! why is this called?
     // _Z11loadRuntimev: nop, // todo bug! why is this called?
