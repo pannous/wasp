@@ -3246,7 +3246,7 @@ Code emitGlobalSection() {
         globalsList.addByte(valtype);
         globalsList.addByte(global.is_mutable);// 1:mutable todo: default? not π ;)
         // expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
-        Function fun{.name="global"};
+        Function fun("global");
         last_type = valtype;
         if (global_init_node->empty())
             error("empty global initializer for "s + global_name);

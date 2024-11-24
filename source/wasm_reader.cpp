@@ -4,6 +4,7 @@
 #include "Code.h"
 #include <cstdio>
 #include <stdlib.h>
+#include <cxxabi.h> // for abi::__cxa_demangle
 #include "wasm_reader.h"
 #include "Util.h"
 //#include "wasm_emitter.h"
@@ -409,13 +410,6 @@ void consumeCodeSection() {
 }
 
 
-// todo ifdef CPP not WASM(?)
-#if not WASM
-
-#include <cxxabi.h> // for abi::__cxa_demangle
-
-#endif
-
 void fixupGenerics(char *s, int len) {
     int bra = 0;
     for (int i = 0; i < len; ++i) {
@@ -425,20 +419,28 @@ void fixupGenerics(char *s, int len) {
     }
 }
 
+char *demangle(String &fun) {
+    char *string = 0;
+#if WASM and not MY_WASM
+    todo("__cxa_demangle in wasm");
+//#elif MY_WASM and not WEBAPP
+//    string = js_demangle(fun); // https://github.com/kripken/cxx_demangle/blob/master/demangle.js
+#else
+    int status;
+    string = abi::__cxa_demangle(fun.data, 0, 0, &status);
+#if not MY_WASM
+    if (status != 0)return 0;
+#endif
+    if (string == 0)return 0;
+#endif
+    return string;
+}
+
 // we can reconstruct arguments from demangled exports or retained wast names
 // _Z2eqPKcS0_i =>  func $eq_char_const*__char_const*__int_ <= eq(char const*, char const*, int)
 List<String> demangle_args(String &fun) {
-    int status;
-    char *string;
-#if WASM and not MY_WASM
-    todo("__cxa_demangle in wasm");
-#elif MY_WASM and not WEBAPP
-    string = js_demangle(fun);
-//        // https://github.com/kripken/cxx_demangle/blob/master/demangle.js
-#else
-    string = abi::__cxa_demangle(fun.data, 0, 0, &status);
-#endif
-    if (status != 0 or string == 0)return (size_t) 0;
+    char *string = demangle(fun);
+    if (string == 0)return 0;
     String real_name = String(string);
     fixupGenerics(real_name.data, real_name.length);
     if (!real_name or !real_name.contains("("))return (size_t) 0;
@@ -460,7 +462,7 @@ void consumeExportSection() {
     module->export_data = exports_vector.rest();
     Code &payload = module->export_data;
     for (int i = 0; i < exportCount; i++) {
-        String export_name = name(payload);
+        String &export_name = name(payload);
         int export_type = unsignedLEB128(payload); // don't confuse with function_type if export_type==0
         int index = unsignedLEB128(payload);// for all types!
         if (export_type == 3 /*global*/) continue; // todo !?
@@ -482,10 +484,15 @@ void consumeExportSection() {
 //        if (func == "parseLong")
 //            breakpoint_helper;// don't make libraries 'main' visible, use own
         int status = 0; // for debugging:
-        String demangled;
-#if not WASM
-        demangled = abi::__cxa_demangle(func0.data, 0, 0, &status);// function name and cpp args but not return
-#endif
+        String demangled = demangle(func0);
+        // todo : remove this when wasm map[] is fixed
+        Function xx(func, "", Signature(), module, 0, 0, -1, -1, false, false, true, false, false, false, true);
+//        Function &funx = module->functions[func];// demangled
+        if (not module->functions.has(func))
+            printf("missing %s\n", func.data);
+//            module->functions.emplace(func, Function());
+//        if(not module->functions.has(func0))
+//            module->functions.emplace(func0, Function());
         Function &fun = module->functions[func];// demangled
         Function &fun0 = module->functions[func0];// mangled
         fun.module = module;
@@ -530,9 +537,7 @@ void consumeExportSection() {
         fun.signature.returns(returns);
         if (&fun != &fun0)
             fun0.signature.returns(returns);
-
         // todo: use wasm_signature if demangling fails, see merge(signature) below
-
         if (demangled.contains("::")) {
             String typ = demangled.to("::");
             auto type = mapType(typ);// Primitive::self
@@ -540,7 +545,6 @@ void consumeExportSection() {
         }
 // e.g. List<String>::add (String) has one arg, but wasm signature is (i32,i32):i32  ["_ZN4ListI6StringE3addES0_"]
 // todo: demangle further and put into multi-dispatch
-
         List<String> args = demangle_args(func0);
         for (String &arg: args) {
             if (arg.empty())continue;

@@ -5,13 +5,13 @@
 #ifndef WASP_MAP_H
 #define WASP_MAP_H
 
-#include <cstdlib> // OK in WASM!
 
 #include "String.h"
 //#include "Node.h"
 #include "wasm_helpers.h"
-#include <cstdarg> // va_list OK IN WASM???
-//#include <cstdarg> // va_list ok in wasm even without wasi!
+#include <cstdlib> // OK in WASM!
+#include <cstdarg> // va_list OK IN WASM??? even without wasi!
+#include <utility> // std::move
 
 #ifndef WASM
 
@@ -131,21 +131,55 @@ public: // todo careful Map<char*,…> eq
         return _size;
     }
 
-//
-// hopefully c++ is smart enough to not copy S / T twice
-    int add(S key, T value) {
-		int found = position(key);
-		if (found >= 0)
-			error("DUPLICATE KEY: "s + key); // or use insert_or_assign
-		if (keys == 0 or _size >= capacity) grow();
-		keys[_size] = key;
-		values[_size] = value;
-		_size++;
-		return _size;
-	}
+    template<typename... Args>
+    int emplace(const S &key, Args &&... args) {
+        int found = position(key);
+        if (found >= 0)
+            error("DUPLICATE KEY: "s + key);
+        if (keys == 0 or _size >= capacity) grow();
+        keys[_size] = key;
+        values[_size] = T(std::forward<Args>(args)...); // In-place construction
+        _size++;
+        return _size;
+    }
+
+    // const & works just as well as int add(S key, T value) !!
+    int add(const S &key, const T &value) {
+        int found = position(key);
+        if (found >= 0)
+            error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+        if (keys == 0 or _size >= capacity) grow();
+        keys[_size] = key;
+        values[_size] = value;
+        _size++;
+        return _size;
+    }
+// hopefully c++ is smart enough to not copy S / T twice? fucks up in WASM so …
+//    int add(S key, T value) {
+//        int found = position(key);
+//        if (found >= 0)
+//            error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+//        if (keys == 0 or _size >= capacity) grow();
+//        keys[_size] = key;
+//        values[_size] = value;
+//        _size++;
+//        return _size;
+//    }
+
+//    int add(const S& key, T&& value) {
+//        int found = position(key);
+//        if (found >= 0)
+//            error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+//        if (keys == 0 or _size >= capacity) grow();
+//        keys[_size] = key;
+//        values[_size] = std::move(value); // Move assignment
+//        _size++;
+//        return _size;
+//    }
+
 
     // similar to map[key]=value
-    int insert_or_assign(S key, T value) {
+    int insert_or_assign(const S &key, const T &value) {
         // todo:  key==nil / key.empty (String::) should not be allowed!
         int found = position(key);
         if (found >= 0) {
