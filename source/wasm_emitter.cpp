@@ -3246,12 +3246,12 @@ Code emitGlobalSection() {
         globalsList.addByte(valtype);
         globalsList.addByte(global.is_mutable);// 1:mutable todo: default? not π ;)
         // expression set in analyse->groupOperators  if(name=="::=")globals[prev.name]=&next;
-        Function fun{.name = global_name};
+//        Function fun{.name = global_name};
         last_type = valtype;
         if (global_init_node->empty())
             error("empty global initializer for "s + global_name);
-//        const Code &globalInit = emitExpression(global_node, fun);// todo ⚠️ global is not a context!
-        const Code &globalInit = emitValue(*global_init_node, fun);// todo ⚠️ global is not a context!
+        Function context{.name = "global"};
+        const Code &globalInit = emitExpression(global_init_node, context);// todo ⚠️ global is not a context!
         globalsList.add(globalInit);// todo names in global context!?
 //        }
 //        else if (global_node->kind == longs) { // todo: just use emitExpression but keep i64 not i32!

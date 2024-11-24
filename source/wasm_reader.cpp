@@ -275,8 +275,8 @@ void consumeNameSection(Code &data) {
     while (data.start < data.length) {
         int type = unsignedLEB128(data);
         Code payload = vec(data);// todo test!
-        print("name type: %d\n"s % type);
-        printf("length: %d\n", payload.length);
+//        print("name type: %d\n"s % type);
+//        printf("length: %d\n", payload.length);
         switch (type) {
             case module_name: {// 0
                 module->name = name(payload);// wrapped in vector why?
