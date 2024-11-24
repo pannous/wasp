@@ -1446,7 +1446,7 @@ Node &groupKebabMinus(Node &node, Function &context) {
 }
 
 Module &loadRuntime() {
-#if WASM and not MY_WASM
+#if WASM // and not MY_WASM
     static Module wasp;
 //    Module &wasp=*module_cache["wasp"s.hash()];
 //    wasp.functions["powi"].signature.returns(int32);
