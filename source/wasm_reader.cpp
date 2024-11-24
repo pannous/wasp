@@ -3,6 +3,7 @@
 //
 #include "Code.h"
 #include <cstdio>
+#include <stdlib.h>
 #include "wasm_reader.h"
 #include "Util.h"
 //#include "wasm_emitter.h"
@@ -356,13 +357,13 @@ void consumeCustomSection() {
     } else if (type == "target_features")
 //	https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md#target-features-section
 // 	atomics bulk-memory exception-handling multivalue mutable-globals nontrapping-fpoint sign-ext simd128 tail-call
-     todow("target_features detection not yet supported")
+    todow("target_features detection not yet supported")
     else if (type == "linking")
         // see https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md
         consumeLinkingSection(payload);
     else if (type == "dylink.0")
         // see https://github.com/WebAssembly/tool-conventions/blob/main/DynamicLinking.md
-        todow("dynamic linking not yet supported")
+    todow("dynamic linking not yet supported")
     else if (type.startsWith("reloc."))
         consumeRelocateSection(payload);// e.g. "reloc.CODE"
         // everything after the period is ignored and the specific target section is encoded in the reloc section itself.
@@ -452,7 +453,7 @@ List<String> demangle_args(String &fun) {
 // https://webassembly.github.io/spec/core/binary/modules.html#binary-exportsec
 void consumeExportSection() {
     Code exports_vector = vec();
-	if (not build_module)return;
+    if (not build_module)return;
     int exportCount = unsignedLEB128(exports_vector);
     if (debug_reader)printf("export_section: %d\n", exportCount);
     module->export_count = exportCount;
@@ -533,9 +534,9 @@ void consumeExportSection() {
         // todo: use wasm_signature if demangling fails, see merge(signature) below
 
         if (demangled.contains("::")) {
-	        String typ = demangled.to("::");
-	        auto type = mapType(typ);// Primitive::self
-	        fun.signature.add(type, "self");
+            String typ = demangled.to("::");
+            auto type = mapType(typ);// Primitive::self
+            fun.signature.add(type, "self");
         }
 // e.g. List<String>::add (String) has one arg, but wasm signature is (i32,i32):i32  ["_ZN4ListI6StringE3addES0_"]
 // todo: demangle further and put into multi-dispatch
@@ -543,9 +544,9 @@ void consumeExportSection() {
         List<String> args = demangle_args(func0);
         for (String &arg: args) {
             if (arg.empty())continue;
-	        fun.signature.add(mapType(arg));
+            fun.signature.add(mapType(arg));
             if (&fun != &fun0)
-	            fun0.signature.add(mapType(arg));
+                fun0.signature.add(mapType(arg));
         }
         if (not(demangled.contains("("))) { // extern "C" pure function name
             fun.signature = wasm_signature;
@@ -654,12 +655,17 @@ void Module::save(const char *file) {
 }
 
 
-#include <stdlib.h>
-
 Module &read_wasm(String file) {
     if (file.empty())error("read_wasm: empty file name");
     if (module_cache.has(file.hash()))
         return *module_cache[file.hash()];
+    String name = file;
+#if MY_WASM
+    size_t size = 0;
+    bytes buffer = getWasmFunclet(file,&size);// load from host
+#elif WASM
+    return *new Module();
+#else
     if (file.contains("~"))
         file = file.replace("~", "/Users/me"); // todo $HOME
     if (file.endsWith(".wast")) {
@@ -673,10 +679,7 @@ Module &read_wasm(String file) {
 
     if (!file.endsWith(".wasm"))
         file = concat(file, ".wasm");
-#if WASM
-    return *new Module();
-#else
-    String name = file;
+
     if (module_cache.has(name.hash()))
         return *module_cache[name.hash()];
     if (debug_reader)print("--------------------------\n");
@@ -689,15 +692,14 @@ Module &read_wasm(String file) {
     bytes buffer = (bytes) malloc(size + 4096 * 16);// do not free
     FILE *stream = fopen(file, "rb");
     fread(buffer, sizeof(buffer), size, stream);// demands blocks of 4096!
-    Module &wasm = read_wasm(buffer, size);
-    wasm.code.name = name;
-    wasm.name = name;
     fclose(stream);
-    print("module->functions[pow]");
-    print(module->functions["pow"]);
-    module_cache.add(name.hash(), &wasm);
-    return wasm;
 #endif
+    Module &wasm_module = read_wasm(buffer, size);
+    wasm_module.code.name = name;
+    wasm_module.name = name;
+    if (not module_cache.has(name.hash()))
+        module_cache.add(name.hash(), &wasm_module);
+    return wasm_module;
 }
 
 Module &read_wasm(bytes buffer, int size0) {

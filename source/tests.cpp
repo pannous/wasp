@@ -133,6 +133,7 @@ void testFetch() {
 		return;
 	}
 	check_eq(res, "test 2 5 3 7");
+    check_emit("fetch https://pannous.com/files/test", "test 2 5 3 7");
 }
 
 void testCanvas() {

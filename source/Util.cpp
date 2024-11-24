@@ -124,11 +124,14 @@ bool isDir(const char *name) {
 
 //String findNewestFile(String filename) {
 String findFile(String filename, String current_dir) {
-    if (fileExists(filename))return filename;
-    if (fileExists(current_dir + "/" + filename))return current_dir + "/" + filename;
-#if RUNTIME_ONLY or WASM
+#if MY_WASM
+    return filename; // todo read from host?
+#elif RUNTIME_ONLY or WASM
     return "";
 #else
+
+    if (fileExists(filename))return filename;
+    if (fileExists(current_dir + "/" + filename))return current_dir + "/" + filename;
     List<String> extensions = {"", ".wit", ".wasm", ".wast", ".wasp", ".witx"};
     List<String> folders = {"", "lib", "src", "wasp", "source", "include", "sample", "samples", "test", "tests"};
     List<String> paths;

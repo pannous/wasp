@@ -10,9 +10,9 @@ let Wasp = {}
 let WASP_COMPILER = 'wasp-hosted.wasm' // 4MB with tests and shortcuts
 // let WASP_COMPILER = 'assets/wasp-hosted.wasm' // 4MB with tests and shortcuts
 // let WASP_COMPILER = 'assets/wasp-debug.wasm' // 4MB with tests and shortcuts
-// let WASP_RUNTIME = 'wasp-runtime.wasm'
-// let lib_folder_url = "https://pannous.github.io/wasp/lib/"
+// let WASP_RUNTIME = 'wasp-runtime.wasm' // now in :
 let lib_folder_url = "assets/lib/"
+// let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false;
@@ -42,6 +42,8 @@ function binary_hack(binary_as_text) {
   return binary
 }
 
+var download_async = (url) => fetch(url).then(res => res.text())
+
 function download(url, binary = false) {
   if (typeof url != "string") url = chars(url)
   // console.log("download", url)
@@ -53,7 +55,7 @@ function download(url, binary = false) {
   if (xhr.status === 200)
     return binary ? bytes(binary_hack(xhr.response)) : chars(xhr.responseText.trim()) // to be used in WASM as string! use fetch() in JS
   else
-    throw new Error(`Failed to download: ${xhr.status} ${xhr.statusText}`);
+    throw new Error(`Failed to download ${url}: ${xhr.status} ${xhr.statusText}`);
   return null;
 }
 
@@ -97,7 +99,9 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
 
 
 function getWasmFunclet(funclet_name, size_p) {
-  [pointer, bytes_size] =  download(lib_folder_url + chars(funclet_name)+".wasm", binary = true)
+  let file = lib_folder_url + chars(funclet_name)
+  if (!file.endsWith(".wasm")) file += ".wasm"
+  let [pointer, bytes_size] = download(file, binary = true)
   console.log("getWasmFunclet", chars(funclet_name), pointer, bytes_size)
   set_int(size_p, bytes_size)
   return pointer
@@ -120,10 +124,6 @@ function createHtml(parent, innerHtml) {
   if (!parent) parent = document.body;
   parent.appendChild(element);
   return element;
-}
-
-let resume; // callback function resuming after run_wasm finished
-class YieldThread { // unwind wasm, reenter through resume() after run_wasm finished
 }
 
 function matrix_multiply(a, b, k = 1) {
@@ -173,6 +173,11 @@ const jsStringPolyfill = {
   "substring": (s, a, b) => s.substring(a, b),
 };
 
+
+let resume; // callback function resuming after run_wasm finished
+class YieldThread {
+} // unwind wasm, re-enter through resume() after run_wasm finished
+
 let imports = {
   "wasm:js-string": jsStringPolyfill, // ignored when provided as WebAssembly.compile(bytes, { builtins: ['js-string'] });
   vector: { // todo: use wasm vector proposal when available, using webgpu-blas as a shim
@@ -187,7 +192,7 @@ let imports = {
     HEAP_END: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as HEAP_END
     grow_memory: x => memory.grow(1), // à 64k … NO NEED, host grows memory automagically!
     async_yield: x => { // called from inside wasm, set callback handler resume before!
-      throw new YieldThread() // unwind wasm, reenter through resume() after run_wasm
+      throw new YieldThread() // unwind wasm, re-enter through resume() after run_wasm
     },
     /* run_wasm: async (x, y) => { */ // Cannot convert [object Promise] to a BigInt
     run_wasm: (x, y) => {
@@ -206,6 +211,7 @@ let imports = {
       expect_test_result = new node(x).Value()
     },
     // HTML DOM JS functions
+    // download: new WebAssembly.Suspending(download_async),
     download,
     getWasmFunclet,
     init_graphics: nop, // canvas init by default
@@ -259,21 +265,20 @@ let imports = {
     },
 
     exit: terminate, // should be wasi.proc_exit!
-    // pow: (x, y) => x ** y, // via pow.wasm funclet => never called here
-    pow: (x, y) => {
+    pow: (x, y) => { // via pow.wasm funclet => never called here IF LINKED!
       console.log("pow", x, y);
       return x ** y
     },
     print: x => console.log(string(x)),
     puti: x => console.log(x), // allows debugging of ints without format String allocation!
     js_demangle: x => x,
-    _Z7compile6Stringb: nop, // todo bug! why is this called?
-    _Z9read_wasmPhi: nop, // todo bug! why is this called?
-    _Z11loadRuntimev: nop, // todo bug! why is this called?
-    _Z10testWasmGCv: nop, // todo bug! why is this called?
-    _Z11testAllWasmv: nop, // todo bug! why is this called?
-    _Z11testAllEmitv: nop, // todo bug! why is this called?
-    _Z12testAllAnglev: nop, // todo bug! why is this called?
+    // _Z7compile6Stringb: nop, // todo bug! why is this called?
+    // _Z9read_wasmPhi: nop, // todo bug! why is this called?
+    // _Z11loadRuntimev: nop, // todo bug! why is this called?
+    // _Z10testWasmGCv: nop, // todo bug! why is this called?
+    // _Z11testAllWasmv: nop, // todo bug! why is this called?
+    // _Z11testAllEmitv: nop, // todo bug! why is this called?
+    // _Z12testAllAnglev: nop, // todo bug! why is this called?
   },
   wasi_unstable: {
     fd_write, // printf
@@ -841,6 +846,13 @@ function load_runtime_bytes() {
 
 async function test() {
   try {
+    // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
+    var test_async = WebAssembly.promising(exports.test_async)
+    test_async().then(result => {
+      console.log("test_async result", result)
+    })
+
+
     if (typeof (wasp_tests) !== "undefined")
       await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
   } catch (x) {
