@@ -1984,8 +1984,7 @@ void load_parser_initialization() { // todo: remove thx to __wasm_call_ctors
 
 
 
-struct Exception {
-};
+//struct Exception {};
 //wasm-ld: error: wasp.o: undefined symbol: vtable for __cxxabiv1::__class_type_info
 
 // 2020: WASI does not yet support C++ exceptions. C++ code is supported only with -fno-exceptions for now.
@@ -2042,11 +2041,13 @@ Node parseFile(String filename, ParserOptions options) {
 void usage() {
 //    print("𓆤 Wasp is a new compiled programming language");
     print("🐝 Wasp is a new compiled programming language");
-    print("wasp                   open interactive programming environment");// [repl/console]
+    print("wasp [console]         open interactive programming environment");
 //	print("wasp <file.wasp>       compile wasp to wasm or native and execute");
 //	print("wasp <file.wasm>       compile wasm to native and execute");
 //	print("wasp <file.html>       compile standalone webview app and execute");// bundle all wasm
     print("wasp <files>           compile and link files into binary and execute");
+    print("wasp eval <code>       run code and print result");
+    print("wasp serve <file/code/ø>       compile and link code into binary and execute");
 //	print("wasp compile <files>   compile and link files into binary");
 //	print("wasp test <files> 				");
 //	print("compile <files> 				");
@@ -2060,7 +2061,7 @@ void usage() {
 }
 
 // provide stack space either through -Wl,-z,stack-size=1179648 or :
-//byte stack_hack[80000];// it turns out c++ DOES somehow need space before __heap_end
+// byte stack_hack[80000];// it turns out c++ DOES somehow need space before __heap_end
 // if value is too small we get all kinds of errors:
 // memory access out of bounds
 // THE SMALLER THE VALUE THE EARLIER IT FAILS
@@ -2077,7 +2078,7 @@ int main(int argc, char **argv) {
     register_global_signal_exception_handler();
 #endif
     try {
-        if (argc == 1) {
+        if (argc == 1) { // no args, just program name
             usage();
             console();
             return 0;
@@ -2115,19 +2116,18 @@ int main(int argc, char **argv) {
 #else
             testCurrent();
 #endif
-
         if (args.startsWith("eval")) {
             Node results = eval(args.from(" "));
             print("» "s + results.serialize());
         }
         if (args == "repl" or args == "console" or args == "start" or args == "run") {
-            console();
+            console(); // todo args == "run" ambiguous run <file> or run repl? not if <file> empty OK
         }
         if (args == "2D" or args == "2d" or args == "SDL" or args == "sdl") {
 #if GRAFIX
             init_graphics();
 #else
-            print("wasp compiled without sdl/webview");
+            print("wasp compiled without sdl/webview");// todo grafix host function?
 #endif
         }
         if (args == "app" or args == "webview" or args == "browser") {
@@ -2135,35 +2135,38 @@ int main(int argc, char **argv) {
             print("wasp needs to be compiled with WEBAPP support");
             return -1;
 #endif
-//				start_server(9999);
 #if GRAFIX
             init_graphics();
 #else
             print("wasp compiled without sdl/webview");
 #endif
         }
-        if (args == "server" or args == "serv")
+        if (args.startsWith("serv") or args == "server") {
 #if SERVER
             std::thread go(start_server, 9999);
 //				start_server(9999);
 #else
-            print("wasp compiled without server");
+            printf("Content-Type: text/plain\n\n");
+            String prog = args.from(" ");
+            if (fileExists(prog)) prog = load(prog);
+            Node result = eval(prog);// todo give args as context
+            if (prog.length > 0)
+                print(result.serialize());
+            else
+                print("Wasp compiled without server OR no program given!");
 #endif
-
+        }
         if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
 #if WASM
         initSymbols();
-//		String args(current);
-        String args((char*)alloc(1,1));// hack: written to by wasmx
-//		args.data[0] = '{';
-        print(args);
-        heap_end += strlen(args)+1;
+        String args((char*)alloc(1,1));// hack: written to by wasmx todo ??
+        heap_end += strlen(args)+1; // todo WHAT IS THIS??
 #endif
-        return 0;
+        return 0; // EXIT_SUCCESS;
 //			return 42; // funny, but breaks IDE chaining
-    } catch (Exception e) {
-        print("Exception WOOW");
+//    } catch (Exception e) { // struct Exception {};
+//        print("Exception (…?)");
     } catch (chars err) {
         print("ERROR");
         print(err);

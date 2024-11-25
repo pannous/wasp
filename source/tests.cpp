@@ -25,6 +25,10 @@
 //void testDwarf();
 //void testSourceMap();
 
+void testArguments() {
+    assert_emit("#params", 0);// no args, but create empty List anyway
+}
+
 void testInclude() {
 //    assert_emit("include test-include.wasp", 42);
 //    assert_emit("use test-include.wasm", 42);
