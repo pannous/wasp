@@ -139,6 +139,66 @@ int raise(chars error) {
 }
 
 
+// todo: how to do routes in wasp? serve "/" { "hello" }   serve "/file" { "file" }
+// https://developer.fermyon.com/wasm-languages/cpp
+// https://developer.fermyon.com/wasm-languages/c
+// >> https://deislabs.io/posts/introducing-wagi-easiest-way-to-build-webassembly-microservices/ <<
+// wrapper to serve functions in wasp
+void serve(chars path = "") { // todo called from _start !
+    printf("Content-Type: text/plain\n\n");// todo html
+    const char *p = getenv("QUERY_STRING");
+    String query = p;
+    Strings queries = query.split("&");
+    Map<String, chars> params;
+    for (auto q: queries) {
+        Strings kv = q.split("=");
+        if (kv.size() == 2) {
+            params[kv[0]] = kv[1].data;
+            tracef("QUERY PARAM: %s: %s\n", kv[0].data, kv[1].data);
+        }
+    }
+    // todo: call wasp function here
+//    auto args=params;
+//    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
+    printf("Hello, World!\n");
+}
+
+/* HTTP_HOST = foo.example.com
+SERVER_NAME = foo.example.com
+SERVER_SOFTWARE = WAGI/1
+GATEWAY_INTERFACE = CGI/1.1
+HTTP_USER_AGENT = curl/7.64.1
+X_FULL_URL = http://foo.example.com/hello?greet=matt
+REQUEST_METHOD = GET
+SERVER_PROTOCOL = http
+HTTP_ACCEPT = *
+SERVER_PORT = 80
+PATH_INFO = /hello
+PATH_TRANSLATED = /env ???
+QUERY_STRING = greet=matt
+*/
+
+void serve_file(chars path = "") {
+    const char *p = getenv("X_RELATIVE_PATH");
+    printf("Content-Type: text/plain\n\n");
+
+    FILE *fptr = fopen(p, "r");
+    if (fptr == NULL) {
+        fprintf(stderr, "Fileserver: File not found %s\n", p);
+        printf("Status: 404\n\nNot Found\n");
+        exit(0);
+    }
+
+    fprintf(stderr, "Fileserver: Loading file %s\n", p);
+
+    int ch;
+    while ((ch = fgetc(fptr)) != EOF) {
+        putchar(ch);
+    }
+
+    fclose(fptr);
+}
+
 // wasm has sqrt opcode, ignore √ in interpreter for now! cmath only causes problems, including 1000 on mac and print()
 double sqrt1(double a) {
 #if WASM

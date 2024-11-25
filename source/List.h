@@ -350,16 +350,21 @@ public:
         return size_ == 0 or items == 0;
     }
 
-    void addAll(S *items[]) {
-        for (auto s: items)
+    void addAll(S *more[]) {
+        for (auto s: more)
             add(s);
     }
 
-    void addAll(S items[]) {
-        for (auto s: items)
+    void addAll(S more[]) {
+        for (auto s: more)
             add(s);
     }
 
+    void each(void (*lambda)(S)) {
+        for (auto s: *this) {
+            lambda(s);
+        }
+    }
 
 //    list.map(+[](Function *f) { return f->name; });
 // ⚠️ note the + in "+[]" to make it a lambda!

@@ -372,6 +372,7 @@ void consumeCustomSection() {
     else if (type == "relocate")
         consumeRelocateSection(payload);
     else if (type == "producers");// ignore
+    else if (type == "sourceMappingURL");// ignore todo ?
     else {
 //		pos = size;// force finish
         todow("consumeCustomSection not implementated for "s + type);
