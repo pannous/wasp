@@ -1,0 +1,34 @@
+spin_manifest_version = 2
+
+[application]
+name = "Wasp"
+version = "0.1.0"
+authors = ["pannous <info@pannous.com>"]
+description = "🐝 Wasp compiler running on spin: wasp.fermyon.app ! Use http://wasp.pannous.com/ to deploy tiny wasp programs as wasm on fermyon.app "
+
+[[trigger.http]]
+route = "/..."
+component = "wasp"
+executor = { type = "wagi" }
+
+[component.wasp]
+source = "wasp.wasm"
+allowed_outbound_hosts = []
+
+[component.wasp.build]
+command = "make"
+watch = ["wasp.wasm"]
+
+# [component]
+# sqlite_databases = ["default"]  # .spin/sqlite_db.db
+# spin cloud sqlite create wasp
+# spin cloud sqlite list
+# spin cloud sqlite execute -d wasp "CREATE TABLE IF NOT EXISTS …"
+# spin cloud sqlite execute -d wasp @mysql.sql
+
+# [component.spin_key_value]
+# key_value_stores = ["default"]
+# NO C API: https://developer.fermyon.com/spin/v2/key-value-store-tutorial
+# use spin_sdk::{
+#     key_value::Store,
+# };

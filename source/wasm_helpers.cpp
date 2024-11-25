@@ -145,7 +145,8 @@ int raise(chars error) {
 // >> https://deislabs.io/posts/introducing-wagi-easiest-way-to-build-webassembly-microservices/ <<
 // wrapper to serve functions in wasp
 void serve(chars path = "") { // todo called from _start !
-    printf("Content-Type: text/plain\n\n");// todo html
+    if (getenv("SERVER_SOFTWARE"))
+        printf("Content-Type: text/plain\n\n");// todo html
     const char *p = getenv("QUERY_STRING");
     String query = p;
     Strings queries = query.split("&");

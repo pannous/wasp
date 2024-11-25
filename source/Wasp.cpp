@@ -2069,6 +2069,8 @@ void usage() {
 // wasmer etc DO accept float/double return, just not from main!
 //extern "C"
 int main(int argc, char **argv) {
+    if (getenv("SERVER_SOFTWARE"))
+        printf("Content-Type: text/plain\n\n");// todo html
     String args;
     for (int i = 1; i < argc; ++i) args += i > 1 ? String(" ") + argv[i] : String(argv[i]);
     String path = argv[0];
@@ -2148,7 +2150,7 @@ int main(int argc, char **argv) {
 #else
             printf("Content-Type: text/plain\n\n");
             String prog = args.from(" ");
-            if (fileExists(prog)) prog = load(prog);
+            if (fileExists(prog)) prog = load(prog); // todo: static content?
             Node result = eval(prog);// todo give args as context
             if (prog.length > 0)
                 print(result.serialize());

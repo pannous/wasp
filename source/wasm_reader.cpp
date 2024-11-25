@@ -656,9 +656,10 @@ Module &read_wasm(String file) {
     if (module_cache.has(file.hash()))
         return *module_cache[file.hash()];
     String name = file;
+    bytes buffer;
 #if MY_WASM
     size_t size = 0;
-    bytes buffer = getWasmFunclet(file,&size);// load from host
+    buffer = getWasmFunclet(file,&size);// load from host
 #elif WASM
     return *new Module();
 #else
@@ -685,7 +686,7 @@ Module &read_wasm(String file) {
 #endif
     size = fileSize(file);
     if (size <= 0)error("file not found: "s + file);
-    bytes buffer = (bytes) malloc(size + 4096 * 16);// do not free
+    buffer = (bytes) malloc(size + 4096 * 16);// do not free
     FILE *stream = fopen(file, "rb");
     fread(buffer, sizeof(buffer), size, stream);// demands blocks of 4096!
     fclose(stream);
