@@ -1363,9 +1363,18 @@ int ord(Node &p) {
 
 // todo: make constructor
 extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
-    printf("smartNode(smartPointer64 : %llx\n", (int64) smartPointer64);
+    printf("smartNode(smartPointer64 : %llx\n", (uint64) smartPointer64);
 	if (smartPointer64 == 0)return &False;//const_cast<Node *>(&NIL);
 	if (smartPointer64 == 0x8000000000000000)return new Node(0);
+    if ((smartPointer64 & node_header_64) == node_header_64) {
+        Node *node = (Node *) (smartPointer64 & 0x0000FFFFFFFFFFFF);
+        printf("smartNode: node : %p\n", (void *) node);
+        printf("smartNode: node : %llu\n", (uint64) (void *) node);
+        printf("smartNode: node->kind : %d\n", (int) node->kind);
+        printf("smartNode: node->kind : %s\n", kindName(node->kind));
+        print("smartNode: node->name : %s\n"s + node->serialize());
+        return node;
+    }
 //    if (!isSmartPointer(smartPointer64))
 //        return Node(smartPointer64);
 	if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
@@ -1419,7 +1428,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
 	}
 
 	breakpoint_helper
-	printf("smartPointer64 : %llx\n", (int64) smartPointer64);
+    printf("smartPointer64 : %llx\n", (uint64) smartPointer64);
 	error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
 	return new Node();
 }

@@ -3,6 +3,8 @@
 // Created by me on 15.11.20.
 //
 typedef long long int64;
+typedef unsigned long long uint64;
+
 //typedef double float64;
 //typedef int1_t bit / bool 0/1 (flag entry)
 //typedef uint2_t bibi™ ;) 0…3

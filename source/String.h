@@ -74,7 +74,7 @@ typedef String grapheme;// sequence of one or more code points that are displaye
 
 void newline();
 
-String &hex(int64 d, bool include_0x = true, bool upper_case = false);
+String &hex(uint64 d, bool include_0x = true, bool upper_case = false);
 
 enum sizeMeasure {
 	by_char8s,// bytes
@@ -683,8 +683,10 @@ public:
 			return this->replace("%lld", formatLong(d));
 		else if (contains("%ld"))
 			return this->replace("%ld", formatLong(d));
+        else if (contains("%llu"))
+            return this->replace("%llu", hex(d));// always unsigned
 		else if (contains("%llx"))
-			return this->replace("%llx", hex(d));
+            return this->replace("%llx", hex(d));// always unsigned
 		else if (contains("%lx"))
 			return this->replace("%lx", hex(d));
 		else if (contains("%l"))
@@ -693,6 +695,8 @@ public:
 			return this->replace("%d", formatLong(d));
 		else if (contains("%x"))
 			return this->replace("%x", hex(d));
+        else if (contains("%p"))// pointer
+            return this->replace("%p", hex(d));
 		print("FORMAT:");
 		printf("%s", data);
 		printf("int64 arg:");

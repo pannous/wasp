@@ -734,8 +734,8 @@ void testWasmMemoryIntegrity() {
     if (!MAX_MEM) {
         error("NO MEMORY");
     }
-    printf("MEMORY start at %lld\n", (int64) memory);
-    printf("current start at %lld\n", (int64) heap_end);
+    printf("MEMORY start at %lld\n", (uint64) memory);
+    printf("current start at %lld\n", (uint64) heap_end);
 //	Bus error: 10  if i > MEMORY_SIZE
 // Fails at 100000, works at 100001 WHERE IS THIS SET?
 //	int start=125608;

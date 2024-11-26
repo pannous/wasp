@@ -1,5 +1,5 @@
 let exampleCode = {
-  getElementById: '$canvas.width', //results.value',
+  getElementById: '$canvas.width', //results.value=1',
     hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
   math2: `√π²`,
     function: `square := it*it; square 3`,

@@ -199,9 +199,11 @@ void printf(char const *format, size_t i);
 
 void printf(char const *format, uint32_t i);
 
-void printf(char const *format, int64 l);
+//void printf(char const *format, int64 lld);
 
-void printf(char const *format, int64 l);
+void printf(char const *format, uint64 llx);
+
+void printf(char const *format, void* p);
 
 void printf(char const *format, double d);
 

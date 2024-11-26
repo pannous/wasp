@@ -31,6 +31,7 @@ let wasm_pointer_size = 4;// 32 bit todo: 64 bit on demand
 let string_header_32 = 0x10000000
 let array_header_32 = 0x40000000
 let node_header_32 = 0x80000000
+let node_header_64 = 0x0a000000 // first part of 64 bit pointer
 
 function binary_hack(binary_as_text) {
   let binary = new Uint8Array(binary_as_text.length);
@@ -252,6 +253,26 @@ let imports = {
     getWasmFunclet,
     init_graphics: nop, // canvas init by default
     requestAnimationFrame: nop, // todo
+    getenv: x => {
+      console.log("getenv", x);
+      return 0
+    }, // todo
+    fopen: x => {
+      console.log("fopen", x);
+      return 0
+    }, // todo WASI / NOT
+    fprintf: (x, y) => {
+      console.log("fprintf", x, y);
+      return 0
+    }, // todo WASI / NOT
+    fgetc: x => {
+      console.log("fgetc", x);
+      return 0
+    }, // todo WASI / NOT
+    fclose: x => {
+      console.log("fclose", x);
+      return 0
+    }, // todo WASI / NOT
     getDocumentBody: () => document.body,
     createHtml,
     addScript: (scriptContent) => {
@@ -546,6 +567,8 @@ class node {
     this.memory = mem // may be lost, or does JS GC keep it?
     this.pointer = pointer
     if (!pointer) return;//throw "avoid 0 pointer node constructor"
+    // if(read_int32(pointer, mem)!=node_header_32 && read_int32(pointer, mem)!=0) // todo: WTH??
+    //   pointer = read_int32(pointer, mem)
     check_eq(read_int32(pointer, mem), node_header_32, "read_int32(pointer, mem)==node_header_32 @pointer:" + pointer)
     pointer += 4;
     this.length = read_int32(pointer, mem);
@@ -705,17 +728,20 @@ function read_array(data, mem) {
   return array
 }
 
-function smartNode(data0, type /*int32*/, memory) {
+function smartNode(data0, type /*int32*/, mem) {
   // console.log("smartNode")
   type = data0 >> BigInt(32) // shift 32 bits ==
   let data = Number(BigInt.asIntN(32, data0))// drop high bits
   if (type == string_header_32 || type == string_header_32 >> 8)
-    return load_chars(data, length = -1, memory, format = 'utf8')
+    return load_chars(data, length = -1, mem, format = 'utf8')
   if (type == array_header_32 || type == array_header_32 >> 8)
-    return read_array(data, memory)
-  if (type == node_header_32 || type == node_header_32 >> 8)
-    return new node(data, memory)
-  let nod = new node(runtime_exports.smartNode(data0, memory));
+    return read_array(data, mem)
+  // if (type == node_header_32 || type == node_header_32 >> 8)
+  //   return new node(data, memory)
+  // if (type == node_header_64)
+  //   return new node(data, memory)
+  // runtime_exports.smartNode(data0, memory)) can't access app's memory!
+  let nod = new node(data, mem);
   if (nod.kind == kinds.real || nod.kind == kinds.bool || nod.kind == kinds.long || nod.kind == kinds.codepoint)
     return nod.Value() // primitives independent of memory
   // if (nod.kind == kinds.object)

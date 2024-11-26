@@ -68,6 +68,14 @@ void printf(char const *format, int64 l) {
 	print(String(format) % l);
 }
 
+void printf(char const *format, uint64 l) {
+    print(String(format) % l);
+}
+
+void printf(char const *format, void *l) {
+    print(String(format) % (uint64) l);
+}
+
 void printf(chars format, chars value) {
 	print(String(format).replace("%s", value));
 }
@@ -111,9 +119,9 @@ void printf(chars format, chars val, int value) {
 	print(String(format).format((char *) val).format(value));
 }
 
-void printf(chars format, void *value) {
-	print(String(format).replace("%p", String((int64) value)));
-}
+//void printf(chars format, void *value) {
+//	print(String(format).replace("%p", String((int64) value)));
+//}
 
 extern "C" void *__cxa_allocate_exception(size_t thrown_size) { return 0; }
 extern "C" void __cxa_throw(

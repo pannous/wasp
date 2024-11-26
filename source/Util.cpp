@@ -471,8 +471,8 @@ String load(String file) {
 static String zerox = "0x00";
 static String ZERO = "0";
 
-String &hex(int64 d0, bool include_0x, bool upper_case) {
-    int64 d = abs(d0);
+String &hex(uint64 d, bool include_0x, bool upper_case) {
+//    int64 d = abs(d0);
     if (d == 0)
         return include_0x ? zerox : ZERO;
     int size = 4 + 64 / 4;
@@ -487,12 +487,12 @@ String &hex(int64 d0, bool include_0x, bool upper_case) {
         d /= 16;
     }
     if (include_0x) {
-        if (abs(d0) < 16)
+        if (d < 16)
             s[i++] = '0';// pad 0x01
         s[i++] = 'x';
         s[i++] = '0';
     }
-    if (d0 < 0)s[i++] = '-';
+    if (d < 0)s[i++] = '-'; // no negative hex!
     s[i] = 0;
     reverseInPlace(s, i);
     return *new String(s);
