@@ -43,7 +43,7 @@ function binary_hack(binary_as_text) {
 var download_async = (url) => fetch(url).then(res => res.text())
 
 function download(url, binary = false) {
-  if (typeof url != "string") url = chars(url)
+  if (typeof url != "string") url = chars(url, app.memory || memory) // unless wasm test
   // console.log("download", url)
   let xhr = new XMLHttpRequest();
   // if (binary) xhr.responseType = 'arraybuffer'; // not allowed for sync requests
@@ -69,13 +69,12 @@ function error(msg) {
   // if (typeof results !== 'undefined')
   if (msg instanceof WebAssembly.CompileError) {
     // results.value += "\n⚠️ COMPILE ERROR:\n";
-    results.value += "\n"+ msg.stack + "\n";
+    results.value += "\n" + msg.stack + "\n";
   } else if (msg instanceof Error) {
     results.value += "\n⚠️ ERROR: " + msg + "\n";
     results.value += msg.stack + "\n";
     throw msg
-  }
-  else
+  } else
     throw new Error("⚠️ ERROR: " + msg)
 }
 
@@ -118,7 +117,7 @@ function terminate() {
 
 function createHtml(parent, innerHtml) {
   let element = document.createElement("div"); // todo tag
-  element.innerHTML = string(innerHtml);
+  element.innerHTML = string(innerHtml, app.memory);
   if (!parent) parent = document.body;
   parent.appendChild(element);
   return element;
@@ -154,6 +153,45 @@ function matrix_multiply(a, b, k = 1) {
   const result = webgpublas.sgemm(m, n, k, alpha, array_a, array_b);
   console.log(result); // m*n row-major matrix (Float32Array)
   return result
+}
+
+function smartResult(object) { // returns BigInt smart pointer to object
+                               // if(is_smart_pointer(object))
+                               //     return parseSmartResult(object)
+  last_result = object
+  if (typeof object === "number")
+    return BigInt(object)
+  // if (typeof object === "string" && !isNaN(object))
+  //     return BigInt(object)
+  // if (typeof object === "object")
+  //     return -123;//
+  try {
+    // print("smartResult: ", object, "trying to parse to BigInt")
+    let reflect = {}
+    for (let prop in object) {
+      if (typeof object[prop] === "function") {
+        // reflect[prop] = object[prop].toString()
+      } else {
+        reflect[prop] = object[prop]
+      }
+    }
+    let typed = {}
+    let typ = typeof object
+    if (typ === "object") typ = object.constructor.name
+    typed[typ] = reflect
+    // serialized=JSON.stringify(object)
+    serialized = JSON.stringify(typed)
+    // serialized=JSON.stringify(reflect)
+
+    print("smartResult: typeof", typeof object, ": ", object, " =>", serialized)
+    last_result = serialized
+    let wrapped = new_string(serialized)
+    return BigInt(wrapped) // to be consumed by wasm, potentially returned to wasp via main and wasm_done
+  } catch (ex) {
+    // todo error handling via print!
+    console.error("smartResult: ", object, "failed to parse to BigInt", ex)
+    return -1
+  }
 }
 
 
@@ -218,23 +256,25 @@ let imports = {
     createHtml,
     addScript: (scriptContent) => {
       let script = document.createElement('script');
-      script.textContent = string(scriptContent);
+      script.textContent = string(scriptContent, app.memory);
       console.log("script", script.textContent)
       document.body.appendChild(script);
     },
     createHtmlElement: (tag, id) => {
-      let element = document.createElement(string(tag));
+      let element = document.createElement(string(tag, app.memory));
       element.id = string(id);
       document.body.appendChild(element);
       return element;
     },
-    getElementById: id => {
-      print("getElementById", id, string(id))
-      return document.getElementById(string(id))
+    getElementById: pointer => {
+      let id = chars(pointer, app.memory)
+      let object = document.getElementById(id)
+      print("getElementById", pointer, id, "=>", object)
+      return object // automatically cast to (extern)ref
     },
     // getExternRefPropertyValue: async (ref, prop0) => { async not working in wasm!
     getExternRefPropertyValue: (ref, prop0) => {
-      let prop = string(prop0)
+      let prop = chars(prop0, app.memory)
       print("CALLING getExternRefPropertyValue", ref, prop)
       if (ref && typeof ref[prop] !== 'undefined') {
         print("getExternRefPropertyValue OK ", ref, prop, ref[prop])
@@ -267,7 +307,7 @@ let imports = {
       console.log("pow", x, y);
       return x ** y
     },
-    print: x => console.log(string(x)),
+    print: x => console.log(string(x)), // todo: right memory!
     puti: x => console.log(x), // allows debugging of ints without format String allocation!
     js_demangle: x => chars(demangle(chars(x))),
     __cxa_demangle: (name, buf, len, status_p) => chars(demangle(chars(name))),
@@ -314,6 +354,10 @@ function check(ok, msg) {
   if (!ok) throw new Error("⚠️ TEST FAILED! " + (msg || ""));
 }
 
+function check_eq(a, b, msg) {
+  if (a != b) throw new Error("⚠️ TEST FAILED! " + a + "≠" + b + "  " + (msg || ""));
+}
+
 function debugMemory(pointer, num, mem) {
   if (!mem) mem = memory
   let buffer = new Uint8Array(mem.buffer, pointer, num);
@@ -325,7 +369,7 @@ function debugMemory(pointer, num, mem) {
   }
 }
 
-function string(data) { // wasm<>js interop
+function string(data, mem = memory) { // wasm<>js interop
   switch (typeof data) {
     case "string":
       while (HEAP_END % 8) HEAP_END++
@@ -337,18 +381,18 @@ function string(data) { // wasm<>js interop
     case "bigint":
     case "number":
     default:
-      let pointer = read_int32(data);
-      let length = read_int32(data + 4);
+      let pointer = read_int32(data, mem);
+      let length = read_int32(data + 4, mem);
       if (!pointer) {
         console.log("NO chars to read")
         debugMemory(data - 10, 20)
       }
-      let cs = load_chars(pointer, length);
+      let cs = load_chars(pointer, length, mem);
       return cs
   }
 }
 
-function load_chars(pointer, length = -1, format = 'utf8', module_memory) {
+function load_chars(pointer, length = -1, module_memory = 0, format = 'utf8') {
   if (!module_memory) module_memory = memory
   if (pointer === 0) return
   if (typeof pointer == "string") return chars(s)
@@ -371,9 +415,9 @@ function load_chars(pointer, length = -1, format = 'utf8', module_memory) {
   }
 }
 
-function bytes(data) {
+function bytes(data, mem = memory) {
   if (!data) return 0;// MAKE SURE!
-  buffer = new Uint8Array(memory.buffer, HEAP_END, data.length); // wasm linear memory
+  buffer = new Uint8Array(mem.buffer, HEAP_END, data.length); // wasm linear memory
   buffer.set(data, 0); // copy data to wasm linear memory
   let c = HEAP_END
   HEAP_END += data.length;
@@ -381,22 +425,22 @@ function bytes(data) {
   return [c, data.length]
 }
 
-function chars(data) {
+function chars(data, mem = memory) {
   if (!data) return 0;// MAKE SURE!
-  if (typeof data != "string") return load_chars(data)
+  if (typeof data != "string") return load_chars(data, -1, mem)
   const uint8array = new TextEncoder("utf-8").encode(data + "\0");
-  return bytes(uint8array)[0] // pointer without length
+  return bytes(uint8array, mem)[0] // pointer without length
 }
 
-function set_int(address, val) {
+function set_int(address, val, mem = memory) {
 //    memory.setUint32(address + 0, val, true); // ok ?
-  let buf = new Uint32Array(memory.buffer, address, 4);
+  let buf = new Uint32Array(mem.buffer, address, 4);
   buf[0] = val
 }
 
-function new_int(val) {
+function new_int(val, mem = memory) {
   while (HEAP_END % 4) HEAP_END++;
-  let buf = new Uint32Array(memory.buffer, HEAP_END, 4);
+  let buf = new Uint32Array(mem.buffer, HEAP_END, 4);
   buf[0] = val
   HEAP_END += 4
 }
@@ -405,20 +449,18 @@ function new_int(val) {
 function new_long(val) {
   // memory.setUint32(addr + 0, val, true);
   // memory.setUint32(addr + 4, Math.floor(val / 4294967296), true);
-  let buf = new Uint64Array(memory.buffer, HEAP_END / 8, memory.length); // todo: /8??
+  let buf = new Uint64Array(memory.buffer, HEAP_END / 8, mem.length); // todo: /8??
   buf[0] = val
   HEAP_END += 8
 }
 
-function read_byte(pointer, mem) {
-  if (!mem) mem = memory
+function read_byte(pointer, mem = memory) {
   // return mem.buffer[pointer]
   let buffer = new Int8Array(mem.buffer, pointer, 1);
   return buffer[0]
 }
 
-function read_int32(pointer, mem) {
-  if (!mem) mem = memory
+function read_int32(pointer, mem = memory) {
   // return mem.getUint32(addr + 0, true); // ok?
   buffer = new Uint8Array(mem.buffer, 0, mem.length);
   return buffer[pointer + 3] * 2 ** 24 + buffer[pointer + 2] * 256 * 256 + buffer[pointer + 1] * 256 + buffer[pointer];
@@ -434,8 +476,7 @@ function read_int32(pointer, mem) {
 // }
 
 // getInt64
-function read_int64(pointer, mem) { // little endian
-  if (!mem) mem = memory
+function read_int64(pointer, mem = memory) { // little endian
   // const low = mem.getUint32(pointer + 0, true);
   // const high = mem.getInt32(pointer + 4, true);
   // return low + high * 4294967296; // ok ?
@@ -446,15 +487,16 @@ function read_int64(pointer, mem) { // little endian
 // reset at each run, discard previous data!
 // NOT COMPATIBLE WITH ASYNC CALLS!
 function reset_heap() {
-  HEAP = runtime_exports.__heap_base; // ~68000
-  DATA_END = runtime_exports.__data_end
+  // todo: this is for the compiler, not runtime/app!
+  HEAP = compiler_exports.__heap_base; // ~68000
+  DATA_END = compiler_exports.__data_end
   HEAP_END = HEAP || DATA_END;
   HEAP_END += 0x100000 * run++; // todo
 }
 
 function compile_and_run(code) {
   if (typeof compiler_exports === 'undefined')
-    load_compiler_as_runtime()
+    load_compiler()
   // reset_heap();
   expect_test_result = false
   try {
@@ -473,7 +515,8 @@ function reinterpretInt64AsFloat64(n) { // aka reinterpret_cast long to double
 
 function loadKindMap() {
   for (let i = 0; i < 255; i++) {
-    let kinda = runtime_exports.kindName(i);
+    let kinda = runtime_exports.kindName(i); // might be stripped
+    // let kinda = compiler_exports.kindName(i);
     let kindName = chars(kinda)
     if (!kinda || !kindName) continue
     kinds[kindName] = i
@@ -499,12 +542,11 @@ class node {
   Content = 0
   Childs = []
 
-  constructor(pointer, mem) {
-    if (!mem) mem = memory
+  constructor(pointer, mem = memory) {
     this.memory = mem // may be lost, or does JS GC keep it?
     this.pointer = pointer
     if (!pointer) return;//throw "avoid 0 pointer node constructor"
-    check(read_int32(pointer, mem) == node_header_32, "node_header_32")
+    check_eq(read_int32(pointer, mem), node_header_32, "read_int32(pointer, mem)==node_header_32 @pointer:" + pointer)
     pointer += 4;
     this.length = read_int32(pointer, mem);
     pointer += 4;
@@ -668,10 +710,12 @@ function smartNode(data0, type /*int32*/, memory) {
   type = data0 >> BigInt(32) // shift 32 bits ==
   let data = Number(BigInt.asIntN(32, data0))// drop high bits
   if (type == string_header_32 || type == string_header_32 >> 8)
-    return load_chars(data, length = -1, format = 'utf8', memory)
+    return load_chars(data, length = -1, memory, format = 'utf8')
   if (type == array_header_32 || type == array_header_32 >> 8)
     return read_array(data, memory)
-  let nod = new node(runtime_exports.smartNode(data0));
+  if (type == node_header_32 || type == node_header_32 >> 8)
+    return new node(data, memory)
+  let nod = new node(runtime_exports.smartNode(data0, memory));
   if (nod.kind == kinds.real || nod.kind == kinds.bool || nod.kind == kinds.long || nod.kind == kinds.codepoint)
     return nod.Value() // primitives independent of memory
   // if (nod.kind == kinds.object)
@@ -885,7 +929,7 @@ function load_runtime() {
   if (typeof runtime_exports !== 'undefined') return
   if (!use_big_runtime)
     load_release_runtime()
-  else load_compiler_as_runtime()
+  else load_compiler()
 }
 
 // obsolete? see WASP_COMPILER compiler_exports
@@ -917,8 +961,8 @@ function load_release_runtime() {
   });
 }
 
-function load_compiler_as_runtime() {
-  if (typeof compiler_exports !== 'undefined'){
+function load_compiler() {
+  if (typeof compiler_exports !== 'undefined') {
     console.log("compiler_exports already loaded")
     return
   }
@@ -1003,7 +1047,7 @@ async function run_wasm(buf_pointer, buf_size) {
     }
     if (typeof results != "undefined")
       results.value = result
-      results.value += "\n" // JSON.stringify( Do not know how to serialize a BigInt
+    results.value += "\n" // JSON.stringify( Do not know how to serialize a BigInt
     return result; // useless, returns Promise!
   } catch (ex) {
     //throw new Error(`Error in run_wasm: ${error.message}\nStack: ${error.stack}`);
