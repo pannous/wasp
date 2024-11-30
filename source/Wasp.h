@@ -24,7 +24,7 @@ Node &parse(chars source);
 Node &parse(String source, ParserOptions parserOptions = {});// wasp -> data
 Node assert_parsesx(chars mark);
 
-bool is_operator(codepoint ch);// todo: next?
+bool is_operator(codepoint ch, bool check_identifiers = true);// todo: next?
 //extern String operator_list[];// resolve xor->operator ... semantic wasp parser really?
 //extern List<chars> functor_list;
 

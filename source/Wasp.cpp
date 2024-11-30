@@ -180,16 +180,12 @@ String &normOperator(String &alias) {
 
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
-    if (ch == '#')return false;// size/count/length
-    if (ch == '=')return false;
-    if (ch == ':')return false;
-    if (ch == ' ')return false;
-    if (ch == ';')return false;
-    if (ch == '.')return false;
-    if (ch == '-')return false;// todo
+    if (ch == '_' or ch == '$' or ch == '@')return true;
+    if (ch == '-' or ch == u'‖' or ch == L'‖' or ch == '/')return false;
+    if (is_operator(ch, false))
+        return false;
     if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
-    return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
-           ch == '@';// ch<0: UNICODE
+    return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z'); // ch<0: UNICODE
     //		not((ch != '_' and ch != '$') and (ch < 'a' or ch > 'z') and (ch < 'A' or ch > 'Z'));
 };
 
@@ -271,9 +267,14 @@ codepoint closingBracket(codepoint bracket) {
 //	if(is_grapheme_modifier(ch))parseError("multi codepoint graphemes not");
 // everything that is not an is_identifier is treated as operator/symbol/identifier?
 // NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
-bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
+bool is_operator(codepoint ch, bool check_identifiers /*= true*/) {// todo is_KNOWN_operator todo Julia
+    if (ch == u'‖')return true;
+    if (ch == '-')return true;
+    if (check_identifiers && is_identifier(ch))
+        return false;
+    if (ch == L'‖')return true;
     //	0x0086	134	<control>: START OF SELECTED AREA	†
-
+    if (ch == U'$')return false;// special case for variables
     if (ch == U'∞')return false;// or can it be made as operator!?
     if (ch == U'⅓')return false;// numbers are implicit operators 3y = 3*y
     if (ch == U'∅')return false;// Explicitly because it is part of the operator range 0x2200 - 0x2319
@@ -293,7 +294,6 @@ bool is_operator(codepoint ch) {// todo is_KNOWN_operator todo Julia
     //		if(ch=='=') return false;// internal treatment
     if (ch > 0x80)
         return false;// utf NOT enough: ç. can still be a reference!
-    if (is_identifier(ch)) return false;
     if (isalnum0(ch)) return false;// ANY UTF 8
     return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
 }
