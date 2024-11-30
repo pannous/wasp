@@ -1400,13 +1400,17 @@ Code emitValue(Node &node, Function &context) {
             if (not knownSymbol(name, context))
                 error("UNKNOWN symbol "s + name + " in context " + context);
             if (node.value.node) {
+                if (name == node.value.string)
+                    goto emit_getter_block;
                 Node &value = *node.value.node;
                 warn("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!");// todo FIX!!
                 code.add(emitSetter(node, value, context));
             } else {
+                emit_getter_block:
                 auto local = context.locals[name];
                 code.addByte(get_local);// todo skip repeats
                 code.addByte(local.position);// base location stored in variable!
+                last_type = local.type;
                 if (node.length > 0) {
                     if (use_wasm_arrays)
                         return emitWasmArrayGetter(node, context, local);
@@ -1816,7 +1820,10 @@ Type commonType(Type lhs, Type rhs) {
     if (lhs == rhs)return lhs;
     if (lhs == i64 and rhs == int32) return i64;
     if (lhs == int32 and rhs == i64) return i64;
-    if (lhs == unknown_type and rhs == i64) return i64;// bad guess, could be any object * n !
+    if (lhs == unknown_type) return rhs;// bad guess, could be any object * n !
+//    if (lhs == reference) return rhs;// bad guess, could be any object * n !
+//    if(rhs == reference) return lhs;// bad guess, could be any object * n !
+//    if(rhs == unknown_type) return lhs;// bad guess, could be any object * n !
     if (lhs == float64 or rhs == float64)return float64;
     if (lhs == float32 or rhs == float32)return float32;
     return lhs; // todo!

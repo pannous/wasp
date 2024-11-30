@@ -334,6 +334,12 @@ void testPolymorphism2() {
     check_is(function.variants[1].signature.parameters[0].type, (Type) float32);
 }
 
+
+void testPolymorphism3() {
+    assert_emit("fun test(string a){return a};\nfun test(float b){return b+1};\ntest('ok')", "ok");
+    assert_emit("fun test(string a){return a};\nfun test(float b){return b+1};\ntest(1.0)", 2.0);
+}
+
 //#import "pow.h"
 //void testOwnPowerExponentialLogarithm() {
 //	check_is(exp(1), 2.718281828459045);
@@ -3457,6 +3463,8 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    test_implicit_multiplication(); // todo in parser how?
+
     assert_emit("-42", -42)
 #if WEBAPP
         testHostIntegration();
@@ -3470,6 +3478,7 @@ void testCurrent() {
     testTypes();
     testPolymorphism();
     testPolymorphism2();
+    testPolymorphism3();
 //	testDom();
     assert_emit("global x=7", 7);
     assert_eval("if 0:3", false);
@@ -3486,6 +3495,7 @@ void testCurrent() {
 
 //    testInclude();
 //    check_is("τ≈6.2831853",true);
+    assert_emit("τ≈6.2831853", true);
 //    assert_emit("square := it*it; square 3", 9);
 //    assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
 //    assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
@@ -3495,7 +3505,6 @@ void testCurrent() {
 //    assert_emit("√ π ²", pi);
 //    assert_emit("√π²", pi);
 
-//    test_implicit_multiplication(); todo in parser how?
 
 //    testGlobals();
 //    testTypeConfusion();
