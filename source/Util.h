@@ -15,12 +15,11 @@
 //#define debug_line() printf("\n%s:%d\n",dropPath(__FILE__),__LINE__);
 //#define debug_line() printf("\n    at mapTypeToWasm(Type32) (%s:%d)\n",dropPath(__FILE__),__LINE__);
 #define debug_line() printf("\nfile://%s\n%s:%d\n",__FILE__,__FILE__,__LINE__);
-#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
 #else
-#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);}
-#define backtrace_exit() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 #define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
 #endif
+#define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);}
+#define backtrace_exit() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(-1);}
 
 
 //typedef int64 i64;

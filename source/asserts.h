@@ -30,6 +30,12 @@ extern Node &result;
 #elif MY_WASM and not EMSCRIPTEN // todo WHY does if MY_WASM not work??
 #define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
 #else
+
+#include "Util.h"
+
+//#define backtrace_exit() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(-1);}
+
+
 //// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
 #define assert_is(wasp, result) \
 printf("TEST %s==%s\n",#wasp,#result); \
