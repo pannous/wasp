@@ -117,7 +117,7 @@ function terminate() {
 
 function createHtml(parent, innerHtml) {
   let element = document.createElement("div"); // todo tag
-  element.innerHTML = string(innerHtml, app.memory);
+  element.innerHTML = chars(innerHtml, app.memory);
   if (!parent) parent = document.body;
   parent.appendChild(element);
   return element;
@@ -1085,7 +1085,7 @@ async function run_wasm(buf_pointer, buf_size) {
 
 function wasm_to_wat(buffer) {
   try {
-    const parsed = window.WebAssemblyParser.decode(buffer);
+    const parsed = window.WebAssemblyParser2.decode(buffer);
     console.log(parsed)
     // editor.setValue(parsed.toText());
 

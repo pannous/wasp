@@ -683,7 +683,7 @@ private:
             return Nan;
         }
 
-        // todo include ⅓ for consistency
+        // todo include ⅓ for consistency but 3⅓=3+⅓ ⅓π=⅓*π … !!
         while (atoi1(ch) >= 0) { // -1 if not
             //	ch >= '0' and ch <= '9'
             string += ch;

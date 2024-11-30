@@ -35,7 +35,9 @@
   <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>-->
   <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>-->
 
-  <script src="https://cdn.jsdelivr.net/npm/@webassemblyjs/wasm-parser@1.14.1/lib/index.js"></script>
+  <script>window.exports = {};</script>
+  <script src="assets/script/wasm-parser-bundle.js"></script>
+  <!--  <script type="module" src="https://cdn.jsdelivr.net/npm/@webassemblyjs/wasm-parser@1.14.1/lib/index.js"></script>-->
   <script src="https://webassembly.github.io/wabt/demo/libwabt.js"></script>
   <script> WabtModule().then(function (wabt) {
     window.wabt = wabt;
