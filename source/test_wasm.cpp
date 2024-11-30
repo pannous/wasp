@@ -81,6 +81,10 @@ void testEmitter() {
 void test_implicit_multiplication(){
     assert_emit("x=3;2x", 6);
     assert_emit("2π", 2 * pi);
+    skip(
+            assert_emit("x=9;⅓x", 3);
+    )
+//    assert_emit("⅓9", 3);
 }
 
 void testGlobals() {
