@@ -323,10 +323,7 @@ void testPolymorphism() {
 }
 
 void testPolymorphism2() {
-    clearAnalyzerContext();
-    clearEmitterContext();
-    functions.clear();
-    auto node = parse("fun test(int a){return a};\nfun test(float b){return b+1}");
+    auto node = parse("fun test(string a){return a};\nfun test(float b){return b+1}");
     auto fun = analyze(node);
     auto function = functions["test"];
     check_is(function.is_polymorphic, true);
@@ -1077,8 +1074,6 @@ double sin(double x){
 }
 
 void testSinus() {
-    printf("testSinus");
-    backtrace_line();
     //k=78; fucks it up!!
     assert_emit("double sin(double x){\n"
                 "\tx = modulo_double(x,tau)\n"
@@ -3487,8 +3482,12 @@ void testCurrent() {
     testTypedFunctions();
     testTypes();
     testPolymorphism();
-//    testPolymorphism2();
-//    testPolymorphism3();
+    testPolymorphism2();
+    skip(
+    testPolymorphism3();
+            assert_emit("τ≈6.2831853", true);
+    )
+
 //	testDom();
     assert_emit("global x=7", 7);
     assert_eval("if 0:3", false);
