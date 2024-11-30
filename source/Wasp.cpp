@@ -268,13 +268,11 @@ codepoint closingBracket(codepoint bracket) {
 // everything that is not an is_identifier is treated as operator/symbol/identifier?
 // NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
 bool is_operator(codepoint ch, bool check_identifiers /*= true*/) {// todo is_KNOWN_operator todo Julia
-    if (ch == u'‖')return true;
-    if (ch == '-')return true;
+    if (ch == '-')return true; // ⚠️ minus vs hyphen!
     if (check_identifiers && is_identifier(ch))
         return false;
-    if (ch == L'‖')return true;
     //	0x0086	134	<control>: START OF SELECTED AREA	†
-    if (ch == U'$')return false;// special case for variables
+//    if (ch == '_' or ch == '$' or ch == '@')return false; // part of identifier in VARIABLEs
     if (ch == U'∞')return false;// or can it be made as operator!?
     if (ch == U'⅓')return false;// numbers are implicit operators 3y = 3*y
     if (ch == U'∅')return false;// Explicitly because it is part of the operator range 0x2200 - 0x2319
@@ -283,7 +281,6 @@ bool is_operator(codepoint ch, bool check_identifiers /*= true*/) {// todo is_KN
     if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
     if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
     if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
-    if (ch == '-')return true;
     if (ch == u'¬')return true;
     if (ch == u'＝')return true;
 //    if (ch == u'#' and prev=='\n' or next == ' ')return false;
@@ -686,6 +683,7 @@ private:
             return Nan;
         }
 
+        // todo include ⅓ for consistency
         while (atoi1(ch) >= 0) { // -1 if not
             //	ch >= '0' and ch <= '9'
             string += ch;
