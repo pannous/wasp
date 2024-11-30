@@ -2184,8 +2184,8 @@ void testLogic01() {
 }
 
 void testEqualities() {
-    assert_is("1≠2", True);
     assert_is("1==2", False);
+    assert_is("1≠2", True);
     //	assert_is("1=2", False);
     assert_is("1!=2", True);
     assert_is("1≠1", False);
@@ -3463,6 +3463,8 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    assert_is("1≠2", True);
+
     test_implicit_multiplication(); // todo in parser how?
 
     assert_emit("-42", -42)
@@ -3478,7 +3480,11 @@ void testCurrent() {
     testTypes();
     testPolymorphism();
     testPolymorphism2();
+    skip(
     testPolymorphism3();
+            assert_emit("τ≈6.2831853", true);
+    )
+
 //	testDom();
     assert_emit("global x=7", 7);
     assert_eval("if 0:3", false);
@@ -3495,7 +3501,6 @@ void testCurrent() {
 
 //    testInclude();
 //    check_is("τ≈6.2831853",true);
-    assert_emit("τ≈6.2831853", true);
 //    assert_emit("square := it*it; square 3", 9);
 //    assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
 //    assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);

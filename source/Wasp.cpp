@@ -180,6 +180,8 @@ String &normOperator(String &alias) {
 
 //	bool is_identifier(char ch) {
 bool is_identifier(codepoint ch) {
+//    todo ALL GENERIC OPERATORS
+//    if(is_operator(ch))return false;
     if (ch == '#')return false;// size/count/length
     if (ch == '=')return false;
     if (ch == ':')return false;
@@ -187,6 +189,12 @@ bool is_identifier(codepoint ch) {
     if (ch == ';')return false;
     if (ch == '.')return false;
     if (ch == '-')return false;// todo
+    if (ch == L'≠')return false;
+    if (ch == L'‖')return false;
+    if (ch == L'√')return false;
+    if (ch == L'²')return false;
+    if (ch == L'≥')return false;
+    if (ch == L'≤')return false;
     if (ch < 0 or ch > 128)return true;// all UTF identifier todo ;)
     return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z') or ch == '_' or ch == '$' or
            ch == '@';// ch<0: UNICODE
