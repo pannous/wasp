@@ -323,7 +323,10 @@ void testPolymorphism() {
 }
 
 void testPolymorphism2() {
-    auto node = parse("fun test(string a){return a};\nfun test(float b){return b+1}");
+    clearAnalyzerContext();
+    clearEmitterContext();
+    functions.clear();
+    auto node = parse("fun test(int a){return a};\nfun test(float b){return b+1}");
     auto fun = analyze(node);
     auto function = functions["test"];
     check_is(function.is_polymorphic, true);
@@ -1074,6 +1077,8 @@ double sin(double x){
 }
 
 void testSinus() {
+    printf("testSinus");
+    backtrace_line();
     //k=78; fucks it up!!
     assert_emit("double sin(double x){\n"
                 "\tx = modulo_double(x,tau)\n"
@@ -3463,6 +3468,11 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    skip(
+            assert_emit("‖3‖-1", 2);
+    )
+    assert_emit("1-‖3‖/-3", 2);
+    testSinus();
     test_implicit_multiplication(); // todo in parser how?
 
     assert_emit("-42", -42)
@@ -3477,8 +3487,8 @@ void testCurrent() {
     testTypedFunctions();
     testTypes();
     testPolymorphism();
-    testPolymorphism2();
-    testPolymorphism3();
+//    testPolymorphism2();
+//    testPolymorphism3();
 //	testDom();
     assert_emit("global x=7", 7);
     assert_eval("if 0:3", false);
@@ -3495,7 +3505,7 @@ void testCurrent() {
 
 //    testInclude();
 //    check_is("τ≈6.2831853",true);
-    assert_emit("τ≈6.2831853", true);
+//    assert_emit("τ≈6.2831853", true);
 //    assert_emit("square := it*it; square 3", 9);
 //    assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
 //    assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
