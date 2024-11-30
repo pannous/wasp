@@ -2294,6 +2294,11 @@ Code cast(Valtype from, Valtype to) {
     if (from == 0 and to == i32t)return nop;// nil or false ok as int? otherwise add const 0!
     if (from == i32t and (Type) to == reference)return nop; // should be reference pointer, RIHGT??
     if (from == anyref and (Type) to == i64)return nop; // todo call $$ ref.value()
+    if (from == i32 and to == externref)return nop;// ref ≈ void* ≈ i64 so ok?
+    if (from == i64 and to == externref)return nop;// ref ≈ void* ≈ i64 so ok?
+    if (from == externref and to == i32)return nop;// ref ≈ void* ≈ i32 so ok???
+//      expected type externref, found call of type i64   NOT ok ;)
+
     if ((Type) from == codepoint1 and to == i64)
         return Code(i64_extend_i32_s);
     if (from == float32 and to == float64)return Code(f64_from_f32);
@@ -2336,7 +2341,7 @@ Code cast(Valtype from, Valtype to) {
 //    if (from == string_ref and to == i64)return castRefToChars();
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
-    error("incompatible valtypes "s + typeName(from) + " => " + typeName(to));
+    error("incompatible valtypes "s + (int) from + "->" + (int) to + " / " + typeName(from) + " => " + typeName(to));
     return nop;
 }
 
@@ -2667,7 +2672,7 @@ Code emitBlock(Node &node, Function &context) {
             auto generics = local.type.generics;
             if (isGroup((Kind) generics.kind)) {
                 auto type_index = arrayTypeIndex(valueType(local.type));
-                block.addByte(ref);
+                block.addByte(wasm_struct);
                 block.addByte(type_index);
             } else
                 error("unknown generic type "s + typeName(local.type));

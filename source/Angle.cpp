@@ -2086,6 +2086,9 @@ void preRegisterFunctions() {
     functions["fd_write"].module = new Module{.name="wasi_unstable"};
 #endif
 
+    functions["printx"].import();
+    functions["printx"].signature.add(externref, "extern_reference");
+
     // DOM functions
     functions["getDocumentBody"].import().signature.returns(externref);
     functions["createHtml"].import();
@@ -2093,26 +2096,29 @@ void preRegisterFunctions() {
     functions["addScript"].import().signature.add(charp, "js");
 
 //#if WASM // no funclets in browser (yet?)
-//    functions["pow"].import();//.builtin(); PREVENTS reading from pow.wasm file!
+//    functions["pow"].import(); PREVENTS reading from pow.wasm file!
 //    functions["pow"].signature.add(float64).add(float64).returns(float64);
 
     functions["print"].import();
     functions["print"].signature.add(node).returns(voids);
 
-    functions["getElementById"].import();//.builtin();
+    functions["getElementById"].import();
     functions["getElementById"].signature.add(charp).returns(externref /*!!*/);
-    functions["getExternRefPropertyValue"].import();//.builtin();
-    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(smarti64);
+    functions["getExternRefPropertyValue"].import(); // for consumption
+    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(charp);
+//    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(smarti64);// can't handle smarty yet withouth wasp runtime
+    functions["getExternRefPropertyValueX"].import(); // to forward to host again
+    functions["getExternRefPropertyValueX"].signature.add(externref).add(charp).returns(externref);
 //	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(stringref); // ⚠️ not yet in webview!
 
 //	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(longs);
 //	functions["getExternRefPropertyValue"].signature.add(externref,"object").add(strings,"property").returns(marti64);
 
-//	functions["invokeExternRef"].import();//.builtin();
+//	functions["invokeExternRef"].import();
 //	functions["invokeExternRef"].signature.add(externref).add(strings,"method").add(node,"params").returns(rimitive::smarti64);
 
 
-//	functions["$"].import();//.builtin();
+//	functions["$"].import();
 //	functions["$"].signature.add(strings).returns(referencex);
 
     functions["puts"].builtin();

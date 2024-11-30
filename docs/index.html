@@ -29,15 +29,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/mode/simple.js"></script>
   <!--    <script src="https://codemirror.net/5/addon/mode/simple.js"></script>-->
   <script src='codemirror-wasp-mode.js'></script> <!--    INCLUDE wast syntax!! -->
-  <style>
-      .CodeMirror {
-          resize: both; /* This enables resizing */
-          overflow: auto;
-          min-height: 100px; /* Minimum height for the editor */
-          min-width: 200px; /* Minimum width for the editor */
-          border: 1px solid #ddd;
-      }
-  </style>
+  <!--  <style src="wasp.css"></style>-->
+  <link href="assets/style/wasp.css" rel="stylesheet">
   <!--    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" rel="stylesheet">-->
   <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>-->
   <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>-->
@@ -46,7 +39,7 @@
   <!--  <script> WabtModule().then(function (wabt) {-->
 
 </head>
-<body style="background: floralwhite">
+<body>
 <!--<body style="background: cornsilk">-->
 <!--<body style="background: aliceblue">-->
 <!--<body style="background: azure">-->
@@ -100,7 +93,11 @@
     var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
       lineNumbers: true,
       mode: "wasp",
-      extraKeys: {"Ctrl-Space": "autocomplete"}
+      extraKeys: {
+        "Ctrl-Space": "autocomplete", "Cmd-Enter": function () {
+          compile_and_run(editor.getValue())
+        }
+      },
     });
     editor.on('change', function () {
       compile_and_run(editor.getValue())

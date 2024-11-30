@@ -4,7 +4,7 @@
 //#define var auto // conflicts with const Var &var …
 
 #define allow_untyped_nodes true  // IMPORTANT!  {a b c}#2"=="b" VALID or NOT ?!?
-//#include "asserts.h"
+//#include "asserts.h" // 30.11. XXX
 #include "wasm_helpers.h"
 
 #if WASM
@@ -18,8 +18,7 @@
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);proc_exit(0);}
 #else
 #define backtrace_line() {printf("\n%s:%d\n",__FILE__,__LINE__);}
-//exit(0);
-
+#define backtrace_exit() {printf("\n%s:%d\n",__FILE__,__LINE__);exit(0);}
 #define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
 #endif
 

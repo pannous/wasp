@@ -180,13 +180,18 @@ function smartResult(object) { // returns BigInt smart pointer to object
     if (typ === "object") typ = object.constructor.name
     typed[typ] = reflect
     // serialized=JSON.stringify(object)
-    serialized = JSON.stringify(typed)
+    if (typeof object === "string") serialized = object
+    else serialized = JSON.stringify(typed)
     // serialized=JSON.stringify(reflect)
 
     print("smartResult: typeof", typeof object, ": ", object, " =>", serialized)
     last_result = serialized
-    let wrapped = new_string(serialized)
-    return BigInt(wrapped) // to be consumed by wasm, potentially returned to wasp via main and wasm_done
+    let wrapped = string(serialized, app.memory)
+    // string_header_32 => json_header_32 to be parsed
+    let big_wrap = BigInt(wrapped) | BigInt(string_header_32) << BigInt(32)
+    console.log("smartResult: ", object, "as smart type BigInt", hex(big_wrap));
+
+    return big_wrap // BigInt(wrapped) // to be consumed by wasm, potentially returned to wasp via main and wasm_done
   } catch (ex) {
     // todo error handling via print!
     console.error("smartResult: ", object, "failed to parse to BigInt", ex)
@@ -252,6 +257,26 @@ let imports = {
     getWasmFunclet,
     init_graphics: nop, // canvas init by default
     requestAnimationFrame: nop, // todo
+    getenv: x => {
+      console.log("getenv", x);
+      return 0
+    }, // todo
+    fopen: x => {
+      console.log("fopen", x);
+      return 0
+    }, // todo WASI / NOT
+    fprintf: (x, y) => {
+      console.log("fprintf", x, y);
+      return 0
+    }, // todo WASI / NOT
+    fgetc: x => {
+      console.log("fgetc", x);
+      return 0
+    }, // todo WASI / NOT
+    fclose: x => {
+      console.log("fclose", x);
+      return 0
+    }, // todo WASI / NOT
     getDocumentBody: () => document.body,
     createHtml,
     addScript: (scriptContent) => {
@@ -495,6 +520,7 @@ function reset_heap() {
 }
 
 function compile_and_run(code) {
+  results.value = '';
   if (typeof compiler_exports === 'undefined')
     load_compiler()
   // reset_heap();
@@ -774,7 +800,8 @@ function moduleReflection(wasm_data) {
   })
 }
 
-let hex = x => x >= 0 ? x.toString(16) : (0xFFFFFFFF + x + 1).toString(16)
+let bigHex = x => x >= 0n ? x.toString(16) : (0xFFFFFFFFn + x + 1n).toString(16);
+let hex = x => typeof x === 'bigint' ? bigHex(x) : x >= 0 ? x.toString(16) : (0xFFFFFFFF + x + 1).toString(16)
 let chr = x => String.fromCodePoint(x) // chr(65)=chr(0x41)='A' char
 // debug wasm memory
 function binary_diff(old_mem, new_mem) {

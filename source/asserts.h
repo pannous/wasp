@@ -37,7 +37,7 @@ debug_line();\
 ok=assert_isx(wasp,result);\
 if(ok)printf("PASSED %s==%s\n",#wasp,#result);\
 else{printf("FAILED %s==%s\n",#wasp,#result); \
-backtrace_line()}
+backtrace_exit()}
 #endif
 
 #define assert_eval assert_is
@@ -58,10 +58,10 @@ backtrace_line()}
 
 #define assert(condition) try{\
 if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else printf("\nassert OK: %s\n",#condition);\
-}catch(chars m){printf("\n%s\n%s",m,#condition);backtrace_line()}
+}catch(chars m){printf("\n%s\n%s",m,#condition);backtrace_exit()}
 
 // TODO silent asserts outside of tests!
-#define assert_equals(α, β) if (!assert_equals_x(α,β)){printf("%s != %s",#α,#β);backtrace_line();}
+#define assert_equals(α, β) if (!assert_equals_x(α,β)){printf("%s != %s",#α,#β);backtrace_exit();}
 //#define check_eq assert_equals
 //#define check_is assert_equals
 
@@ -81,23 +81,33 @@ bool assert_equals_x(Node a, int b, chars context = "");
 static List<String> done;
 
 #if EMSCRIPTEN
-#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();}
+#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_exit();}
 #elif (MY_WASM or WASM) and not EMSCRIPTEN
 #define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
 #else
-#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_line();exit(-1);}
+#define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_exit();}
 #endif
-//#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_line();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_line();}
+//#define assert_emit(α, β) try{printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(emit(α),β)){printf("%s != %s",#α,#β);backtrace_exit();}}catch(chars x){printf("%s\nIN %s",x,α);backtrace_exit();}
 #define  check_emit assert_emit
 #if RUNTIME_ONLY or MY_WASM
 #define assert_run(a, b) skip(a)
 // use assert_emit if runtime is not needed!! much easier to debug
 #else
-#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){backtrace_line();}
+#define assert_run(mark, result) if(!assert_equals_x(runtime_emit(mark), result)){backtrace_exit();}
 
 //#define assert_run(α, β)  auto α1=runtime_emit(α);bool Ok= α == Node(β); print(Ok?"OK":"FAILED"); \
 //    print(α1);print(Ok?'=':u'≠');print(β);} \
-//    if(!Ok){printf("%s != %s",#α,#β);backtrace_line();}
+//    if(!Ok){printf("%s != %s",#α,#β);backtrace_exit();}
 #endif
 
 
+#if WASM or WEBAPP
+#define assert_throws(αα)
+#else
+
+#define assert_throws(αα)  {print(#αα);debug_line();bool old=panicking;try{ \
+panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#αα);backtrace_exit(); \
+}catch(chars){}catch(String*){}catch(...){};panicking=old;}
+#endif
+
+#define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_exit();}
