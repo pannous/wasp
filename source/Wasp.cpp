@@ -722,13 +722,20 @@ private:
         }
 //		if (!isFinite(number)) {
 //			parseError("Bad number");
-//		} else {
-        if (base != 10) todo("base "s + base);
-        if (is_identifier(ch))
-            print("IMPLICIT MULTIPLICATION!?"); // now what?
-//            ch!=' ' and not is_operator(ch) and not isWhiteSpace(ch) and not is_bracket(ch) and not is_grouper(ch) and not  and not is_operator(ch) and isDigit(ch)
-        return *new Node(number0); // {number0}; //wow cPP
 //		}
+        if (base != 10) todo("base "s + base);
+        Node &number_node = *new Node(number0);
+        if (not is_identifier(ch)) {
+            return number_node;
+        } else {
+//            print("IMPLICIT MULTIPLICATION!?"); // YES! now what?
+//            ch!=' ' and not is_operator(ch) and not isWhiteSpace(ch) and not is_bracket(ch) and not is_grouper(ch) and not  and not is_operator(ch) and isDigit(ch)
+            Node &mult = *new Node("*");
+            mult.kind = operators;// binops;
+            mult.add(number_node);
+            mult.add(Node(identifier()).setType(reference).clone());
+            return mult;
+        }
     };
 
     int parseInt(char next_digit, int base) {

@@ -49,6 +49,7 @@ type summary add Signature --summary-string  "${var.debug_name}"
 
 # type summary add Signature --summary-string "@${var.type_index} args#${var.types._size} ${var.debug_name} -> ${var.wasm_return_type}"
 
+type summary add --summary-string "${var.value} ${var.kind}" Type
 type summary add --summary-string "${var%E} ${var%x} ${var%B}" Valtype
 type summary add --summary-string "${var%E}" wabt::Result
 type summary add --summary-string "${var.offset_}" wabt::Stream

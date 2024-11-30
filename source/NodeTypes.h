@@ -212,7 +212,7 @@ enum Kind /* 32 bit*/ {// todo: merge Node.kind with Node.class(?)
     reals = 0x7C, /*  ≠ float64 , just hides bugs, these concepts should not be mixed */
     realsF = 0x7D,/*  ≠ float32 , just hides bugs, these concepts should not be mixed */
     longs = 0x7E, // the signature of parameters/variables is independent!
-    long32 = 0x7F, /*  ≠ int32 , just hides bugs, these concepts should not be mixed */
+    long32 = 0x7F, /* int stored in long node field  ≠ int32 , just hides bugs, these concepts should not be mixed */
 
     flag_entry = longs, // special semantics at compile time for now
     enum_entry = longs, // special semantics at compile time for now

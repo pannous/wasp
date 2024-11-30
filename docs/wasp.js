@@ -303,8 +303,8 @@ let imports = {
       print("CALLING getExternRefPropertyValue", ref, prop)
       if (ref && typeof ref[prop] !== 'undefined') {
         print("getExternRefPropertyValue OK ", ref, prop, ref[prop])
-        return smartResult(ref[prop])
-        // return String(ref[prop])
+        return string(ref[prop], app.memory)
+        // return smartResult(ref[prop])
       } else if (ref && typeof ref.getAttribute === 'function') {
         // check attribute
         let attribute = ref.getAttribute(prop);
@@ -1026,7 +1026,7 @@ function load_compiler() {
 async function run_wasm(buf_pointer, buf_size) {
   try { // WE WANT PURE STACK TRACE
     wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
-    // wasm_to_wat(wasm_buffer)
+    wasm_to_wat(wasm_buffer)
     // download_file(wasm_buffer, "emit.wasm", "wasm")
 
     app_module = await WebAssembly.compile(wasm_buffer, {builtins: ['js-string']})
@@ -1085,6 +1085,10 @@ async function run_wasm(buf_pointer, buf_size) {
 
 function wasm_to_wat(buffer) {
   try {
+    const parsed = window.WebAssemblyParser.decode(buffer);
+    console.log(parsed)
+    // editor.setValue(parsed.toText());
+
     wabtFeatures = {
       exceptions: true,
       mutable_globals: true,
@@ -1108,7 +1112,8 @@ function wasm_to_wat(buffer) {
     // console.log(result);
     editor.setValue(result)
   } catch (e) {
-    error(e)
+    console.log("wasm_to_wat error")
+    console.log(e) // but don't overwrite the editor
   }
 }
 
