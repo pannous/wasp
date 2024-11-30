@@ -7,14 +7,6 @@
 #endif
 #include "wasm_emitter.h"
 #import "asserts.h"
-#if WASM or WEBAPP
-#define assert_throws(αα)
-#else
-
-#define assert_throws(αα)  {print(#αα);debug_line();bool old=panicking;try{ \
-panicking=false;throwing=true;eval(αα);printf("SHOULD HAVE THROWN!\n%s\n",#αα);backtrace_line(); \
-}catch(chars){}catch(String*){}catch(...){};panicking=old;}
-#endif
 
 void testRange() {
     assert_emit("0..3", Node(0, 1, 2));

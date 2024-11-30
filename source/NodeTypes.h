@@ -77,11 +77,11 @@ enum Valtype {
     void_block = 0x40, // ⚠️
     none = 0x40, // NOT voids!!!
 
-    ref = 0x6b, // plus type id! vs 0xfb… for functions struct.new struct.get …  ≠ wasmtype_struct 0x5f
-    wasm_array = ref, // 0x6b ≠ wasmtype_array = 0x5e in type section
-    wasm_struct = ref, // 0x6b ≠ wasmtype_struct = 0x5f in type section
+//    ref = 0x6b, // ≠ externref plus type id! vs 0xfb… for functions struct.new struct.get …  ≠ wasmtype_struct 0x5f
+    wasm_struct = 0x6b, // ≠ wasmtype_struct = 0x5f in type section
+    wasm_array = wasm_struct, // 0x6b ≠ wasmtype_array = 0x5e in type section
     anyref = 0x6f,// was conceptually and namewise merged into externref
-    externref = 0x6f, // -0x11 ≠ ref!!
+    externref = 0x6f, // -0x11 111 ≠ 'ref'=wasm_struct!!
     funcref = 0x70, // -0x10
     func = 0x60,
     string_ref = 0x64, // wasm stringref

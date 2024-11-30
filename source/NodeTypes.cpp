@@ -360,8 +360,8 @@ chars typeName(Kind t, bool throws) {
                 return "stringref";// todo how here?
             if ((short) t == wasmtype_array)
                 return "array";
-            if ((short) t == ref)
-                return "ref(…)";
+            if ((short) t == wasm_struct)
+                return "wasm_struct(…)";
             if (throws)
                 error("MISSING Type Kind name mapping "s + (int) t);
             else return "";
@@ -644,8 +644,9 @@ chars typeName(Valtype t, bool fail) {
         case Valtype::string_ref:
             return "wasm_string_ref";
         case Valtype::externref:
-            return "ref"; // todo :
-        case Valtype::ref: // wasm struct / array
+            return "externref"; // todo :
+//            return "ref"; // todo :
+        case Valtype::wasm_struct: // wasm struct / array
             return "wasm_struct";
 //        case unknown_type:
 //            return "unknown";// internal

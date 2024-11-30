@@ -20,8 +20,6 @@
 #include "WitReader.h"
 #include "types/Number.h"
 
-#define assert_parses(marka) result=assert_parsesx(marka);if(result==ERROR){printf("NOT PARSING %s\n",marka);backtrace_line();}
-
 //void testDwarf();
 //void testSourceMap();
 void testAssert() {
@@ -32,6 +30,19 @@ void testAssert() {
 void testArguments() {
     assert_emit("#params", 0);// no args, but create empty List anyway
     // todo add context to wasp variable $params
+}
+
+void testBadType() {
+    skip(
+    // TODO strict mode a:b=c => b is type vs data mode a:b => b is data HOW?
+            assert_throws("x:yz=1");// "yz" is not a type
+    )
+}
+
+void testDeepType() {
+    parse("a=$canvas.tagName");
+//    check_is(result.kind, smarti64);
+    check_is(result.kind, Kind::strings);
 }
 
 void testInclude() {
@@ -89,6 +100,7 @@ void testHtmlWasp() {
 
 void testJS() {
     eval("js{alert('Hello')}"); // => <script>alert('Hello')</script>
+    eval("script{alert('Hello')}"); // => <script>alert('Hello')</script>
 }
 
 void testInnerHtml() {
@@ -216,6 +228,7 @@ void testHostIntegration() {
     testDomProperty();
     testCanvas();
     testInnerHtml();
+    testJS();
     testFetch();
 }
 
@@ -857,6 +870,7 @@ void testHyphenUnits() {
 }
 
 void testHypenVersusMinus() {
+    // Needs variable register in parser.
     const char *code = "a=-1 b=2 b-a";
     assert_emit(code, 3);
     // kebab case
@@ -3443,6 +3457,20 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    assert_emit("-42", -42)
+#if WEBAPP
+        testHostIntegration();
+#endif
+    skip(
+            testKebabCase();
+    )
+    testBadType();
+    testDeepType();
+    testTypedFunctions();
+    testTypes();
+    testPolymorphism();
+    testPolymorphism2();
+//	testDom();
     assert_emit("global x=7", 7);
     assert_eval("if 0:3", false);
 
@@ -3502,12 +3530,6 @@ void testCurrent() {
 //	assert_emit("'αβγδε'#3", U'γ');
 //	assert_emit("√9*-‖-3‖/-3", 3);
 
-//	testSubGroupingFlatten();
-//	testTypedFunctions();
-//	testTypes();
-//	testPolymorphism();
-//	testDom();
-//    testKebabCase();
     skip(
             assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
