@@ -2618,6 +2618,53 @@ Code encodeString(chars str) {
 
 int last_code_byte = 0;
 
+//Code cast FROM SmartPointer more difficult
+Code castToSmartPointer(Type from, Type return_type, Function &context, bool &needs_cast) {
+    Code block;
+    if (from.type == int_array or from == array) {
+        block.add(cast(from, i64));
+        block.addConst64(array_header_64).addByte(i64_or); // todo: other arrays
+//			if (return_type==float64)
+//			block.addByte(f64_reinterpret_i64);// hack smart pointers as main return: f64 has int range which is never hit
+        last_type = i64;
+    }
+//		block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
+
+//		if(from==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
+//		if(from==charp)block.addConst(-1073741824).addByte(i32_or);// string
+    else if (from.kind == strings or from.type == c_string or from == charp or
+             from == string_ref) { //
+        if (from == string_ref)block += castRefToChars();
+        block.addByte(i64_extend_i32_u);
+        block.addConst64(string_header_64);
+        block.addByte(i64_or);
+        last_type = i64;
+        needs_cast = return_type == i64;
+    } else if (from.kind == reference) {
+//			if (from==charp)
+//				block.addConst(string_header_64).addByte(i64_or);
+        todo("from ref");
+    } else if (from == float64 and context.name == start) {
+        // hack smart pointers as main return: f64 has range which is never hit by int
+        block.addByte(
+                i64_reinterpret_f64); // todo: not for _start in wasmtime... or 'unwrap' / print smart pointers via builtin
+//            block.add(emitCall(*new Node("print_smarty"), context)); // _Z5printd putf putd
+//            block.add(emitCall(*new Node("_Z5printd"), context));
+        last_type = i64;
+    } else if (from == byte_char or from == codepoint1) {
+        block.addByte(i64_extend_i32_u);
+        block.addConst64(codepoint_header_64);
+        block.addByte(i64_or);
+        last_type = i64;
+        needs_cast = return_type == i64;
+    }
+//		if(from==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
+//		if(from==angle)block.addByte(i32_or).addInt(0xA000000);//
+//		if(from==pointer)block.addByte(i32_or).addInt(0xF000000);//
+    return block;
+}
+
+
 [[nodiscard]]
 Code emitBlock(Node &node, Function &context) {
 //	todo : ALWAYS MAKE RESULT VARIABLE FIRST IN FUNCTION!!!
@@ -2711,47 +2758,9 @@ Code emitBlock(Node &node, Function &context) {
     else if (return_type == Valtype::i64t and last_type == Valtype::externref)
         block.addConst64(0);  // todo: can't use smart pointers for elusive externref
     else if (abi == wasp_smart_pointers) {
-//		if(last_type==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
-//		if(last_type==charp)block.addConst(-1073741824).addByte(i32_or);// string
-        if (last_type.type == int_array or last_type == array) {
-            block.add(cast(last_type, i64));
-            block.addConst64(array_header_64).addByte(i64_or); // todo: other arrays
-//			if (return_type==float64)
-//			block.addByte(f64_reinterpret_i64);// hack smart pointers as main return: f64 has int range which is never hit
-            last_type = i64;
-        }
-//		block.addConst32(array_header_32).addByte(i32_or); // todo: other arrays
-        else if (last_type.kind == strings or last_type.type == c_string or last_type == charp or
-                 last_type == string_ref) { //
-            if (last_type == string_ref)block += castRefToChars();
-            block.addByte(i64_extend_i32_u);
-            block.addConst64(string_header_64);
-            block.addByte(i64_or);
-            last_type = i64;
-            needs_cast = return_type == i64;
-        } else if (last_type.kind == reference) {
-//			if (last_type==charp)
-//				block.addConst(string_header_64).addByte(i64_or);
-            todo("last_type ref");
-        } else if (last_type == float64 and context.name == start) {
-            // hack smart pointers as main return: f64 has range which is never hit by int
-            block.addByte(
-                    i64_reinterpret_f64); // todo: not for _start in wasmtime... or 'unwrap' / print smart pointers via builtin
-//            block.add(emitCall(*new Node("print_smarty"), context)); // _Z5printd putf putd
-//            block.add(emitCall(*new Node("_Z5printd"), context));
-            last_type = i64;
-        } else if (last_type == byte_char or last_type == codepoint1) {
-            block.addByte(i64_extend_i32_u);
-            block.addConst64(codepoint_header_64);
-            block.addByte(i64_or);
-            last_type = i64;
-            needs_cast = return_type == i64;
-        }
-//		if(last_type==charp)block.addConst32((unsigned int)0xC0000000).addByte(i32_or);// string
-//		if(last_type==angle)block.addByte(i32_or).addInt(0xA000000);//
-//		if(last_type==pointer)block.addByte(i32_or).addInt(0xF000000);//
+        block.add(castToSmartPointer(last_type, return_type, context, needs_cast));
     }
-
+    // todo: merge cast with castSmartPointer
     if (needs_cast and last_type.value) {
         block.add(cast(last_type, return_type));
     }
@@ -2787,6 +2796,7 @@ Code emitBlock(Node &node, Function &context) {
     last_code_byte = block.length;
     return block;
 }
+
 
 /*
 //Map<int, String>

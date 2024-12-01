@@ -27,6 +27,13 @@ void testAssert() {
     assert_throws("assert 0");// todo make wasm throw, not compile error?
 }
 
+void testAutoSmarty() {
+    assert_emit("11", 11);
+    assert_emit("'c'", 'c');
+    assert_emit("'cc'", "cc");
+    assert_emit("π", pi);
+}
+
 void testArguments() {
     assert_emit("#params", 0);// no args, but create empty List anyway
     // todo add context to wasp variable $params
