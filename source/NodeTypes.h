@@ -81,7 +81,9 @@ enum Valtype {
     wasm_struct = 0x6b, // ≠ wasmtype_struct = 0x5f in type section
     wasm_array = wasm_struct, // 0x6b ≠ wasmtype_array = 0x5e in type section
     anyref = 0x6f,// was conceptually and namewise merged into externref
-    externref = 0x6f, // -0x11 111 ≠ 'ref'=wasm_struct!!
+    externref = 0x6f, // -0x11 111 (js)object !  ≠ 'ref'=wasm_struct!!
+    object = externref,
+    js_object = externref,
     funcref = 0x70, // -0x10
     func = 0x60,
     string_ref = 0x64, // wasm stringref
