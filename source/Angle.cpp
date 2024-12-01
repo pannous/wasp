@@ -171,7 +171,7 @@ Node &getType(Node &node) {
 bool isPlural(Node &word) {
     auto name = word.name;
     static List<String> plural_exceptions = {"flags", "puts", "plus", "minus", "times", "is", "has", "was", "does",
-                                             "equals"};
+                                             "equals"};// chars?
     if (plural_exceptions.contains(name)) return false;
     if (name.endsWith("s"))return true;
     return false;
