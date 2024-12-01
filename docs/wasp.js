@@ -200,6 +200,53 @@ function smartResult(object) { // returns BigInt smart pointer to object
 }
 
 
+async function storeObject() {
+// (table (export "externref_table") 1 externref)
+  const table = instance.exports.externref_table;
+
+// Store a JavaScript object in the table
+  const obj = {message: "Hello from externref!"};
+  const index = table.length; // Get the current table size
+  table.grow(1); // Expand table by one slot
+  table.set(index, obj);
+  console.log("Stored object index:", index); // Outputs the index where `obj` is stored
+  // NOW WE CAN PASS THE INDEX TO WASM AS SMARTY !
+
+  // Retrieve the object by index
+  const retrievedObj = table.get(index);
+  console.log(retrievedObj.message); // Outputs: "Hello from externref!"
+
+  /*
+  ;; Retrieve the externref from the table and call the logger
+  (call $print_externref (table.get (local.get 0)))
+  (call $cast_to_node (table.get (local.get 0)))
+   */
+}
+
+async function storeFunction() {
+//   (table (export "funcref_table") 10 funcref)
+// Access the exported table
+  const table = app.exports.funcref_table;
+
+// Store a JavaScript function in the table
+  const externalFunction = () => console.log("Hello from JavaScript!");
+  const index = table.length; // Use current length to append
+  table.grow(1); // Expand table size
+  table.set(index, externalFunction);
+
+// Retrieve and call the function by ID (index)
+  const retrievedFunction = table.get(index);
+  retrievedFunction(); // Outputs: "Hello from JavaScript!"
+
+  /* (func (export "call_by_index") (param i32)
+  ;; Call the function stored at the table index provided
+  call_indirect (type $type) (local.get 0)
+) */
+  app.exports.call_by_index(index);
+}
+
+
+
 const jsStringPolyfill = {
   "charCodeAt": (s, i) => s.charCodeAt(i),
   "compare": (s1, s2) => {
@@ -304,9 +351,9 @@ let imports = {
       if (ref && typeof ref[prop] !== 'undefined') {
         let val = ref[prop];
         print("getExternRefPropertyValue OK ", ref, prop, val, typeof val)
-        if (typeof val != "string") val = JSON.stringify(val) // todo, just
-        // return smartResult(val)
-        return chars(val, app.memory)
+        // if (typeof val != "string") val = JSON.stringify(val) // todo, just
+        return smartResult(val)
+        // return chars(val, app.memory)
         // return string(val, app.memory)
       } else if (ref && typeof ref.getAttribute === 'function') {
         // check attribute
