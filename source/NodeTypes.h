@@ -19,19 +19,22 @@ typedef unsigned int wasm_node_index; // Node* pointer INSIDE wasm_memory
 //	map_header_32 = USE Node!
 #define array_header_length 16 // 4*4 to align with int64
 //#include "ABI.h"
-#define node_header_32   0x80000000 // more complex than array!
+#define string_header_32 0x10000000 // compatible with String
 #define array_header_32  0x40000000 // compatible with List
 #define buffer_header_32  0x44000000 // incompatible with List!
-#define map_header_32    0x60000000
-#define kind_header_32    0xDD000000
-#define string_header_32 0x10000000 // compatible with String
+//#define map_header_32    0x46000000 // compatible with Map
+#define map_header_32    0x50000000 // compatible with Map
+#define ref_header_32    0x60000000 // index of externref == js object ! in table (export "externref_table") 1 externref
 #define smart_mask_32 0x70000000
-#define negative_mask_32 0x80000000
+#define node_header_32   0x80000000 // more complex than array!
+#define negative_mask_32 0x80000000 // todo ^^ ?
+#define kind_header_32   0xDD000000
 // 64 bit headers occur 1. if no multi value available
 
-#define node_header_64 0x0A000000000000000L // todo undup
-#define array_header_64 0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
 #define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
+#define array_header_64 0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
+#define ref_header_64 0x0060000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
+#define node_header_64 0x0A000000000000000L // todo undup
 #define codepoint_header_64 0x00C0000000000000L
 
 // smart_pointer_64 == 32 bits smart_type(header+payload) + 32 bit value
