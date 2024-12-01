@@ -30,6 +30,7 @@ let wasm_pointer_size = 4;// 32 bit todo: 64 bit on demand
 // see [smart-pointers](https://github.com/pannous/wasp/wiki/smart-pointer)
 let string_header_32 = 0x10000000
 let array_header_32 = 0x40000000
+let ref_header_32 = 0x60000000
 let node_header_32 = 0x80000000
 
 function binary_hack(binary_as_text) {
