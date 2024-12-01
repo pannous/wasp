@@ -2621,6 +2621,7 @@ int last_code_byte = 0;
 //Code cast FROM SmartPointer more difficult
 Code castToSmartPointer(Type from, Type return_type, Function &context, bool &needs_cast) {
     Code block;
+    if (from == return_type /*== smarti64*/) return block;
     if (from.type == int_array or from == array) {
         block.add(cast(from, i64));
         block.addConst64(array_header_64).addByte(i64_or); // todo: other arrays

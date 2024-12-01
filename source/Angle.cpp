@@ -2139,7 +2139,8 @@ void preRegisterFunctions() {
 #if MULTI_VALUE
     functions["wasp_main"].signature.returns(i64).returns(i32);// [result, type32] transparently (no flipped stack order)
 #else
-    functions["wasp_main"].signature.returns(i64);
+//    functions["wasp_main"].signature.returns(i64);
+    functions["wasp_main"].signature.returns(smarti64);
 #endif
 //    functions["paint"].import().signature.returns(voids);// paint surface
 //    functions["init_graphics"].import().signature.returns(pointer);// surface
