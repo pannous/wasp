@@ -258,7 +258,7 @@ let imports = {
     init_graphics: nop, // canvas init by default
     requestAnimationFrame: nop, // todo
     getenv: x => {
-      console.log("getenv", x);
+      console.log("getenv", x, chars(x, typeof (app) != 'undefined' ? app.memory : memory));
       return 0
     }, // todo
     fopen: x => {
@@ -1083,39 +1083,40 @@ async function run_wasm(buf_pointer, buf_size) {
   }
 }
 
-function wasm_to_wat(buffer) {
-  try {
-    const parsed = window.WebAssemblyParser2.decode(buffer);
-    console.log(parsed)
-    // editor.setValue(parsed.toText());
 
-    wabtFeatures = {
-      exceptions: true,
-      mutable_globals: true,
-      sat_float_to_int: true,
-      sign_extension: true,
-      simd: true,
-      threads: true,
-      multi_value: true,
-      tail_call: true,
-      bulk_memory: true,
-      reference_types: true,
-      annotations: true,
-      gc: true,
-      memory64: true,
-    }
-
-    const module = wabt.readWasm(buffer, {readDebugNames: true}, wabtFeatures);
-    module.generateNames();
-    module.applyNames();
-    const result = module.toText({foldExprs: true, inlineExport: true});
-    // console.log(result);
-    editor.setValue(result)
-  } catch (e) {
-    console.log("wasm_to_wat error")
-    console.log(e) // but don't overwrite the editor
-  }
-}
+// function wasm_to_wat(buffer) {
+//   try {
+//     const parsed = window.WebAssemblyParser2.decode(buffer);
+//     console.log(parsed)
+//     // editor.setValue(parsed.toText());
+//
+//     wabtFeatures = {
+//       exceptions: true,
+//       mutable_globals: true,
+//       sat_float_to_int: true,
+//       sign_extension: true,
+//       simd: true,
+//       threads: true,
+//       multi_value: true,
+//       tail_call: true,
+//       bulk_memory: true,
+//       reference_types: true,
+//       annotations: true,
+//       gc: true,
+//       memory64: true,
+//     }
+//
+//     const module = wabt.readWasm(buffer, {readDebugNames: true}, wabtFeatures);
+//     module.generateNames();
+//     module.applyNames();
+//     const result = module.toText({foldExprs: true, inlineExport: true});
+//     // console.log(result);
+//     editor.setValue(result)
+//   } catch (e) {
+//     console.log("wasm_to_wat error")
+//     console.log(e) // but don't overwrite the editor
+//   }
+// }
 
 
 function readFile() {// via classic html, not wasp

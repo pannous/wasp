@@ -78,6 +78,8 @@ static bool tracing = false;  // todo
 #else
 #if MY_WASM and DEBUG
 static bool tracing = true;
+#elif DEBUG
+static bool tracing = true;
 #else
 //static bool tracing = true;
 static bool tracing = false;
@@ -98,15 +100,17 @@ typedef const char *chars;
 typedef byte *bytes;
 
 // silent ++
-#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_line()}
-#define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);backtrace_line();}
-#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("%s",ɣ);backtrace_line();}
+#define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
+//#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_line()}
+
+#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_exit();}
+#define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);backtrace_exit();}
+#define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("%s",ɣ);backtrace_exit();}
 
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
-#define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
 
 #define check(test) {print("CHECKING ");print(#test);debug_line(); \
-  if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n",#test);backtrace_line()}}
+  if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n",#test);backtrace_exit()}}
 
 #include "String.h" // AFTER defines!
 #include "smart_types.h"
