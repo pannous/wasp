@@ -199,23 +199,23 @@ function smartResult(object) { // returns BigInt smart pointer to object
   }
 }
 
-
+const refToIndexMap = new Map();
 async function storeObject() {
 // (table (export "externref_table") 1 externref)
   const table = instance.exports.externref_table;
 
 // Store a JavaScript object in the table
-  const obj = {message: "Hello from externref!"};
+  const ref = {message: "Hello from externref!"};
   const index = table.length; // Get the current table size
   table.grow(1); // Expand table by one slot
-  table.set(index, obj);
-  console.log("Stored object index:", index); // Outputs the index where `obj` is stored
+  table.set(index, ref);
+  refToIndexMap.set(ref, index);
+  console.log("Stored object index:", index); // Outputs the index where `ref` is stored
   // NOW WE CAN PASS THE INDEX TO WASM AS SMARTY !
 
   // Retrieve the object by index
-  const retrievedObj = table.get(index);
+  const retrievedObj = table.get(index); // Retrieve the object by index directly! ref=>object!
   console.log(retrievedObj.message); // Outputs: "Hello from externref!"
-
   /*
   ;; Retrieve the externref from the table and call the logger
   (call $print_externref (table.get (local.get 0)))
@@ -223,6 +223,9 @@ async function storeObject() {
    */
 }
 
+function getExternRefIndex(ref) {
+  return refToIndexMap.get(ref); // Retrieve the index for a given ref
+}
 async function storeFunction() {
 //   (table (export "funcref_table") 10 funcref)
 // Access the exported table
