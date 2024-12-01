@@ -2108,9 +2108,10 @@ void preRegisterFunctions() {
     functions["getElementById"].import();
     functions["getElementById"].signature.add(charp).returns(externref /*!!*/);
     functions["getExternRefPropertyValue"].import(); // for consumption
-    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(charp);
+//    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(charp);
 //    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(strings);
-//    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(smarti64);// can't handle smarty yet withouth wasp runtime
+    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(
+            smarti64);// can't handle smarty yet withouth wasp runtime
     functions["getExternRefPropertyValueX"].import(); // to forward to host again
     functions["getExternRefPropertyValueX"].signature.add(externref).add(charp).returns(externref);
 //	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(stringref); // ⚠️ not yet in webview!

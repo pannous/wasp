@@ -881,7 +881,6 @@ Node interpret(Node &n);
 
 Node eval(String n);
 
-
 struct smart_value {
     Type smartType;
     Value value;

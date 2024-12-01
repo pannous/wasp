@@ -27,6 +27,7 @@ typedef enum smartType4bit {
     //	foverflow=0x3,
     symbola = 0x4, // ≈ stringa &memoryChars[payload]
     json5 = 0x5,
+    reference = 0x6, // value = externref index in (table (export "externref_table") 1 externref)
 //	long60p = 0x6, // pointer to long60
     septet = 0x7, // 7 hexes à 4 bit OR 7 bytes in smart64! 7 is NUMERIC through 0x7C…0x7F float32 etc
     utf8char = 0x8, // UTF24 Unicode
