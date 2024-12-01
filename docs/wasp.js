@@ -303,14 +303,16 @@ let imports = {
       print("CALLING getExternRefPropertyValue", ref, prop)
       if (ref && typeof ref[prop] !== 'undefined') {
         print("getExternRefPropertyValue OK ", ref, prop, ref[prop])
-        return string(ref[prop], app.memory)
+        return chars(ref[prop], app.memory)
+        // return string(ref[prop], app.memory)
         // return smartResult(ref[prop])
       } else if (ref && typeof ref.getAttribute === 'function') {
         // check attribute
         let attribute = ref.getAttribute(prop);
         print("getExternRefPropertyValue OK ", ref, prop, attribute)
         // return String(attribute)
-        return smartResult(attribute)
+        return chars(attribute, app.memory)
+        // return smartResult(attribute)
       } else {
         throw new Error(`'${prop}' is not a property of the provided reference`);
       }

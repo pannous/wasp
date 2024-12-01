@@ -143,7 +143,7 @@ extern Node DoubleType; // FloatType RealType
 extern Node BoolType;
 extern Node CodepointType;// CharType CharacterType
 extern Node ByteType;
-extern Node ByteCharType;// ugly by design
+extern Node ByteCharType;// ugly by design // todo char ≠ char* !
 extern Node ShortType;
 extern Node StringType;
 

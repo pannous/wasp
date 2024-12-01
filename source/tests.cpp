@@ -237,7 +237,7 @@ void testTypes() {
     clearAnalyzerContext();
     result = analyze(parse("chars a"));
     assert_equals(result.kind, Kind::reference);
-    assert_equals(result.type, &ByteCharType);
+    assert_equals(result.type, &ByteCharType);// todo char ≠ char* !
     assert_equals(result.name, "a");
 
 
