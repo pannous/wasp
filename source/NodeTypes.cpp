@@ -133,6 +133,7 @@ Type mapType(String arg, bool throws) {
     else if (arg == "unsigned char*")return charp;// pointer with special semantics
     else if (arg == "char const*")return charp;// pointer with special semantics
     else if (arg == "char const*&")return charp;// todo ?
+    else if (arg == "chars")return charp;
     else if (arg == "char*")return charp;
     else if (arg == "char32_t*")return codepoint1; // ≠ codepoint todo, not exactly: WITHOUT HEADER!
     else if (arg == "char const**")return pointer;
@@ -450,8 +451,15 @@ Primitive mapTypeToPrimitive(Node &n) {
         return Primitive::codepoint32;
     if (n == StringType)
         return Primitive::stringp;
+    if (n == BoolType)
+        return Primitive::byte_i8;
+    if (n == ByteCharType) // todo !?
+//        return Primitive::byte_char;
+//    if (n == CharsType)
+        return Primitive::charp;
     else if (mapType(n.name, false) != unknown_type)
         return mapType(n.name, false).type;
+//    else error1("mapTypeToPrimitive "s + n.serialize());
     else todow("mapTypeToPrimitive "s + n.serialize());
     return Primitive::unknown_type;
 }

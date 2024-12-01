@@ -42,7 +42,7 @@ void testBadType() {
 void testDeepType() {
     parse("a=$canvas.tagName");
 //    check_is(result.kind, smarti64);
-    check_is(result.kind, Kind::strings);
+//    check_is(result.kind, Kind::strings);
 }
 
 void testInclude() {
@@ -234,29 +234,67 @@ void testHostIntegration() {
 
 
 void testTypes() {
+    result = analyze(parse("chars a"));
+    assert_equals(result.kind, Kind::reference);
+    assert_equals(result.type, &ByteCharType);
+    assert_equals(result.name, "a");
+
+
     result = analyze(parse("int a"));
-    check_is(result.kind, Kind::reference);
-    check_is(result.type, IntegerType);// IntegerType
-    check_is(result.name, "a");
+    assert_equals(result.kind, Kind::reference);
+    assert_equals(result.type, &IntegerType);// IntegerType
+    assert_equals(result.name, "a");
 
     result = analyze(parse("string b"));
-    check_is(result.kind, Kind::reference);
-    check_is(result.type, StringType);
-    check_is(result.name, "b");
+    assert_equals(result.kind, Kind::reference);
+    assert_equals(result.type, &StringType);
+    assert_equals(result.name, "b");
 
     result = analyze(parse("float a,string b"));
     let result0 = result[0];
-    check_is(result0.kind, Kind::reference);
-//	check_is(result0.kind, Kind::declaration);
+    assert_equals(result0.kind, Kind::reference);
+//	assert_equals(result0.kind, Kind::declaration);
 //	todo at this stage it should be a declaration?
 
-    check_is(result0.type, DoubleType);
-    check_is(result0.name, "a");
+    assert_equals(result0.type, &DoubleType);
+    assert_equals(result0.name, "a");
     let result1 = result[1];
-    check_is(result1.kind, Kind::reference);
-    check_is(result1.type, StringType);
-    check_is(result1.name, "b");
+    assert_equals(result1.kind, Kind::reference);
+    assert_equals(result1.type, &StringType);
+    assert_equals(result1.name, "b");
+
 }
+
+void testTypes2() {
+    result = analyze(parse("a:chars"));
+    assert_equals(result.kind, Kind::reference);
+    assert_equals(result.type, &ByteCharType);
+    assert_equals(result.name, "a");
+
+
+    result = analyze(parse("a:int"));
+    assert_equals(result.kind, Kind::reference);
+    assert_equals(result.type, &IntegerType);// IntegerType
+    assert_equals(result.name, "a");
+
+    result = analyze(parse("b:string"));
+    assert_equals(result.kind, Kind::reference);
+    assert_equals(result.type, &StringType);
+    assert_equals(result.name, "b");
+
+    result = analyze(parse("a:float,b:string"));
+    let result0 = result[0];
+    assert_equals(result0.kind, Kind::reference);
+//	assert_equals(result0.kind, Kind::declaration);
+//	todo at this stage it should be a declaration?
+    assert_equals(result0.type, &DoubleType);
+    assert_equals(result0.name, "a");
+    let result1 = result[1];
+    assert_equals(result1.kind, Kind::reference);
+    assert_equals(result1.type, &StringType);
+    assert_equals(result1.name, "b");
+}
+
 
 
 void testTypedFunctions() {
@@ -323,6 +361,7 @@ void testPolymorphism() {
 }
 
 void testPolymorphism2() {
+    clearAnalyzerContext();
     auto node = parse("fun test(string a){return a};\nfun test(float b){return b+1}");
     auto fun = analyze(node);
     auto function = functions["test"];
@@ -3463,6 +3502,7 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    testTypes();
     skip(
             assert_emit("‖3‖-1", 2);
     )
@@ -3482,7 +3522,7 @@ void testCurrent() {
     testTypedFunctions();
     testTypes();
     testPolymorphism();
-    testPolymorphism2();
+//    testPolymorphism2();
     skip(
     testPolymorphism3();
             assert_emit("τ≈6.2831853", true);

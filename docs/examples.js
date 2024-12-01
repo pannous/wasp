@@ -1,11 +1,11 @@
 let exampleCode = {
   // getElementById: '$canvas.style',
   // getElementById: '$canvas.tagName', // not automatically printed because …?
-  getElementById: 'a=$canvas.tagName;print(a)',
+  // getElementById: 'a=$canvas.tagName;print(a)',
+  getElementById: 'a:chars=$canvas.tagName;print(a)',
   // getElementById: 'a:auto=$canvas.tagName;print(a)',
   // getElementById: 'a:node=$canvas.tagName;print(a)',// todo not a type!
   // getElementById: 'a:string=$canvas.tagName;print(a)',
-  // getElementById: 'a:chars=$canvas.tagName;print(a)',
   // getElementById: 'a:int=$canvas.tagName;print(a)',// smarty rly
   // getElementById: 'a:smarty=$canvas.tagName;print(a)',
   // getElementById: 'a:ref=$canvas.tagName;printx(a)',

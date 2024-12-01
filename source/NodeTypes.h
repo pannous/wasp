@@ -143,7 +143,7 @@ extern Node DoubleType; // FloatType RealType
 extern Node BoolType;
 extern Node CodepointType;// CharType CharacterType
 extern Node ByteType;
-extern Node ByteCharType;// ugyly by design
+extern Node ByteCharType;// ugly by design
 extern Node ShortType;
 extern Node StringType;
 
@@ -265,7 +265,7 @@ enum Primitive /*32*/ {
     any = 0xA1,// Wildcard for function signatures, like haskell add :: a->a
 //	unknown = any,
     array = 0xAA,// compatible with List, Node, String (?)
-    charp = 0xC0, // char* vs codepoint(*)
+    charp = 0xC0, // char* vs codepoint(*) vs byte_char
     stringp = 0xCF,// String* vs stringref …
     string_struct = 0xC8,// String
 //    codepointus = 0xC1,  // when indexing int32 array

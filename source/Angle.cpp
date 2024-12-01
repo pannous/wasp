@@ -138,29 +138,27 @@ void addWasmArrayType(Type value_type) {
 }
 
 
-Node getType(Node node) {
-    auto name = node.name;
+Node &getType(Node &node) {
+    String name = node.name;
     bool vector = false;
     if (name.endsWith("es")) { // addresses
         // todo: cities …
         name = name.substring(0, -3);
         vector = true;
-    } else if (name.endsWith("s")) { // ints …
+    } else if (name.endsWith("s") and not(name == "chars")) { // ints …
         name = name.substring(0, -2);
         vector = true;
     }
-    Node typ;
     if (types.has(name)) {
         auto pNode = types[name];
         if (not pNode)
             error1("getType: types corruption: type %s not found (NULL)", name);
-        typ = *pNode;
-        typ.kind = clazz;
-    } else {
-        typ = *new Node(name);
-        typ.kind = clazz;
-        types[name] = &typ;
+        return *pNode;
+//        typ.kind = clazz;
     }
+    Node &typ = *new Node(name);
+    typ.kind = clazz;
+    types[name] = &typ;
     if (vector) {
         // holup typ.kind = arrays needs to be applied to the typed object!
         typ.kind = arrays;
@@ -191,11 +189,13 @@ bool isType(Node &expression) {
     if (name.empty())return false;
 //    if (isPlural(expression))// very week criterion: houses=[1,2,3]
 //        return true;
-    auto type = mapType(name, false);
+    Type type = mapType(name, false);
     if (type == none || type == unknown_type)
         return types.has(name);
-    else
+    else {
+        tracef("typeName %s\n", typeName(type));
         return true;
+    }
 //	if (not types.has(name))
 //		error1("isType: type %s not found"s% name);
     return types.has(name);
@@ -623,6 +623,7 @@ bool isPrimitive(Node &node) {
     if (&node == &ByteCharType)return true;
     if (&node == &CodepointType)return true;
     if (&node == &ShortType)return true;
+    if (&node == &ByteCharType)return true;
     if (&node == &StringType)return true;// todo uh not really primitive!?
     Kind type = node.kind;
     if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
@@ -662,6 +663,8 @@ void initTypes() {
 //    types.add("sint", &IntegerType);
 
 //    types.add("char", &Byte);
+    types.add("chars", &ByteCharType);
+
     types.add("char", &CodepointType);// todo : warn about abi conflict? CAN'T USE IN STRUCT
     types.add("character", &CodepointType);
     types.add("charpoint", &CodepointType);
@@ -701,7 +704,7 @@ Node &groupTypes(Node &expression, Function &context) {
         return expression;// later
     if (types.size() == 0)initTypes();
     if (isType(expression)) {// double \n x,y,z  extra case :(
-        Node type = getType(expression);
+        Node &type = getType(expression);
         auto is_primitive = isPrimitive(type);
         if (not is_primitive and (type.kind == structs or type.kind == clazz)) // or type == wasmtype_struct
             return constructInstance(expression, context);
@@ -1469,7 +1472,7 @@ Type preEvaluateType(Node &node, Function &context) {
         return mapType(node.name);
     }
     if (node.kind == operators) {
-        if(node.name == "√")return float64;// todo generalize
+        if (node.name == "√")return float64;// todo generalize
         Node &lhs = node[0];
         auto lhs_type = preEvaluateType(lhs, context);
         if (node.length == 1)
@@ -1734,11 +1737,11 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 #endif
     if (contains(funclet_list, name)) {
 #if WASM and not MY_WASM
-//				todo("getWaspFunclet get library function signature from wasp");
-        warn("WASP function "s + name + " getWaspFunclet todo");
-        auto pFunction = getWaspFunction(name).clone();
-        pFunction->import();
-        return use_required(pFunction);
+        //				todo("getWaspFunclet get library function signature from wasp");
+                warn("WASP function "s + name + " getWaspFunclet todo");
+                auto pFunction = getWaspFunction(name).clone();
+                pFunction->import();
+                return use_required(pFunction);
 #endif
         print("loading funclet "s + name);
         Module &funclet_module = read_wasm(findFile(name, "lib"));
