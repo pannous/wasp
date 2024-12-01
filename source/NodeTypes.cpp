@@ -457,10 +457,12 @@ Primitive mapTypeToPrimitive(Node &n) {
 //        return Primitive::byte_char;
 //    if (n == CharsType)
         return Primitive::charp;
+    if (n.kind == flags)
+        return Primitive::wasm_int64;// Kind::flags;
     else if (mapType(n.name, false) != unknown_type)
         return mapType(n.name, false).type;
 //    else error1("mapTypeToPrimitive "s + n.serialize());
-    else todow("mapTypeToPrimitive "s + n.serialize());
+    else todo("mapTypeToPrimitive "s + n.serialize());
     return Primitive::unknown_type;
 }
 
@@ -517,7 +519,8 @@ Valtype mapTypeToWasm(Node &n) {
     if (n.kind == key and n.value.data) return mapTypeToWasm(*n.value.node);
     //	if (n.kind == key and not n.value.data)return array;
     if (n.kind == groups)return (Valtype) array;// uh todo?
-    if (n.kind == flags) return i64;
+    if (n.kind == flags)
+        return i64;
     if (n.kind == enums) return i64;
     if (n.kind == unknown) return int32;// blasphemy!
     Node first = n.first();

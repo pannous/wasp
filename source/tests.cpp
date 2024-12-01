@@ -234,6 +234,7 @@ void testHostIntegration() {
 
 
 void testTypes() {
+    clearAnalyzerContext();
     result = analyze(parse("chars a"));
     assert_equals(result.kind, Kind::reference);
     assert_equals(result.type, &ByteCharType);
@@ -821,6 +822,7 @@ void testFlags2() {
 void testFlags() {
     clearAnalyzerContext();
     Node &parsed = parse("flags abc{a b c}");
+    backtrace_line();
     Node &node = analyze(parsed);
     check(node.name == "abc")
     check(node.kind == flags)
@@ -3502,6 +3504,7 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    testFlags();
     testTypes();
     skip(
             assert_emit("‖3‖-1", 2);
