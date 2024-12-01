@@ -8,6 +8,7 @@
 #include "wasm_helpers.h"
 #include "Util.h"
 #include "NodeTypes.h"
+#include "ABI.h"
 //#include "Map.h" recursive include error Node.h:60:9: error: field has incomplete type 'String'
 
 #include <cstdlib> // OK in WASM!

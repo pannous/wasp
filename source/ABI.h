@@ -66,3 +66,48 @@ struct AssemblyScriptData {
 	u32 rtSize;// 	-4 	u32 	Size of the data following the header
 	void *payload;// 0 	Payload starts here
 };
+
+
+// todo move these to ABI.h once it is used:
+//	map_header_32 = USE Node!
+#define array_header_length 16 // 4*4 to align with int64
+//#include "ABI.h"
+#define string_header_32 0x10000000 // compatible with String
+#define array_header_32  0x40000000 // compatible with List
+#define buffer_header_32  0x44000000 // incompatible with List!
+//#define map_header_32    0x46000000 // compatible with Map
+#define map_header_32    0x50000000 // compatible with Map
+#define ref_header_32    0x60000000 // index of externref == js object ! in table (export "externref_table") 1 externref
+//#define smart_mask_32    0x70000000 ??
+#define node_header_32   0x80000000 // more complex than array!
+#define negative_mask_32 0x80000000 // todo ^^ ?
+#define kind_header_32   0xDD000000
+// 64 bit headers occur 1. if no multi value available
+
+#define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
+#define array_header_64 0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
+#define ref_header_64 0x0060000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
+#define node_header_64 0x0A000000000000000L // todo undup
+#define codepoint_header_64 0x00C0000000000000L
+
+// smart_pointer_64 == 32 bits smart_type(header+payload) + 32 bit value
+//enum smart_pointer_masks {
+static int64
+//	float_header_64 = 0x0020000000000000, not needed, use:
+smart_type_64_mask = 0xFFFFFFFF00000000L,
+        double_mask_64 = 0x7F00000000000000L,
+        smart_mask_64 = 0x00FF000000000000L,
+//	negative_mask_64 = 0x8000000000000000,
+negative_mask_64 = 0xFF00000000000000L,
+        type_mask_64_word = 0xFFFF000000000000L,
+        smart_pointer_value60_mask = 0x0FFFFFFFFFFFFFFFL,
+        smart_pointer_value56_mask = 0x00FFFFFFFFFFFFFFL,
+        smart_pointer_value52_mask = 0x000FFFFFFFFFFFFFL,
+        smart_pointer_value48_mask = 0x0000FFFFFFFFFFFFL,
+        smart_pointer_value32_mask = 0x00000000FFFFFFFFL; // or do shift << 32 >> 32 to remove header
+//	negative_long_mask_64 = 0xBFF0000000000000,
+
+//};
+
+// 3 * sizeof(int32)  header, kind, length before *DATA !
+// sizeof(List) - sizeof(S*)
