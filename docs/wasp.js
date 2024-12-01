@@ -302,14 +302,16 @@ let imports = {
       let prop = chars(prop0, app.memory)
       print("CALLING getExternRefPropertyValue", ref, prop)
       if (ref && typeof ref[prop] !== 'undefined') {
-        print("getExternRefPropertyValue OK ", ref, prop, ref[prop])
-        return chars(ref[prop], app.memory)
-        // return string(ref[prop], app.memory)
-        // return smartResult(ref[prop])
+        let val = ref[prop];
+        print("getExternRefPropertyValue OK ", ref, prop, val, typeof val)
+        if (typeof val != "string") val = JSON.stringify(val) // todo, just
+        // return smartResult(val)
+        return chars(val, app.memory)
+        // return string(val, app.memory)
       } else if (ref && typeof ref.getAttribute === 'function') {
         // check attribute
         let attribute = ref.getAttribute(prop);
-        print("getExternRefPropertyValue OK ", ref, prop, attribute)
+        print("getExternRefPropertyValue OK! ", ref, prop, attribute)
         // return String(attribute)
         return chars(attribute, app.memory)
         // return smartResult(attribute)
