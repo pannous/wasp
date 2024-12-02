@@ -1307,6 +1307,7 @@ Node &groupOperators(Node &expression, Function &context) {
 //        else error("binop?");
         if (op == ".") {
             if (prev.kind == referencex) {
+                functions["invokeExternRef"].is_used = true; // a.b() => invokeExternRef(a, "b")
                 functions["getExternRefPropertyValue"].is_used = true;
                 functions["setExternRefPropertyValue"].is_used = true;
             }
@@ -2115,6 +2116,12 @@ void preRegisterFunctions() {
     functions["getElementById"].import();
     functions["getElementById"].signature.add(charp, "id").returns(externref /*!!*/);
 
+    functions["invokeExternRef"].import(); // how to distinguish between functions and properties? 1. no params use getExternRefPropertyValue
+    functions["invokeExternRef"].signature.add(externref).add(charp, "method").add(charp, "params").returns(smarti64);
+
+//    functions["invokeExternRef"].signature.add(externref).add(strings, "method").add(node, "params").returns(smarti64);
+//    TODO get pointer of node on stack
+
     functions["getExternRefPropertyValue"].import(); // for consumption
     functions["getExternRefPropertyValue"].signature.add(externref, "object").add(charp, "field").returns(smarti64);
 //	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(stringref); // ⚠️ not yet in webview!
@@ -2122,9 +2129,6 @@ void preRegisterFunctions() {
     functions["setExternRefPropertyValue"].import();
     functions["setExternRefPropertyValue"].signature.
             add(externref, "object").add(charp, "field").add(smarti64, "value").returns(smarti64);
-
-    functions["invokeExternRef"].import();
-    functions["invokeExternRef"].signature.add(externref).add(strings, "method").add(node, "params").returns(smarti64);
 
 
 //	functions["$"].import();

@@ -1549,10 +1549,20 @@ Code emitAttributeSetter(Node &node, Function &context) {
     return Code();
 }
 
+[[nodiscard]]
+Code emitInvokeExternRef(Node &node, Node &field, Function &function) {
+    auto op = Node("invokeExternRef");
+    op.add(node);
+    op.add(Node(field.name));
+//    op.add(field.childs());// params as Node
+    op.add(Node(field.childs().serialize()));// params
+    return emitCall(op, function);
+}
 
 // external reference ≠ wasm reference types (struct …) !
 [[nodiscard]]
 Code emitReferenceProperty(Node &node, Node &field, Function &function) {
+    if (field.length > 0)return emitInvokeExternRef(node, field, function);
     auto op = Node("getExternRefPropertyValue");
     op.add(node);
     op.add(Node(field.name));
