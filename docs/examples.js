@@ -1,23 +1,26 @@
 let exampleCode = {
   // getElementById: '$canvas.style',
   getElementById: '$canvas.tagName', // OK via chars
-    hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
+  math: `1+2*√3^2`,
+  hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
   math2: `√π²`,
-    function: `square := it*it; square 3`,
-    lists: `a = [1, 2, 3]; a[1] == a#2`,
-    lists2: `a = [1, 2] + [3, 4]; a[2] == a#3 == 3`,
-    strings: `a = "Hello " +"🌎"; a#7 == '🌎'`,
-    fibonacci: `fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\n\nfib(10)`,
-    fibonacci2: `fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)\n\nfib(10)`,
-    // fibonacci_juliaesque: `fib 0 :=0; fib 1 := 1; fib n := fib(n - 1) + fib(n - 2)\n\nfib(10)`,
-    // fibonacci2: `fib n := n < 3 ? 1 : fib(n - 1) + fib(n - 2)\n\n`,
-    paint2d: `ctx.fillStyle = 'red'; ctx.fillRect(10, 10, 150, 100)`,
+  function: `square := it*it; square 3`,
+  lists: `a = [1, 2, 3]; a[1] == a#2`,
+  lists2: `a = [1, 2] + [3, 4]; a[2] == a#3 == 3`,
+  strings: `a = "Hello " +"🌎"; a#7 == '🌎'`,
+  fibonacci: `fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\n\nfib(10)`,
+  // fibonacci2: `fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)\n\nfib(10)`,
+  // fibonacci_juliaesque: `fib 0 :=0; fib 1 := 1; fib n := fib(n - 1) + fib(n - 2)\n\nfib(10)`,
+  // fibonacci2: `fib n := n < 3 ? 1 : fib(n - 1) + fib(n - 2)\n\n`,
+  // paint2d: `ctx = $canvas.getContext('2d');ctx.fillStyle = 'red'; ctx.fillRect(10, 10, 150, 100)`,
+  // paint2d: `$ctx.fillStyle = 'red'; $ctx.fillRect(10, 10, 150, 100)`,
+  paint2d: `$ctx.fillStyle = 'red'`,
   html: `html{bold{"Hello"}}`,
   // html: `html: h1: "Hello, World!"`,
-    // html: `html: <h1>Hello, World!</h1>`, // operator missing: <
-    alert: 'script: alert("Hello, World!")',
-    javascript: `html: div id="app"; app.innerHTML = "Hello, World!"`,
-    draw_sine: `// sine wave\nfor i in 0..1000\n  ctx.lineTo(i, 100 + Math.sin(i / 10) * 50)\nctx.stroke()`,
+  // html: `html: <h1>Hello, World!</h1>`, // operator missing: <
+  alert: 'script: alert("Hello, World!")',
+  javascript: `html: div id="app"; app.innerHTML = "Hello, World!"`,
+  draw_sine: `// sine wave\nfor i in 0..1000\n  ctx.lineTo(i, 100 + Math.sin(i / 10) * 50)\nctx.stroke()`,
   sine: `double sin(double x){
     double
     S1  = -1.66666666666666324348e-01, 
@@ -43,5 +46,5 @@ let exampleCode = {
 sin(3.1415926)
     `,
 
-    // scene3d: `// draw a red rectangle\nctx.fillStyle = 'red';\nctx.fillRect(10, 10, 150, 100);`
+  // scene3d: `// draw a red rectangle\nctx.fillStyle = 'red';\nctx.fillRect(10, 10, 150, 100);`
 }

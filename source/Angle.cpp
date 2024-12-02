@@ -1306,8 +1306,10 @@ Node &groupOperators(Node &expression, Function &context) {
 //            prev = expression.to(op);
 //        else error("binop?");
         if (op == ".") {
-            if (prev.kind == referencex)
+            if (prev.kind == referencex) {
                 functions["getExternRefPropertyValue"].is_used = true;
+                functions["setExternRefPropertyValue"].is_used = true;
+            }
             if (prev.kind == (Kind) Primitive::node)
                 functions["get"].is_used = true;
         }
@@ -2111,21 +2113,18 @@ void preRegisterFunctions() {
     functions["print"].signature.add(node).returns(voids);
 
     functions["getElementById"].import();
-    functions["getElementById"].signature.add(charp).returns(externref /*!!*/);
+    functions["getElementById"].signature.add(charp, "id").returns(externref /*!!*/);
+
     functions["getExternRefPropertyValue"].import(); // for consumption
-//    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(charp);
-//    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(strings);
-    functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(
-            smarti64);// can't handle smarty yet withouth wasp runtime
-    functions["getExternRefPropertyValueX"].import(); // to forward to host again
-    functions["getExternRefPropertyValueX"].signature.add(externref).add(charp).returns(externref);
+    functions["getExternRefPropertyValue"].signature.add(externref, "object").add(charp, "field").returns(smarti64);
 //	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(stringref); // ⚠️ not yet in webview!
 
-//	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(longs);
-//	functions["getExternRefPropertyValue"].signature.add(externref,"object").add(strings,"property").returns(marti64);
+    functions["setExternRefPropertyValue"].import();
+    functions["setExternRefPropertyValue"].signature.
+            add(externref, "object").add(charp, "field").add(smarti64, "value").returns(smarti64);
 
-//	functions["invokeExternRef"].import();
-//	functions["invokeExternRef"].signature.add(externref).add(strings,"method").add(node,"params").returns(rimitive::smarti64);
+    functions["invokeExternRef"].import();
+    functions["invokeExternRef"].signature.add(externref).add(strings, "method").add(node, "params").returns(smarti64);
 
 
 //	functions["$"].import();
