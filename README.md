@@ -2,13 +2,13 @@
 
 **[Wasp](https://github.com/pannous/wasp/wiki)** is a new unified notation for both markup/object data and code.  
 Wasp is the foundation layer of the higher order programming language [angle](https://github.com/pannous/wasp/wiki).
-[//]: # (https://github.com/pannous/angle)
+<!-- https://github.com/pannous/angle -->
 
 «Data is Code and Code is Data»
 
 ## [Wasp Syntax](https://github.com/pannous/wasp/wiki/syntax)
 
-For example, a HTML registration form:
+For example, an HTML registration form:
 
 ```html
 <form>
@@ -37,6 +37,16 @@ form{
   }
 }
 ```
+
+Html is just an arbitrary example of structured data, wasp can represent any data, like json, xml, yaml,
+s-expressions...
+The difference from passive data is that Wasp is fully typed and also used for active data, such as code.
+
+## Online Demo
+
+[wasp.pannous.com](https://wasp.pannous.com)
+
+## Runtime
 
 The wasp runtime is available as
 
