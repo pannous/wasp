@@ -1,148 +1,153 @@
-<div align="center">
-  <h1>Fermyon Spin</h1>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/static/image/logo-dark.png">
-    <img alt="spin logo" src="./docs/static/image/logo.png" width="300" height="128">
-  </picture>
-  <p>Spin is a framework for building, deploying, and running fast, secure, and composable cloud microservices with WebAssembly.</p>
-      <a href="https://github.com/fermyon/spin/actions/workflows/build.yml"><img src="https://github.com/fermyon/spin/actions/workflows/build.yml/badge.svg" alt="build status" /></a>
-      <a href="https://discord.gg/eGN8saYqCk"><img alt="Discord" src="https://img.shields.io/discord/926888690310053918?label=Discord"></a>
-</div>
+# 𓆤 Wasp : Wasm Programming Language
 
-## What is Spin?
+**[Wasp](https://github.com/pannous/wasp/wiki)** is a new unified notation for both markup/object data and code.  
+Wasp is the foundation layer of the higher order programming language [angle](https://github.com/pannous/angle).
 
-Spin is an open source framework for building and running fast, secure, and
-composable cloud microservices with WebAssembly. It aims to be the easiest way
-to get started with WebAssembly microservices, and takes advantage of the latest
-developments in the
-[WebAssembly component model](https://github.com/WebAssembly/component-model)
-and [Wasmtime](https://wasmtime.dev/) runtime.
+«Data is Code and Code is Data»
 
-Spin offers a simple CLI that helps you create, distribute, and execute
-applications, and in the next sections we will learn more about Spin
-applications and how to get started.
+## [Wasp Syntax](https://github.com/pannous/wasp/wiki/syntax)
 
-## Getting started
+For example, a HTML registration form:
 
-See the [Install Spin](https://developer.fermyon.com/spin/install) page of
-the [Spin documentation](https://developer.fermyon.com/spin/index) for a detailed
-guide on installing and configuring Spin, but in short run the following commands:
-
-```bash
-curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash
-sudo mv ./spin /usr/local/bin/spin
+```html
+<form>
+  <!--comment-->
+  <div class="form-group">
+    <label for="email">Email address:</label>
+    <input type="email" id="email">
+  </div>
+  <button class='btn btn-info'>Submit</button>
+</form>
 ```
 
-Alternatively, you could [build Spin from source](https://developer.fermyon.com/spin/contributing/).
+Can be represented in Wasp as:
 
-To get started writing apps, follow the [quickstart guide](https://developer.fermyon.com/spin/quickstart/),
-and then follow the
-[Rust](https://developer.fermyon.com/spin/rust-components/), [JavaScript](https://developer.fermyon.com/spin/javascript-components), [Python](https://developer.fermyon.com/spin/python-components),
-or [Go](https://developer.fermyon.com/spin/go-components/)
-language guides, and the [guide on writing Spin applications](https://developer.fermyon.com/spin/configuration/).
-
-## Usage
-
-Below is an example of using the `spin` CLI to create a new Spin application. To run the example you will need to
-install the `wasm32-wasi` target for Rust.
-
-```bash
-$ rustup target add wasm32-wasi
+```text
+form{                                 
+  //comment                          
+  div{ class:"form-group"             
+    label{ for:email                  
+      "Email address:"                
+    }
+    input{ type:email id:email}     
+  }
+  button{ class:['btn' 'btn-info']  
+    'Submit'                        
+  }
+}
 ```
 
-First, run the `spin new` command to create a Spin application from a template.
+The wasp runtime is available as
 
-```bash
-# Create a new Spin application named 'hello-rust' based on the Rust http template, accepting all defaults
-$ spin new --accept-defaults -t http-rust hello-rust
+* native **binary** for Mac, Linux and Windows
+* small standalone **webassembly** file (~50kb), with or without
+* a wasm **compiler** (~100kb) in wasm:
+
+# Angle Language
+
+[Angle](https://github.com/pannous/wasp/wiki/angle) is a new Programming Language using Wasp as data format,  
+"Lisp with Hashes" and optional braces.
+
+Hello World in Angle is  
+`"Hello World"`
+
+The deep formal reason why this is a valid program is that the last object in a block is its return value  
+and the last result in the root block of the main file is printed.
+
+Fibonacci in Angle is
+
+```
+fibonacci number = if number<2 : 1 else fibonacci(number - 1) + fibonacci it - 2
 ```
 
-Running the `spin new` command created a `hello-rust` directory with all the necessary files for your application.
-Change to the `hello-rust` directory and build the application with `spin build`, then run it locally with `spin up`:
+Note how number simulataneously acts as type and variable name.  
+Note how the unique argument `number` can be accessed via `it` keyword and some brackets are optional
 
-```bash
-# Compile to Wasm by executing the `build` command.
-$ spin build
-Executing the build command for component hello-rust: cargo build --target wasm32-wasi --release
-    Finished release [optimized] target(s) in 0.03s
-Successfully ran the build command for the Spin components.
+[Auto typed](https://github.com/pannous/wasp/wiki/type-inference) fibonacci in Angle is
 
-# Run the application locally.
-$ spin up
-Logging component stdio to ".spin/logs/"
-
-Serving http://127.0.0.1:3000
-Available Routes:
-  hello-rust: http://127.0.0.1:3000 (wildcard)
+```
+fib := if it<2 : 1 else fib(it-1) + fib it - 2
 ```
 
-That's it! Now that the application is running, use your browser or cURL in another shell to try it out:
+Angle runs as wasm file inside browsers an as small lambdas in edge computing.
+Angle programms **compiled to wasm**, which dont make use of the standard api can be extremely small <1kb, just like
+handwritten [wast](https://www.richinfante.com/2020/01/03/webassembly-examples) but with much more comfort.
 
-```bash
-# Send a request to the application.
-$ curl -i 127.0.0.1:3000
-HTTP/1.1 200 OK
-foo: bar
-content-length: 14
-date: Thu, 13 Apr 2023 17:47:24 GMT
+## built-in linker
 
-Hello, Fermyon         
+Like in swift, all files within the source file's directory are parsed and available without extra `use` / `include`
+keyword. However other projects and source files can be included dynamically or statically aot at compile time.
+
+## built-in component model
+
+The webassembly [component model](https://github.com/WebAssembly/component-model) is a first class citizen of
+angle: `wit` files and syntax can be included directly:
+
+```
+flags virtues{ 
+  fast
+  safe
+}
+
+wasp virtues  = fast + safe
 ```
 
-You can make the app do more by editting the `src/lib.rs` file in the `hello-rust` directory using your favorite editor
-or IDE. To learn more about writing Spin applications
-see [Writing Applications](https://developer.fermyon.com/spin/writing-apps) in the Spin documentation. To learn how to
-publish and distribute your application see
-the [Publishing and Distribution](https://developer.fermyon.com/spin/distributing-apps) guide in the Spin documentation.
+No need for any bindgen, unless interfacing with components of other languages.
+In fact we hope to promote wit to a universal header file format.
 
-For more information on the cli commands and subcommands see
-the [CLI Reference](https://developer.fermyon.com/common/cli-reference).
+Wasp and Angle are **free of dependencies** (other than gcc, if the runtime is to be compiled from scratch).
+Only some optional features can make use of external dependencies:
 
-## Language Support for Spin Features
+The natives runtimes can be configured to ship with a JIT wasm runtime (wasmtime, wasmedge, wasm3, wasmer,
+wasm-micro-runtime and V8!)
 
-The table below summarizes the [feature support](https://developer.fermyon.com/spin/language-support-overview) in each
-of the language SDKs.
+The **native** Wasp/Angle binary contains a small **WebView** connector making use of the host's browser component (Edge
+or WebKit).
+Since the Angle language can be compiled from wasm to wasm, this gives a whole self sufficient programming environment
+in less than 200kb,  
+with similar power to [electron](https://www.electronjs.org/) and QT.
 
-| Feature                                                                                                            | Rust SDK Supported? | TypeScript SDK Supported? | Python SDK Supported? | Tiny Go SDK Supported? | C# SDK Supported? |
-|--------------------------------------------------------------------------------------------------------------------|---------------------|---------------------------|-----------------------|------------------------|-------------------|
-| **Triggers**                                                                                                       |
-| [HTTP](https://developer.fermyon.com/spin/http-trigger)                                                            | Supported           | Supported                 | Supported             | Supported              | Supported         |
-| [Redis](https://developer.fermyon.com/spin/redis-trigger)                                                          | Supported           | Not Supported             | Supported             | Supported              | Not Supported     |
-| **APIs**                                                                                                           |
-| [Outbound HTTP](https://developer.fermyon.com/spin/rust-components.md#sending-outbound-http-requests)              | Supported           | Supported                 | Supported             | Supported              | Supported         |
-| [Configuration Variables](https://developer.fermyon.com/spin/variables)                                            | Supported           | Supported                 | Supported             | Supported              | Supported         |
-| [Key Value Storage](https://developer.fermyon.com/spin/kv-store-api-guide)                                         | Supported           | Supported                 | Supported             | Supported              | Not Supported     |
-| [SQLite Storage](https://developer.fermyon.com/spin/sqlite-api-guide)                                              | Supported           | Supported                 | Supported             | Supported              | Not Supported     |
-| [MySQL](https://developer.fermyon.com/spin/rdbms-storage#using-mysql-and-postgresql-from-applications)             | Supported           | Supported                 | Not Supported         | Supported              | Not Supported     |
-| [PostgreSQL](https://developer.fermyon.com/spin/rdbms-storage#using-mysql-and-postgresql-from-applications)        | Supported           | Supported                 | Not Supported         | Supported              | Supported         |
-| [Outbound Redis](https://developer.fermyon.com/spin/rust-components.md#storing-data-in-redis-from-rust-components) | Supported           | Supported                 | Supported             | Supported              | Supported         |
-| [Serverless AI](https://developer.fermyon.com/spin/serverless-ai-api-guide)                                        | Supported           | Supported                 | Supported             | Supported              | Not Supported     |
-| **Extensibility**                                                                                                  |
-| [Authoring Custom Triggers](https://developer.fermyon.com/spin/extending-and-embedding)                            | Supported           | Not Supported             | Not Supported         | Not Supported          | Not Supported     |
+Note: The full wasp_compiler.wasm is currently 2MB but can be shrunk back close to the 70kb of wasp_runtime.wasm once
+the lazy external references are removed again.
 
-## Getting Involved and Contributing
+Until a smart way is found to write directly to the WebViews canvas, native angle ships with a low
+overhead **[graphics](https://github.com/pannous/wasp/wiki/graphics)** adapter (using SDL) for fast fullscreen painting
+in native wasp bundles.
 
-We are delighted that you are interested in making Spin better! Thank you!
+## [Documentation](https://github.com/pannous/wasp/wiki/)
 
-Each Monday at 2:30om UTC and 9:00pm UTC (alternating), we meet to discuss Spin issues, roadmap, and ideas in our Spin
-Project Meetings. Subscribe to
-this [Google Calendar](https://calendar.google.com/calendar/u/1?cid=c3Bpbi5tYWludGFpbmVyc0BnbWFpbC5jb20) for meeting
-dates.
+- [Syntax specification](https://github.com/pannous/wasp/wiki/syntax)
+- [Features](https://github.com/pannous/wasp/wiki/features)
+- [Inventions](https://github.com/pannous/wasp/wiki/Inventions)
+- [Examples](https://github.com/pannous/wasp/wiki/Examples)
 
-The [Spin Project Meeting agenda](https://docs.google.com/document/d/1EG392gb8Eg-1ZEPDy18pgFZvMMrdAEybpCSufFXoe00/edit?usp=sharing)
-is a public document. The document contains a rolling agenda with the date and time of each meeting, the Zoom link, and
-topics of discussion for the day. You will also find the meeting minutes for each meeting and the link to the recording.
-If you have something you would like to demo or discuss at the project meeting, we encourage you to add it to the
-agenda.
+## Wasp Data Model
 
-You can find the contributing guide [here](https://developer.fermyon.com/spin/contributing).
+**Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be
+represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very
+clean syntax and simple data model.
 
-Fermyon also hosts a Discord server, where we discuss anything Spin: [Discord server](https://discord.gg/eGN8saYqCk).
+- It has **clean syntax** with **fully-type** data model *(like JSON or even better)*
+- It is **generic** and **extensible** *(like XML or even better)*
+- It has built-in **mixed content** support *(like HTML5 or even better)*
+- It supports **high-order** composition *(like S-expression or even better)*
 
-## Stay in Touch
+|                        | [Wasp](https://github.com/pannous/wasp/wiki)/[Mark](https://github.com/henry-luo/wasp) | JSON     | HTML | XML | S-expr  | YAML     |
+|------------------------|----------------------------------------------------------------------------------------|----------|------|-----|---------|----------|
+| Clean syntax           | yes                                                                                    | yes      | no   | yes | yes     | yes      |
+| Fully-typed            | yes                                                                                    | yes      | no   | no  | yes     | yes      |
+| Generic                | yes                                                                                    | yes      | no   | yes | yes     | yes      |
+| Mixed content support  | yes                                                                                    | hard     | yes  | yes | hard    | hard     |
+| High-order composition | yes                                                                                    | possible | no   | yes | yes     | possible |
+| Wide adoption          | not yet                                                                                | yes      | yes  | yes | limited | limited  |
 
-Follow us on Twitter: [@spinframework](https://twitter.com/spinframework)
+Wasp has a simple and fully-typed data model.
 
-You can join the Spin community in our [Discord server](https://discord.gg/eGN8saYqCk) where you can ask questions, get
-help, and show off the cool things you are doing with Spin!
+## [Documentation](https://github.com/pannous/wasp/wiki/)
+
+- [Data model](https://github.com/pannous/wasp/wiki/data)
+- [FAQ](https://github.com/pannous/wasp/wiki/FAQ)
+- [Examples](https://github.com/pannous/wasp/wiki/Examples)
+
+
 
