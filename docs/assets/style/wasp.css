@@ -1,3 +1,18 @@
+body { /* Default (light mode) styles */
+    background-color: floralwhite;
+    color: black;
+    font-family: Arial, sans-serif;
+    margin-left: 30px;
+}
+
+@media (prefers-color-scheme: dark) {
+    body { /* Dark mode styles */
+        background-color: #06062b;
+        color: white;
+    }
+}
+
+
 .CodeMirror {
     resize: both; /* This enables resizing */
     overflow: auto;
@@ -18,17 +33,5 @@
     @media (prefers-color-scheme: dark) {
         background-color: #06062b;
         color: floralwhite;
-    }
-}
-
-body { /* Default (light mode) styles */
-    background-color: floralwhite;
-    color: black;
-}
-
-@media (prefers-color-scheme: dark) {
-    body { /* Dark mode styles */
-        background-color: #06062b;
-        color: white;
     }
 }
