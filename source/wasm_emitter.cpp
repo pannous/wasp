@@ -566,13 +566,14 @@ Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
     if (node.name == "html") {
         for (auto &child: node)
             code.add(emitHtml(child, function, parent));// html is not parent
-//        printf("emitHtml node %s", node.serialize().data);
-        printf("emitHtml code %d", code.length);
         return code;
     }
     if (parent == previous);// use previous return as parent (on stack)
     else if (parent)code.add(emitData(*new Node(parent), function));
     else code.add(emitCall(*new Node("getDocumentBody"), function));
+//    code.add(get_local);
+//    code.addInt(function.locals["parent"].position);
+//    emitGetter(node, *new Node("appendChild"), function);
 //    else code.addConst32(0); // get document body in js
     if (node.kind == strings)
         code.add(emitString(node, function));
@@ -583,8 +584,6 @@ Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
     for (auto &child: node) {
         code.add(emitHtml(child, function, previous));// html is not parent
     }
-    printf("emitHtml code %d", code.length);
-//    printf("emitHtml node %s", node.serialize().data);
     return code;
 }
 
