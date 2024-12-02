@@ -79,8 +79,8 @@ static bool tracing = false;  // todo
 #if MY_WASM and DEBUG
 static bool tracing = true;
 #elif DEBUG
-//static bool tracing = true;
-static bool tracing = false;
+static bool tracing = true;
+//static bool tracing = false;
 #else
 //static bool tracing = true;
 static bool tracing = false;

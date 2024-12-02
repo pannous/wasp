@@ -561,11 +561,30 @@ Code emitPrimitiveArray(Node &node, Function &context) {
 // extern "C" ExternRef createHtml(ExternRef parent /*0*/,chars innerHTML); // html{bold{Hello}} => appendChild bold to body
 [[nodiscard]]
 Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
+    static ExternRef previous = (void *) -1;
     Code code;
-    if (parent)code.add(emitData(*new Node(parent), function));
+    if (node.name == "html") {
+        for (auto &child: node)
+            code.add(emitHtml(child, function, parent));// html is not parent
+//        printf("emitHtml node %s", node.serialize().data);
+        printf("emitHtml code %d", code.length);
+        return code;
+    }
+    if (parent == previous);// use previous return as parent (on stack)
+    else if (parent)code.add(emitData(*new Node(parent), function));
     else code.add(emitCall(*new Node("getDocumentBody"), function));
-    code.add(emitString(node, function));
+//    else code.addConst32(0); // get document body in js
+    if (node.kind == strings)
+        code.add(emitString(node, function));
+    else
+        code.add(emitString(*new Node("<"s + node.name + ">"), function));
     code.add(emitCall(*new Node("createHtml"), function));
+    trace(node.name);
+    for (auto &child: node) {
+        code.add(emitHtml(child, function, previous));// html is not parent
+    }
+    printf("emitHtml code %d", code.length);
+//    printf("emitHtml node %s", node.serialize().data);
     return code;
 }
 
@@ -1306,14 +1325,14 @@ Code emitString(Node &node, Function &context) {
     } else if (as_c_io_vector) { // wasp abi:
         emitIntData(data_index_end + 8, false);// char* for ciov, redundant but also acts as checksum
         emitIntData(string.length, false);
-    } else { // wasp abi:
-
-        emitIntData(string_header_32, false);
-        emitIntData(data_index_end + 20, false);
+    } else { // ⚠️ WASP ABI is NOT the same as String, because pointer are 4/8 bit and we ignore other fields!!
+        // ⚠️ ANY CHANGE HERE NEEDS TO BE REFLECTED in wasp.js and smartNode (and getField??)
+        emitIntData(data_index_end + 20, false);// 32 bit 'pointer'
         emitIntData(string.length, false);
-        emitIntData(1, false);// iovs len?
+//        emitIntData(string_header_32, false); WASP ABI is NOT the same as String ^^
+        emitIntData(1, false);// iovs len? // todo: know what you are doing!
 //        emitIntData(string.codepoint_count, false);// type + child_pointer in node
-        emitLongData(data_index_end + 8, false);// POINTER to char[] which just follows:
+        emitLongData(data_index_end + 8, false);// 64 bit POINTER to char[] AGAIN!? which just follows:
     }
     int chars_start = data_index_end;
     // the actual string content:
@@ -1327,7 +1346,7 @@ Code emitString(Node &node, Function &context) {
     last_type = stringp;
     last_object_pointer = last_pointer;
 
-    if (use_wasm_strings) // via data instead of string_const
+    if (use_wasm_strings) // prepend length via data instead of string_const
         return Code().addInt(string.length).addInt(chars_start).addOpcode(string_new_wtf8);
 
     return Code().addConst32(chars_start);// direct data!
