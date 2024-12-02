@@ -1961,6 +1961,7 @@ Node &analyze(Node &node, Function &function) {
     if (name == "html") {
         functions["getDocumentBody"].is_used = true;
         functions["createHtml"].is_used = true;
+        functions["createHtmlElement"].is_used = true;
         return node; // html builder currently not parsed
     }
     if (name == "js" or name == "script" or name == "javascript") {
@@ -2096,6 +2097,10 @@ void preRegisterFunctions() {
     functions["getDocumentBody"].import().signature.returns(externref);
     functions["createHtml"].import();
     functions["createHtml"].signature.add(externref, "parent").add(charp, "innerHtml").returns(externref);
+    functions["createHtmlElement"].import();
+    functions["createHtmlElement"].signature.add(externref, "parent").add(charp, "tag").add(charp, "id").returns(
+            externref);
+
     functions["addScript"].import().signature.add(charp, "js");
 
 //#if WASM // no funclets in browser (yet?)

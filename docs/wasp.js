@@ -116,13 +116,11 @@ function terminate() {
   // if(sure)throw
 }
 
-function createHtml(parent, innerHtml) { // via emitHtml
-  let element = document.createElement("div"); // todo tag
-  let tagOrHtml = chars(innerHtml, app.memory);
-  if(tagOrHtml[0]=="<") element=document.createElement(tagOrHtml.replace("<","").replace(">",""))
-  else element.innerHTML = tagOrHtml;
+function createHtml(parent, data) { // via emitHtml
+  let innerHtml = chars(data, app.memory);
+  element = document.createElement("div");
+  element.innerHTML = innerHtml;
   if (!parent) parent = document.body;
-  else console.log("GOT PARENT", parent, "FOR", element.innerHTML)
   parent.appendChild(element);
   return element;
 }
@@ -203,6 +201,7 @@ function smartResult(object, mem = memory) { // returns BigInt smart pointer to 
 }
 
 const refToIndexMap = new Map();
+
 async function storeObject() {
 // (table (export "externref_table") 1 externref)
   const table = instance.exports.externref_table;
@@ -229,6 +228,7 @@ async function storeObject() {
 function getExternRefIndex(ref) {
   return refToIndexMap.get(ref); // Retrieve the index for a given ref
 }
+
 async function storeFunction() {
 //   (table (export "funcref_table") 10 funcref)
 // Access the exported table
@@ -250,7 +250,6 @@ async function storeFunction() {
 ) */
   app.exports.call_by_index(index);
 }
-
 
 
 const jsStringPolyfill = {
@@ -331,17 +330,18 @@ let imports = {
       return 0
     }, // todo WASI / NOT
     getDocumentBody: () => document.body,
-    createHtml,
     addScript: (scriptContent) => {
       let script = document.createElement('script');
-      script.textContent = string(scriptContent, app.memory);
+      script.textContent = chars(scriptContent, app.memory);
       console.log("script", script.textContent)
       document.body.appendChild(script);
     },
-    createHtmlElement: (tag, id) => {
-      let element = document.createElement(string(tag, app.memory));
-      element.id = string(id);
-      document.body.appendChild(element);
+    createHtml,
+    createHtmlElement: (parent, tag, id) => {
+      let element = document.createElement(chars(tag, app.memory));// string
+      if (id) element.id = chars(id);
+      parent = parent || document.body;
+      parent.appendChild(element);
       return element;
     },
     getElementById: pointer => {
