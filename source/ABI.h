@@ -111,3 +111,18 @@ negative_mask_64 = 0xFF00000000000000L,
 
 // 3 * sizeof(int32)  header, kind, length before *DATA !
 // sizeof(List) - sizeof(S*)
+
+
+smartType4bit getSmartType(smart_pointer_32 spo);
+//smartType4bit getSmartType(smart_pointer_64 spo);
+
+static smart_pointer_64 smart_pointer_type_mask = 0xFFFFFFFF00000000L; // full : smartType4bit plus 12 specifier bit plus 16 bit type payload
+static smart_pointer_64 smart_pointer_header_mask = 0xFFFF000000000000L; // smartType4bit plus 12 specifier  todo maybe less F?
+static smart_pointer_64 smart_pointer_payload_mask = 0x0000FFFF00000000L; // todo maybe less F?
+//todo stringa = 0x9 vs
+#define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
+#define array_header_64  0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
+
+static smart_pointer_64 smart_pointer_node_signature = 0xA000000000000000L;// ((smart_pointer_64)nodep) << 63; // 0xA0…0
+
+//    short smart_type_payload = (short)(smartPointer64 & 0x0000FFFF00000000L)>>16;// type payload including length (of array)
