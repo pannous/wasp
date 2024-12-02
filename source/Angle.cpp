@@ -2215,7 +2215,7 @@ Node smartNode32(int smartPointer32) {
 //			check(arr.type=…
         return arr;
     }
-    if ((result & 0xF0000000) == string_header_32 /* and abi=wasp */ ) {
+    if ((result & 0xFF000000) == string_header_32 /* and abi=wasp */ ) {
         // smart pointer for string
         return Node(((char *) wasm_memory) + smart_pointer);
     }

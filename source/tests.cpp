@@ -102,6 +102,7 @@ void testVectorShim() {
 
 void testHtmlWasp() {
     eval("html{bold{Hello}}"); // => <html><body><bold>Hello</bold></body></html> via appendChild bold to body
+    eval("html: h1: 'Hello, World!'"); // => <html><h1>Hello, World!</h1></html>
 //	eval("html{bold($myid style=red){Hello}}"); // => <bold id=myid style=red>Hello</bold>
 }
 
@@ -3511,6 +3512,7 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    testHtmlWasp();
     testFlags();
     testTypes();
     skip(

@@ -116,7 +116,7 @@ function terminate() {
   // if(sure)throw
 }
 
-function createHtml(parent, innerHtml) {
+function createHtml(parent, innerHtml) { // via emitHtml
   let element = document.createElement("div"); // todo tag
   element.innerHTML = chars(innerHtml, app.memory);
   if (!parent) parent = document.body;
@@ -157,8 +157,7 @@ function matrix_multiply(a, b, k = 1) {
 }
 
 function smartResult(object, mem = memory) { // returns BigInt smart pointer to object
-                               // if(is_smart_pointer(object))
-                               //     return parseSmartResult(object)
+  // if(is_smart_pointer(object))return object
   last_result = object
   if (typeof object === "number")
     return BigInt(object)
@@ -355,17 +354,18 @@ let imports = {
       if (ref && typeof ref[prop] !== 'undefined') {
         let val = ref[prop];
         print("getExternRefPropertyValue OK ", ref, prop, val, typeof val)
-        // if (typeof val != "string") val = JSON.stringify(val) // todo, just
         return smartResult(val, app.memory)
+        // if (typeof val != "string") val = JSON.stringify(val)
         // return chars(val, app.memory)
         // return string(val, app.memory)
       } else if (ref && typeof ref.getAttribute === 'function') {
         // check attribute
         let attribute = ref.getAttribute(prop);
         print("getExternRefPropertyValue OK! ", ref, prop, attribute)
-        // return String(attribute)
-        return chars(attribute, app.memory)
-        // return smartResult(attribute)
+        // if (typeof attribute != "string") val = JSON.stringify(attribute)
+        // return String(attribute, app.memory)
+        // return chars(attribute, app.memory)
+        return smartResult(attribute, app.memory)
       } else {
         throw new Error(`'${prop}' is not a property of the provided reference`);
       }
@@ -453,11 +453,15 @@ function string(data, mem = memory) { // wasm<>js interop
   switch (typeof data) {
     case "string":
       // todo use HEAP_END of APP, not of compiler! lol
-      while (HEAP_END % 8) HEAP_END++
+      while (HEAP_END % 8) HEAP_END++ // align to 8 bytes
       let p = HEAP_END
-      new_int(HEAP_END + 12, mem) // pointer to chars = string_start + …
+      new_int(HEAP_END + 12, mem) // pointer to chars = string_start + 20  TODO 12 vs 20 in c++/ABI
       new_int(data.length, mem)
       new_int(string_header_32, mem)
+      // new_long(0, mem) // 8 byte *codepoints 64 bit in c++
+      // new_int(0, mem) // 4 byte *codepoints 32 bit in WASM !!!
+      // new_int(-1, mem) // codepoint_count
+      // new_int(0, mem) // shared reference
       chars(data, mem);
       return p;
     case "bigint":
@@ -465,13 +469,14 @@ function string(data, mem = memory) { // wasm<>js interop
     default:
       let pointer = read_int32(data, mem);
       let length = read_int32(data + 4, mem);
-      let kind = read_int32(data + 8, mem);
-      if (kind != string_header_32) {
-        console.log("missing string_header_32 kind", kind, pointer, length, data)
-        if (!pointer) return load_chars(data, length, mem);
-      }
-      // else console.log("found string_header_32", pointer, length, data)
-
+      let kind = read_int32(data + 8, mem); // todo not part of string ABI!
+      if (kind == length) ;//todo("string_header_32 kind==length HOW?");
+      else if (kind != string_header_32) {
+        // console.log("TODO missing string_header_32 kind", kind, pointer, length, data)
+        // todo mixing string_header_32 for strings and other chars BAD!!
+        if (!kind) return load_chars(pointer, length, mem);// todo messed up ABI!!
+        return load_chars(data, -1, mem);
+      } else console.log("found string_header_32", pointer, length, data)
       if (!pointer) {
         console.log("NO chars to read")
         debugMemory(data - 10, 20, mem)
@@ -539,7 +544,7 @@ function new_int(val, mem = memory) {
 function new_long(val) {
   // memory.setUint32(addr + 0, val, true);
   // memory.setUint32(addr + 4, Math.floor(val / 4294967296), true);
-  let buf = new Uint64Array(memory.buffer, HEAP_END / 8, mem.length); // todo: /8??
+  let buf = new Uint64Array(memory.buffer, HEAP_END, mem.length); // todo: /8??
   buf[0] = val
   HEAP_END += 8
 }

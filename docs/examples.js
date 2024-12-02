@@ -12,7 +12,8 @@ let exampleCode = {
     // fibonacci_juliaesque: `fib 0 :=0; fib 1 := 1; fib n := fib(n - 1) + fib(n - 2)\n\nfib(10)`,
     // fibonacci2: `fib n := n < 3 ? 1 : fib(n - 1) + fib(n - 2)\n\n`,
     paint2d: `ctx.fillStyle = 'red'; ctx.fillRect(10, 10, 150, 100)`,
-    html: `html: h1: "Hello, World!"`,
+  html: `html{bold{"Hello"}}`,
+  // html: `html: h1: "Hello, World!"`,
     // html: `html: <h1>Hello, World!</h1>`, // operator missing: <
     alert: 'script: alert("Hello, World!")',
     javascript: `html: div id="app"; app.innerHTML = "Hello, World!"`,
