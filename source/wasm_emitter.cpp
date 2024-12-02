@@ -578,7 +578,7 @@ Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
         code.add(emitString(node, function));
     else
         code.add(emitString(*new Node("<"s + node.name + ">"), function));
-    code.add(emitCall(*new Node("createHtml"), function));
+    code.add(emitCall(*new Node("createHtml"), function));// todo doesn't use parent!?
     trace(node.name);
     for (auto &child: node) {
         code.add(emitHtml(child, function, previous));// html is not parent
