@@ -156,7 +156,7 @@ function matrix_multiply(a, b, k = 1) {
   return result
 }
 
-function smartResult(object) { // returns BigInt smart pointer to object
+function smartResult(object, mem = memory) { // returns BigInt smart pointer to object
                                // if(is_smart_pointer(object))
                                //     return parseSmartResult(object)
   last_result = object
@@ -188,10 +188,10 @@ function smartResult(object) { // returns BigInt smart pointer to object
     print("smartResult: typeof", typeof object, ": ", object, " =>", serialized)
     last_result = serialized
     let wrapped = string(serialized, app.memory)
+    // let wrapped = chars(serialized, mem)
     // string_header_32 => json_header_32 to be parsed
     let big_wrap = BigInt(wrapped) | BigInt(string_header_32) << BigInt(32)
     console.log("smartResult: ", object, "as smart type BigInt", hex(big_wrap));
-
     return big_wrap // BigInt(wrapped) // to be consumed by wasm, potentially returned to wasp via main and wasm_done
   } catch (ex) {
     // todo error handling via print!
@@ -356,7 +356,7 @@ let imports = {
         let val = ref[prop];
         print("getExternRefPropertyValue OK ", ref, prop, val, typeof val)
         // if (typeof val != "string") val = JSON.stringify(val) // todo, just
-        return smartResult(val)
+        return smartResult(val, app.memory)
         // return chars(val, app.memory)
         // return string(val, app.memory)
       } else if (ref && typeof ref.getAttribute === 'function') {
@@ -452,21 +452,31 @@ function debugMemory(pointer, num, mem) {
 function string(data, mem = memory) { // wasm<>js interop
   switch (typeof data) {
     case "string":
+      // todo use HEAP_END of APP, not of compiler! lol
       while (HEAP_END % 8) HEAP_END++
       let p = HEAP_END
-      new_int(HEAP_END + 8)
-      new_int(data.length)
-      chars(data);
+      new_int(HEAP_END + 12, mem) // pointer to chars = string_start + …
+      new_int(data.length, mem)
+      new_int(string_header_32, mem)
+      chars(data, mem);
       return p;
     case "bigint":
     case "number":
     default:
       let pointer = read_int32(data, mem);
       let length = read_int32(data + 4, mem);
+      let kind = read_int32(data + 8, mem);
+      if (kind != string_header_32) {
+        console.log("missing string_header_32 kind", kind, pointer, length, data)
+        if (!pointer) return load_chars(data, length, mem);
+      }
+      // else console.log("found string_header_32", pointer, length, data)
+
       if (!pointer) {
         console.log("NO chars to read")
-        debugMemory(data - 10, 20)
+        debugMemory(data - 10, 20, mem)
       }
+      // console.log("pointer, length, mem", pointer, length, mem)
       let cs = load_chars(pointer, length, mem);
       return cs
   }
@@ -790,8 +800,9 @@ function smartNode(data0, type /*int32*/, memory) {
   // console.log("smartNode")
   type = data0 >> BigInt(32) // shift 32 bits ==
   let data = Number(BigInt.asIntN(32, data0))// drop high bits
+  console.log("smartNode data 0x" + hex(data) + " type 0x" + hex(type));
   if (type == string_header_32 || type == string_header_32 >> 8)
-    return load_chars(data, length = -1, memory, format = 'utf8')
+    return string(data, memory) || load_chars(data, length = -1, memory, format = 'utf8')
   if (type == array_header_32 || type == array_header_32 >> 8)
     return read_array(data, memory)
   if (type == node_header_32 || type == node_header_32 >> 8)
@@ -1105,13 +1116,13 @@ async function run_wasm(buf_pointer, buf_size) {
     app.memory = app.exports.memory || app.exports._memory || app.memory
     let main = app.exports.wasp_main || app.exports.main || app.instance.start || app.exports._start
     let result = main()
-    // console.log("GOT raw ", result)
+    console.log("GOT raw ", hex(result))
     if (result < -0x100000000 || result > 0x100000000) {
       if (!app.memory)
         error("NO app.memory")
       result = smartNode(result, 0, app.memory)
       //  result lives in emit.wasm!
-      // console.log("GOT nod ", nod)
+      console.log("GOT node ", result)
       // result = nod.Value()
     }
     if (expect_test_result) {
