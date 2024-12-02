@@ -23,6 +23,8 @@ extern Map<String, Global> globals;
 //Map<String, Signature> functions;// todo Signature copy by value is broken
 Code emitString(Node &node, Function &context);
 
+Code emitString(const String &text, Function &context);
+
 Code emitArray(Node &node, Function &context);
 
 Map<int, uint> sourceMap;// line number to wasm offset
@@ -383,7 +385,7 @@ bool isProperList(Node &node) {
 Code emitSimilar(Node &node, Function &context) {
     Code code;
     // a ≈ b <> | a - b | < ε
-//    code.add(emitCall(*new Node("similar"), context));
+//    code.add(emitCall("similar", context));
     todow("emitSimilar a ≈ b <> | a - b | < ε    e.g. π≈3.14159");
     return code;
 }
@@ -561,25 +563,24 @@ Code emitPrimitiveArray(Node &node, Function &context) {
 // extern "C" ExternRef createHtml(ExternRef parent /*0*/,chars innerHTML); // html{bold{Hello}} => appendChild bold to body
 [[nodiscard]]
 Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
-    static ExternRef previous = (void *) -1;
     Code code;
     if (node.name == "html") {
         for (auto &child: node)
             code.add(emitHtml(child, function, parent));// html is not parent
         return code;
     }
+    static ExternRef previous = (void *) -1;
     if (parent == previous);// use previous return as parent (on stack)
     else if (parent)code.add(emitData(*new Node(parent), function));
-    else code.add(emitCall(*new Node("getDocumentBody"), function));
-//    code.add(get_local);
-//    code.addInt(function.locals["parent"].position);
-//    emitGetter(node, *new Node("appendChild"), function);
+    else code.add(emitCall("getDocumentBody", function));
 //    else code.addConst32(0); // get document body in js
+    code.add(emitString(node, function));
     if (node.kind == strings)
-        code.add(emitString(node, function));
-    else
-        code.add(emitString(*new Node("<"s + node.name + ">"), function));
-    code.add(emitCall(*new Node("createHtml"), function));// todo doesn't use parent!?
+        code.add(emitCall("createHtml", function));
+    else {
+        code.add(emitString(*new Node("IDK_ID"), function));
+        code.add(emitCall("createHtmlElement", function));
+    }
     trace(node.name);
     for (auto &child: node) {
         code.add(emitHtml(child, function, previous));// html is not parent
@@ -590,10 +591,21 @@ Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
 [[nodiscard]]
 Code emitScript(Node &node, Function &function) {
     Code code;
-    print("emitScript");
-    printf("emitString node %s", node.serialize().data);
-    code.add(emitString(node, function));
-    code.add(emitCall(*new Node("addScript"), function));
+    printf("emitScript … %s", node.serialize().data);
+    if (node.name == "script") {
+        if (node.value.data) {
+            code.add(emitString(node.value.node->serialize(), function));// todo : value can't be string RIGHT!?
+        }
+        for (auto &child: node) {
+            const String &text = child.serialize();
+            printf("emitScript %s", text.data);
+            code.add(emitString(text, function));
+        }
+    } else {
+        printf("emitScript %s", node.name.data);
+        code.add(emitString(node, function));
+    }
+    code.add(emitCall("addScript", function));
     return code;
 }
 
@@ -670,7 +682,7 @@ Code emitLength(Node &node, Function &context) {
         code.addOpcode(i32_load);
         code.add(0x02);// alignment (?)
         code.add(0x00);//
-//        return emitCall(*new Node("strlen"), context);
+//        return emitCall("strlen", context);
     } else if (type.isArray()) {
         auto valueType1 = valueType(type);
         if (use_wasm_arrays) {
@@ -1300,9 +1312,14 @@ Code emitStringRef(Node &node, Function &context) {
     return code;
 }
 
+Code emitString(const String &text, Function &context) {
+    return emitString((new Node(text))->setType(strings), context);// todo: ?
+//    return emitStringRef(*new Node(text), context);
+}
+
 Code emitString(Node &node, Function &context) {
     if (node.kind != strings)
-        return emitString((new Node(node.name))->setType(strings), context);
+        return emitString(node.name, context);
     if (not node.value.string)
         error("empty node.value.string");
 //    emitPadding(data_index_end % 4);// pad to int size, too late if in node struct!
@@ -1555,7 +1572,7 @@ Code emitGetter(Node &node, Node &field, Function &context) {
     if (field.kind == strings)
         code.add(emitString(field, context));
     else
-        code.add(emitString(*new Node(field.name), context));
+        code.add(emitString(field.name, context));
 
     Function &getField = functions["getField"];
     code.addByte(function_call);
@@ -1733,7 +1750,7 @@ Code emitOperator(Node &node, Function &context) {
         code.addByte(i64_eqz);
         last_type = i32t;// bool'ish
     } else if (name == "*" and isArrayType(last_type)) {
-        code.add(emitCall(*new Node("matrix_multiply"), context)); // gpu / vector shim
+        code.add(emitCall("matrix_multiply", context)); // gpu / vector shim
     } else if (name == "++" or name == "--") {
         Node increased = Node(name[0]).setType(operators);
         increased.add(first); // if not first emitted
@@ -1770,18 +1787,18 @@ Code emitOperator(Node &node, Function &context) {
         code.add(opcodes("*", last_type));
     } else if (name == "**" or name == "to the" or name == "^" or name == "^^") {
 //        code.add(cast(last_type, Primitive::wasm_float64));
-//        code.add(emitCall(*new Node("pow"), context));
+//        code.add(emitCall("pow", context));
 //		if(last_value==0)code.addConst(1);
 //		if(last_value==1)return code;
 //#if MY_WASM
 //        getWaspFunction("pow");
-//        code.add(emitCall(*new Node("pow"), context));
+//        code.add(emitCall("pow", context));
 //#else
-        if (last_type == int32) code.add(emitCall(*new Node("powi"), context));
-        else if (last_type == float32) code.add(emitCall(*new Node("powf"), context));
-        else if (last_type == float64) code.add(emitCall(*new Node("pow"), context));
-        else if (last_type == int64s) code.add(emitCall(*new Node("pow_long"), context));
-        else code.add(emitCall(*new Node("pow_long"), context));
+        if (last_type == int32) code.add(emitCall("powi", context));
+        else if (last_type == float32) code.add(emitCall("powf", context));
+        else if (last_type == float64) code.add(emitCall("pow", context));
+        else if (last_type == int64s) code.add(emitCall("pow_long", context));
+        else code.add(emitCall("pow_long", context));
 //#endif
 //        else todo("^ power with type "s + typeName(last_type));
 //         'powi' is a builtin with type 'long double (long double, long double)'
@@ -1794,7 +1811,7 @@ Code emitOperator(Node &node, Function &context) {
         code.add(cast(last_type, return_type));
         code.add(return_block);
     } else if (name == "as") {
-        code.add(emitCall(*new Node("cast"), context));
+        code.add(emitCall("cast", context));
 
     } else if (name == "%") {// int cases handled above
         if (last_type == float32)
@@ -1815,9 +1832,9 @@ Code emitOperator(Node &node, Function &context) {
             code.addInt(context.locals["n"].position);
             code.add(cast(context.locals["n"].type, float64));// todo all casts should be auto-cast now, right?
         }
-        code.add(emitCall(*new Node("pow"), context));
+        code.add(emitCall("pow", context));
 //		else
-//			code.add(emitCall(*new Node("powi"), context));
+//			code.add(emitCall("powi", context));
 
     } else {
         error("unknown opcode / call / symbol: "s + name);
@@ -2110,11 +2127,11 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 Code emitHtmlWasp(Node &node, Function &function, ExternRef parent = 0) {
     Code code;
     if (node.name == "html") {
-        code.add(emitCall(*new Node("getDocumentBody"), function)); // document.body as parent
+        code.add(emitCall("getDocumentBody", function)); // document.body as parent
     } else {
 //		if(parent)code.add(emitData(*new Node(parent), function)); todo ?
         code.add(emitString(node, function));
-        code.add(emitCall(*new Node("createElement"), function));
+        code.add(emitCall("createElement", function));
         //	addVariable(node.name, parent); // can't, must be in analyze!
     }
     for (Node &child: node) {
@@ -2241,6 +2258,10 @@ Code emitExpression(Node *nodes, Function &context) {
     if (!nodes)return Code();
 //	if(node_pointer==NIL)return Code();// emit nothing unless NIL is explicit! todo
     return emitExpression(*nodes, context);
+}
+
+Code emitCall(String fun, Function &context) {
+    return emitCall(*new Node(fun), context);
 }
 
 [[nodiscard]]
@@ -2667,8 +2688,8 @@ Code castToSmartPointer(Type from, Type return_type, Function &context, bool &ne
         // hack smart pointers as main return: f64 has range which is never hit by int
         block.addByte(
                 i64_reinterpret_f64); // todo: not for _start in wasmtime... or 'unwrap' / print smart pointers via builtin
-//            block.add(emitCall(*new Node("print_smarty"), context)); // _Z5printd putf putd
-//            block.add(emitCall(*new Node("_Z5printd"), context));
+//            block.add(emitCall("print_smarty", context)); // _Z5printd putf putd
+//            block.add(emitCall("_Z5printd", context));
         last_type = i64;
     } else if (from == byte_char or from == codepoint1) {
         block.addByte(i64_extend_i32_u);

@@ -34,6 +34,8 @@ Code emitIf(Node &node, Function &context);
 
 Code emitCall(Node &node, Function &context);
 
+Code emitCall(String fun, Function &context);
+
 Code emitDeclaration(Node &fun, Node &body);
 
 Code emitSetter(Node &node, Node &value, Function &context);

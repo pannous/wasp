@@ -75,7 +75,7 @@
   <h2>A new programming language for Wasm</h2>
   <label for="examples">Choose a Wasp example:</label>
   <select id="examples"
-          onchange="results.value='';editor.setValue(exampleCode[value]);compile_and_run(editor.getValue())">
+          onchange="results.value='';editor.setValue(exampleCode[value]);// causes compile_and_run(editor.getValue())">
     <option value="math">Math</option>
     <option value="hello">Hello World</option>
     <option value="lists">Lists</option>
