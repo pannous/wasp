@@ -118,8 +118,11 @@ function terminate() {
 
 function createHtml(parent, innerHtml) { // via emitHtml
   let element = document.createElement("div"); // todo tag
-  element.innerHTML = chars(innerHtml, app.memory);
+  let tagOrHtml = chars(innerHtml, app.memory);
+  if(tagOrHtml[0]=="<") element=document.createElement(tagOrHtml.replace("<","").replace(">",""))
+  else element.innerHTML = tagOrHtml;
   if (!parent) parent = document.body;
+  else console.log("GOT PARENT", parent, "FOR", element.innerHTML)
   parent.appendChild(element);
   return element;
 }
