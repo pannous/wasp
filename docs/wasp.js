@@ -256,6 +256,7 @@ function getExternRefPropertyValue(ref, prop0) {
   print("CALLING getExternRefPropertyValue", ref, prop)
   if (ref && typeof ref[prop] !== 'undefined') {
     let val = ref[prop];
+    if (typeof val === 'function') val = val.bind(ref)() // vs invokeExternRef
     print("getExternRefPropertyValue OK ", ref, prop, val, typeof val)
     return smartResult(val, app.memory)
   } else if (ref && typeof ref.getAttribute === 'function') {

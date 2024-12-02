@@ -107,6 +107,7 @@ void testHtmlWasp() {
 }
 
 void testJS() {
+    eval("$canvas.getContext('2d')"); // => invokeReference(canvas, getContext, '2d')
     eval("js{alert('Hello')}"); // => <script>alert('Hello')</script>
     eval("script{alert('Hello')}"); // => <script>alert('Hello')</script>
 }

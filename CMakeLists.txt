@@ -585,7 +585,28 @@ if (WASM) # OR WASI)
     elseif (WASP_FULL) # including merger
         add_executable(wasp-full.wasm ${SOURCE_FILES})
     elseif (MY_WASM) # hosted
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+        ADD_COMPILE_FLAG("-g")
+        #        ADD_COMPILE_FLAG("-g -gsource-map") # emcc only :( // --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map")
         add_executable(wasp-hosted.wasm ${SOURCE_FILES}) # run_wasm() put() panic() ...
+        add_custom_command(
+                TARGET wasp-hosted.wasm POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E echo "Generating source map for wasp-hosted.wasm"
+                COMMAND ${CMAKE_COMMAND} -E echo "Extracting debug symbols"
+                #                COMMAND llvm-dwarfdump -debug-info ${CMAKE_BINARY_DIR}/wasp-hosted.wasm | wasm-sourcemap ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
+                #                COMMAND llvm-dwarfdump -debug-info ${CMAKE_BINARY_DIR}/wasp-hosted.wasm > ${CMAKE_BINARY_DIR}/wasp-hosted.dwarf
+                #                COMMAND emcc --source-map --output ${CMAKE_BINARY_DIR}/wasp-hosted.wasm ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
+                #                COMMAND wasm2wat --generate-names --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map -o ${CMAKE_BINARY_DIR}/wasp-hosted.wat ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
+                COMMAND python3 /Users/me/dev/script/wasm/wasm-sourcemap.py ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
+                COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
+
+                #                COMMAND wasm-opt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -g -o ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
+                #                COMMAND wasm2js --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
+                #                COMMAND llvm-dsymutil ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
+                #                COMMAND /opt/wasm/wasi-sdk/bin/wasm-ld --strip-debug=false --export-dynamic -o wasp-hosted.wasm source.o
+                COMMAND ${CMAKE_COMMAND} -E echo "Source map generated: ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map"
+        )
         #        add_executable(wasp.wasm ${SOURCE_FILES})
     elseif (WASI OR PURE_WASM)
         add_executable(wasp-standalone.wasm ${SOURCE_FILES}) # custom WASI without host vs emcc WASI:
