@@ -1170,7 +1170,7 @@ public:
         return *this;
     }
 
-    Signature &returns(Valtype valtype) {
+    Signature &returns(Valtype valtype, String name = "") { // todo use name as default variable name
         wasm_return_type = valtype;
         if (valtype != voids and valtype != none) {
             if (valtype == float64 or valtype == float32 or valtype == int32 or valtype == i64)

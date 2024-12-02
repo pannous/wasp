@@ -251,6 +251,33 @@ async function storeFunction() {
   app.exports.call_by_index(index);
 }
 
+function getExternRefPropertyValue(ref, prop0) {
+  let prop = chars(prop0, app.memory)
+  print("CALLING getExternRefPropertyValue", ref, prop)
+  if (ref && typeof ref[prop] !== 'undefined') {
+    let val = ref[prop];
+    print("getExternRefPropertyValue OK ", ref, prop, val, typeof val)
+    return smartResult(val, app.memory)
+  } else if (ref && typeof ref.getAttribute === 'function') {
+    let attribute = ref.getAttribute(prop);
+    print("getExternRefPropertyValue OK! ", ref, prop, attribute)
+    return smartResult(attribute, app.memory)
+  } else {
+    throw new Error(`'${prop}' is not a property of the provided reference`);
+  }
+}
+
+function setExternRefPropertyValue(ref, property, value_node) {
+  let field = chars(property, app.memory)
+  let value = smartNode(value_node, 0, app.memory)// node(value_node,app.memory).value
+  print("CALLING setExternRefPropertyValue", ref, field, value)
+  if (ref && typeof ref.setAttribute === 'function') {
+    ref.setAttribute(field, value);
+  } else {
+    ref[field] = value // may create it
+    // throw new Error(`'${field}' is not a property of the provided reference`);
+  }
+}
 
 const jsStringPolyfill = {
   "charCodeAt": (s, i) => s.charCodeAt(i),
@@ -351,28 +378,8 @@ let imports = {
       return object // automatically cast to (extern)ref
     },
     // getExternRefPropertyValue: async (ref, prop0) => { async not working in wasm!
-    getExternRefPropertyValue: (ref, prop0) => {
-      let prop = chars(prop0, app.memory)
-      print("CALLING getExternRefPropertyValue", ref, prop)
-      if (ref && typeof ref[prop] !== 'undefined') {
-        let val = ref[prop];
-        print("getExternRefPropertyValue OK ", ref, prop, val, typeof val)
-        return smartResult(val, app.memory)
-        // if (typeof val != "string") val = JSON.stringify(val)
-        // return chars(val, app.memory)
-        // return string(val, app.memory)
-      } else if (ref && typeof ref.getAttribute === 'function') {
-        // check attribute
-        let attribute = ref.getAttribute(prop);
-        print("getExternRefPropertyValue OK! ", ref, prop, attribute)
-        // if (typeof attribute != "string") val = JSON.stringify(attribute)
-        // return String(attribute, app.memory)
-        // return chars(attribute, app.memory)
-        return smartResult(attribute, app.memory)
-      } else {
-        throw new Error(`'${prop}' is not a property of the provided reference`);
-      }
-    },
+    getExternRefPropertyValue,
+    setExternRefPropertyValue,
     invokeExternRef: (ref, fun, params) => {
       print("invokeExternRef", ref, fun, params)
       // Check if 'fun' is a valid method of 'ref'

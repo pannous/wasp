@@ -73,7 +73,7 @@
 <div>
   <h1>🐝 <a href="https://github.com/pannous/wasp">Wasp</a></h1>
   <h2>A new programming language for Wasm</h2>
-  <label for="examples">Choose a Wasp example:</label>
+  <label for="examples">Choose a Wasp example:</label> <!--  filled by examples.js -->
   <select id="examples"
           onchange="results.value='';editor.setValue(exampleCode[value]);// causes compile_and_run(editor.getValue())">
     <option value="math">Math</option>
@@ -131,5 +131,6 @@
 
 </div>
 <canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
+<script>const ctx = canvas.getContext('2d')</script>
 </body>
 
