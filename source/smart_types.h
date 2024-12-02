@@ -2,12 +2,13 @@
 //
 // Created by me on 15.11.20.
 //
+
 typedef long long int64;
 //typedef double float64;
 //typedef int1_t bit / bool 0/1 (flag entry)
-//typedef uint2_t bibi™ ;) 0…3
-//typedef uint3_t boc / octal-char 0…7
-//typedef uint4_t bat / hex-char 0…F
+//typedef uint2_t bine™ ;) 0…3 like in gene basepairs A:0 C:1 G:2 T:3 or A:0 G:1 C:2 T:3 AGCT≈ABCD 10 11 12 13
+//typedef uint3_t boct / octal-char 0…7
+//typedef uint4_t nibble / hex-char 0…F
 //typedef uint8_t byte / unsigned char
 //typedef uint16_t bort / word / short
 //typedef uint32_t pint / int
@@ -51,17 +52,3 @@ typedef unsigned long long SmartPointer64;
 typedef unsigned long long smart_pointer_64;
 //typedef uint64 smart_type_64;
 typedef smart_pointer_64 smarty;
-
-smartType4bit getSmartType(smart_pointer_32 spo);
-//smartType4bit getSmartType(smart_pointer_64 spo);
-
-static smart_pointer_64 smart_pointer_type_mask = 0xFFFFFFFF00000000L; // full : smartType4bit plus 12 specifier bit plus 16 bit type payload
-static smart_pointer_64 smart_pointer_header_mask = 0xFFFF000000000000L; // smartType4bit plus 12 specifier  todo maybe less F?
-static smart_pointer_64 smart_pointer_payload_mask = 0x0000FFFF00000000L; // todo maybe less F?
-//todo stringa = 0x9 vs
-#define string_header_64 0x0010000000000000L // todo : what happened to 0x9 smartType4bit ??
-#define array_header_64  0x0040000000000000L // why 0x004? because first 2 bats indicate doubles/ints!
-
-static smart_pointer_64 smart_pointer_node_signature = 0xA000000000000000L;// ((smart_pointer_64)nodep) << 63; // 0xA0…0
-
-//    short smart_type_payload = (short)(smartPointer64 & 0x0000FFFF00000000L)>>16;// type payload including length (of array)
