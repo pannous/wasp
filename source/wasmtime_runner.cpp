@@ -284,6 +284,17 @@ wrap(putc) {// put_char
     return NULL;
 }
 
+wrap(download) {
+    char *url = (char *) wasm_memory + args[0].of.i32;
+    chars result = fetch(url);
+//    uint64 pointer = (uint64) (void *) result;
+    uint64 pointer = 0x100000; // INTERNAL POINTER instead of wasm_memory
+    results[0].of.i32 = pointer;
+//    results[0].of.i64 = pointer;
+    strcpy((char *) wasm_memory + pointer, result);// todo HEAP!
+    return NULL;
+}
+
 wrap(nop) {
     return NULL;
 }
@@ -410,6 +421,7 @@ wasm_wrap *link_import(String name) {
     if (name == "putc") return &wrap_putc;
 //    if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
     if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
+    if (name == "download") return &wrap_download;
     if (name == "wasp_main") return &hello_callback;
     if (name == "memory")
         return 0;// not a funciton

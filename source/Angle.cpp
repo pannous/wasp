@@ -1657,6 +1657,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         }
         rest = expressiona.from(i + 1);
         int arg_length = rest.length;
+        if (not arg_length and rest.kind == urls) arg_length = 1;
         if (not arg_length and rest.kind == reference) arg_length = 1;
         if (not arg_length and rest.value.data) arg_length = 1;
         if (arg_length > 1)
@@ -1673,8 +1674,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             minArity--;
         }
         if (arg_length < minArity) {
-            print(function);
-            print((String) signature);
+            print(function.name + (String) signature);
             error("missing arguments for function %s, given %d < expected %d. "
                   "defaults and currying not yet supported"s % name % arg_length % minArity);
         } else if (arg_length == 0 and minArity > 0)
@@ -2096,6 +2096,9 @@ void preRegisterFunctions() {
 
     functions["printx"].import();
     functions["printx"].signature.add(externref, "extern_reference");
+
+    functions["download"].import();
+    functions["download"].signature.add(charp, "url").returns(charp);
 
     // DOM functions
     functions["getDocumentBody"].import().signature.returns(externref);

@@ -110,6 +110,7 @@ codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', 
 // ︷ ︵ ﹁ ﹃ ︹ ︻ ︽
 // ︸ ︶ ﹂ ﹄ ︺ ︼ ︾
 
+const char *validUrlSchemes[] = {"http", "https", "ftp", "file", "mailto", "tel", "//", nullptr};/// CAREFUL
 
 // predicates in of on from to
 // todo split keywords into binops and prefix functors
@@ -634,6 +635,32 @@ private:
         String key = String(text.data + start, to - start, !debug);
         return key;
     };
+
+    // Helper: Check if character is valid in a URL.
+    bool isValidUrlChar(char ch) {
+        return is_identifier(ch) || isDigit(ch) || ch == '-' || ch == '_' || ch == '~' || ch == '/' || ch == ':' ||
+               ch == '?' ||
+               ch == '&' || ch == '=' || ch == '%' || ch == '#' || ch == '.';
+    }
+
+    // Parse a URL.
+    String url() {
+        // URLs should start with a valid scheme (e.g., http, https).
+//        if (!starts_with_scheme(ch))
+//            parserError("Unexpected start of URL: "s + renderChar(ch));
+        int start = at;
+
+        // Process characters valid in a URL (letters, digits, -, _, ~, /, :, ?, &, =, %, #).
+        while (proceed() && (isValidUrlChar(ch)))
+            if (isWhite(ch))
+                break;
+
+        int to = at;
+        while (to > 0 && empty(text[to - 1])) to--;
+
+        String url = String(text.data + start, to - start, !debug);
+        return url;
+    }
 
     Node &hexadecimal_number() {
         if (ch == '0')proceed();
@@ -1714,8 +1741,8 @@ private:
                     actual.add(id);
                     break;
                 }
-                case U'：':
                 case ':':
+                case U'：':
                 case U'≝':
                 case U'≔': // vs ≕ =:
                 case U'＝':
@@ -1725,6 +1752,13 @@ private:
                 case '=': { // assignments, declarations and map key-value-pairs
                     // todo {a b c:d} vs {a:b c:d}
                     Node &key = actual.last();
+
+                    if (ch == ':' and next == '/' and key.name.in(validUrlSchemes)) {
+                        key.name = key.name + url();
+                        key.setType(Kind::urls, false); // todo: Kind::urls ?
+                        continue;
+//                        break;
+                    }
                     bool add_raw = actual.kind == expression or key.kind == expression or
                                    (actual.last().kind == groups and actual.length > 1);
                     bool add_to_whole_expression = false;

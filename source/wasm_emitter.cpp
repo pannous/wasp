@@ -2138,9 +2138,12 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //};
             return emitArray(node, context);
             break;
+        case urls:
+            return emitString(node, context);
         case undefined:
         case unknown:// todo: proper NIL!
             return code;
+
         case constructor:
             return emitConstruct(node, context);
         default:
