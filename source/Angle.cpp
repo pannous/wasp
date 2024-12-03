@@ -593,7 +593,7 @@ List<String> collectOperators(Node &expression) {
 }
 
 
-bool isVariable(Node &node) {
+bool maybeVariable(Node &node) {
     if (node.kind != reference and node.kind != key and !node.isSetter())
         return false;
     if (node.kind == strings)return false;
@@ -1170,7 +1170,8 @@ Node &groupDeclarations(Node &expression, Function &context) {
             else
                 continue;
         }
-        if (node.kind == reference or (node.kind == key and isVariable(node))) {// only constructors here!
+        if ((node.kind == reference and not node.length) or
+            (node.kind == key and maybeVariable(node))) {// only constructors here!
             if (not globals.has(op) and not isFunction(node) and not builtin_constants.contains(op)) {
                 Type evaluatedType = unknown_type;
                 if (use_wasm_arrays)
@@ -2015,7 +2016,7 @@ Node &analyze(Node &node, Function &function) {
         return groupGlobal(node, function);
 //        return node.setType(global, false);
     if (isPrimitive(node)) {
-        if (isVariable(node))
+        if (maybeVariable(node))
             addLocal(function, name, mapType(node), false);
         return node;// nothing to be analyzed!
     }
