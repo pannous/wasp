@@ -52,6 +52,7 @@ Type mapType(Node &arg) {
                 return Primitive::wasmtype_array;// array
             else
                 return Primitive::node_pointer;
+        case urls:
         case strings:
             if (use_wasm_strings)
                 return string_ref;
@@ -355,6 +356,8 @@ chars typeName(Kind t, bool throws) {
             return "module";
         case global: // todo global of what name, what type
             return "global";
+        case urls:
+            return "url";
         case last_kind:
         default:
             if ((short) t == stringref)

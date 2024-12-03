@@ -180,6 +180,7 @@ enum Kind /* 32 bit*/ {// todo: merge Node.kind with Node.class(?)
     enum_entry = longs, // special semantics at compile time for now
     last_kind = 0x80,
     codepoint1 = 0xC4, // in value.longy field, boxed as node vs codepoint32 primitive todo?
+    urls, // special references/strings IN NAME!
 
     kind_padding = 0x80000000, // TODO do 32 bit padding differently! keep kind in 8 bits! TODO remove!
 };

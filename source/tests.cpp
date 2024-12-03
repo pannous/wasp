@@ -232,7 +232,12 @@ void testDomProperty() {
 //	print(nod);
 }
 
+void testHostDownload() {
+    assert_emit("download http://pannous.com/files/test", "test 2 5 3 7\n");
+}
+
 void testHostIntegration() {
+    testHostDownload();
     test_getElementById();
     testDom();
     testDomProperty();
@@ -3515,6 +3520,9 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+//    testSinus();
+//    assert_emit("1-‖3‖/-3", 2);
+//    testHostDownload();
 //    testJS();
 //    testHtmlWasp();
     testFlags();

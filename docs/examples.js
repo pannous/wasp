@@ -2,6 +2,7 @@ let exampleCode = {
   // getElementById: '$canvas.style',
   getElementById: '$canvas.tagName', // OK via chars
   invokeRef: `$canvas.getContext('2d')`,
+  download: `download http://pannous.com/files/test`,
   math: `1+2*√3^2`,
   hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
   math2: `√π²`,
