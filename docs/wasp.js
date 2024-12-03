@@ -43,8 +43,8 @@ function binary_hack(binary_as_text) {
 
 var download_async = (url) => fetch(url).then(res => res.text())
 
-function download(url, binary = false) {
-  if (typeof url != "string") url = chars(url, app.memory || memory) // unless wasm test
+function download(url, binary = false, mem = app.memory) {
+  if (typeof url != "string") url = chars(url, mem) // unless wasm test
   // console.log("download", url)
   let xhr = new XMLHttpRequest();
   // if (binary) xhr.responseType = 'arraybuffer'; // not allowed for sync requests
@@ -52,7 +52,7 @@ function download(url, binary = false) {
   xhr.open('GET', url, false);
   xhr.send();
   if (xhr.status === 200)
-    return binary ? bytes(binary_hack(xhr.response)) : chars(xhr.responseText.trim()) // to be used in WASM as string! use fetch() in JS
+    return binary ? bytes(binary_hack(xhr.response)) : chars(xhr.responseText.trim(), mem) // to be used in WASM as string! use fetch() in JS
   else
     throw new Error(`Failed to download ${url}: ${xhr.status} ${xhr.statusText}`);
   return null;
@@ -99,7 +99,7 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
 function getWasmFunclet(funclet_name, size_p) {
   let file = lib_folder_url + chars(funclet_name)
   if (!file.endsWith(".wasm")) file += ".wasm"
-  let [pointer, bytes_size] = download(file, binary = true)
+  let [pointer, bytes_size] = download(file, binary = true, memory) // load into compiler!
   console.log("getWasmFunclet", chars(funclet_name), pointer, bytes_size)
   set_int(size_p, bytes_size)
   return pointer
@@ -1115,7 +1115,7 @@ function load_compiler() {
 async function run_wasm(buf_pointer, buf_size) {
   try { // WE WANT PURE STACK TRACE
     wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
-    wasm_to_wat(wasm_buffer)
+    // wasm_to_wat(wasm_buffer)
     // download_file(wasm_buffer, "emit.wasm", "wasm")
 
     app_module = await WebAssembly.compile(wasm_buffer, {builtins: ['js-string']})
