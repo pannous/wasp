@@ -1559,8 +1559,7 @@ Code emitInvokeExternRef(Node &node, Node &field, Function &function) {
     if (field.length == 1)
         op.add(field.first());
     else
-        op.add(field.childs()); // todo params type node vs chars
-//    op.add(Node(field.childs().serialize()));// params
+        op.add(field.childs()); // todo params type node vs chars .serialize()
     return emitCall(op, function);
 }
 
