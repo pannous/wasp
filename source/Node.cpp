@@ -233,12 +233,12 @@ bool typesCompatible(Node &one, Node &other) {
 // super wasteful, for debug
 Node &Node::set(String string, Node *node) {
 //	if (!children)children = static_cast<Node *>(alloc(capacity));
-
+    if (capacity == 0)capacity = NODE_DEFAULT_CAPACITY;// how ;) copy constructor bug? todo
 	if (!children) {
 		init_children();
 //        if (name == nil_name)name = "ø";
 	}
-	if (length >= capacity / 2) todo("GROW children");
+    if (length >= capacity / 2) todo("GROW children");
 //	children = static_cast<Node *>(alloc(1000));// copy old
 	Node &entry = children[length];
 	if (length > 0) {
@@ -596,7 +596,7 @@ Node &Node::add(const Node *node) {
 		return *this;
 	if (kind == longs or kind == reals)
 		warn("can't modify primitives, only their referenceIndices");// e.g.  a=7 a.nice=yes
-	if (capacity == 0)capacity = NODE_DEFAULT_CAPACITY;// how ;) copy constructor?
+    if (capacity == 0)capacity = NODE_DEFAULT_CAPACITY;// how ;) copy constructor bug? todo
 	if (length >= capacity - 1) {
 		warn("Out of node capacity "s + capacity + " in " + name);
 		capacity *= 2;
@@ -895,6 +895,7 @@ chars Node::serializeValue(bool deep) const {
 		case operators:
 		case constructor:
 		case functor:
+        case urls:
 		case modul:
 			return name;// +"!"
 		case declaration:
@@ -912,11 +913,13 @@ chars Node::serializeValue(bool deep) const {
 //        case wasmtype_array:
 //            return name;
 		case number:
+            return formatLong(val.longy);
 		default:
 			breakpoint_helper
 			return "MISSING CASE";
+            break;
 	}
-	error("MISSING CASE for "s + (int) kind + " " + typeName(kind));
+    error("MISSING CASE serializeValue for "s + (int) kind + " " + typeName(kind));
 }
 
 // todo: (x)=>x when root
