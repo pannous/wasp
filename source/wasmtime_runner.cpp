@@ -95,7 +95,8 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     for (const String &import_name: meta.import_names) {
         if (import_name.empty()) break;
         wasmtime_func_t func;
-        const wasm_functype_t *type0 = funcType(meta.functions[import_name].signature);
+        Signature &signature = meta.functions[import_name].signature;
+        const wasm_functype_t *type0 = funcType(signature);
         wasmtime_func_new(context, type0, link_import(import_name), NULL, NULL, &func);
         wasmtime_extern_t import = { .kind = WASMTIME_EXTERN_FUNC, .of.func = func };
         imports[import_nr++] = import;

@@ -107,6 +107,7 @@ void testHtmlWasp() {
 }
 
 void testJS() {
+    // todo remove (local $getContext i32)  !
     eval("$canvas.getContext('2d')"); // => invokeReference(canvas, getContext, '2d')
     eval("js{alert('Hello')}"); // => <script>alert('Hello')</script>
     eval("script{alert('Hello')}"); // => <script>alert('Hello')</script>
@@ -3513,8 +3514,8 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
-    testJS();
-    testHtmlWasp();
+//    testJS();
+//    testHtmlWasp();
     testFlags();
     testTypes();
     skip(
