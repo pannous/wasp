@@ -381,12 +381,19 @@ let imports = {
     // getExternRefPropertyValue: async (ref, prop0) => { async not working in wasm!
     getExternRefPropertyValue,
     setExternRefPropertyValue,
-    invokeExternRef: (ref, fun, params) => {
+    invokeExternRef: (ref, fun0, params0) => {
+      let fun = chars(fun0, app.memory)
+      let params = chars(params0, app.memory) // node(params0, app.memory)
       print("invokeExternRef", ref, fun, params)
       // Check if 'fun' is a valid method of 'ref'
       if (ref && typeof ref[fun] === 'function') {
         // Call the method with the provided parameters
-        return ref[fun](...params);
+        if (Array.isArray(params))
+          result = ref[fun](...params);
+        else
+          result = ref[fun](params);
+        print("invokeExternRef RESULT", result)
+        return smartResult(result, app.memory);
       } else {
         // Handle the case where 'fun' is not a valid method
         throw new Error(`'${fun}' is not a function of the provided reference`);
