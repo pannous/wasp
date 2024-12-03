@@ -1549,13 +1549,18 @@ Code emitAttributeSetter(Node &node, Function &context) {
     return Code();
 }
 
+
 [[nodiscard]]
 Code emitInvokeExternRef(Node &node, Node &field, Function &function) {
     auto op = Node("invokeExternRef");
     op.add(node);
     op.add(Node(field.name));
 //    op.add(field.childs());// params as Node
-    op.add(Node(field.childs().serialize()));// params
+    if (field.length == 1)
+        op.add(field.first());
+    else
+        op.add(field.childs()); // todo params type node vs chars
+//    op.add(Node(field.childs().serialize()));// params
     return emitCall(op, function);
 }
 
@@ -1569,6 +1574,17 @@ Code emitReferenceProperty(Node &node, Node &field, Function &function) {
     return emitCall(op, function);
 }
 
+
+[[nodiscard]]
+Code emitAttributeCall(Node &node, Node &field, Function &context) {
+    if (node.kind == referencex)
+        return emitInvokeExternRef(node, field, context);
+    Node *value = node.value.node;
+    if (!value)value = node.last().value.node;
+    if (!value)error("attribute setter missing value");
+    todo("emitAttributeCall");
+    return Code();
+}
 
 Code emitGetter(Node &node, Node &field, Function &context) {
     Code code;
@@ -1591,6 +1607,7 @@ Code emitGetter(Node &node, Node &field, Function &context) {
 }
 
 Code emitReferenceAttribute(Node &node, Node &field, Function &function) {
+    todo("emitReferenceAttribute");
     return Code();
 }
 
@@ -1606,6 +1623,8 @@ Code emitAttribute(Node &node, Function &context) {
         return emitAttributeSetter(node, context);// danger get->set ?
     Node field = node.last();// NOT ref, we resolve it to index!
     Node &object = node.first();
+    if (field.length) // e.g. $canvas.getContext('2d')
+        return emitAttributeCall(object, field, context);// danger get->set ?
 
     if (object.kind == constructor and use_wasm_structs) {
         Code ref = emitReferenceTypeConstructor(object, context);
@@ -3606,8 +3625,7 @@ void add_imports_and_builtins() {
             function.call_index = ++last_index;
             call_indices[sig] = last_index;
             info("using import "s + sig);
-            trace(function.name);
-            trace(function.signature.serialize());
+            trace(function.name + function.signature.serialize());
             import_count++;
         }
     }
