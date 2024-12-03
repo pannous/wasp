@@ -1040,12 +1040,13 @@ void testDeepColon2() {
 
 
 void testStupidLongLong() {
-    //	int a;
-//	int64 b;// 4 byte in wasm/windows grr
+//	int a;
+//	long b;// 4 byte in wasm/windows grr
+//	long long c;// 8 bytes everywhere (still not guaranteed grr)
 //	int64 c;// 8 bytes everywhere (still not guaranteed grr)
-    float a;
     double b;
-    long double c;// float128 16 byte in wasm wow, don't use anyways;)
+    float a;
+    long double c;// float128 16 byte in wasm wow, don't use anyway;)
     print((int) sizeof(a));
     print((int) sizeof(b));
     print((int) sizeof(c));// what? 16 bytes!?
@@ -1160,7 +1161,7 @@ void testIteration() {
         error("NO ITEM, should'nt be reached "s + x);
 
 //#ifndef WASM
-    List<String> list = {"1", "2", "3"};// wow initializer_list now terminate!
+    List<String> list = {"1", "2", "3"};// wow! initializer_list now terminate!
 //	List<String> list = {"1", "2", "3", 0};
     int i = 0;
     for (auto x: list) {
@@ -1750,7 +1751,7 @@ void testStringReferenceReuse() {
     String x3 = x.substring(0, 2, true);
     check(x.data == x3.data);
     check(x.length >
-          x3.length) // shared data but different length! check shared_reference when modifying it!! &text[1] doesn't work anyways;)
+          x3.length) // shared data but different length! check shared_reference when modifying it!! &text[1] doesn't work anyway;)
     check(x3 == "ab");
     print(x3);
     // todo("make sure all algorithms respect shared_reference and crucial length! especially print!");
@@ -1975,7 +1976,7 @@ void testIterate() {
     }
     check(liste[0].value.longy == 11)
     for (Node child: liste) {
-        // should NOT effect result
+        // should NOT affect result
         child.value.longy = child.value.longy + 1;
     }
     check(liste[0].value.longy == 11)
@@ -2113,8 +2114,8 @@ void testTruthiness() {
     skip(
             assert_is("2", true);  // Truthiness != equality with 'true' !
             assert_is("2", True); // Truthiness != equality with 'True' !
-            assert_is("{x:0}", true); // wow falsey so deep?
-            assert_is("[0]", true);  // wow falsey so deep?
+            assert_is("{x:0}", true); // wow! falsey so deep?
+            assert_is("[0]", true);  // wow! falsey so deep?
     )
     assert_is("1", true);
 
@@ -2515,7 +2516,7 @@ void testParent() {
     print(a);
     check(a.kind == key or a.kind == strings);
     check(a == "HIO");
-    check(a.parent == 0);// key a is highest level
+    check(a.parent == 0);// key is the highest level
     Node *parent = a.value.node->parent;
     check(parent);
     print(parent);// BROKEN, WHY?? let's find out:
@@ -3147,7 +3148,7 @@ void todos() {
     // while without body
     assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
     assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
-    assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !
+    assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !"
     assert_emit("1 - - 3", 4);// -1 uh ok?  warn "what are you doning?"
     assert_emit("use math;⅓ ≈ .3333333 ", 1);
     assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
