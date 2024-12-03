@@ -442,7 +442,7 @@ List<chars> infixOperators = operator_list;
 // todo: norm all those unicode variants first!
 // ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
 
-// handled different than other operators, because … they affect the namespace context
+// handled different from other operators, because … they affect the namespace context
 List<chars> setter_operators = {"="};
 List<chars> return_keywords = {"return", "yield", "as", "=>", ":", "->"}; // "convert … to " vs "to print(){}"
 List<chars> function_operators = {":="};//, "=>", "->" ,"<-"};
@@ -750,7 +750,7 @@ Node &groupTypes(Node &expression, Function &context) {
         }
         if (i < expression.length and not is_operator(expression.children[i].name[0])) {
             typed = &expression.children[i];
-        } else if (i > 1) { // special reverse syntax a int, jeff as int
+        } else if (i > 1) { // special reverse syntax int x => x int, x as int
             typed = &expression.children[i - 1];
             if (typed->name == "as") { // danger edge cases!
                 expression.remove(i - 1, i);
@@ -2203,9 +2203,8 @@ Node runtime_emit(String prog) {
 // smart pointers returned if ABI does not allow multi-return, as in int main(){}
 
 Node smartNode32(int smartPointer32) {
-    auto result = smartPointer32;
-    auto smart_pointer = result & 0x00FFFFFF;// data part
-    if ((result & 0xF0000000) == array_header_32 /* and abi=wasp */ ) {
+    auto smart_pointer = smartPointer32 & 0x00FFFFFF;// data part
+    if ((smartPointer32 & 0xF0000000) == array_header_32 /* and abi=wasp */ ) {
         // smart pointer to smart array
         int *index = ((int *) wasm_memory) + smart_pointer;
         int kind = *index++;
@@ -2224,7 +2223,7 @@ Node smartNode32(int smartPointer32) {
 //			check(arr.type=…
         return arr;
     }
-    if ((result & 0xFF000000) == string_header_32 /* and abi=wasp */ ) {
+    if ((smartPointer32 & 0xFF000000) == string_header_32 /* and abi=wasp */ ) {
         // smart pointer for string
         return Node(((char *) wasm_memory) + smart_pointer);
     }
