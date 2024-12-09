@@ -1325,10 +1325,11 @@ bool Node::contains(const char *string) {
 }
 
 
-chars Node::containsAny(List<chars> strings) {
+chars Node::containsAny(List<chars> strings, bool allow_quoted/*=true*/) {
 	for (Node &chile: *this)
 		for (chars string: strings)
-			if (chile.name == string)return string;
+            if (chile.name == string and (allow_quoted or chile.kind != Kind::strings))
+                return string;
 	return 0;
 }
 

@@ -856,7 +856,7 @@ public:
 
     bool contains(const char *string);
 
-    chars containsAny(List<chars> strings);
+    chars containsAny(List<chars> strings, bool allow_quoted = true);
 
     int size();
 
