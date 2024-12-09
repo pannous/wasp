@@ -2390,6 +2390,7 @@ Code emitFor(Node &node, Function &context) {
     Node &begin = node["begin"];
     Node &end = node["end"];
     Node &body = node["body"];
+    Node &upto = node["upto"];
 
     let variables = context.locals;
 //        return emitForIterator(node, context);
@@ -2413,12 +2414,21 @@ Code emitFor(Node &node, Function &context) {
 
     // Emit condition (e.g., 'i < end')
     Node condition("<=");
+    if (upto.value.longy) // 1 upto 4 = 1 2 3
+        condition = Node("<");
     condition.setType(operators);
     condition.add(variable);
     condition.add(end);
     code = code + emitExpression(condition, context);
     code.addByte(if_i);
     code.addByte(none); // Void block for condition
+
+    // Set the result variable to the current (=>last) loop variable
+    code.addByte(get_local);
+    code.addByte(variables[variable.name].position); // Set the result variable to the current (=>last) loop variable
+    code.add(cast(i32, i64));
+    code.addByte(set_local); // Set the result variable to the current (=>last) loop variable
+    code.addByte(variables["result"].position);
 
     // Emit loop body
     Code bodyCode = emitExpression(body, context);
@@ -2450,6 +2460,10 @@ Code emitFor(Node &node, Function &context) {
 
     // End loop block
     code.addByte(end_block);
+
+    code.addByte(get_local);
+    code.addByte(variables["result"].position); // Set the result variable to the current (=>last) loop variable
+    last_type = i64;
 
     return code;
 }

@@ -1906,7 +1906,9 @@ Node &groupForClassic(Node &node, Function &context) {
 
 Node &groupForIn(Node &n, Function &context) {
     // for i in 0 to 10 {}
-    if (n[2].name != "in" or n[4] != "to")
+    // for i in 1 < 3 {}
+    //    todo : for i < 3
+    if (n[2].name != "in" or (n[4] != "to" and n[4] != "upto" and n[4] != "<" and n[4] != "<="))
         error("Invalid 'for' loop structure. Expected for i in begin to end {}");
     Node &variable = n[1];
     addLocal(context, variable.name, int32, false);
@@ -1921,6 +1923,7 @@ Node &groupForIn(Node &n, Function &context) {
     ef["begin"] = analyze(begin, context);
     ef["end"] = analyze(end, context);
     ef["body"] = analyze(body, context);
+    ef["upto"] = *new Node(n[4].name == "upto" or n[4].name == "<");
     analyzed[ef.hash()] = 1;
     return ef;
 }
