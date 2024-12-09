@@ -45,7 +45,7 @@ var download_async = (url) => fetch(url).then(res => res.text())
 
 function download(url, binary = false, mem = app.memory) {
   if (typeof url != "string") url = chars(url, mem) // unless wasm test
-  // console.log("download", url)
+  // debug("download", url)
   let xhr = new XMLHttpRequest();
   // if (binary) xhr.responseType = 'arraybuffer'; // not allowed for sync requests
   if (binary) xhr.overrideMimeType('text/plain; charset=x-user-defined'); // Prevent UTF-8 decoding
@@ -88,7 +88,7 @@ const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
       error(text + "\n");
     else {
       results.value += text + "\n";
-      console.log(text + "\n");
+      debug(text + "\n");
     }
     c_io_vector += 8
   }
@@ -100,7 +100,7 @@ function getWasmFunclet(funclet_name, size_p) {
   let file = lib_folder_url + chars(funclet_name)
   if (!file.endsWith(".wasm")) file += ".wasm"
   let [pointer, bytes_size] = download(file, binary = true, memory) // load into compiler!
-  console.log("getWasmFunclet", chars(funclet_name), pointer, bytes_size)
+  debug("getWasmFunclet", chars(funclet_name), pointer, bytes_size)
   set_int(size_p, bytes_size)
   return pointer
 }
@@ -112,7 +112,7 @@ function parse(data) {
 }
 
 function terminate() {
-  console.log("wasm terminate()")
+  debug("wasm terminate()")
   // if(sure)throw
 }
 
@@ -153,7 +153,7 @@ function matrix_multiply(a, b, k = 1) {
   let n = b.length / k
   // await
   const result = webgpublas.sgemm(m, n, k, alpha, array_a, array_b);
-  console.log(result); // m*n row-major matrix (Float32Array)
+  debug(result); // m*n row-major matrix (Float32Array)
   return result
 }
 
@@ -198,7 +198,7 @@ function smartResult(object, mem = memory) {
     // let wrapped = chars(serialized, mem)
     // string_header_32 => json_header_32 to be parsed
     let big_wrap = BigInt(wrapped) | BigInt(string_header_32) << BigInt(32)
-    console.log("smartResult: ", object, "as smart type BigInt", hex(big_wrap));
+    debug("smartResult: ", object, "as smart type BigInt", hex(big_wrap));
     return big_wrap // BigInt(wrapped) // to be consumed by wasm, potentially returned to wasp via main and wasm_done
   } catch (ex) {
     // todo error handling via print!
@@ -219,12 +219,12 @@ async function storeObject() {
   table.grow(1); // Expand table by one slot
   table.set(index, ref);
   refToIndexMap.set(ref, index);
-  console.log("Stored object index:", index); // Outputs the index where `ref` is stored
+  debug("Stored object index:", index); // Outputs the index where `ref` is stored
   // NOW WE CAN PASS THE INDEX TO WASM AS SMARTY !
 
   // Retrieve the object by index
   const retrievedObj = table.get(index); // Retrieve the object by index directly! ref=>object!
-  console.log(retrievedObj.message); // Outputs: "Hello from externref!"
+  debug(retrievedObj.message); // Outputs: "Hello from externref!"
   /*
   ;; Retrieve the externref from the table and call the logger
   (call $print_externref (table.get (local.get 0)))
@@ -242,7 +242,7 @@ async function storeFunction() {
   const table = app.exports.funcref_table;
 
 // Store a JavaScript function in the table
-  const externalFunction = () => console.log("Hello from JavaScript!");
+  const externalFunction = () => debug("Hello from JavaScript!");
   const index = table.length; // Use current length to append
   table.grow(1); // Expand table size
   table.set(index, externalFunction);
@@ -345,30 +345,30 @@ let imports = {
     init_graphics: nop, // canvas init by default
     requestAnimationFrame: nop, // todo
     getenv: x => {
-      console.log("getenv", x, chars(x, typeof (app) != 'undefined' ? app.memory : memory));
+      debug("getenv", x, chars(x, typeof (app) != 'undefined' ? app.memory : memory));
       return 0
     }, // todo
     fopen: x => {
-      console.log("fopen", x);
+      debug("fopen", x);
       return 0
     }, // todo WASI / NOT
     fprintf: (x, y) => {
-      console.log("fprintf", x, y);
+      debug("fprintf", x, y);
       return 0
     }, // todo WASI / NOT
     fgetc: x => {
-      console.log("fgetc", x);
+      debug("fgetc", x);
       return 0
     }, // todo WASI / NOT
     fclose: x => {
-      console.log("fclose", x);
+      debug("fclose", x);
       return 0
     }, // todo WASI / NOT
     getDocumentBody: () => document.body,
     addScript: (scriptContent) => {
       let script = document.createElement('script');
       script.textContent = chars(scriptContent, app.memory);
-      console.log("script", script.textContent)
+      debug("script", script.textContent)
       document.body.appendChild(script);
     },
     createHtml,
@@ -409,11 +409,11 @@ let imports = {
 
     exit: terminate, // should be wasi.proc_exit!
     pow: (x, y) => { // via pow.wasm funclet => never called here IF LINKED!
-      console.log("pow", x, y);
+      debug("pow", x, y);
       return x ** y
     },
-    print: x => console.log(smartValue(x, app.memory)), // todo: right memory!
-    puti: x => console.log(x), // allows debugging of ints without format String allocation!
+    print: x => print(smartValue(x, app.memory)), // todo: right memory!
+    puti: x => debug(x), // allows debugging of ints without format String allocation!
     js_demangle: x => chars(demangle(chars(x))),
     __cxa_demangle: (name, buf, len, status_p) => chars(demangle(chars(name))),
     // _Z7compile6Stringb: nop, // todo bug! why is this called?
@@ -442,15 +442,33 @@ let imports = {
 imports.wasi_snapshot_preview1 = imports.wasi_unstable // fuck wasmedge!
 Wasp = imports // provide global Wasp object for debugging, fill with wasi functions and runtime exports later!
 
+const console_log = window.console.log
+
+function debug(...args) {
+  // if(debugging)
+  console_log.apply(console, args); // Call the original debug
+}
+
 let todo = x => console.error("TODO", x)
-let puts = x => console.log(chars(x)) // char*
-let prints = x => console.log(string(x)) // char**
-const print = window.console.log;// redirect to text box
-const console_log = window.console.log;// redirect to text box
+let puts = x => print(chars(x)) // char*
+let prints = x => print(string(x)) // char**
+// const print = window.console.log ;// redirect to text box ! results.value += text + "\n";
+// window.console.log =
+const print = function (...args) {
+  const formattedArgs = args.map(arg => {
+    if (typeof arg === "string" || typeof arg === "number")
+      return arg; // No modification needed
+    else
+      return JSON.stringify(arg, null, 2); // Format non-string/number values
+  });
+  results.value += formattedArgs.join(' ') + '\n';
+  console_log.apply(console, args); // Call the original debug
+};
+// window.console.log = print// redirect ALL to text box
 
 // #if not TRACE
 // redirect after testing!
-// window.console.log = function (...args) {
+// window.debug = function (...args) {
 //     console_log(...args);
 //     args.forEach(arg => results.value += `${format(arg)}\n`);
 // }
@@ -470,7 +488,7 @@ function debugMemory(pointer, num, mem) {
   while (num-- > 0) {
     let x = buffer[i++]
     if (i < 3 || x)
-      console.log("CHAR AT", i, hex(x), chr(x), x)
+      debug("CHAR AT", i, hex(x), chr(x), x)
   }
 }
 
@@ -497,16 +515,16 @@ function string(data, mem = memory) { // wasm<>js interop
       let kind = read_int32(data + 8, mem); // todo not part of string ABI!
       if (kind == length) ;//todo("string_header_32 kind==length HOW?");
       else if (kind != string_header_32) {
-        // console.log("TODO missing string_header_32 kind", kind, pointer, length, data)
+        // debug("TODO missing string_header_32 kind", kind, pointer, length, data)
         // todo mixing string_header_32 for strings and other chars BAD!!
         if (!kind) return load_chars(pointer, length, mem);// todo messed up ABI!!
         return load_chars(data, -1, mem);
-      } else console.log("found string_header_32", pointer, length, data)
+      } else debug("found string_header_32", pointer, length, data)
       if (!pointer) {
-        console.log("NO chars to read")
+        debug("NO chars to read")
         debugMemory(data - 10, 20, mem)
       }
-      // console.log("pointer, length, mem", pointer, length, mem)
+      // debug("pointer, length, mem", pointer, length, mem)
       let cs = load_chars(pointer, length, mem);
       return cs
   }
@@ -516,12 +534,12 @@ function load_chars(pointer, length = -1, module_memory = 0, format = 'utf8') {
   if (!module_memory) module_memory = memory
   if (pointer === 0) return
   if (typeof pointer == "string") return chars(s)
-  // console.log("string",pointer,length)
+  // debug("string",pointer,length)
   if (length < 0) { // auto length
     let buffer = new Uint8Array(module_memory.buffer, pointer, module_memory.length);
     while (buffer[++length]) ;// strlen ;)
   }
-  //console.log("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
+  //debug("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
   if (typeof (TextDecoder) != 'undefined') {// WEB, text-encoding, Node 11
     const utf8_decoder = new TextDecoder('utf8');
     let decoder = format == 'utf8' ? utf8_decoder : utf16denoder
@@ -541,7 +559,7 @@ function bytes(data, mem = memory) {
   buffer.set(data, 0); // copy data to wasm linear memory
   let c = HEAP_END
   HEAP_END += data.length;
-  // console.log("bytes", data.length, HEAP_END, buffer)
+  // debug("bytes", data.length, HEAP_END, buffer)
   return [c, data.length]
 }
 
@@ -643,8 +661,8 @@ function loadKindMap() {
     kinds[kindName] = i
     kinds[i] = kindName
   }
-  // console.log("kinds:")
-  // console.log(kinds)
+  // debug("kinds:")
+  // debug(kinds)
 }
 
 function isGroup(kind) {
@@ -677,7 +695,7 @@ class node {
     // pointer += wasm_pointer_size;// forced 32 bit,  improved from 'undefined' upon construction
     this.child_pointer = read_int32(pointer, mem);
     pointer += wasm_pointer_size;// LIST, not link. block body content
-    // console.log(pointer,pointer%8) // must be %8=0 by now
+    // debug(pointer,pointer%8) // must be %8=0 by now
     this.value = read_int64(pointer, mem);
     // this.value = parseInt(read_int64(pointer, mem));
     pointer += 8; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
@@ -758,12 +776,12 @@ class node {
   }
 
   debug() {
-    console.log(this.serialize());
-    console.log(this);
-    console.log(this.children());
-    console.log(this.name, ":",)
+    debug(this.serialize());
+    debug(this);
+    debug(this.children());
+    debug(this.name, ":",)
     for (let childe of this.children()) {
-      console.log(childe.name)
+      debug(childe.name)
     }
   }
 }
@@ -791,19 +809,19 @@ function download_file(data, filename, type) {
 
 // holdup, this list layout is not compatible with the list layout pointer, length, kind, value
 function read_array(data, mem) {
-  console.log("read_array", data)
+  debug("read_array", data)
   let array_header = read_int32(data, mem)
   check(array_header == array_header_32, "array_header_32")
   let kind = read_int32(data + 4, mem)
   let length = read_int32(data + 8, mem)
   let value_kind = read_int32(data + 12, mem)
   let start = data + 16;// continuous mode!  read_int32(data+16, memory)
-  console.log("array start", start)
-  console.log("array length", length)
-  console.log("array kind", kind, kinds[kind])
-  console.log("value_kind", value_kind, kinds[value_kind])
+  debug("array start", start)
+  debug("array length", length)
+  debug("array kind", kind, kinds[kind])
+  debug("value_kind", value_kind, kinds[value_kind])
   let Kind = new node(value_kind, mem)
-  console.log("Kind", Kind)
+  debug("Kind", Kind)
   let item_size = 1;
   if (value_kind == kinds.byte) item_size = 1;
   if (value_kind == kinds.short) item_size = 2;
@@ -822,7 +840,7 @@ function read_array(data, mem) {
     // todo: serialize as node[] to avoid logic duplication!? space expensive! not THAT many cases (yet?)
     array.push(value)
   }
-  console.log("array", array)
+  debug("array", array)
   return array
 }
 
@@ -837,10 +855,10 @@ function read_array(data, mem) {
  */
 function smartValue(data0, type /*int32*/, memory) {
 // READS smartValue vs smartResult
-  // console.log("smartNode")
+  // debug("smartNode")
   type = data0 >> BigInt(32) // shift 32 bits ==
   let data = Number(BigInt.asIntN(32, data0))// drop high bits
-  console.log("smartNode data 0x" + hex(data) + " type 0x" + hex(type));
+  debug("smartNode data 0x" + hex(data) + " type 0x" + hex(type));
   if (type == string_header_32 || type == string_header_32 >> 8)
     return string(data, memory) || load_chars(data, length = -1, memory, format = 'utf8')
   if (type == array_header_32 || type == array_header_32 >> 8)
@@ -886,7 +904,7 @@ async function link_runtime() {
     app_exports = app_exports
     main = app_exports.wasp_main
     if (main) {
-      console.log("Calling start function:", main);
+      debug("Calling start function:", main);
       result = main()
     } else
       result = "NO MAIN! Entry function main not found."
@@ -904,7 +922,7 @@ function moduleReflection(wasm_data) {
     module.generateNames();
     module.applyNames();
     let output = module.toText({foldExprs: false, inlineExport: false});
-    console.log(output);
+    debug(output);
   })
 }
 
@@ -913,17 +931,17 @@ let hex = x => typeof x === 'bigint' ? bigHex(x) : x >= 0 ? x.toString(16) : (0x
 let chr = x => String.fromCodePoint(x) // chr(65)=chr(0x41)='A' char
 // debug wasm memory
 function binary_diff(old_mem, new_mem) {
-  console.log("binary_diff")
+  debug("binary_diff")
   old_mem = new Uint8Array(old_mem, 0, old_mem.length)
   new_mem = new Uint8Array(new_mem, 0, new_mem.length)
   if (old_mem.length != new_mem.length)
-    console.log("old_mem.length!=new_mem.length", old_mem.length, new_mem.length);
+    debug("old_mem.length!=new_mem.length", old_mem.length, new_mem.length);
   let badies = 0;
   for (let i = 0; i < old_mem.length && badies < 1000; i++) {
     let x = old_mem[i];
     let y = new_mem[i];
     if (x && x != y) {
-      console.log("DIFF AT", i, ":", hex(x), hex(y), " ", chr(x), chr(y))
+      debug("DIFF AT", i, ":", hex(x), hex(y), " ", chr(x), chr(y))
       badies++
     }
   }
@@ -944,7 +962,7 @@ function copy_runtime_bytes_to_compiler() {
 getArguments = function (func) {
   const symbols = func.toString();
   let start, end, register;
-  // console.log("getArguments",func,symbols)
+  // debug("getArguments",func,symbols)
   // start = symbols.indexOf('function');
   // if (start !== 0 && start !== 1) return undefined;
   start = symbols.indexOf('(', start);
@@ -970,7 +988,7 @@ function register_wasp_functions(exports) {
 
       let demangled = demangle(name)
       // console_log(func.name, func)
-      // console.log(name, "⇨", demangled)
+      // debug(name, "⇨", demangled)
       exports[demangled] = func
       if (!demangled.match("<") && !demangled.match("\\[")
         && !demangled.match(":: ") && !demangled.match("~"))// no generics yet
@@ -1006,10 +1024,10 @@ function load_runtime_bytes() {
       runtime_bytes = buffer
       WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
         //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
-        // console.log(obj.instance.exports._ZN6StringC2EPKcb)
-        // console.log(obj.instance.exports._ZN6StringC2EPKcb.length)
-        // console.log(obj.instance.exports._ZN6StringC2EPKcb.arguments)
-        // console.log(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
+        // debug(obj.instance.exports._ZN6StringC2EPKcb)
+        // debug(obj.instance.exports._ZN6StringC2EPKcb.length)
+        // debug(obj.instance.exports._ZN6StringC2EPKcb.arguments)
+        // debug(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
         // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
       })
       // copy_runtime_bytes()
@@ -1020,14 +1038,14 @@ function load_runtime_bytes() {
 
 // var work = new Worker("wasp_tests.js");
 // work.postMessage({ a:8, b:9 });
-// work.onmessage = (evt) => { console.log(evt.data); };
+// work.onmessage = (evt) => { debug(evt.data); };
 
 async function test() {
   try {
     // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
     var test_async = WebAssembly.promising(exports.test_async)
     test_async().then(result => {
-      console.log("test_async result", result)
+      debug("test_async result", result)
     })
 
 
@@ -1035,13 +1053,13 @@ async function test() {
       await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
   } catch (x) {
     if (x instanceof YieldThread)
-      console.log("⚠️ CANNOT USE assert_emit in wasp_tests() or testCurrent() ONLY via testRun()")
+      debug("⚠️ CANNOT USE assert_emit in wasp_tests() or testCurrent() ONLY via testRun()")
     throw x
   }
 }
 
 function wasp_ready() {
-  console.log("wasp is ready")
+  debug("wasp is ready")
   // moduleReflection(wasm_data);
   loadKindMap()
   try {
@@ -1084,13 +1102,13 @@ function load_release_runtime() {
       main = runtime_instance.start || runtime_exports.teste || runtime_exports.main || runtime_exports.wasp_main || runtime_exports._start
       // main = runtime_instance._Z11testCurrentv || main  via wasp_tests()
       if (main) {
-        console.log("got main")
+        debug("got main")
         result = main()
       } else {
         console.error("missing main function in wasp module!")
         result = runtime_instance.exports//show what we've got
       }
-      console.log(result);
+      debug(result);
       wasp_ready()
     });
   });
@@ -1098,7 +1116,7 @@ function load_release_runtime() {
 
 function load_compiler() {
   if (typeof compiler_exports !== 'undefined') {
-    console.log("compiler_exports already loaded")
+    debug("compiler_exports already loaded")
     return
   }
   WASP_COMPILER_BYTES = fetch(WASP_COMPILER)
@@ -1117,13 +1135,13 @@ function load_compiler() {
       main = compiler_instance.start || compiler_exports.teste || compiler_exports.main || compiler_exports.wasp_main || compiler_exports._start
       main = compiler_instance._Z11testCurrentv || main
       if (main) {
-        console.log("got main")
+        debug("got main")
         result = main()
       } else {
         console.error("missing main function in wasp module!")
         result = compiler_instance.exports//show what we've got
       }
-      console.log(result);
+    debug(result);
       wasp_ready()
     }
   ).catch(err => {
@@ -1157,18 +1175,19 @@ async function run_wasm(buf_pointer, buf_size) {
     app.exports = app.instance.exports
     app.memory = app.exports.memory || app.exports._memory || app.memory
     let main = app.exports.wasp_main || app.exports.main || app.instance.start || app.exports._start
+    results.value = "" // reset error messages
     let result = main()
-    console.log("GOT raw ", hex(result))
+    debug("GOT raw ", hex(result))
     if (result < -0x100000000 || result > 0x100000000) {
       if (!app.memory)
         error("NO app.memory")
       result = smartValue(result, 0, app.memory)
       //  result lives in emit.wasm!
-      console.log("GOT node ", result)
+      debug("GOT node ", result)
       // result = nod.Value()
     }
     if (expect_test_result) {
-      console.log("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM emit.WASM
+      debug("EXPECT", expect_test_result, "GOT", result) //  RESULT FROM emit.WASM
       if (Array.isArray(expect_test_result) && Array.isArray(result)) {
         for (let i = 0; i < result.length; i++)
           check(+expect_test_result[i] == +result[i])
@@ -1180,8 +1199,9 @@ async function run_wasm(buf_pointer, buf_size) {
       expect_test_result = 0
       if (resume) setTimeout(resume, 1);
     }
-    if (typeof results != "undefined")
-      results.value = result
+    results.value += "\nresult:\n"
+    if (typeof results != "undefined") //
+      results.value += result
     results.value += "\n" // JSON.stringify( Do not know how to serialize a BigInt
     return result; // useless, returns Promise!
   } catch (ex) {
@@ -1195,7 +1215,7 @@ async function run_wasm(buf_pointer, buf_size) {
 // function wasm_to_wat(buffer) {
 //   try {
 //     const parsed = window.WebAssemblyParser2.decode(buffer);
-//     console.log(parsed)
+//     debug(parsed)
 //     // editor.setValue(parsed.toText());
 //
 //     wabtFeatures = {
@@ -1218,22 +1238,22 @@ async function run_wasm(buf_pointer, buf_size) {
 //     module.generateNames();
 //     module.applyNames();
 //     const result = module.toText({foldExprs: true, inlineExport: true});
-//     // console.log(result);
+//     // debug(result);
 //     editor.setValue(result)
 //   } catch (e) {
-//     console.log("wasm_to_wat error")
-//     console.log(e) // but don't overwrite the editor
+//     debug("wasm_to_wat error")
+//     debug(e) // but don't overwrite the editor
 //   }
 // }
 
 
 function readFile() {// via classic html, not wasp
-  console.log("readFile")
+  debug("readFile")
   const file = input_file.files[0]
   const reader = new FileReader
   reader.addEventListener('load', () => {
-    console.log("readFile load")
-    console.log(reader.result)
+    debug("readFile load")
+    debug(reader.result)
     if (typeof code_input !== 'undefined')
       code_input.innerHTML = reader.result
     if (typeof editor !== 'undefined')
