@@ -41,6 +41,11 @@ char *data;// any data to be stored to wasm: values of variables, strings, node_
 int data_index_end = 0;// position to write more data = end + length of data section when building ≠ heap_end in live app
 int last_object_pointer = 0;// outside stack
 //int last_data_pointer = 0;// last_data plus header , see referenceDataIndices
+// todo use these for named data e.g. named strings and arrays
+int named_data_segments = 0; // first is just implicit "wasp_data" zero page
+List<int> data_segment_offsets; // todo redundant with referenceIndices
+List<String> data_segment_names;
+
 //Map<String *, int64> referenceDataIndices; // wasm pointers to strings within wasm data WITHOUT runtime offset!
 // todo: put into Function.locals :
 typedef int nodehash;
@@ -738,6 +743,19 @@ Code emitWasmArray(Node &node, Function &context) {
     return code;
 }
 
+// just register the name for custom section here
+void addNamedDataSegment(int pointer, Node &node) {
+    if (not node.name.empty()) { // todo: end this segment even if next one not named.
+        named_data_segments++;
+        data_segment_offsets.add(pointer);
+        data_segment_names.add(node.name);
+        // todo: un-redundant:
+//        referenceIndices.insert_or_assign(node.name, pointer);
+//        referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
+//        referenceMap[node.name] = node;
+    } else todow("all data_segments should have names!");
+}
+
 // todo emitPrimitiveArray vs just emitNode as it is (with child*)
 [[nodiscard]]
 Code emitArray(Node &node, Function &context) {
@@ -777,6 +795,8 @@ Code emitArray(Node &node, Function &context) {
     let code = Code();
     emitPaddingAlignment(8);
     int pointer = data_index_end;
+    addNamedDataSegment(pointer, node);
+
 //	todo: sync with emitOffset
     emitIntData(array_header_32, false);
 //    todo ⚠️really lose information here? use emitNodeBinary if full representation required
@@ -1234,6 +1254,7 @@ Code emitData(Node &node, Function &context) {
     // (data "\ff\33\01\00")
     // (data (;1;) (i32.const 10) "⚠️segment# and offset CAN OVERLAP! ⚠️ \00")
     int last_pointer = data_index_end;
+    addNamedDataSegment(last_pointer, node);
     switch (node.kind) {
         case nils:// also 0, false
         case bools:
@@ -3662,6 +3683,41 @@ Code emitGlobalSection() {
     return globalSection;
 }
 
+
+//// todo use these for named data e.g. named strings and arrays
+//int named_data_segments = 0; // first is just "wasp_data" zero page
+//List<int> data_segment_offsets;
+//List<String> data_segment_names;
+
+[[nodiscard]]
+Code emitDataSections() { // needs memory section too!
+// split for named data e.g. named strings and arrays
+//https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
+    Code datas;
+    if (data_index_end == 0 or data_index_end == runtime_data_offset)return datas;//empty
+// see clearEmitterContext() for NULL PAGE of data_index_end
+
+    datas.addByte(named_data_segments + 1);// n memory data segment initialization
+
+    for (int i = 0; i <= named_data_segments; i++) {
+        datas.addByte(00);// memory id always 0 until multi-memory
+        datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
+        int offset = runtime_data_offset ? runtime_data_offset : 0;
+        int end = data_index_end;
+        if (i > 0)offset = data_segment_offsets[i - 1]; // runtime_data_offset builtin ?
+        if (i < named_data_segments)end = data_segment_offsets[i];
+        datas.addInt(offset); // actual offset in memory
+        // todo: WHY cant it start at 0? wx  todo: module offset + module data length
+        datas.addByte(0x0b);// mode: active?
+        auto size_of_data = end - offset;
+        check(size_of_data >= 0, "data segment beyound end");
+        datas.addInt(size_of_data);
+        const Code &actual_data = Code((bytes) data + offset, size_of_data);
+        datas.add(actual_data);// now comes the actual data  encodeVector()? nah manual here!
+    }
+    return createSection(data_section, encodeVector(datas));// size added via actual_data
+}
+
 [[nodiscard]]
 Code emitDataSection() { // needs memory section too!
 //https://webassembly.github.io/spec/core/syntax/modules.html#syntax-datamode
@@ -3669,8 +3725,8 @@ Code emitDataSection() { // needs memory section too!
     if (data_index_end == 0 or data_index_end == runtime_data_offset)return datas;//empty
 // see clearEmitterContext() for NULL PAGE of data_index_end
     datas.addByte(01);// one memory initialization / data segment
-    datas.addByte(00);// memory id always 0 until multi-memory
 
+    datas.addByte(00);// memory id always 0 until multi-memory
     datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
     datas.addInt(runtime_data_offset ? runtime_data_offset : 0); // actual offset in memory
     // todo: WHY cant it start at 0? wx  todo: module offset + module data length
@@ -3793,6 +3849,7 @@ Code emitNameSection() {
     auto localNames = Code(local_names) + encodeVector(Code(usedLocals) + localNameMap);
     auto typeNames = Code(type_names) + encodeVector(Code(usedTypes) + typeNameMap);
     auto globalNames = Code(global_names) + encodeVector(Code(usedGlobals) + globalNameMap);
+    int named_data_segments = 1;
     auto dataNames = Code(data_names) + encodeVector(Code(1)/*count*/ + Code(0) /*index*/ + Code("wasp_data"));
     auto fieldNames = Code(field_names) + encodeVector(Code(usedFields) + fieldNameMap);// usedTypes ??
 
@@ -3963,6 +4020,9 @@ void clearEmitterContext() {
 
 //	referenceMap.setDefault(Node());
 //    runtime_data_offset = 0x100000;
+    named_data_segments = 0;
+    data_segment_offsets.clear();
+    data_segment_names.clear();
     data_index_end = runtime_data_offset; //0
     last_object_pointer = 0;
     if (!data) data = (char *) calloc(MAX_WASM_DATA_LENGTH, sizeof(char));// todo grow
@@ -4007,7 +4067,7 @@ Code &emit(Node &root_ast, String program) {
                 + globalSection1
                 + exportSection1
                 + codeSection1 // depends on importSection, yields data for funcTypeSection!
-                + emitDataSection()
+                  + emitDataSections()
                 //			+ linkingSection()
                 + emitNameSection()
                 //	              + emitDwarfSections()  // https://yurydelendik.github.io/webassembly-dwarf/
