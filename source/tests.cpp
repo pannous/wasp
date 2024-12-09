@@ -28,7 +28,10 @@ void testAssert() {
 }
 
 void testForLoops() {
-    assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
+    assert_emit("for i in 1 to 5 {print i};i", 6);
+//    assert_emit("sum=0\nfor i in (1..3) {sum+=i}\nsum", 6);
+//    assert_emit("sum=0;for i in (1..3) {sum+=i};sum", 6);
+//    assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
 }
 
 void testAutoSmarty() {
@@ -3525,10 +3528,10 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    testForLoops();
     testParamizedKeys();
     testAutoSmarty();
     testArguments();
-//    testForLoops();
 //    testSinus();
 //    assert_emit("1-‖3‖/-3", 2);
 //    testHostDownload();

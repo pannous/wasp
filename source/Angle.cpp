@@ -1600,6 +1600,13 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
                 return expressiona;
             continue;
         }
+//        if (name == "for") {
+//            Node &forr = groupFor(node, context);
+//            int j = expressiona.lastIndex(forr.last().next) - 1;
+//            if (j > i)
+//                expressiona.replace(i, j, forr);
+//            continue;
+//        }
         if (name == "while") {
             // todo: move into groupWhile !!
             if (node.length == 2) {
@@ -1864,82 +1871,130 @@ List<String> aliases(String name) {
     return found;
 }
 
-Node &groupFor(Node &n, Function &context) {
-    todow("groupFor for i in 1..10 {}");
-    return n;
+Node &groupForClassic(Node &node, Function &context) {
+// // for i=0;i<10;i++ {}
+    if (node.length < 4)
+        error("Invalid 'for' loop structure. Expected initializer, condition, increment, and body.");
+
+    // Extract components
+    Node &initializer = node[0]; // e.g., 'i = 0'
+    Node &condition = node[1];   // e.g., 'i < 1000'
+    Node &increment = node[2];   // e.g., 'i++'
+    Node &body = node[3];        // Loop body
+
+    // Validate components
+    if (!initializer.value.data)
+        error("Missing initializer in 'for' loop.");
+    if (!condition.value.data)
+        error("Missing condition in 'for' loop.");
+    if (!increment.value.data)
+        error("Missing increment in 'for' loop.");
+
+    // Create a node for the 'for' loop
+    Node *forNode = new Node("for");
+    Node &grouped = *forNode;
+    grouped.kind = expression; // Mark as an expression node
+
+    // Group components into structured nodes
+    grouped["initializer"] = initializer; // Store the initializer
+    grouped["condition"] = condition;     // Store the condition
+    grouped["increment"] = increment;     // Store the increment
+    grouped["body"] = body;               // Store the loop body
+
+    return grouped;
 }
 
-// todo: un-adhoc this!
+Node &groupForIn(Node &n, Function &context) {
+    // for i in 0 to 10 {}
+    if (n[2].name != "in" or n[4] != "to")
+        error("Invalid 'for' loop structure. Expected for i in begin to end {}");
+    Node &variable = n[1];
+    addLocal(context, variable.name, int32, false);
+    Node &begin = n[3];
+    Node &end = n[5];
+    Node &body = (n.length > 6) ? n[6] : end.values();
+    body.setType(expression); // if …
+    Node *foro = new Node("for");
+    Node &ef = *foro;
+    ef.kind = expression;
+    ef["variable"] = analyze(variable, context);
+    ef["begin"] = analyze(begin, context);
+    ef["end"] = analyze(end, context);
+    ef["body"] = analyze(body, context);
+    analyzed[ef.hash()] = 1;
+    return ef;
+}
+
+Node &groupFor(Node &n, Function &context) {
+    if (n.length < 2)
+        error("Incomplete 'for' loop structure");
+    if (n[2].name == "in")
+        return groupForIn(n, context);
+    if (n.length > 7 or n[2].name != "in")
+        return groupForClassic(n, context);
+
+    // Extract components: variable, iterable, and body
+    // for i in iterable {}
+    Node &variable = n.children[0];
+    Node &iterable = n.children[1];
+    Node body = (n.length > 2) ? n.children[2] : Node();
+
+    addLocal(context, variable.name, int32, false);
+
+    // Create and structure the "for" node
+    Node *foro = new Node("for");
+    Node &ef = *foro;
+    ef.kind = expression;
+    ef["variable"] = analyze(variable, context);
+    ef["iterable"] = analyze(iterable, context);
+    ef["body"] = analyze(body, context);
+    analyzed[ef.hash()] = 1;
+    return ef;
+}
+
 Node &groupWhile(Node &n, Function &context) {
-    if (n.length == 0 and !n.value.data)
-        error("no if condition given");
-    if (n.length == 1 and !n.value.data)
-        error("no if block given");
+    // Check for minimum structure
+    if (n.length == 0 && !n.value.data)
+        error("Missing condition for while statement");
+    if (n.length == 1 && !n.value.data)
+        error("Missing block for while statement");
 
+    // Extract condition and 'then' block
     Node &condition = n.children[0];
-    Node then;
-    if (n.length == 0) then = n.values();
-    if (n.length == 1) {
-        if (n.next)
-            then = *n.next;
-            //		else if(previous)
-//			then = previous
-        else
-            error("missing block for while statement");// should be in parser/analyzer or carry over code pointer!
-    }
-    if (n.length > 0) then = n[1];
-    if (n.length >= 2 and !n.value.data) {
-//		return n; // all good!
-        condition = n[0];
-        then = n[1];
-    }
+    Node then = (n.length > 1) ? n.children[1] : Node(); // Use explicit initialization
 
-    // todo: UNMESS how? UNMESS by applying operator ":" first a/r grouping in valueNode
-    if (n.has(":") /*before else: */) {
+    // Handle ":" and "do" grouping
+    if (n.has(":")) {
         condition = n.to(":");
         then = n.from(":");
-    } else if (condition.has(":")) {// as child
-        then = condition.from(":");
-    }
-    if (n.has("do")) {
+    } else if (n.has("do")) {
         condition = n.to("do");
         then = n.from("do");
+    } else if (condition.has(":")) {
+        then = condition.from(":");
     }
-    if (then.has("do"))
-        then = n.from("do");
 
-    if (condition.value.data and !condition.next)
+    // Handle standalone conditions and alternative grouping cases
+    if (condition.value.data && !condition.next)
         then = condition.values();
     if (condition.kind == reference) {
-        // find better condition todo HOW TO UNMESS??
         for (Node &child: n) {
-            if (child.kind == groups or child.kind == objects) {// while x y z {}
+            if (child.kind == groups || child.kind == objects) {
                 condition = n.to(child);
                 then = child;
                 break;
             }
         }
     }
-
-    Node *whilo = new Node("while");// regroup cleanly
+    // Create and structure the "while" node
+    Node *whilo = new Node("while");
     Node &ef = *whilo;
-    ef.kind = expression;// todo no longer functor?
-    //	ef.kind = ifStatement;
-    //	if (condition.length > 0)condition.setType(expression);// so far treated as group! todo: expression should be ok even if it's group!
-//	if (then.length > 0)then.setType(expression);// NO! it CAN BE A GROUP!, e.g. while(i++){log(1);put(2);}
-//	ef.add(analyze(condition).clone());
-//	ef.add(analyze(then).clone());
-//	ef.length = 2;
+    ef.kind = expression;
     ef["condition"] = analyze(condition, context);
     ef["then"] = analyze(then, context);
     analyzed[ef.hash()] = 1;
     return ef;
 }
-
-//
-//extern "C" Node *analyze(Node &node){
-//	return &analyze(node, "wasp_main");
-//}
 
 
 Node &groupOperatorCall(Node &node, Function &function);
@@ -1971,6 +2026,7 @@ Node &analyze(Node &node, Function &function) {
         functions["getDocumentBody"].is_used = true;
         functions["createHtml"].is_used = true;
         functions["createHtmlElement"].is_used = true;
+        // also getHtmlAttribute / createHtmlAttribute / setHtmlAttribute / property
         return node; // html builder currently not parsed
     }
     if (name == "js" or name == "script" or name == "javascript") {
@@ -1979,6 +2035,7 @@ Node &analyze(Node &node, Function &function) {
     }
     if (name == "if")return groupIf(node, function);
     if (name == "while")return groupWhile(node, function);
+    if (name == "for" or firstName == "for")return groupFor(node, function);
     if (name == "?")return groupIf(node, function);
     if (name == "module") {
         if (!module)module = new Module();
@@ -2122,7 +2179,8 @@ void preRegisterFunctions() {
 //    functions["pow"].signature.add(float64).add(float64).returns(float64);
 
     functions["print"].import();
-    functions["print"].signature.add(node).returns(voids);
+//    functions["print"].signature.add(node).returns(voids);
+    functions["print"].signature.add(smarti64).returns(voids);
 
     functions["getElementById"].import();
     functions["getElementById"].signature.add(charp, "id").returns(externref /*!!*/);

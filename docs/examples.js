@@ -1,5 +1,6 @@
 let exampleCode = {
   // getElementById: '$canvas.style',
+  forLoop: `for i in 1 to 3 {print i}`,
   getElementById: '$canvas.tagName', // OK via chars
   invokeRef: `$canvas.getContext('2d')`,
   download: `download http://pannous.com/files/test`,

@@ -71,6 +71,8 @@ void addGlobal(Node &node);
 
 Node &groupWhile(Node &n, Function &context);
 
+Node &groupFor(Node &n, Function &context);
+
 bool isPrimitive(Node &node);
 
 bool isType(Node &node);
