@@ -745,15 +745,20 @@ Code emitWasmArray(Node &node, Function &context) {
 
 // just register the name for custom section here
 void addNamedDataSegment(int pointer, Node &node) {
-    if (not node.name.empty()) { // todo: end this segment even if next one not named.
-        named_data_segments++;
-        data_segment_offsets.add(pointer);
-        data_segment_names.add(node.name);
-        // todo: un-redundant:
+    String name = "data";
+    if (not node.name.empty())
+        name = node.name;
+    else if (node.parent and not node.parent->name.empty())
+        name = node.parent->name;
+//    else todow("all data_segments should have names!");
+//    { // todo: end this segment even if next one not named.
+    named_data_segments++;
+    data_segment_offsets.add(pointer);
+    data_segment_names.add(name);
+    // todo: un-redundant:
 //        referenceIndices.insert_or_assign(node.name, pointer);
 //        referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
 //        referenceMap[node.name] = node;
-    } else todow("all data_segments should have names!");
 }
 
 // todo emitPrimitiveArray vs just emitNode as it is (with child*)
@@ -1347,6 +1352,8 @@ Code emitString(Node &node, Function &context) {
 
     int last_pointer = data_index_end;
     String &string = *node.value.string;
+
+    addNamedDataSegment(last_pointer, node.parent and not node.parent->name.empty() ? *node.parent : node);
     referenceMap[string] = node;
     if (string and referenceIndices.has(string)) {
         // todo: reuse same strings even if different pointer, aor make same pointer before
@@ -3702,7 +3709,7 @@ Code emitDataSections() { // needs memory section too!
     for (int i = 0; i <= named_data_segments; i++) {
         datas.addByte(00);// memory id always 0 until multi-memory
         datas.addByte(0x41);// opcode for i32.const offset: followed by unsignedLEB128 value:
-        int offset = runtime_data_offset ? runtime_data_offset : 0;
+        int offset = runtime_data_offset; // or 0
         int end = data_index_end;
         if (i > 0)offset = data_segment_offsets[i - 1]; // runtime_data_offset builtin ?
         if (i < named_data_segments)end = data_segment_offsets[i];
@@ -3849,8 +3856,20 @@ Code emitNameSection() {
     auto localNames = Code(local_names) + encodeVector(Code(usedLocals) + localNameMap);
     auto typeNames = Code(type_names) + encodeVector(Code(usedTypes) + typeNameMap);
     auto globalNames = Code(global_names) + encodeVector(Code(usedGlobals) + globalNameMap);
-    int named_data_segments = 1;
-    auto dataNames = Code(data_names) + encodeVector(Code(1)/*count*/ + Code(0) /*index*/ + Code("wasp_data"));
+
+    // custom data section for data names split in emitDataSections
+//    auto dataNames = Code(data_names) + encodeVector(Code(1)/*count*/ + Code(0) /*index*/ + Code("wasp_data"));
+    auto dataNames = Code();
+    dataNames.addInt(named_data_segments + 1); // Total count of named data segments
+    dataNames.addInt(0); // Index of the data segment
+    dataNames.add(Code("wasp_data")); // Name of the data segment
+    for (int i = 1; i <= named_data_segments; i++) {
+        dataNames.addInt(i); // Index of the data segment
+        String &name = data_segment_names[i - 1];
+        dataNames.add(Code(name)); // Name of the data segment
+    }
+    dataNames = Code(data_names) + encodeVector(dataNames);
+
     auto fieldNames = Code(field_names) + encodeVector(Code(usedFields) + fieldNameMap);// usedTypes ??
 
 //	The name section is a custom section whose name string is itself ‘𝚗𝚊𝚖𝚎’.

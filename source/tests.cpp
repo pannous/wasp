@@ -34,6 +34,11 @@ void testForLoops() {
 //    assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
 }
 
+void testNamedDataSections() {
+    assert_emit("fest='def';test='abc'", "abc");
+    exit(0);
+}
+
 void testAutoSmarty() {
     assert_emit("11", 11);
     assert_emit("'c'", 'c');
@@ -3528,6 +3533,9 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+//    testNamedDataSections();
+    assert_is("1 2 3", Node(1, 2, 3, 0))
+
     testForLoops();
     testParamizedKeys();
     testAutoSmarty();

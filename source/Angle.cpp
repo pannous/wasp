@@ -1082,7 +1082,7 @@ Node extractModifiers(Node &expression) {
 Node &groupFunctionDefinition(Node &expression, Function &context) {
     auto first = expression.first();
     Node modifieres = extractModifiers(expression);
-    auto kw = expression.containsAny(function_keywords);
+    auto kw = expression.containsAny(function_keywords, false); // todo fest='def' QUOTED!!
     if (expression.index(kw) != 0) error("function keywords must be first");
     expression.children++;
     expression.length--;
@@ -2088,7 +2088,7 @@ Node &analyze(Node &node, Function &function) {
         return node;// nothing to be analyzed!
     }
 //    if(function_keywords.contains(firstName))
-    if (node.containsAny(function_keywords))
+    if (node.containsAny(function_keywords, false))
         return groupFunctionDefinition(node, function);
 
     if (type == operators or type == call or isFunction(node)) //todo merge/clean
