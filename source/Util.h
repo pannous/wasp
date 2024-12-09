@@ -110,8 +110,22 @@ typedef byte *bytes;
 
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
 
-#define check(test) {print("CHECKING ");print(#test);debug_line(); \
-  if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n",#test);backtrace_exit()}}
+#define check(test, ...) { \
+  printf("CHECKING "); \
+  print(#test); \
+  debug_line(); \
+  if (test) { \
+    printf("OK check passes: "); \
+    print(#test); \
+  } else { \
+    printf("\nNOT PASSING %s\n", #test); \
+    __VA_OPT__(printf("Message: %s\n", __VA_ARGS__);) \
+    backtrace_exit(); \
+  } \
+}
+
+#define check_old(test, ...) {print("CHECKING ");print(#test);debug_line(); \
+  if(test){print("OK check passes: ");print(#test);}else{printf("\nNOT PASSING %s\n%s\n",#test);backtrace_exit()}}
 
 #include "String.h" // AFTER defines!
 #include "smart_types.h"

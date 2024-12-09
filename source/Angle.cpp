@@ -1909,7 +1909,7 @@ Node &groupForIn(Node &n, Function &context) {
     // for i in 1 < 3 {}
     //    todo : for i < 3
     if (n[2].name != "in" or (n[4] != "to" and n[4] != "upto" and n[4] != "<" and n[4] != "<="))
-        error("Invalid 'for' loop structure. Expected for i in begin to end {}");
+        error("Invalid 'for' loop structure. Expected: for i in begin to end {}");
     Node &variable = n[1];
     addLocal(context, variable.name, int32, false);
     Node &begin = n[3];
