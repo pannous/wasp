@@ -30,6 +30,8 @@ extern Map<String, int> call_indices;// todo functions[].index
 // private, could be moved:
 Code emitWhile(Node &node, Function &context);
 
+Code emitFor(Node &node, Function &context);
+
 Code emitIf(Node &node, Function &context);
 
 Code emitCall(Node &node, Function &context);

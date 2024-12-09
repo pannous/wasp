@@ -27,11 +27,16 @@ void testAssert() {
     assert_throws("assert 0");// todo make wasm throw, not compile error?
 }
 
+void testForLoops() {
+    assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
+}
+
 void testAutoSmarty() {
     assert_emit("11", 11);
     assert_emit("'c'", 'c');
     assert_emit("'cc'", "cc");
     assert_emit("π", pi);
+//    assert_emit("{a:b}", new Node{.name="a"));
 }
 
 void testArguments() {
@@ -3229,16 +3234,16 @@ void testPaintWasm() {
 #ifdef GRAFIX
     //	struct timeval stop, start;
     //	gettimeofday(&start, NULL);
-        // todo: let compiler comprinte constant expressions like 1024*65536/4
-    //	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
+        // todo: let compiler compute constant expressions like 1024*65536/4
+//    	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
     //out of bounds memory access if only one Memory page!
-    //	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
+    	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
         // wow, SLOWER in wasm-micro-runtime HOW!?
     //	exit(0);
 
     //(√((x-c)^2+(y-c)^2)<r?0:255)
     //(x-c)^2+(y-c)^2
-    //	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
+    	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
     ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
         char *wasm_paint_routine = "w=1920;c=500;r=100;surface=(1,2);i=0;"
                                    "while(i<1000000){"
@@ -3255,7 +3260,7 @@ void testPaintWasm() {
     //	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
     //	exit(0);
     //char *wasm_paint_routine = "init_graphics(); while(1){paint()}";// SDL bugs a bit
-        while (1)paint(0);// help a little
+//        while (1)paint(0);// help a little
 #endif
 }
 
@@ -3520,6 +3525,10 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    testParamizedKeys();
+    testAutoSmarty();
+    testArguments();
+//    testForLoops();
 //    testSinus();
 //    assert_emit("1-‖3‖/-3", 2);
 //    testHostDownload();
