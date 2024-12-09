@@ -1357,6 +1357,14 @@ public:
 	Function *clone() {
 		return new Function(*this);
 	}
+
+    int allocateLocal(String local_name = "") {
+        int index = locals.size();
+        if (local_name.empty())
+            local_name = "local_"s + index;
+        locals.add(local_name, Local{.position = index, .name = local_name});
+        return index;
+    }
 };
 
 

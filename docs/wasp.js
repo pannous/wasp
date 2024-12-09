@@ -157,8 +157,15 @@ function matrix_multiply(a, b, k = 1) {
   return result
 }
 
-function smartResult(object, mem = memory) { // returns BigInt smart pointer to object
-  // if(is_smart_pointer(object))return object
+/**
+ * Returns a BigInt smart pointer of the given object.
+ * ⚠️ as opposed to smartValue which returns the value of the smart pointer.
+ *
+ * @param {Object} object - The object to create a smart pointer for.
+ * @param {WebAssembly.Memory} [mem=memory] - The memory to associate with the object. Defaults to `memory`.
+ * @returns {BigInt} A BigInt representing the smart pointer to the object.
+ */
+function smartResult(object, mem = memory) {
   last_result = object
   if (typeof object === "number")
     return BigInt(object)
@@ -270,7 +277,7 @@ function getExternRefPropertyValue(ref, prop0) {
 
 function setExternRefPropertyValue(ref, property, value_node) {
   let field = chars(property, app.memory)
-  let value = smartNode(value_node, 0, app.memory)// node(value_node,app.memory).value
+  let value = smartValue(value_node, 0, app.memory)// node(value_node,app.memory).value
   print("CALLING setExternRefPropertyValue", ref, field, value)
   if (ref && typeof ref.setAttribute === 'function') {
     ref.setAttribute(field, value);
@@ -405,7 +412,7 @@ let imports = {
       console.log("pow", x, y);
       return x ** y
     },
-    print: x => console.log(string(x)), // todo: right memory!
+    print: x => console.log(smartValue(x, app.memory)), // todo: right memory!
     puti: x => console.log(x), // allows debugging of ints without format String allocation!
     js_demangle: x => chars(demangle(chars(x))),
     __cxa_demangle: (name, buf, len, status_p) => chars(demangle(chars(name))),
@@ -819,7 +826,17 @@ function read_array(data, mem) {
   return array
 }
 
-function smartNode(data0, type /*int32*/, memory) {
+/**
+ * Reads a value from the given smartpointer.
+ * ⚠️ as opposed to smartResult which creates a smart pointer
+ *
+ * @param {any} data0 - The input data to process.
+ * @param {number} type - The type of the data (e.g., `int32`).
+ * @param {WebAssembly.Memory} memory - The memory context used for processing.
+ * @returns {any} The processed smart value.
+ */
+function smartValue(data0, type /*int32*/, memory) {
+// READS smartValue vs smartResult
   // console.log("smartNode")
   type = data0 >> BigInt(32) // shift 32 bits ==
   let data = Number(BigInt.asIntN(32, data0))// drop high bits
@@ -828,6 +845,8 @@ function smartNode(data0, type /*int32*/, memory) {
     return string(data, memory) || load_chars(data, length = -1, memory, format = 'utf8')
   if (type == array_header_32 || type == array_header_32 >> 8)
     return read_array(data, memory)
+  if (type == 0 && data0 > 0xFFFFFFFFn) return data0
+  if (type == 0) return data
   if (type == node_header_32 || type == node_header_32 >> 8)
     return new node(data, memory)
   let nod = new node(runtime_exports.smartNode(data0, memory));
@@ -1143,7 +1162,7 @@ async function run_wasm(buf_pointer, buf_size) {
     if (result < -0x100000000 || result > 0x100000000) {
       if (!app.memory)
         error("NO app.memory")
-      result = smartNode(result, 0, app.memory)
+      result = smartValue(result, 0, app.memory)
       //  result lives in emit.wasm!
       console.log("GOT node ", result)
       // result = nod.Value()

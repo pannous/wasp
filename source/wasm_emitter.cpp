@@ -1813,6 +1813,8 @@ Code emitOperator(Node &node, Function &context) {
         code.add(get_local);
         code.add(result.position);
         code.add(opcodes("*", last_type));
+    } else if (name == "+=") { //
+        error(" += usually handled in analyze!");
     } else if (name == "**" or name == "to the" or name == "^" or name == "^^") {
 //        code.add(cast(last_type, Primitive::wasm_float64));
 //        code.add(emitCall("pow", context));
@@ -2144,6 +2146,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
             return emitString(node, context);
         case undefined:
         case unknown:// todo: proper NIL!
+            warn("UNKNOWN EMIT CASE: "s + node.serialize());
             return code;
 
         case constructor:
@@ -2224,8 +2227,235 @@ Code emitConstruct(Node &node, Function &context) {
     return code;
 }
 
-[[nodiscard]] // for i in 1..10 / for i in list
+[[nodiscard]]
+Code emitForIterator(Node &node, Function &context) {
+    if (node.length < 2)
+        error("Invalid 'for' loop structure. Expected variable and list or iterable.");
+
+    Code code;
+
+    // Extract components
+    Node &variable = node[0];       // Loop variable (e.g., 'i')
+    Node &iterable = node[1];       // List or iterable (e.g., 'list')
+    Node body = (node.length > 2) ? node[2] : Node(); // Loop body
+
+    // Validate components
+    if (!variable.value.data)
+        error("Missing loop variable in 'for' statement.");
+    if (!iterable.value.data)
+        error("Missing list or iterable in 'for' statement.");
+
+    // Initialize iterator
+    Node iterator = Node("iterator");
+    iterator.add(iterable);
+    Code iteratorInitCode = emitExpression(iterator, context);
+    code = code + iteratorInitCode;
+
+    // Begin loop block
+    code.addByte(loop);
+    code.addByte(none); // No return type for the loop itself
+
+    // Emit condition: Check if the iterator has more elements
+    Node hasNext = Node("hasNext");
+    hasNext.add(iterator);
+    Code conditionCode = emitExpression(hasNext, context);
+    code = code + conditionCode;
+    code.addByte(if_i);
+    code.addByte(none); // Void block for condition
+
+    // Emit loop body
+    // Assign the current element of the iterator to the variable
+    Node getNext = Node("getNext");
+    getNext.add(iterator);
+    Node assign = Node("=");
+    assign.add(variable);
+    assign.add(getNext);
+    Code assignCode = emitExpression(assign, context);
+    code = code + assignCode;
+    Code bodyCode = emitExpression(body, context);
+    code = code + bodyCode;
+    code.addByte(br_branch); //  back to the start of the loop
+    code.addByte(0); // Branch to the start of this loop block
+    code.addByte(end_block);
+    code.addByte(end_block);
+    return code;
+}
+
+[[nodiscard]]
+Code emitForArray(Node &node, Function &context) { // builtin list in wasm
+    if (node.length < 2)
+        error("Invalid 'for' loop structure. Expected variable and list or iterable.");
+
+    // Extract components
+    Code code;
+    Node &variable = node[0];       // Loop variable (e.g., 'i')
+    Node &list = node[1];           // Built-in list (e.g., 'list')
+    Node body = (node.length > 2) ? node[2] : Node(); // Loop body
+
+    // Validate components
+    if (!variable.value.data)
+        error("Missing loop variable in 'for' statement.");
+    if (!list.value.data)
+        error("Missing list in 'for' statement.");
+
+//    if(!context.locals.has(variable.name))
+    context.allocateLocal(variable.name);// error if there?
+
+    // Emit list length retrieval (memory read from *pointer - 4)
+    code.addByte(get_local);         // Load the list's pointer
+    int pointer = (int) (long) (list.value.data);
+    code.addInt(pointer, false);
+    code.addByte(i32_load);          // WebAssembly load instruction
+    code.addByte(4);           // Alignment (4 bytes for 32-bit integer)
+    code.addByte(-4);    // Offset -4 to retrieve length
+
+    // Save length to a local variable
+    int lengthLocalIndex = context.allocateLocal("array_length"); // Allocate a local variable for list length
+    code.addByte(set_local);
+    code.addByte(lengthLocalIndex);
+
+    // Initialize index to 0
+    int indexLocal = context.allocateLocal("array_index"); // Allocate a local variable for the index
+    code.addByte(i32_const);
+    code.addByte(0);
+    code.addByte(set_local);
+    code.addByte(indexLocal);
+
+    // Begin loop block
+    code.addByte(loop);
+    code.addByte(none); // No return type for the loop itself
+
+    // Emit condition: Check if index < list length
+    code.addByte(get_local);
+    code.addByte(indexLocal);
+    code.addByte(get_local);
+    code.addByte(lengthLocalIndex);
+    code.addByte(i32_lt); // Compare index < length
+    code.addByte(if_i);
+    code.addByte(none); // Void block for condition
+
+    // Access list[index]
+    code.addByte(get_local);
+    code.addByte(pointer);  // Load list pointer
+    code.addByte(get_local);
+    code.addByte(indexLocal);        // Load index
+    code.addByte(i32_add);           // Compute list + index
+    code.addByte(i32_load);          // Load list[index]
+
+    // Assign to the loop variable
+    int variableLocal = context.locals[variable.name].position; // Allocate or retrieve a local for the variable
+    code.addByte(set_local);
+    code.addByte(variableLocal);
+
+    // Emit loop body
+    Code bodyCode = emitExpression(body, context);
+    code = code + bodyCode;
+
+    // Increment index
+    code.addByte(get_local);
+    code.addByte(indexLocal);
+    code.addByte(i32_const);
+    code.addByte(1); // Increment by 1
+    code.addByte(i32_add);
+    code.addByte(set_local);
+    code.addByte(indexLocal);
+
+    // Branch back to the start of the loop
+    code.addByte(br_branch);
+    code.addByte(0); // Branch to the start of this loop block
+
+    code.addByte(end_block);
+    code.addByte(end_block);
+    return code;
+}
+
+[[nodiscard]]
 Code emitFor(Node &node, Function &context) {
+    // for i in 1 to 4 {}    i <= 4
+    // for i in 1 upto 4 {}  i < 4
+    if (node.length < 4)
+        return emitForArray(node, context);
+//  todo: general case: for i in iterable {}
+//        error("Invalid 'for' loop structure. Expected variable, from to , and body.");
+
+    Code code;
+
+    // Extract components
+//    Node &variable = *node[0].value.node;       // Loop variable (e.g., 'i')
+//    Node &begin = node[1];          // Range (e.g., '1..10')
+//    Node &end = node[2];          // Range (e.g., '1..10')
+//    Node &body = node[3];           // Loop body
+
+    Node &variable = node["variable"];
+    Node &begin = node["begin"];
+    Node &end = node["end"];
+    Node &body = node["body"];
+
+    let variables = context.locals;
+//        return emitForIterator(node, context);
+
+    // Decompose the range into start, end, and step
+//    Node begin = range.children[0]; // Start of the range (e.g., '1')
+//    Node end = range.children[1];   // End of the range (e.g., '10')
+//    Node step = range.size() > 2 ? range.children[2] : Node("1"); // Default step = 1
+    Node step = Node(1); // Default step = 1
+
+    // Emit initialization (e.g., 'i = start')
+    Node assignment = Node("=");
+    assignment.setType(operators);
+    assignment.add(variable);
+    assignment.add(begin);
+    code = code + emitExpression(assignment, context);
+
+    // Begin loop block
+    code.addByte(loop);
+    code.addByte(none); // No return type for the loop itself
+
+    // Emit condition (e.g., 'i < end')
+    Node condition("<=");
+    condition.setType(operators);
+    condition.add(variable);
+    condition.add(end);
+    code = code + emitExpression(condition, context);
+    code.addByte(if_i);
+    code.addByte(none); // Void block for condition
+
+    // Emit loop body
+    Code bodyCode = emitExpression(body, context);
+    code = code + bodyCode;
+
+    // Emit increment (e.g., 'i += step')
+    // Create the addition expression: i + step
+    Node addition = Node("+");
+    addition.setType(operators);
+    addition.add(variable); // Left operand: i
+    addition.add(step);     // Right operand: step (e.g., 1)
+
+// Create the assignment: i = (i + step)
+    Node reassignment = Node("=");
+    reassignment.setType(operators);
+    reassignment.add(variable); // Left-hand side: i
+    reassignment.add(addition); // Right-hand side: result of (i + step)
+
+// Emit the assignment expression
+    Code incrementCode = emitExpression(reassignment, context);
+    code = code + incrementCode;
+
+    // Branch back to the start of the loop
+    code.addByte(br_branch);
+    code.addByte(1); // Branch to the start of this loop block
+
+    // End condition block
+    code.addByte(end_block);
+
+    // End loop block
+    code.addByte(end_block);
+
+    return code;
+}
+
+[[nodiscard]] // for i=0;i<10;i++ {}
+Code emitForClassic(Node &node, Function &context) {
     Code code;
 
     Node initializer = node[0];   // i = 0
