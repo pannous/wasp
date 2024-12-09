@@ -37,7 +37,7 @@ List<String> class_keywords = {"struct", "type", "class",
                                "prototype", /*"trait", "impl"*/};// "interface", record see wit -> module
 
 // functions group externally square 1 + 2 == square(1 + 2) VS √4+5=√(4)+5
-chars control_flows[] = {"if", "while", "unless", "until", "as soon as", 0};
+chars control_flows[] = {"if", "while", "for", "unless", "until", "as soon as", 0};
 
 List<String> extra_reserved_keywords = {"func"};// EXTRA!  // use bool isKeyword(String) !!
 
@@ -1601,7 +1601,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             continue;
         }
         if (name == "while") {
-            // todo: move into groupWhile
+            // todo: move into groupWhile !!
             if (node.length == 2) {
                 node[0] = analyze(node[0], context);
                 node[1] = analyze(node[1], context);
@@ -1864,6 +1864,11 @@ List<String> aliases(String name) {
     return found;
 }
 
+Node &groupFor(Node &n, Function &context) {
+    todow("groupFor for i in 1..10 {}");
+    return n;
+}
+
 // todo: un-adhoc this!
 Node &groupWhile(Node &n, Function &context) {
     if (n.length == 0 and !n.value.data)
@@ -2004,6 +2009,8 @@ Node &analyze(Node &node, Function &function) {
                 return groupTypes(node, function);
             else if (first.name == "while")
                 return groupWhile(node, function);
+            else if (first.name == "for")
+                return groupFor(node, function);
             else if (first.name == "if")
                 return groupIf(node, function);
             else if (node.length > 1)

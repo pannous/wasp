@@ -1970,6 +1970,8 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
         return emitIf(node, context);
     if (name == "while")
         return emitWhile(node, context);
+    if (name == "for")
+        return emitFor(node, context);
     if (name == "it") {
         // todo when is it ok to just reuse the last value on stack!?
 //		if(last_type==none or last_type==voids){
@@ -2104,7 +2106,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) { // expressi
 //				todo: convert if wrong type
                 code.addByte(tee_local);// set and get/keep
                 code.addByte(local_index);
-                // todo KF 2022-6-5 last_type set by emitExpression (?)
+                // todo last_type set by emitExpression (?)
 //				last_type = declaredFunctions[context.locals.at([local_index).valtype;
             } else {// GET
                 code.addByte(get_local);// todo: skip repeats
@@ -2219,6 +2221,49 @@ Code emitConstruct(Node &node, Function &context) {
 //    last_type = mapTypeToPrimitive(*node.type);
     last_type = pointer;
     code.addConst32(pointer);// base for future index getter/setter [0] #1
+    return code;
+}
+
+[[nodiscard]] // for i in 1..10 / for i in list
+Code emitFor(Node &node, Function &context) {
+    Code code;
+
+    Node initializer = node[0];   // i = 0
+    Node condition = node[1];    // i < 1000
+    Node increment = node[2];    // i++
+    Node body = node[3];         // loop body
+
+    Valtype loop_type = none; // Assume no return type for now
+
+    // Emit initializer (i = 0)
+    code = code + emitExpression(initializer, context);
+
+    // Start the loop block
+    code.addByte(loop);
+    code.addByte(loop_type);
+
+    // Emit condition (i < 1000)
+    code = code + emitExpression(condition, context);
+    code.addByte(if_i);
+    code.addByte(none); // Type: void_block
+
+    // Emit loop body
+    code = code + emitExpression(body, context);
+
+    // Emit increment (i++)
+    code = code + emitExpression(increment, context);
+
+    // Branch back to the start of the loop
+    code.addByte(br_branch);
+    code.addByte(0); // Loop to the start of the current loop
+
+    // End the condition block
+    code.addByte(end_block);
+
+    // End the loop block
+    code.addByte(end_block);
+
+    last_type = loop_type;
     return code;
 }
 

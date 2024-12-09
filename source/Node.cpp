@@ -662,6 +662,7 @@ void Node::addSmart(Node *node, bool flatten, bool clutch) { // flatten AFTER co
 		// f (x) == f(x) ~= f x
 		if (letzt.kind == reference or letzt.kind == key or
 		    letzt.name == "while" /*todo: functors, but not operators?*/)
+//          or  letzt.name == "for" ?
 			letzt.addSmart(node);
 		else if (name.empty() and kind != expression and kind != groups)// last().kind==reference)
 			letzt.addSmart(node);
@@ -1263,7 +1264,8 @@ Node &Node::setType(Kind kin, bool check) {
 	if (kind == referencex and kin == key)check = false; // careful we lose $ semantics!
     if (kind == groups and kin == key)check = false;
 //	if (kind == groups and kin == global)check = false;
-	if (kind == expression and kin == declaration)check = false;
+    if (kind == expression and kin == declaration)check = false;
+    if (kind == operators and kin == key)check = false;// todo: allow operators as keys in maps {for:me while:day} ??
 	if (kind == declaration and kin == assignment)check = false;// todo wait who changes x:=7 to x=7 ??
 	if (check) {
 		if (kind != unknown and kind != objects and

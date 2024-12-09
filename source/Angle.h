@@ -40,7 +40,7 @@ static chars wasi_function_list[] = {"proc_exit", "fd_write", "args_sizes_get", 
 static chars funclet_list[] = {"pow", "powi", "pow_long", "log", "log10", "log2", "lowerCaseUTF", "print"/*node*/, 0};
 //static chars funclet_list[] = {};//  LINK WITH RUNTIME!
 
-static chars functor_list[] = {"if", "while", "go", "do", "until", 0};// MUST END WITH 0, else BUG
+static chars functor_list[] = {"if", "while", "for", "go", "do", "until", 0};// MUST END WITH 0, else BUG
 
 extern bool throwing;
 extern List<Module *> libraries;// merged:
