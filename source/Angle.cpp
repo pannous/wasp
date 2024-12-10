@@ -375,8 +375,8 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
         function.is_polymorphic = true;
 //			function.is_used … todo copy other attributes?
         function.signature = *new Signature();// empty
-        function.variants.add(&old_variant);
-        function.variants.add(&new_variant);
+        function.variants.add(old_variant.clone());
+        function.variants.add(new_variant.clone());
     } else if (function.is_polymorphic) {
         variant = new Function();
         for (Function *fun: function.variants)
