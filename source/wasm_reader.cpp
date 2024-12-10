@@ -505,11 +505,10 @@ void consumeExportSection() {
             trace("function %s already has signature "s % func + fun.signature.serialize());
             trace("function %s old code_index %d new code_index %d"s % func % fun.code_index % lower_index);
             Function &abstract = *new Function{.name=func, .module=module, .is_runtime=true, .is_polymorphic=true};
-            abstract.variants.add(&fun);
+            abstract.variants.add(fun);
             module->functions[func] = abstract;
-//            fun = *abstract.variants.items[2];
+            fun = abstract.variants.items[2];
             fun = *new Function{.code_index=lower_index, .name=func, .module=fun.module, .is_runtime=true};
-            abstract.variants.items[2] = &fun;
         } else {
             fun0.code_index = lower_index;
             fun.code_index = lower_index;
