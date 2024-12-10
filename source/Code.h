@@ -1302,7 +1302,7 @@ public:
     bool is_builtin = false;// hard coded functions, tests only? todo remove
     bool is_used = false;// called imports / buildins
     bool is_polymorphic = false;// IF polymorph, this 'Function' acts as abstract only, all REAL Functions are in variants
-    List<Function> variants;// = 20;//={.capacity=20};// multi dispatch!
+    List<Function *> variants;// = 20;//={.capacity=20};// multi dispatch!
 
     //    Code* code; // todo: use
     Map<String, Local> locals;  // todo: use, instead of global locals!

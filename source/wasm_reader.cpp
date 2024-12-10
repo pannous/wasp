@@ -37,19 +37,19 @@ Valtype mapArgToValtype(String &arg);
 
 #define consume(len, match) if(!consume_x(code,&pos,len,match)){if(debug_reader)printf("\nNOT consuming %s",#match);backtrace_line();}
 
-bool consume_x(byte *code, int *pos, int len, byte *bytes) {
-    if (*pos + len > size)
+bool consume_x(byte *code_bytes, int *posi, int len, byte *bytes) {
+    if (*posi + len > size)
         error("END OF FILE");
     if (not bytes) {
-        *pos = *pos + len;
+        *posi = *posi + len;
         return true;
     }
 
     int i = 0;
     while (i < len) {
-        if (bytes and code[*pos] != bytes[i])
+        if (bytes and code_bytes[*posi] != bytes[i])
             return false;
-        *pos = *pos + 1;
+        *posi = *posi + 1;
         i++;
     }
     return true;
@@ -505,10 +505,11 @@ void consumeExportSection() {
             trace("function %s already has signature "s % func + fun.signature.serialize());
             trace("function %s old code_index %d new code_index %d"s % func % fun.code_index % lower_index);
             Function &abstract = *new Function{.name=func, .module=module, .is_runtime=true, .is_polymorphic=true};
-            abstract.variants.add(fun);
+            abstract.variants.add(&fun);
             module->functions[func] = abstract;
-            fun = abstract.variants.items[2];
+//            fun = *abstract.variants.items[2];
             fun = *new Function{.code_index=lower_index, .name=func, .module=fun.module, .is_runtime=true};
+            abstract.variants.items[2] = &fun;
         } else {
             fun0.code_index = lower_index;
             fun.code_index = lower_index;
@@ -627,9 +628,9 @@ void consumeSections() {
 Map<int64, Module *> module_cache{.capacity=100};
 
 Code &read_code(chars file) {
-    int size;
-    char *data = readFile(file, &size);
-    Code &cod = *new Code(data, size, false);
+    int code_size;
+    char *data = readFile(file, &code_size);
+    Code &cod = *new Code(data, code_size, false);
     cod.name = String(file);
     return cod;
 }
