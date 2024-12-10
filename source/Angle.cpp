@@ -375,16 +375,16 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
         function.is_polymorphic = true;
 //			function.is_used … todo copy other attributes?
         function.signature = *new Signature();// empty
-        function.variants.add(&old_variant);
-        function.variants.add(&new_variant);
+        function.variants.add(old_variant);
+        function.variants.add(new_variant);
     } else if (function.is_polymorphic) {
         variant = new Function();
-        for (Function *fun: function.variants)
-            if (fun->signature == signature)
-                return fun->signature;// signature;
+        for (Function &fun: function.variants)
+            if (fun.signature == signature)
+                return fun.signature;// signature;
         variant->name = function.name;
         variant->signature = signature;
-        function.variants.add(variant);
+        function.variants.add(*variant);
     } else if (!already_defined) {
         function.signature = signature;
     }
@@ -1805,8 +1805,8 @@ Function *use_required(Function *function) {
         functions["proc_exit"].is_used = true;
     if (function->name == "puts")
         functions["fd_write"].is_used = true;
-    for (Function *variant: function->variants) {
-        addLibraryFunctionAsImport(*variant);
+    for (Function &variant: function->variants) {
+        addLibraryFunctionAsImport(variant);
     }
     for (String &alias: aliases(function->name)) {
         if (alias == function->name)continue;
@@ -1814,7 +1814,7 @@ Function *use_required(Function *function) {
         if (ali)addLibraryFunctionAsImport(*ali);
     }
     for (auto vari: function->variants) {
-        vari->is_used = true;
+        vari.is_used = true;
     }
 //    for(Function& dep:function.required)
 //        dep.is_used = true;

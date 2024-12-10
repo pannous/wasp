@@ -409,12 +409,12 @@ void testPolymorphism() {
     auto function = functions["test"];
     check_is(function.is_polymorphic, true);
     check_is(function.variants.size(), 2);
-    check_is(function.variants[0]->signature.size(), 1);
+    check_is(function.variants[0].signature.size(), 1);
 //	check_is(function.variants[0].signature.parameters[0].type, (Type) strings); todo
-    check_is(function.variants[0]->signature.parameters[0].type, (Type) stringp);
+    check_is(function.variants[0].signature.parameters[0].type, (Type) stringp);
     auto variant = function.variants[1];
-    check_is(variant->signature.size(), 1);
-    check_is(variant->signature.parameters[0].type, (Type) float32);
+    check_is(variant.signature.size(), 1);
+    check_is(variant.signature.parameters[0].type, (Type) float32);
 }
 
 void testPolymorphism2() {
@@ -424,10 +424,10 @@ void testPolymorphism2() {
     auto function = functions["test"];
     check_is(function.is_polymorphic, true);
     check_is(function.variants.size(), 2);
-    check_is(function.variants[0]->signature.size(), 1);
-    check_is(function.variants[0]->signature.parameters[0].type, (Type) int32);
-    check_is(function.variants[1]->signature.size(), 1);
-    check_is(function.variants[1]->signature.parameters[0].type, (Type) float32);
+    check_is(function.variants[0].signature.size(), 1);
+    check_is(function.variants[0].signature.parameters[0].type, (Type) int32);
+    check_is(function.variants[1].signature.size(), 1);
+    check_is(function.variants[1].signature.parameters[0].type, (Type) float32);
 }
 
 
