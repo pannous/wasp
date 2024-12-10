@@ -101,7 +101,7 @@ typedef const char *chars;
 typedef byte *bytes;
 
 // silent ++
-#define check_silent(test) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
+#define check_silent(test, ...) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
 //#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_line()}
 
 #define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_exit();}

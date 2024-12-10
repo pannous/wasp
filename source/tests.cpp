@@ -20,6 +20,34 @@
 #include "WitReader.h"
 #include "types/Number.h"
 
+template<class S>
+void testListGrowth() {
+    List<S> list; // List<S*> even better!
+    for (int i = 0; i < 1000; i++) {
+        list.add(*new S());
+    }
+    check_eq(list.size(), 1000);
+    for (int i = 0; i < 10; i++) { // 20 => growth by 2^20!!!
+        list.grow();
+    }
+    check(list.capacity > 100000);
+}
+
+void testListGrowthWithStrings() {
+    List<String> list;
+    for (int i = 0; i < 1000; i++) {
+        list.add(String(i));
+    }
+    check_eq(list.size(), 1000);
+    check_eq(list[999], new String(999));
+    for (int i = 0; i < 10; i++) {
+        list.grow();// lots of deep copy!!
+    }
+    check(list.capacity > 100000);
+    check_eq(list[999], new String(999));
+}
+
+
 //void testDwarf();
 //void testSourceMap();
 void testAssert() {
@@ -3533,11 +3561,19 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+//    List<const int&> axx = {1, 2, 3};
 //    testNamedDataSections();
-    assert_is("1 2 3", Node(1, 2, 3, 0))
+//    testListGrowth<const int&>();// pointer to a reference error
+    assert_emit("x='abcde';x#4='f';x[3]", 'f');
 
+    testListGrowth<int>();
+    testListGrowth<float>();
+    testListGrowth<String>();
+    testListGrowth<Signature>();
+    testListGrowth<Function>();
+//    testListGrowth<Map>();
+    testListGrowthWithStrings();
     testForLoops();
-    testParamizedKeys();
     testAutoSmarty();
     testArguments();
 //    testSinus();

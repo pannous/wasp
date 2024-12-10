@@ -26,10 +26,9 @@ template<class S, class T>
 class Map {
 public: // todo careful Map<char*,…> eq
     int capacity = MAP_INITIAL_CAPACITY;// initial
+    int _size = 0;
     S *keys = (S *) calloc(sizeof(S), capacity);
     T *values = (T *) calloc(sizeof(T), capacity);
-    int _size = 0;
-
     int map_header = map_header_32;
 
     [[maybe_unused]] T defaulty;

@@ -26,24 +26,27 @@
 #include "../List.h"
 
 namespace wabt {
-	namespace link {
+    namespace link {
 
-		class LinkerInputBinary;
+        class LinkerInputBinary;
 
-		struct Export {
-			ExternalKind kind;
-			String name;
-			Index index;
-		};
+        struct Export {
+            ExternalKind kind;
+            String name;
+            Index index;
+        };
 
 
-		struct ExportInfo {
-			ExportInfo(const Export *export_, LinkerInputBinary *binary) : export_(export_), binary(binary) {}
-			const Export *export_;
-			LinkerInputBinary *binary;
-		};
+        struct ExportInfo {
+            ExportInfo() = default;
 
-		struct FunctionImport {
+            ExportInfo(const Export *export_, LinkerInputBinary *binary) : export_(export_), binary(binary) {}
+
+            const Export *export_;
+            LinkerInputBinary *binary;
+        };
+
+        struct FunctionImport {
             String module_name;
             String name;
             Index type_index;
@@ -54,39 +57,46 @@ namespace wabt {
             Index index;// implicit in list, but needed to link duplicate imports
             Index foreign_index;// after link to foreign export
             ExportInfo *linked_function;
+
+            FunctionImport() = default; // Default constructor
         };
 
-		struct GlobalImport {
-			String module_name;
-			String name;
-			wabt::Type type;
-			bool mutable_;
-			bool active = true;
-			LinkerInputBinary *foreign_binary;
-			int foreign_index;
+        struct GlobalImport {
+            String module_name;
+            String name;
+            wabt::Type type;
+            bool mutable_;
+            bool active = true;
+            LinkerInputBinary *foreign_binary;
+            int foreign_index;
             int relocated_global_index;
-		};
 
-		struct DataSegment {
-			Index memory_index;
-			Address64 offset;
-			const uint8_t *data;
-			size_t size;
-		};
+            GlobalImport() = default; // Default constructor
+        };
 
+        struct DataSegment {
+            Index memory_index;
+            Address64 offset;
+            const uint8_t *data;
+            size_t size;
 
-		struct Func {
-//        Var type_var;
+            DataSegment() = default; // Default constructor
+        };
+
+        struct Func {
             Index index;// code index
             String name;// set later in name section
             Index type_index;// =>
-//        wabt::FuncSignature sig;
+
+            Func() = default; // Default constructor
         };
 
-		struct Section {
+        struct Section {
             WABT_DISALLOW_COPY_AND_ASSIGN(Section);
 
             Section();
+
+//    Section() = default; // Default constructor
 
             ~Section();
 
@@ -103,35 +113,35 @@ namespace wabt {
             size_t payload_increase;// after reloc LEB inserts
 
             /* For known sections, the count of the number of elements in the section */
-			Index count;
+            Index count;
 
-			union {
+            union {
                 /* DATA section data */
                 List<DataSegment> *data_segments;
                 /* MEMORY section data */
                 uint64_t initial;
-			} data;
+            } data;
 
-			/* The offset at which this section appears within the combined output section. */
-			size_t output_payload_offset;
-		};
+            /* The offset at which this section appears within the combined output section. */
+            size_t output_payload_offset;
+        };
 
         typedef List<Section *> SectionPtrVector;
 
-		class LinkerInputBinary {
-		public:
-			WABT_DISALLOW_COPY_AND_ASSIGN(LinkerInputBinary);
+        class LinkerInputBinary {
+        public:
+            WABT_DISALLOW_COPY_AND_ASSIGN(LinkerInputBinary);
 
 
             LinkerInputBinary(const char *filename, List<uint8_t> &data);
 
-			Index RelocateFuncIndex(Index findex);
+            Index RelocateFuncIndex(Index findex);
 
             Index RelocateTypeIndex(Index index) const;
 
             Index RelocateMemoryIndex(Index memory_index) const;
 
-			Index RelocateGlobalIndex(Index index);
+            Index RelocateGlobalIndex(Index index);
 
             Index RelocateTable(Index findex) const;
 
@@ -174,7 +184,7 @@ namespace wabt {
             bool needs_relocate{};// keep runtime untouched!
         };
 
-	}  // namespace link
+    }  // namespace link
 }  // namespace wabt
 
 #endif /* WABT_LINK_H_ */
