@@ -463,7 +463,7 @@ public:
         std::shared_ptr<S[]> new_items(new S[new_size], std::default_delete<S[]>());
         // Copy old items to new_items (up to the smaller of old and new sizes)
         if (items) {
-            for (size_t i = 0; i < new_size; ++i) {
+            for (size_t i = 0; i < min(new_size, size_); i++) {
                 new_items[i] = std::move(items[i]);
             }
         }
