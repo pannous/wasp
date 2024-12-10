@@ -7,7 +7,7 @@
 
 #include <cstdlib> // OK in WASM!
 
-#define LIST_DEFAULT_CAPACITY 10 // todo grow doesn't work, BREAKS SYSTEM!
+#define LIST_DEFAULT_CAPACITY 200 // todo grow doesn't work, BREAKS SYSTEM!
 #define LIST_MAX_CAPACITY 0x1000000000l // debug only!
 
 #include "Util.h"
@@ -58,20 +58,22 @@ public:
 //        capacity = size;
 //        items = (S *) calloc(size, sizeof(S));
 //    }
-    List(size_t initial_size = LIST_DEFAULT_CAPACITY) : size_(initial_size) {
-        if (initial_size > 0) {
+    List(size_t initial_size = LIST_DEFAULT_CAPACITY) {
+        if (initial_size > 0)
             items = std::make_unique<S[]>(initial_size);
-        }
+        if (initial_size > capacity)capacity = initial_size;//!
     }
 
     List(const List &old) : items(old.items) { // todo: memcopy?
         size_ = old.size_;
+        capacity = old.capacity;
     }
 
     List(Array_Header a) {
         if (a.length == 0xA0000000)
             error1("double header");// todo: just shift by 4 bytes
         size_ = a.length;
+        capacity = a.length; //!
         items = (S *) &a.data;// ok? copy data?
 //		todo("a.typ");
     }
@@ -94,8 +96,10 @@ public:
 //#ifndef PURE_WASM
     List(const std::initializer_list<S> &inis) : List() {
         auto item_count = inis.end() - inis.begin();
-        while (item_count >= capacity)grow();
+        while (item_count >= capacity)
+            grow();
         for (const S &s: inis) {
+            if (item_count-- < 0)break;
             if (&s == nullptr)continue;
             items[size_++] = s;
         }
@@ -113,6 +117,7 @@ public:
             print("va_arg#");
             print(size_);
             print(item);
+            if (size_ >= capacity)grow();
             items[size_++] = item;
             item = (S) va_arg(args, S);
         } while (item);
@@ -136,6 +141,7 @@ public:
         if (args == 0)return;
 //        check_silent(count < LIST_MAX_CAPACITY)
         size_ = count;
+        capacity = count;//!
         if (share)
             items = std::shared_ptr<S[]>(args, [](S *p) { delete[] p; });
         else {
@@ -175,12 +181,20 @@ public:
         _type = type;
     }
 
-    void grow() {
-//        warn("grow");
-        auto new_size = capacity * 2;
-        resize(new_size);
-//
-//        if (new_size < 0)error("List capacity overflow");
+    void grow() { /// ≠ resize() !
+        auto new_capacity = capacity * 2;
+        if (new_capacity < 0)error("List capacity overflow");
+        warn("grow");
+//        print(new_capacity);
+        std::shared_ptr<S[]> new_items(new S[new_capacity], std::default_delete<S[]>());
+        // Copy old items to new_items (up to the smaller of old and new sizes)
+        if (items) {
+            for (size_t i = 0; i < size_; ++i) {
+                new_items[i] = std::move(items[i]);
+            }
+        }
+        items = new_items;
+        capacity = new_capacity;
 ////        check_silent(new_size < LIST_MAX_CAPACITY);
 //        S *neu = (S *) alloc(new_size, sizeof(S));
 //        memcpy((void *) neu, (void *) items, capacity * sizeof(S));
@@ -190,13 +204,13 @@ public:
 ////      indeed List<int> FUCKS UP just by growing even without references
 ////      malloc: Heap corruption detected, free list is damaged
 //        items = neu;
-//        capacity = new_size;
     }
 
     S &add(S s) {
 //        if(!items)grow();// how?
+        if (size_ >= capacity - 1)
+            grow();
         items[size_++] = s;
-        if (size_ >= capacity)grow();
         return items[size_ - 1];
     }
 
@@ -444,6 +458,7 @@ public:
     }
 
     void resize(size_t new_size) {
+        if (new_size > capacity)capacity = new_size;
         std::shared_ptr<S[]> new_items(new S[new_size], std::default_delete<S[]>());
         // Copy old items to new_items (up to the smaller of old and new sizes)
         if (items) {
@@ -456,9 +471,8 @@ public:
     }
 
     void append(S *value, size_t len) {
-        if (size_ + len >= capacity) {
+        if (size_ + len >= capacity)
             grow();
-        }
         memcpy((void *) &items[size_], (void *) value, len * sizeof(S));
         size_ += len;
     }
