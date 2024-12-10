@@ -284,6 +284,20 @@ wrap(putc) {// put_char
     return NULL;
 }
 
+wrap(powi) {
+    int64 i = args[0].of.i64;
+    int64 x = args[1].of.i64;
+    results[0].of.i64 = powi(i, x);
+    return NULL;
+}
+
+wrap(powd) {
+    double i = args[0].of.f64;
+    double x = args[1].of.f64;
+    results[0].of.f64 = powd(i, x);
+    return NULL;
+}
+
 wrap(download) {
     char *url = (char *) wasm_memory + args[0].of.i32;
     chars result = fetch(url);
@@ -400,7 +414,11 @@ wasm_wrap *link_import(String name) {
     if (name == "proc_exit") return &wrap_exit;
     if (name == "panic") return &wrap_exit;
     if (name == "raise") return &wrap_exit;
+
     if (name == "square") return &wrap_square;
+    if (name == "powi") return &wrap_powi;
+    if (name == "powd") return &wrap_powd;
+    if (name == "pow") return &wrap_pow;
 
     if (name == "printf") return &wrap_puts;
     if (name == "print") return &wrap_puts;

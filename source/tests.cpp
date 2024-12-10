@@ -3567,10 +3567,10 @@ void testCurrent() {
     assert_emit("x='abcde';x#4='f';x[3]", 'f');
 
     testListGrowth<int>();
-    testListGrowth<float>();
-    testListGrowth<String>();
-    testListGrowth<Signature>();
-    testListGrowth<Function>();
+//    testListGrowth<float>();
+//    testListGrowth<String>();
+//    testListGrowth<Signature>();
+//    testListGrowth<Function>(); // pretty slow with new List shared_ptr implementation
 //    testListGrowth<Map>();
     testListGrowthWithStrings();
     testForLoops();

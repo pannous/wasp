@@ -143,7 +143,8 @@ public:
         size_ = count;
         capacity = count;//!
         if (share)
-            items = std::shared_ptr<S[]>(args, [](S *p) { delete[] p; });
+//            items = std::shared_ptr<S[]>(args, [](S *p) { delete[] p; });
+            items = std::shared_ptr<S[]>(args, [](S *p) {}); // don't delete!
         else {
             // Create a new array and copy elements
             items = std::shared_ptr<S[]>(new S[count], std::default_delete<S[]>());
