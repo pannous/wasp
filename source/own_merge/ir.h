@@ -35,7 +35,10 @@
 //#include "string-view.h"
 
 namespace wabt {
+    class Expr;
 
+    typedef List<Expr> ExprList;
+//    class ExprList;
 	struct Module;
 
 	enum class VarType {
@@ -463,7 +466,7 @@ namespace wabt {
     public:
         WABT_DISALLOW_COPY_AND_ASSIGN(Expr);
 
-        Expr() = delete;
+//        Expr() = delete;
 
         virtual ~Expr() = default;
 
@@ -471,8 +474,18 @@ namespace wabt {
 
         Location loc;
 
-	protected:
-		explicit Expr(ExprType type, const Location &loc = Location())
+        Expr() = default;
+
+        Expr(std::nullptr_t) {}
+//    private:
+        // Private default constructor
+
+//        friend class List<Expr>; // Allow List to access the default constructor
+//        friend class Expr; // Allow ExprList to access the default constructor
+//        friend class ExprMixin<>;
+        // Protected default constructor
+
+        explicit Expr(ExprType type, const Location &loc = Location())
 				: loc(loc), type_(type) {}
 
 		ExprType type_;
@@ -958,7 +971,8 @@ namespace wabt {
     public:
         WABT_DISALLOW_COPY_AND_ASSIGN(ModuleField);
 
-        ModuleField() = delete;
+        ModuleField() = default;
+//        ModuleField() = delete;
 
         virtual ~ModuleField() = default;
 

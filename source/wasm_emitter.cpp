@@ -743,9 +743,10 @@ Code emitWasmArray(Node &node, Function &context) {
     return code;
 }
 
-// just register the name for custom section here
+// just register the name for custom section here, one per each data-object like string, array, object, …
+// only for debugging so add strip option
 void addNamedDataSegment(int pointer, Node &node) {
-    String name = "data";
+    String name = "data"; // todo add type and counter, e.g. string-1, string-2, … array-1, …
     if (not node.name.empty())
         name = node.name;
     else if (node.parent and not node.parent->name.empty())
@@ -754,7 +755,7 @@ void addNamedDataSegment(int pointer, Node &node) {
 //    { // todo: end this segment even if next one not named.
     named_data_segments++;
     data_segment_offsets.add(pointer);
-    data_segment_names.add(name);
+    data_segment_names.add(name); // only for debugging so add strip option
     // todo: un-redundant:
 //        referenceIndices.insert_or_assign(node.name, pointer);
 //        referenceDataIndices.insert_or_assign(node.name, pointer + array_header_length);
@@ -3717,7 +3718,7 @@ Code emitDataSections() { // needs memory section too!
         // todo: WHY cant it start at 0? wx  todo: module offset + module data length
         datas.addByte(0x0b);// mode: active?
         auto size_of_data = end - offset;
-        check(size_of_data >= 0, "data segment beyound end");
+        check_silent(size_of_data >= 0, "data segment beyound end");
         datas.addInt(size_of_data);
         const Code &actual_data = Code((bytes) data + offset, size_of_data);
         datas.add(actual_data);// now comes the actual data  encodeVector()? nah manual here!

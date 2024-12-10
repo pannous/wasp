@@ -7,7 +7,7 @@
 
 #include <cstdlib> // OK in WASM!
 
-#define LIST_DEFAULT_CAPACITY 100 // todo grow doesn't work, BREAKS SYSTEM!
+#define LIST_DEFAULT_CAPACITY 10 // todo grow doesn't work, BREAKS SYSTEM!
 #define LIST_MAX_CAPACITY 0x1000000000l // debug only!
 
 #include "Util.h"
@@ -34,17 +34,20 @@ void heapSort(S arr[], int n, float (valuator)(S &));
 template<class S>
 void heapSort(S arr[], int n);
 
+#include <memory>
 
 // ⚠️ references to List items are NOT safe during list construction due to List::grow()  ( invalid / forbidden )
 template<class S>
 class List {
 public:
+
+    std::shared_ptr<S[]> items;
+//    S *items = 0;// 32bit pointers in wasm! In C++ References cannot be put into an array, if you try you get
     int header = array_header_32;// wasn't this moved down ?
     Type _type{};// reflection on template class S
     int size_ = 0;
     int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
     // previous entries must be aligned to int64!
-    S *items = 0;// 32bit pointers in wasm! In C++ References cannot be put into an array, if you try you get
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
     // todo item references are UNSAFE after grow()
@@ -55,12 +58,11 @@ public:
 //        capacity = size;
 //        items = (S *) calloc(size, sizeof(S));
 //    }
-
-    List(size_t size = LIST_DEFAULT_CAPACITY) {
-        capacity = size;
-        items = (S *) calloc(size, sizeof(S));
+    List(size_t initial_size = LIST_DEFAULT_CAPACITY) : size_(initial_size) {
+        if (initial_size > 0) {
+            items = std::make_unique<S[]>(initial_size);
+        }
     }
-
 
     List(const List &old) : items(old.items) { // todo: memcopy?
         size_ = old.size_;
@@ -135,13 +137,17 @@ public:
 //        check_silent(count < LIST_MAX_CAPACITY)
         size_ = count;
         if (share)
-            items = args;
+            items = std::shared_ptr<S[]>(args, [](S *p) { delete[] p; });
         else {
-            if (capacity < size_ or not items) {
-                items = (S *) calloc(size_ + 1, sizeof(S));
-                capacity = size_;
+            // Create a new array and copy elements
+            items = std::shared_ptr<S[]>(new S[count], std::default_delete<S[]>());
+            // Use memcpy for trivially copyable types
+            if constexpr (std::is_trivially_copyable<S>::value) {
+                std::memcpy(items.get(), args, count * sizeof(S));
+            } else
+                for (int i = 0; i < count; ++i) {
+                    items[i] = args[i];
             }
-            memcpy((void *) items, (void *) args, count * sizeof(S));
         }
     }
 
@@ -172,16 +178,19 @@ public:
     void grow() {
 //        warn("grow");
         auto new_size = capacity * 2;
-//        check_silent(new_size < LIST_MAX_CAPACITY);
-        S *neu = (S *) alloc(new_size, sizeof(S));
-        memcpy((void *) neu, (void *) items, capacity * sizeof(S));
-        if (items)free(items); // EXC_BAD_ACCESS (code=2, address=0x250000002d)
-//        warn("⚠️ List.grow memcpy messes with existing references!
-//        Todo: add List<items> / wrap S with shared_pointer<S> ?");
-//      indeed List<int> FUCKS UP just by growing even without references
-//      malloc: Heap corruption detected, free list is damaged
-        items = neu;
-        capacity = new_size;
+        resize(new_size);
+//
+//        if (new_size < 0)error("List capacity overflow");
+////        check_silent(new_size < LIST_MAX_CAPACITY);
+//        S *neu = (S *) alloc(new_size, sizeof(S));
+//        memcpy((void *) neu, (void *) items, capacity * sizeof(S));
+//        if (items)free(items); // EXC_BAD_ACCESS (code=2, address=0x250000002d)
+////        warn("⚠️ List.grow memcpy messes with existing references!
+////        Todo: add List<items> / wrap S with shared_pointer<S> ?");
+////      indeed List<int> FUCKS UP just by growing even without references
+////      malloc: Heap corruption detected, free list is damaged
+//        items = neu;
+//        capacity = new_size;
     }
 
     S &add(S s) {
@@ -214,7 +223,7 @@ public:
 
     S &operator[](uint64 index) const {
         if (index < 0 or index >= size_) /* and const means not auto_grow*/
-	        error("List index out of range : %d > %d"s % (int64) index % size_);
+            error("List index out of range : %d > %d"s % (int64) index % size_);
         return items[index];
     }
 
@@ -250,11 +259,11 @@ public:
     }
 
     S *begin() const {
-        return items;
+        return items.get();
     }
 
     S *end() const {
-        return &items[size_];
+        return items.get() + size_;
     }
 
 
@@ -285,18 +294,18 @@ public:
         heapSort(items, size_, comparator);
     }
 
-    List<S> &sort(bool (comparator)(S &, S &)) {
-        heapSort(items, size_, comparator);
+    List<S> &sort(bool (*comparator)(S &, S &)) {
+        heapSort(items.get(), size_, comparator); // Use raw pointer from unique_ptr
         return *this;
     }
 
     List<S> &sort(float (valuator)(S &a)) {
-        heapSort(items, size_, valuator);
+        heapSort(items.get(), size_, valuator);
         return *this;
     }
 
     List<S> &sort() {
-        heapSort(items, size_);
+        heapSort(items.get(), size_);
         return *this;
     }
 
@@ -321,8 +330,8 @@ public:
     }
 
     void clear() {
-        free(items);
-        items = (S *) alloc(LIST_DEFAULT_CAPACITY, sizeof(S));
+        items.reset(); // Release the current memory managed by unique_ptr
+        items = std::make_unique<S[]>(LIST_DEFAULT_CAPACITY); // Allocate new memory
         size_ = 0;
     }
 
@@ -332,11 +341,21 @@ public:
         memmove(items + pos, items + pos + 1, size_ - pos);
         size_--;
     }
-
     bool remove(short position) {
-        if (position < 0 or size_ <= 0 or position >= size_)return false;
-        memmove((void *) (items + position), (void *) (items + position + 1), (size_ - position) * sizeof(S));
-        size_--;
+        if (position < 0 || size_ <= 0 || position >= size_) return false;
+
+        if constexpr (std::is_trivially_copyable<S>::value) {
+            // Use memmove for trivially copyable types
+            std::memmove(items.get() + position, items.get() + position + 1, (size_ - position - 1) * sizeof(S));
+        } else {
+            // Use a loop for non-trivially copyable types
+            for (size_t i = position; i < size_ - 1; ++i) {
+                items[i] = std::move(items[i + 1]); // Move assignment for safety
+            }
+            // Explicitly destroy the last object
+            items[size_ - 1].~S();
+        }
+        --size_;
         return true;
     }
 
@@ -384,11 +403,11 @@ public:
     }
 
 
-	S *find(bool (*lambda)(S *)) {
-		for (S *s: *this)
-			if (lambda(s))return s;
-		return 0;
-	}
+    S *find(bool (*lambda)(S *)) {
+        for (S *s: *this)
+            if (lambda(s))return s;
+        return 0;
+    }
 
     String join(String string) {
         String s;
@@ -424,9 +443,15 @@ public:
         return last();
     }
 
-    void resize(long new_size) {
-        if (new_size >= capacity)
-            grow();
+    void resize(size_t new_size) {
+        std::shared_ptr<S[]> new_items(new S[new_size], std::default_delete<S[]>());
+        // Copy old items to new_items (up to the smaller of old and new sizes)
+        if (items) {
+            for (size_t i = 0; i < new_size; ++i) {
+                new_items[i] = std::move(items[i]);
+            }
+        }
+        items = new_items;
         size_ = new_size;
     }
 
@@ -449,7 +474,7 @@ public:
 //    }
 
     S *data() const {
-        return items;
+        return items.get();
     }
 
     S &first() {
@@ -471,6 +496,93 @@ public:
     void push(S &item) {
 //        insert(item);
         add(item);
+    }
+
+
+private:
+
+    static void heapSort(S *arr, size_t n) {
+        for (int i = n / 2 - 1; i >= 0; i--)
+            heapify(arr, n, i);
+
+        for (int i = n - 1; i > 0; i--) {
+            std::swap(arr[0], arr[i]);
+            heapify(arr, i, 0);
+        }
+    }
+
+
+    static void heapSort(S *arr, size_t n, bool (*comparator)(S &, S &)) {
+        for (int i = n / 2 - 1; i >= 0; i--)
+            heapify(arr, n, i, comparator);
+
+        for (int i = n - 1; i > 0; i--) {
+            std::swap(arr[0], arr[i]);
+            heapify(arr, i, 0, comparator);
+        }
+    }
+
+    static void heapSort(S *arr, size_t n, float (*valuator)(S &)) {
+        for (int i = n / 2 - 1; i >= 0; i--)
+            heapify(arr, n, i, valuator);
+
+        for (int i = n - 1; i > 0; i--) {
+            std::swap(arr[0], arr[i]);
+            heapify(arr, i, 0, valuator);
+        }
+    }
+
+
+    static void heapify(S *arr, size_t n, size_t i) {
+        size_t largest = i; // Initialize largest as root
+        size_t left = 2 * i + 1;
+        size_t right = 2 * i + 2;
+
+        if (left < n && arr[left] > arr[largest])
+            largest = left;
+
+        if (right < n && arr[right] > arr[largest])
+            largest = right;
+
+        if (largest != i) {
+            std::swap(arr[i], arr[largest]);
+            heapify(arr, n, largest);
+        }
+    }
+
+
+    static void heapify(S *arr, size_t n, size_t i, bool (*comparator)(S &, S &)) {
+        size_t largest = i; // Initialize largest as root
+        size_t left = 2 * i + 1;
+        size_t right = 2 * i + 2;
+
+        if (left < n && comparator(arr[left], arr[largest]))
+            largest = left;
+
+        if (right < n && comparator(arr[right], arr[largest]))
+            largest = right;
+
+        if (largest != i) {
+            std::swap(arr[i], arr[largest]);
+            heapify(arr, n, largest, comparator);
+        }
+    }
+
+    static void heapify(S *arr, size_t n, size_t i, float (*valuator)(S &)) {
+        size_t largest = i; // Initialize largest as root
+        size_t left = 2 * i + 1;
+        size_t right = 2 * i + 2;
+
+        if (left < n && valuator(arr[left]) > valuator(arr[largest]))
+            largest = left;
+
+        if (right < n && valuator(arr[right]) > valuator(arr[largest]))
+            largest = right;
+
+        if (largest != i) {
+            std::swap(arr[i], arr[largest]);
+            heapify(arr, n, largest, valuator);
+        }
     }
 };
 

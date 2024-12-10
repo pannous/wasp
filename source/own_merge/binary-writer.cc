@@ -106,6 +106,7 @@ namespace wabt {
   fprintf(stderr, "%s:%d: allocation failed\n", __FILE__, __LINE__)
 
 		struct RelocSection {
+            RelocSection() = default;
 			RelocSection(const char *name, Index index)
 					: name(name), section_index(index) {}
 
@@ -116,6 +117,7 @@ namespace wabt {
 
 		class Symbol {
 		public:
+            Symbol() = default;
 			struct Function {
 				static const SymbolType type = SymbolType::Function;
 				Index index;
