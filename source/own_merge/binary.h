@@ -149,7 +149,7 @@ public:
             case ValueType::FuncRef:
             case ValueType::ExternRef:
 //				return TypeVector(this, this + 1);
-                return TypeVector(*this, this + 1);
+                return TypeVector{*this};//  TypeVector(*this, this + 1);
             default:
                 WABT_UNREACHABLE;
 		}
