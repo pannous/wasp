@@ -466,6 +466,8 @@ namespace wabt {
     public:
         WABT_DISALLOW_COPY_AND_ASSIGN(Expr);
 
+        Expr(Expr &&) = default;                // Enable move constructor
+        Expr &operator=(Expr &&) = default;     // Enable move assignment
 //        Expr() = delete;
 
         virtual ~Expr() = default;

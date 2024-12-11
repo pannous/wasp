@@ -38,12 +38,14 @@ String StringPrintf(const char *format, ...) {
     va_start(args, format);
     va_copy(args_copy, args);
     size_t len = vsnprintf(nullptr, 0, format, args) + 1;  // For \0.
-    List<char> buffer(len);
+//    char buffer[len];
+    char *buffer = new char[len];
     va_end(args);
 
-    vsnprintf(buffer.items, len, format, args_copy);
+    vsnprintf(buffer, len, format, args_copy);
     va_end(args_copy);
-    return String(buffer.items, (int) len - 1);
+//    delete[] buffer; after :
+    return String(buffer, (int) len - 1);
 }
 
 #pragma clang diagnostic pop
