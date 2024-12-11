@@ -1914,7 +1914,11 @@ Node &groupForIn(Node &n, Function &context) {
     addLocal(context, variable.name, int32, false);
     Node &begin = n[3];
     Node &end = n[5];
-    Node &body = (n.length > 6) ? n[6] : end.values();
+    Node &body = end.values();// for i in 1 to 5 : {print i}
+    if (n.length == 6) body = n[6];
+    if (n.length > 6) body = n.from(6);
+    if (n.length > 6 and n[6].name == ":") body = n.from(7);
+
     body.setType(expression); // if …
     Node *foro = new Node("for");
     Node &ef = *foro;
