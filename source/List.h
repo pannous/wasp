@@ -7,7 +7,7 @@
 
 #include <cstdlib> // OK in WASM!
 
-#define LIST_DEFAULT_CAPACITY 100 // todo grow doesn't work, BREAKS SYSTEM!
+#define LIST_DEFAULT_CAPACITY 100 // todo grow doesn't work, BREAKS SYSTEM if < 100 !!! TODO WTH!
 #define LIST_MAX_CAPACITY 0x1000000000l // debug only!
 
 #include "Util.h"

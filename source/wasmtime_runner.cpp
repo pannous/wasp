@@ -84,6 +84,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     if (!initialized) init_wasmtime();
 
     wasmtime_module_t *module0 = NULL;
+    // EXC_BAD_ACCESS (code=1, address=0x0) can be caused by List.h capacity too small WTH!
     wasmtime_error_t *error = wasmtime_module_new(engine, data, size, &module0);
     if (error != NULL) exit_with_error("Failed to compile module", error, NULL);
 
