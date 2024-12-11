@@ -296,7 +296,7 @@ namespace wabt {
             read_options.read_debug_names = true;
             read_options.fail_on_custom_section_error = false;
             read_options.stop_on_first_error = false;
-            return ReadBinary(input_info->data.items.get(), input_info->data.size_, &reader,
+            return ReadBinary(input_info->data.items, input_info->data.size_, &reader,
                               (const ReadBinaryOptions) read_options);
 
 //            return ReadBinary(input_info->data.items, input_info->data.size(), &reader, (const ReadBinaryOptions) read_options);

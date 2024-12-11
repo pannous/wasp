@@ -405,7 +405,7 @@ Section::~Section() {
 
 LinkerInputBinary::LinkerInputBinary(const char *filename, List<uint8_t> &data)
         : name(filename),
-          data(data.items.get(), data.size_, false),
+          data(data.items, data.size_, false),
 //          size(data.size_),
           active_function_imports(0),
           active_global_imports(0),
