@@ -209,26 +209,10 @@ public:
         _type = type;
     }
 
-    void grow(bool do_free = false) {
+    void grow() {
         capacity *= 2;
 //        printf("grow %d\n", capacity);
-
-        S *new_items = static_cast<S *>(realloc(items, capacity * sizeof(S)));
-        if (new_items) { // realloc succeeded
-            items = new_items;
-        } else {  // realloc failed, but items is still valid
-//        std::shared_ptr<S[]> new_items(new S[capacity]); // implicit std::default_delete<S[]>()
-//            std::shared_ptr<S[]> new_items(new S[capacity], [](S *) {}); // no delete explicit
-            new_items = static_cast<S *>(calloc(capacity, sizeof(S)));
-            if constexpr (std::is_trivially_copyable<S>::value) {
-                std::memcpy(new_items, items, size_ * sizeof(S));
-            } else
-                for (size_t i = 0; i < size_; ++i)
-                    new_items[i] = std::move(items[i]);
-//            items = new_items.get();
-            if (do_free)free(items);
-            items = new_items;
-        }
+        items = static_cast<S *>(realloc(items, capacity * sizeof(S)));
     }
 
     S &add(S s) {
