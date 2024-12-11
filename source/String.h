@@ -249,8 +249,10 @@ public:
 //#endif
 
 	void operator delete(void *) {
+        int debug = 12;
 //        check(header == string_header_32);
-		/*lol*/} // Todo ;)
+        /*lol*/
+    } // Todo ;)
 
 //	~String()=default;
 

@@ -19,6 +19,8 @@
 #include "wasm_runner.h"
 #include "WitReader.h"
 #include "types/Number.h"
+#include "own_merge/type.h"
+#include "own_merge/common.h"
 
 template<class S>
 void testListGrowth() {
@@ -27,7 +29,7 @@ void testListGrowth() {
         list.add(*new S());
     }
     check_eq(list.size(), 1000);
-    for (int i = 0; i < 5; i++) { // 10 VERY SLOW in new implementation! DONT DO 20 => growth by 2^20!!!
+    for (int i = 0; i < 15; i++) { // 10 VERY SLOW in new implementation! DONT DO 20 => growth by 2^20!!!
         list.grow();
     }
     check(list.capacity > 1000);
@@ -3569,15 +3571,24 @@ void testCurrent() {
 //    List<const int&> axx = {1, 2, 3};
 //    testNamedDataSections();
 //    testListGrowth<const int&>();// pointer to a reference error
-    assert_emit("x='abcde';x#4='f';x[3]", 'f');
+
 
     testListGrowth<int>();
-//    testListGrowth<float>();
-//    testListGrowth<String>();
-//    testListGrowth<Signature>();
-//    testListGrowth<Function>(); // pretty slow with new List shared_ptr implementation
+    testListGrowth<float>();
+    testListGrowth<String>();
+    testListGrowth<Signature>();
+    testListGrowth<wabt::Index>();// just int
+    testListGrowth<wabt::Reloc>();
+    testListGrowth<wabt::Type>();
+    testListGrowth<wabt::Location>();
+    testListGrowth<wabt::Result>();
+    testListGrowth<wabt::TypeVector>();
+    testListGrowth<Function>(); // pretty slow with new List shared_ptr implementation
 //    testListGrowth<Map>();
     testListGrowthWithStrings();
+    assert_emit("x='abcde';x#4='f';x[3]", 'f'); // SIGSEGV specifically at target_depths_.resize(num_targets); !!?!
+    assert_emit("x='abcde';x#4='x';x[3]", 'x'); // SIGSEGV
+
     testForLoops();
     testAutoSmarty();
     testArguments();

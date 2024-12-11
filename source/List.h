@@ -7,7 +7,7 @@
 
 #include <cstdlib> // OK in WASM!
 
-#define LIST_DEFAULT_CAPACITY 100 // todo grow doesn't work, BREAKS SYSTEM if < 100 !!! TODO WTH!
+#define LIST_DEFAULT_CAPACITY 10 // todo grow doesn't work, BREAKS SYSTEM if < 100 !!! TODO WTH! use valgrind
 #define LIST_MAX_CAPACITY 0x1000000000l // debug only!
 
 #include "Util.h"
@@ -23,6 +23,8 @@
 #ifndef WASM
 
 #endif
+
+#include <memory> // memcpy
 
 //The template definition (the cpp file in your code) has to be included prior to instantiating a given template class
 template<class S>
@@ -55,21 +57,54 @@ public:
 //        capacity = size;
 //        items = (S *) calloc(size, sizeof(S));
 //    }
-
+//
     List(size_t size = LIST_DEFAULT_CAPACITY) {
         capacity = size;
         items = (S *) calloc(size, sizeof(S));
     }
+//
+//
+//    // Move constructor
+//    List(List&& old) noexcept : size_(old.size_), capacity(old.capacity), items(old.items) {
+//        old.items = nullptr;
+//        old.size_ = 0;
+//        old.capacity = 0;
+//    }
+//
+//    // Copy constructor
+//    List(const List &old) : size_(old.size_), capacity(old.capacity) {
+//        if (old.items) {
+//            items = new S[old.capacity]; // Assuming ItemType is the type of items
+//            std::copy(old.items, old.items + old.size_, items);
+//        }
+//    }
+//
+//
+//    // Move assignment operator
+//    List& operator=(List&& old) noexcept {
+//        if (this != &old) {
+//            delete[] items;
+//            size_ = old.size_;
+//            capacity = old.capacity;
+//            items = old.items;
+//
+//            old.items = nullptr;
+//            old.size_ = 0;
+//            old.capacity = 0;
+//        }
+//        return *this;
+//    }
 
-
-    List(const List &old) : items(old.items) { // todo: memcopy?
-        size_ = old.size_;
-    }
+//    List(const List &old) : items(old.items) { // todo: memcopy?
+//        size_ = old.size_;
+//        capacity = old.capacity;
+//    }
 
     List(Array_Header a) {
         if (a.length == 0xA0000000)
             error1("double header");// todo: just shift by 4 bytes
         size_ = a.length;
+        capacity = a.length; //!
         items = (S *) &a.data;// ok? copy data?
 //		todo("a.typ");
     }
@@ -94,7 +129,10 @@ public:
         auto item_count = inis.end() - inis.begin();
         while (item_count >= capacity)grow();
         for (const S &s: inis) {
-            if (&s == nullptr)continue;
+            if (item_count-- < 0)
+                break;// superfluous
+            if (&s == nullptr)
+                continue;// superfluous
             items[size_++] = s;
         }
     }
@@ -111,6 +149,7 @@ public:
             print("va_arg#");
             print(size_);
             print(item);
+            if (size_ >= capacity)grow();
             items[size_++] = item;
             item = (S) va_arg(args, S);
         } while (item);
@@ -134,12 +173,13 @@ public:
         if (args == 0)return;
 //        check_silent(count < LIST_MAX_CAPACITY)
         size_ = count;
-        if (share)
+        if (share) {
             items = args;
-        else {
+            capacity = count;
+        } else {
             if (capacity < size_ or not items) {
-                items = (S *) calloc(size_ + 1, sizeof(S));
-                capacity = size_;
+                items = (S *) calloc(count, sizeof(S));
+                capacity = count;
             }
             memcpy((void *) items, (void *) args, count * sizeof(S));
         }
@@ -169,25 +209,32 @@ public:
         _type = type;
     }
 
-    void grow() {
-//        warn("grow");
-        auto new_size = capacity * 2;
-//        check_silent(new_size < LIST_MAX_CAPACITY);
-        S *neu = (S *) alloc(new_size, sizeof(S));
-        memcpy((void *) neu, (void *) items, capacity * sizeof(S));
-        if (items)free(items); // EXC_BAD_ACCESS (code=2, address=0x250000002d)
-//        warn("⚠️ List.grow memcpy messes with existing references!
-//        Todo: add List<items> / wrap S with shared_pointer<S> ?");
-//      indeed List<int> FUCKS UP just by growing even without references
-//      malloc: Heap corruption detected, free list is damaged
-        items = neu;
-        capacity = new_size;
+    void grow(bool do_free = false) {
+        capacity *= 2;
+//        printf("grow %d\n", capacity);
+
+        S *new_items = static_cast<S *>(realloc(items, capacity * sizeof(S)));
+        if (new_items) { // realloc succeeded
+            items = new_items;
+        } else {  // realloc failed, but items is still valid
+//        std::shared_ptr<S[]> new_items(new S[capacity]); // implicit std::default_delete<S[]>()
+//            std::shared_ptr<S[]> new_items(new S[capacity], [](S *) {}); // no delete explicit
+            new_items = static_cast<S *>(calloc(capacity, sizeof(S)));
+            if constexpr (std::is_trivially_copyable<S>::value) {
+                std::memcpy(new_items, items, size_ * sizeof(S));
+            } else
+                for (size_t i = 0; i < size_; ++i)
+                    new_items[i] = std::move(items[i]);
+//            items = new_items.get();
+            if (do_free)free(items);
+            items = new_items;
+        }
     }
 
     S &add(S s) {
 //        if(!items)grow();// how?
         items[size_++] = s;
-        if (size_ >= capacity)grow();
+        if (size_ >= capacity - 1)grow();
         return items[size_ - 1];
     }
 
@@ -320,9 +367,12 @@ public:
         return position(item) >= 0;
     }
 
-    void clear() {
-        free(items);
-        items = (S *) alloc(LIST_DEFAULT_CAPACITY, sizeof(S));
+    void clear(bool hard = false) {
+        if (hard) {
+            capacity = LIST_DEFAULT_CAPACITY;
+            free(items);
+            items = (S *) alloc(capacity, sizeof(S));
+        }
         size_ = 0;
     }
 
@@ -424,8 +474,9 @@ public:
         return last();
     }
 
+    // todo: remove items if shrinking?
     void resize(long new_size) {
-        if (new_size >= capacity)
+        while (new_size >= capacity)
             grow();
         size_ = new_size;
     }
