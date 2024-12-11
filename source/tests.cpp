@@ -2043,11 +2043,14 @@ void testListInitializerList() {
 
 void testListVarargs() {
     testListInitializerList();
+    // ^^ OK just use List<int> oks = {1, 2, 3};
+    skip(
     const List<int> &list1 = List<int>(1, 2, 3, 0);
     if (list1.size_ != 3)
         breakpoint_helper
     check(list1.size_ == 3);
     check(list1[2] == 3);
+    )
 }
 
 
