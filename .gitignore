@@ -31,7 +31,9 @@ wasp.cbp
 *.bc
 *.wat
 *.wast
-*.wasm
+# *.wasm  # we need pow.wasm etc!
+main.wasm
+test.wasm
 *.o
 *.i
 *.dwarf
