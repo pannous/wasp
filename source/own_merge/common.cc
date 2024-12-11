@@ -41,9 +41,9 @@ String StringPrintf(const char *format, ...) {
     List<char> buffer(len);
     va_end(args);
 
-    vsnprintf(buffer.items.get(), len, format, args_copy);
+    vsnprintf(buffer.items, len, format, args_copy);
     va_end(args_copy);
-    return String(buffer.items.get(), (int) len - 1);
+    return String(buffer.items, (int) len - 1);
 }
 
 #pragma clang diagnostic pop
@@ -93,7 +93,7 @@ namespace wabt {
 			}
 			size_t old_size = out_data->size();
             out_data->resize(old_size + bytes_read);
-            memcpy(out_data->items.get() + old_size, buffer, bytes_read);
+            memcpy(out_data->items + old_size, buffer, bytes_read);
 		}
 	}
 
@@ -142,7 +142,7 @@ namespace wabt {
 		}
 
 		out_data->resize(size);
-        if (size != 0 && fread(out_data->items.get(), size, 1, infile) != 1) {
+        if (size != 0 && fread(out_data->items, size, 1, infile) != 1) {
             fprintf(stderr, "%s: fread failed: %s\n", filename_cstr, strerror(errno));
             fclose(infile);
             return Result::Error;
