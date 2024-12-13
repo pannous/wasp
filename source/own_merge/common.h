@@ -369,7 +369,8 @@ namespace wabt {
 	static const int kRelocTypeCount = WABT_ENUM_COUNT(RelocType);
 
 	struct Reloc {
-        Reloc();
+        Reloc() = default;
+//        Reloc();
 
         Reloc(RelocType, size_t offset, Index index, int32_t addend = 0);
 

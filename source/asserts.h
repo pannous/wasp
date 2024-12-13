@@ -1,5 +1,5 @@
 #pragma once
-#undef assert // <cassert> / <assert.h>  assert.h:92 not as good!
+#undef assert // <cassert> / <assert.h>  assert.h:92 not as good! and needs "env" "__assert_fail"
 
 #include "List.h"
 #include "Util.h" // define backtrace_exit

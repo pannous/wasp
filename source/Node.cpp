@@ -1369,7 +1369,7 @@ int ord(Node &p) {
 
 // todo: make constructor
 extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
-    printf("smartNode(smartPointer64 : %llx\n", (int64) smartPointer64);
+//    tracef("smartNode(smartPointer64 : %llx\n", (int64) smartPointer64);
 	if (smartPointer64 == 0)return &False;//const_cast<Node *>(&NIL);
 	if (smartPointer64 == 0x8000000000000000)return new Node(0);
 //    if (!isSmartPointer(smartPointer64))
