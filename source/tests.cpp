@@ -22,6 +22,16 @@
 #include "own_merge/type.h"
 #include "own_merge/common.h"
 
+void testMatrixOrder() {
+    assert_emit("m=([[1, 2], [3, 4]]);m[0][1]", 2);
+    assert_emit("([[1, 2], [3, 4]])[0][1]", 2);
+    assert_emit("([[1, 2], [3, 4]])[1][0]", 3);
+    assert_emit("([1, 2], [3, 4])[1][0]", 3);
+    assert_emit("(1, 2; 3, 4)[1][0]", 3);
+    assert_emit("(1, 2; 3, 4)[1,0]", 3);
+    assert_emit("(1 2, 3 4)[1,0]", 3);
+}
+
 template<class S>
 void testListGrowth() {
     List<S> list; // List<S*> even better!
@@ -3571,6 +3581,7 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+//    testMatrixOrder();
 //    List<const int&> axx = {1, 2, 3};
 //    testNamedDataSections();
 //    testListGrowth<const int&>();// pointer to a reference error

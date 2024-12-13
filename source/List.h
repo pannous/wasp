@@ -166,7 +166,13 @@ public:
     void grow() {
         capacity *= 2;
 //        printf("grow %d\n", capacity);
+#if not WASM
         items = static_cast<S *>(realloc(items, capacity * sizeof(S)));
+#else
+        S *new_items = (S *) calloc(capacity, sizeof(S));
+        memcpy((void *) new_items, (void *) items, size_ * sizeof(S));
+        items = new_items;
+#endif
     }
 
     S &add(S s) {

@@ -111,11 +111,11 @@ typedef byte *bytes;
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
 
 #define check(test, ...) { \
-  printf("CHECKING "); \
+  print("CHECKING "); \
   print(#test); \
   debug_line(); \
   if (test) { \
-    printf("OK check passes: "); \
+    print("OK check passes: "); \
     print(#test); \
   } else { \
     printf("\nNOT PASSING %s\n", #test); \

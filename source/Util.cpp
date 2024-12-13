@@ -129,7 +129,6 @@ String findFile(String filename, String current_dir) {
 #elif RUNTIME_ONLY or WASM
     return "";
 #else
-
     if (fileExists(filename))return filename;
     if (fileExists(current_dir + "/" + filename))return current_dir + "/" + filename;
     List<String> extensions = {"", ".wit", ".wasm", ".wast", ".wasp", ".witx"};

@@ -1,7 +1,7 @@
 #include "wasmtime.h"
 #include "wasm_reader.h"
 
-#include <assert.h>
+#include "asserts.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <wasm.h>
@@ -11,7 +11,6 @@
 //#include <wasmtime.h>
 #include "wasmtime.h"
 #include "wasm_reader.h"
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wasm.h>

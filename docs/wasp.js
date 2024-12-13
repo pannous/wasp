@@ -192,7 +192,7 @@ function smartResult(object, mem = memory) {
     else serialized = JSON.stringify(typed)
     // serialized=JSON.stringify(reflect)
 
-    print("smartResult: typeof", typeof object, ": ", object, " =>", serialized)
+    debug("smartResult: typeof", typeof object, ": ", object, " =>", serialized)
     last_result = serialized
     let wrapped = string(serialized, app.memory)
     // let wrapped = chars(serialized, mem)
@@ -260,15 +260,15 @@ async function storeFunction() {
 
 function getExternRefPropertyValue(ref, prop0) {
   let prop = chars(prop0, app.memory)
-  print("CALLING getExternRefPropertyValue", ref, prop)
+  debug("CALLING getExternRefPropertyValue", ref, prop)
   if (ref && typeof ref[prop] !== 'undefined') {
     let val = ref[prop];
     if (typeof val === 'function') val = val.bind(ref)() // vs invokeExternRef
-    print("getExternRefPropertyValue OK ", ref, prop, val, typeof val)
+    debug("getExternRefPropertyValue OK ", ref, prop, val, typeof val)
     return smartResult(val, app.memory)
   } else if (ref && typeof ref.getAttribute === 'function') {
     let attribute = ref.getAttribute(prop);
-    print("getExternRefPropertyValue OK! ", ref, prop, attribute)
+    debug("getExternRefPropertyValue OK! ", ref, prop, attribute)
     return smartResult(attribute, app.memory)
   } else {
     throw new Error(`'${prop}' is not a property of the provided reference`);
@@ -344,6 +344,7 @@ let imports = {
     getWasmFunclet,
     init_graphics: nop, // canvas init by default
     requestAnimationFrame: nop, // todo
+    __assert_fail: nop, // todo remove
     getenv: x => {
       debug("getenv", x, chars(x, typeof (app) != 'undefined' ? app.memory : memory));
       return 0
@@ -382,7 +383,7 @@ let imports = {
     getElementById: pointer => {
       let id = chars(pointer, app.memory)
       let object = document.getElementById(id)
-      print("getElementById", pointer, id, "=>", object)
+      debug("getElementById", pointer, id, "=>", object)
       return object // automatically cast to (extern)ref
     },
     // getExternRefPropertyValue: async (ref, prop0) => { async not working in wasm!

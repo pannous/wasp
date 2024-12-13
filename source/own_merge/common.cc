@@ -57,10 +57,10 @@ namespace wabt {
 
 
     // Default constructor for List<Reloc>
-    Reloc::Reloc() : type(RelocType::First),
-                     offset(0),
-                     index(0),
-                     addend(0) {}
+//    Reloc::Reloc() : type(RelocType::First),
+//                     offset(0),
+//                     index(0),
+//                     addend(0) {}
 
 	const char *g_kind_name[] = {"func", "table", "memory", "global", "tag"};
 //	WABT_STATIC_ASSERT(WABT_ARRAY_SIZE(g_kind_name) == kExternalKindCount);
