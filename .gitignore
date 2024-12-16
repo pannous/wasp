@@ -110,3 +110,7 @@ main.wasm.json
 wiki/:=.md
 kotlinc.xml
 x
+
+sourceMappingURL.txt
+
+main.c
