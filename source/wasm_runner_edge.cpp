@@ -1,5 +1,4 @@
 #include <wasmedge/wasmedge.h>
-//#include "wasmedge.h"
 #include "wasm_runner.h"
 #include "Util.h"
 #include "Node.h"
@@ -38,6 +37,14 @@ WasmEdge_Result fd_write_wrap(void *Data,
                               const FrameContext *CallFrameCxt,
                               const WasmEdge_Value *In, WasmEdge_Value *Out) {
     printf("fd_write_wrap TODO\n");
+    return WasmEdge_Result_Success;
+}
+
+
+WasmEdge_Result print_wrap(void *Data,
+                           const FrameContext *CallFrameCxt,
+                           const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    printf("print_wrap TODO\n");
     return WasmEdge_Result_Success;
 }
 
@@ -97,10 +104,12 @@ WasmEdge_ModuleInstanceContext *CreateWasiModule() {
     WasmEdge_String HostName;
     WasmEdge_FunctionTypeContext *HostFType = NULL;
     WasmEdge_FunctionInstanceContext *HostFunc = NULL;
-
     {
-        enum WasmEdge_ValType P[1], R[0];
-        P[0] = WasmEdge_ValType_I32;// charp (id:string)
+        WasmEdge_Result Res;
+        WasmEdge_ValType P[1], R[0];
+//        P[0] = WasmEdge_ValTypeGenI32();// charp (id:string)
+        P[0] = WasmEdge_ValTypeGenI32();
+        R[0] = WasmEdge_ValTypeGenI32();
         HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 0);
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, proc_exit_wrap, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
@@ -111,15 +120,12 @@ WasmEdge_ModuleInstanceContext *CreateWasiModule() {
 
     {
 //        void fd_write_host(int FD, char **strp, int *len, int *nwritten) {
-        enum WasmEdge_ValType P[2], R[1];
-//        Expected: FuncType {params{i32 , i32 , i32 , i32} returns{i32}} ,
-//        Got:      FuncType {params{i32 ,  ,  , } returns{i32}}
-// TODO we had the same shit before new WasmEdge_ValType_I32.clone??
-        P[0] = WasmEdge_ValType_I32;
-        P[1] = WasmEdge_ValType_I32;
-//        P[2] = WasmEdge_ValType_I32;
-//        P[3] = WasmEdge_ValType_I32;
-        R[0] = WasmEdge_ValType_I32; // return value???
+        WasmEdge_ValType P[4], R[1];
+        P[0] = WasmEdge_ValTypeGenI32();
+        P[1] = WasmEdge_ValTypeGenI32();
+        P[2] = WasmEdge_ValTypeGenI32();
+        P[3] = WasmEdge_ValTypeGenI32();
+        R[0] = WasmEdge_ValTypeGenI32(); // return value???
         HostName = WasmEdge_StringCreateByCString("fd_write");
         HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fd_write_wrap, NULL, 0);
@@ -141,10 +147,10 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     if (not HostMod) HostMod = WasmEdge_ModuleInstanceCreate(HostName);
 
     {
-        enum WasmEdge_ValType P[2], R[1];
-        R[0] = WasmEdge_ValType_I64;
-        P[0] = WasmEdge_ValType_ExternRef;
-        P[1] = WasmEdge_ValType_I32;
+        WasmEdge_ValType P[2], R[1];
+        R[0] = WasmEdge_ValTypeGenI64();
+        P[0] = WasmEdge_ValTypeGenExternRef();
+        P[1] = WasmEdge_ValTypeGenI32();
         HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
 	    HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getExternRefPropertyValue, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
@@ -154,9 +160,9 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     }
 
     {
-        enum WasmEdge_ValType P[1], R[1];
-        R[0] = WasmEdge_ValType_ExternRef;
-        P[0] = WasmEdge_ValType_I32;// charp (id:string)
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenExternRef();
+        P[0] = WasmEdge_ValTypeGenI32();// charp (id:string)
         HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getElementById, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
@@ -166,8 +172,8 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     }
 
     {
-        enum WasmEdge_ValType P[1], R[1];
-        R[0] = WasmEdge_ValType_ExternRef;
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenExternRef();
         HostFType = WasmEdge_FunctionTypeCreate(P, 0, R, 1);
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getDocumentBody, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
@@ -176,10 +182,10 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         WasmEdge_StringDelete(HostName);
     }
     {
-        enum WasmEdge_ValType P[2], R[1];
-        R[0] = WasmEdge_ValType_ExternRef;
-        P[0] = WasmEdge_ValType_ExternRef;
-        P[1] = WasmEdge_ValType_I32;// string
+        WasmEdge_ValType P[2], R[1];
+        R[0] = WasmEdge_ValTypeGenExternRef();
+        P[0] = WasmEdge_ValTypeGenExternRef();
+        P[1] = WasmEdge_ValTypeGenI32();// string
         HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, createHtml, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
@@ -289,7 +295,7 @@ int64 run_wasm2(char *wasm_path) {
 //	context.
     /* The parameters and returns arrays. */
     int ParamCount = 0;
-    WasmEdge_Value Params[ParamCount];// = { WasmEdge_ValueGenI32(32) };
+    WasmEdge_Value Params[0];//ParamCount];// = { WasmEdge_ValueGenI32(32) };
     WasmEdge_Value Returns[1];
     /* Function name. */
     WasmEdge_String FuncName = WasmEdge_StringCreateByCString("test");

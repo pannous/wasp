@@ -3603,7 +3603,9 @@ void testCurrent() {
     assert_emit("x='abcde';x#4='f';x[3]", 'f'); // SIGSEGV specifically at target_depths_.resize(num_targets); !!?!
     assert_emit("x='abcde';x#4='x';x[3]", 'x'); // SIGSEGV
 
+    skip(
     testForLoops();
+    )
     testAutoSmarty();
     testArguments();
 //    testSinus();

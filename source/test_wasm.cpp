@@ -975,13 +975,13 @@ void testArrayIndicesWasm() {
 //	data_mode = true;// todo remove hack
     assert_emit("x={1 2 3}; x#3=4;x#3", 4);
 #if WASM
-    assert_emit("puts('ok');", -1);
+    assert_emit("puts('ok');", -1); // todo: fix puts return
+#elif WASMEDGE
+    assert_emit("puts('ok');", 8);
 #else
-//    assert_emit("puts('ok');", 8);
     assert_emit("puts('ok');", 0);
-    assert_emit("puts('ok');(1 4 3)#2", 4);
 #endif
-//    assert_emit("puts('ok');", 0);
+    assert_emit("puts('ok');(1 4 3)#2", 4);
     assert_emit("{1 4 3}#2", 4);
 
     assert_emit("x={1 4 3};x#2", 4);
