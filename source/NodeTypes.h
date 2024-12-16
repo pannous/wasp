@@ -116,6 +116,7 @@ extern Node StringType;
 // todo dangerous overlap with Valtype in Type!? OK only accessible via mapTypeToWasm
 // needs to be stable: Kind is returned in multivalue and thus needs to be parsed by js!
 // todo change naming scheme: remove false plural 's' where inappropiate: 'strings' groups … … …
+// compare / merge(?) with enum Primitive? nah, primitive is internal / wasm only
 enum Kind /* 32 bit*/ {// todo: merge Node.kind with Node.class(?)
     // todo smartType4bit first 16 values!!
     // plurals because of namespace clash
@@ -195,6 +196,7 @@ bool isGroup(Kind type); // Node of kind group
 //	https://github.com/pannous/angle/wiki/smart-pointer
 // see header_4 / smartType4bit
 // todo universal micro bits for 1. POINTER 2. ARRAY 2. STRUCT with HEADER
+// INTERNAL TYPES mapped to wasm types
 enum Primitive /*32*/ {
     //    THE 0x00 …0x0F …0xF0 … range is reserved for numbers
 //   redundant Valtype overlap
@@ -317,7 +319,6 @@ enum Primitive /*32*/ {
 //	ffointer_of_int32 = 0xFF7F, // int** etc
 // for 32 bit smart pointers, as used in return of int main(){}
     pad_to32_bit = 0xF0000000,
-
 };
 
 

@@ -2,7 +2,6 @@
 ////
 //// Created by pannous on 30.09.19.
 ////
-//
 
 #include "Node.h"
 #include "List.h"

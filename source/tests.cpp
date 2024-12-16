@@ -68,12 +68,13 @@ void testAssert() {
 }
 
 void testForLoops() {
-    assert_emit("for i in 1 to 5 : {print i};i", 6);
-    assert_emit("for i in 1 to 5 {print i}", 5);
-    assert_emit("for i in 1 to 5 {print i};i", 6); // after loop :(
-    assert_emit("for i in 1 to 5 : print i", 5);
-    assert_emit("for i in 1 to 5\n  print i\ni", 5);
-    assert_emit("for i in 1 to 5\n  print i\ni", 5);
+//    assert_emit("for i in 1 to 5 : {print i};i", 6);
+    assert_emit("for i in 1 to 5 : {puti i};i", 6);
+    assert_emit("for i in 1 to 5 {puti i}", 5);
+    assert_emit("for i in 1 to 5 {puti i};i", 6); // after loop :(
+    assert_emit("for i in 1 to 5 : puti i", 5);
+    assert_emit("for i in 1 to 5\n  puti i\ni", 5);
+    assert_emit("for i in 1 to 5\n  puti i\ni", 5);
 //    assert_emit("sum=0\nfor i in (1..3) {sum+=i}\nsum", 6);
 //    assert_emit("sum=0;for i in (1..3) {sum+=i};sum", 6);
 //    assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
@@ -3586,6 +3587,9 @@ void testCurrent() {
 //    testNamedDataSections();
 //    testListGrowth<const int&>();// pointer to a reference error
 
+// todo print as general dispatch depending on smarttype
+//    assert_emit("for i in 1 to 5 : {print i};i", 6);
+    assert_emit("for i in 1 to 5 : {puti i};i", 6);
 
     testListGrowth<int>();
     testListGrowth<float>();
@@ -3603,8 +3607,8 @@ void testCurrent() {
     assert_emit("x='abcde';x#4='f';x[3]", 'f'); // SIGSEGV specifically at target_depths_.resize(num_targets); !!?!
     assert_emit("x='abcde';x#4='x';x[3]", 'x'); // SIGSEGV
 
-    skip(
     testForLoops();
+    skip(
     )
     testAutoSmarty();
     testArguments();

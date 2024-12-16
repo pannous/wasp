@@ -4,9 +4,7 @@ Frameworks/wasm-c-api
 /yarn.lock
 */wapm
 .idea/
-.idea/*
-.idea/**
-.idea/**/*
+.vscode/
 node_modules/
 tmp/
 coverage/
@@ -31,7 +29,8 @@ wasp.cbp
 *.bc
 *.wat
 *.wast
-# *.wasm  # we need pow.wasm etc!
+# we need pow.wasm etc!
+*.wasm  
 main.wasm
 test.wasm
 *.o
@@ -109,3 +108,5 @@ main.wasm.json
 *.map
 :=.md
 wiki/:=.md
+kotlinc.xml
+x
