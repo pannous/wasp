@@ -2434,6 +2434,7 @@ Function getWaspFunction(String name) { // signature only, code must be loaded f
 
 extern "C" void registerWasmFunction(chars name, chars mangled) {
     if ("floor"s == name)return; // use builtin!
+    if ("loor"s == name)return; // BUG!
     getWaspFunction(name);
 //    if (!functions.has(name))functions.add(name, getWaspFunction(name));
 //    if (!loadRuntime().functions.has(mangled))

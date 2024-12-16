@@ -989,7 +989,8 @@ function register_wasp_functions(exports) {
 
       let demangled = demangle(name)
       // console_log(func.name, func)
-      // debug(name, "⇨", demangled)
+      // if(demangled == "loor")
+      //   debug(name, "⇨", demangled)
       exports[demangled] = func
       if (!demangled.match("<") && !demangled.match("\\[")
         && !demangled.match(":: ") && !demangled.match("~"))// no generics yet

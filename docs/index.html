@@ -36,9 +36,19 @@
   <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>-->
 
   <script>window.exports = {};</script>
+  <!--  <script src="assets/script/wasm-parser-bundle.js"></script> &lt;!&ndash;  ok but no wast emitter &ndash;&gt;-->
+  <!--  <script src="https://webassembly.github.io/wabt/demo/libwabt.js"></script> &lt;!&ndash;  can't handle partial/erronous wasm &ndash;&gt;-->
+  <!--  <script type="module" src="https://cdn.jsdelivr.net/npm/@webassemblyjs/wasm-parser@1.14.1/lib/index.js"></script>-->
+  <!--  <script> WabtModule().then(function (wabt) {-->
+  <!--    window.wabt = wabt;-->
+  <!--    console.log('wabt loaded', wabt);-->
+  <!--  });</script>-->
   <script type="module">
-    import * as binaryen from "https://unpkg.com/binaryen@latest/index.js";
+    // import * as binaryen from "https://unpkg.com/binaryen@latest/index.js";
+    // import * as binaryen from "https://cdn.jsdelivr.net/npm/binaryen@latest/index.js"
+    import * as binaryen from "./assets/script/binaryen-latest.js"
 
+    console.log('OK wasm_to_wat via binaryen', binaryen);
     export function wasm_to_wat(buffer) {
       try {
         const module = binaryen.default.readBinary(buffer);
@@ -53,14 +63,6 @@
 
     window.wasm_to_wat = wasm_to_wat;
   </script>
-
-  <!--  <script src="assets/script/wasm-parser-bundle.js"></script> &lt;!&ndash;  ok but no wast emitter &ndash;&gt;-->
-  <!--  <script src="https://webassembly.github.io/wabt/demo/libwabt.js"></script> &lt;!&ndash;  can't handle partial/erronous wasm &ndash;&gt;-->
-  <!--  <script type="module" src="https://cdn.jsdelivr.net/npm/@webassemblyjs/wasm-parser@1.14.1/lib/index.js"></script>-->
-  <script> WabtModule().then(function (wabt) {
-    window.wabt = wabt;
-    console.log('wabt loaded', wabt);
-  });</script>
 </head>
 <body>
 <!--<body style="background: cornsilk">-->
