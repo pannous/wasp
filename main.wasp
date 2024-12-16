@@ -1,8 +1,0 @@
-/////////////// ;)
-int tttt(int j){
-	int x=j+1;
-	return x;
-}
-
-tttt(3)
-tttt(7)
