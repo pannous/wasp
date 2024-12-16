@@ -1,0 +1,1 @@
+sourceMappingURL=wasp-hosted.wasm.map
