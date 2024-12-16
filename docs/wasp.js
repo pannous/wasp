@@ -634,7 +634,7 @@ function reset_heap() {
 }
 
 function compile_and_run(code) {
-  results.value = '';
+  // results.value = '';
   if (typeof compiler_exports === 'undefined')
     load_compiler()
   // reset_heap();

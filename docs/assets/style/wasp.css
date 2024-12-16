@@ -15,7 +15,7 @@ body { /* Default (light mode) styles */
 
 .CodeMirror {
     resize: both; /* This enables resizing */
-    overflow: auto;
+    /*overflow: auto;*/
     min-height: 100px; /* Minimum height for the editor */
     min-width: 200px; /* Minimum width for the editor */
     border: 1px solid #ddd;

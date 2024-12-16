@@ -21,9 +21,9 @@ let exampleCode = {
   html: `html{bold{"Hello"}}`,
   // html: `html: h1: "Hello, World!"`,
   // html: `html: <h1>Hello, World!</h1>`, // operator missing: <
+  // html2: `html: div id="app"; app.innerHTML = "Hello, World!"`,
   alert: 'script: alert("Hello, World!")',
-  javascript: `html: div id="app"; app.innerHTML = "Hello, World!"`,
-  draw_sine: `// sine wave\nfor i in 0..1000\n  ctx.lineTo(i, 100 + Math.sin(i / 10) * 50)\nctx.stroke()`,
+  // draw_sine: `// sine wave\nfor i in 0..1000\n  ctx.lineTo(i, 100 + Math.sin(i / 10) * 50)\nctx.stroke()`,
   sine: `double sin(double x){
     double
     S1  = -1.66666666666666324348e-01, 
