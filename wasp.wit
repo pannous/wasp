@@ -1,0 +1,133 @@
+// world wasp {
+// node circle {
+// name: "circle"
+// type: null
+// kind: ValueType::Node
+// value: Value::Node(Node {
+// name: String { pointer: 0, length: 6 }
+// })
+// }
+// }
+package wasp
+
+// Enum to represent the active type in the union `Value`
+enum ValueType {
+node = 0,
+string = 1,
+data   = 2,
+long  = 3,
+real  = 4,
+module = 5
+}
+
+// Kind Enum Definition
+enum Kind{
+undefined = 0        // Default kind, undefined
+unknown = 1          // Unknown kind
+objects = 2          // Block data with children closures
+strings = 0x9        // String representation
+call = 0x10          // Call representation
+
+groups = 0x11        // Group (meta parameters, lists, etc.)
+tuples = 0x11        // Alias for groups with restrictions
+patterns = 0x12      // Patterns (selectors, annotations, etc.)
+generics = 0x13      // Generic node tags or lists
+tags = 0x13          // Alias for generics (e.g., <html>)
+
+key = 0x14           // Key with a value
+fields = 0x15        // Key in a struct/class/type without a value
+
+reference = 0x16     // Variable identifier (e.g., x)
+global = 0x17        // Global variable
+
+symbol = 0x18        // Symbol (e.g., one, plus)
+operators = 0x19     // Operators (semantic types)
+functor = 0x1A       // Functor (e.g., while(xyz){abc})
+expression = 0x1B    // Expression (e.g., one plus one)
+declaration = 0x1C   // Declaration (e.g., x := 1)
+assignment = 0x1D    // Assignment (e.g., x = 1)
+buffers = 0x1E       // Buffer (e.g., int[])
+
+bools = 0x1F         // Boolean type
+errors = 0x20        // Internal error type
+
+clazz = 0x21         // Class type
+arrays = 0x22        // Untyped array of Nodes
+linked_list = 0x23   // Linked list structure via children or value
+meta = 0x23          // Alias for linked list
+enums = 0x24         // Enum type
+flags = 0x25         // Boolean enum with bitwise values
+variants = 0x26      // Variant type
+records = 0x27       // Record type
+constructor = 0x28   // Special constructor call
+modul = 0x29         // Module/interface/resource/library/package
+
+nils = 0x40          // Void block for compatibility
+referencex = 0x41    // External reference (externref in WASM spec)
+number = 0x70        // SmartNumber or boxed Number
+structs = 0x77       // Struct type
+reals = 0x7C         // Real (double/float64) type
+realsF = 0x7D        // Real (float32) type
+longs = 0x7E         // Long integer type
+long32 = 0x7F        // Integer stored in long node field
+
+last_kind = 0x80     // Last valid kind value
+codepoint1 = 0xC4    // Codepoint (stored in value.longy field)
+urls = 0xC5          // Special string references in name
+}
+
+// String type representation in WASM
+type String struct {
+pointer: u32      // Pointer to the start of the string in WASM memory
+length: u32       // Length of the string
+}
+
+// Union to represent the Value structure
+union Value {
+Node(node: Node)       // Reference to another Node
+String(string: String) // Reference to a String
+Data(data: u64)        // Data pointer
+Long(long: s64)        // 64-bit integer
+Real(real: f64)        // 64-bit float
+Module(module: u64)    // Module pointer
+}
+
+// Struct to represent a Node
+type Node struct {
+name: String         // Name as a String
+type: option<Node>   // Nullable reference to a type Node
+kind: ValueType      // Value type of the node
+value: Value         // Union structure defined above
+length: u32          // Number of children
+child: list<Node>    // List of children Nodes
+meta: option<Node>   // Nullable reference to meta node
+parent: option<Node> // Nullable reference to parent node
+next: option<Node>   // Nullable reference to next node in list
+separator: u8        // Separator character [a b c] or [a,b,c]
+}
+
+// Functions exposed for manipulating Nodes
+
+// Create a new Node with basic fields
+func create_node(name: String, kind: ValueType, value: Value) -> Node
+
+// Add a child Node to a parent Node
+func add_child(parent: Node, child: Node)
+
+// Set the meta Node for a given Node (nullable)
+func set_meta(node: Node, meta: option<Node>)
+
+// Set the parent Node for a given Node (nullable)
+func set_parent(node: Node, parent: option<Node>)
+
+// Set the next Node for a given Node (nullable)
+func set_next(node: Node, next: option<Node>)
+
+// Update the value of a Node
+func update_value(node: Node, value: Value)
+
+// Get the child Nodes of a given Node
+func get_children(node: Node) -> list<Node>
+
+// Debugging or utilities
+func print_node_debug(node: Node)

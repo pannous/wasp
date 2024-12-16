@@ -85,72 +85,18 @@ void print(Node *n0);
 class Module;
 //class String;
 
+
 // ⚠️ A Value is only useful with accompanying Type!
-union Value { // node_pointer can contain ANYTHING, especially types known in wasp
-//	sizeof(Value)==8 (int64)
-    Node *node = 0;// todo DANGER, pointer can be lost :(   // todo same as child
-//	Node *child = 0; //todo DANGER child and next are NOT REDUNDANT! (a:b c:d) == a(value=b next=c(value=d))
-//	Node **children = 0;// keep children separate for complex key node_pointer (a b c):(d e f)
-    String *string;// todo: wasm_chars*
-//    Function *function;
+union Value {
+    Node *node = 0;
+    String *string;
     Module *module;
-
-    void *data;// any bytes
+    void *data;
     int64 longy;
-//    codepoint codepoint;//chary;// use longy
+    //    codepoint codepoint;//chary;// use longy
     double real;
-
-//	Value() {}// = default;
-//	explicit Value(int i) { longy = i; }
-//
-//	explicit Value(int64 i) { longy = i; }
-//
-//	Value(bool b) { longy = b; }
-//
-//	Value(double r) { real = r; }
-//
-////	Value(String s) { string = &s; }
-//
-//	Value(String &s) { string = &s; }
-//
-//	Value(String *s) { string = s; }
-
-//	~Value() = default;
 };
 
-//
-//struct TypedValue {
-//	Kind type;// 1 byte!
-//	//	Kind kind;
-//	//	ValueKind kind;
-////	Node* type; forseeing? but:
-//	Value value;// node can have its own type
-//};
-//
-//struct TypedNode {
-//	Node *type;
-//	Node *node;
-//};
-
-struct debug_struct {
-    byte a1;
-    byte a12;
-    byte a13;
-    byte a14;
-    byte a15;
-    byte a16;
-    byte a17;
-    byte a11;
-    byte a21;
-    byte a31;
-    byte a41;
-    byte a51;
-    byte a61;
-    byte a71;
-    int64 rest1;
-    int64 rest2;
-    int64 rest3;
-};
 
 // in wasm32 pointers are int instead of int64, use this struct to transfer between both Node* spaces
 // reconcilable with Node INSIDE wasm. ALWAYS PAIR ints so that they align with int64, in 32 AND 64 bit modes!
