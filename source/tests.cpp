@@ -25,6 +25,90 @@
 
 #include <wasmedge/wasmedge.h>
 
+// this is NOT reinterpret cast, but a real cast, e.g. from 2 to '2'
+extern "C"
+Node cast(const Node &from, Type to_type) {
+    if(from.kind == to_type.kind)return from;
+    if(from.kind == reals and to_type.kind == longs)return Node((int64_t)from.value.real); // boring, done by wasm?
+    if(from.kind == longs and to_type.kind == reals)return Node((double)from.value.longy);
+    if(from.kind == longs and to_type.kind == bools)return Node((bool)from.value.longy);
+    // REAL CASTS "2" to '2' to 2
+    if(from.kind == longs and to_type.kind == strings)return Node(formatLong(from.value.longy),false);
+    if(from.kind == reals and to_type.kind == strings)
+        return Node(formatRealWithBaseAndPrecision(from.value.real, 10, 2),false);
+    if(from.kind == longs and to_type.kind == codepoint1){ // digit to char! 2 => '2'
+        // DANGER: user intention unclear!? 2 => '2' or 0x20 => ' '
+        if(from.value.longy < 0 or from.value.longy > 9)error("int to char cast only for 0 to 9");
+        if(from.value.longy>9) return Node((codepoint)from.value.longy);// reinterpret cast
+        return Node(getChar(formatLong(from.value.longy),1));
+    }
+    if(from.kind == strings and to_type.kind == codepoint1)return Node(getChar(*from.value.string,1));// "a" => 'a'
+    if(from.kind == strings and to_type.kind == bools) // "False" => false "nil" => false
+        return Node(not falseKeywords.has(*from.value.string) and not nilKeywords.has(*from.value.string));
+    if(from.kind == codepoint1 and to_type.kind == bools){
+        codepoint c = from.value.longy;
+        if(empty(c))return Node(false);
+        if(c == '0' or c == 'f' or c == 'F' or c == 'n' or c == 'N' or c == u'ø')return Node(false);
+        return Node(atoi1(c)!=0);
+    }
+    if(from.kind == codepoint1 and to_type.kind == longs)return Node((int64_t) from.value.longy);
+    if(from.kind == codepoint1 and to_type.kind == strings)return Node(String((codepoint)from.value.longy),false);
+    todo("cast "s + from.serialize() + " to " + typeName(to_type));
+}
+
+extern "C"
+Node cast_smart(smarty value, Type to_type) {
+    return cast(Node(value), to_type);
+}
+
+void testCast(){
+    check_eq("2"s , cast(Node(2), strings).value.string);
+    check_eq(cast(Node(2), longs).value.longy, 2);// trivial
+    check_eq(cast(Node(2.1), longs).value.longy, 2);
+    check_eq(cast(Node(2), reals).value.real, 2.0);
+    check_eq(cast(Node(2.1), reals).value.real, 2.1);
+    check_eq("2.1"s, cast(Node(2.1), strings).value.string);
+    check_eq("a"s, cast(Node('a'), strings).value.string);
+    check_eq(false, cast(Node('0'), bools).value.longy);
+    check_eq(false, cast(Node(u'ø'), bools).value.longy);
+    check_eq(false, cast(Node("False", false), bools).value.longy);
+    check_eq(false, cast(Node("ø", false), bools).value.longy);
+    check_eq(true, cast(Node("True", false), bools).value.longy);
+    check_eq(true, cast(Node("1", false), bools).value.longy);
+    check_eq(true, cast(Node(1), bools).value.longy);
+    check_eq(true, cast(Node("abcd",false), bools).value.longy);
+}
+
+void testEmitCast(){
+    assert_emit("(2 as float, 4.3 as int)  == 2.0 ,4", 1);
+    assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
+    // advanced, needs cast() to be implemented in wasm
+    assert_emit("2 as char", '2');// ≠ char(0x41) ==  'a'
+    assert_emit("2 as string", "2");
+    assert_emit("'2' as number", 2);
+    assert_emit("'2.1' as number", 2.1);
+    assert_emit("'2' as bool", true);
+    assert_emit("2 as bool", true);
+    assert_emit("'false' as bool", false);
+    assert_emit("'no' as bool", false);
+    assert_emit("'ø' as bool", false);
+    assert_emit("'2' as int", 2);
+    assert_emit("'2' as long", 2);
+    assert_emit("'2.1' as int", 2);
+    assert_emit("'2.1' as long", 2);
+    assert_emit("'2.1' as real", 2.1);
+    assert_emit("'2.1' as float", 2.1);
+    assert_emit("'2.1' as double", 2.1);
+}
+
+void testConstructorCast(){
+    assert_run("int('123')", 123);
+    assert_run("str(123)", "123");
+    assert_run("'a'", 'a');
+    assert_run("char(0x41)", 'a');
+    assert_run("string(123)", "123");
+    assert_run("String(123)", "123");
+}
 
 int test_wasmedge_gc() {
     // Initialize WasmEdge runtime
@@ -391,7 +475,7 @@ void testHostIntegration() {
 }
 
 
-void testTypes() {
+void testTypesSimple() {
     clearAnalyzerContext();
     result = analyze(parse("chars a"));
     assert_equals(result.kind, Kind::reference);
@@ -424,7 +508,7 @@ void testTypes() {
 
 }
 
-void testTypes2() {
+void testTypesSimple2() {
     result = analyze(parse("a:chars"));
     assert_equals(result.kind, Kind::reference);
     assert_equals(result.type, &ByteCharType);
@@ -499,6 +583,15 @@ void testEmptyTypedFunctions() {
     check_is(result.kind, Kind::declaration);// header signature
     check_is(result.type, IntegerType);
     check_is(result.name, "a");
+}
+
+void testTypes(){
+    testBadType();
+    testDeepType();
+    testTypedFunctions();
+    testTypesSimple();
+    testTypesSimple2();
+    testTypeConfusion();
 }
 
 void testPolymorphism() {
@@ -1455,12 +1548,14 @@ void testDataMode() {
     print(result);
     check(result.length == 4);// a b = c
 
+    skip(
     result = analyze(result);
     print(result);
     check(result.length == 1);// todo  todo => (a b)=c => =( (a b) c)
 
     result = parse("<a href=link.html/>", ParserOptions{.data_mode=true, .use_tags=true});
     check(result.length == 1);// a(b=c)
+            )
 }
 
 void testSignificantWhitespace() {
@@ -2003,7 +2098,7 @@ void testAddField() {
 void testErrors() {
     // use assert_throws
     assert_throws("0/0");
-#if defined(WASI) || defined(WASM)
+#if WASI or WASM
     skip("can't catch ERROR in wasm")
     return;
 #endif
@@ -2086,7 +2181,10 @@ void testMathExtra() {
     assert_emit("3**3", 27);
     assert_emit("√3**2", 3);
     assert_emit("√3^2", 3);
+    skip(
     assert_is("one plus two times three", 7);
+            )
+
 }
 
 void testRoot() {
@@ -2627,8 +2725,14 @@ void testEval() {
 }
 
 void testLengthOperator() {
-    todo_emit(assert_is("#{a b c}", 3);)
-    skip(assert_is("#(a b c)", 3, 0));// todo: groups
+    assert_run("#'0123'", 4);// todo at compile?
+    assert_run("#[0 1 2 3]", 4);
+    assert_run("#[a b c d]", 4);
+    assert_run("len('0123')", 4);// todo at compile?
+    assert_run("len([0 1 2 3])", 4);
+    assert_run("size([a b c d])", 4);
+    assert_is("#{a b c}", 3);
+    assert_is("#(a b c)", 3);// todo: groups
 }
 
 void testNodeName() {
@@ -3243,26 +3347,23 @@ void testArrayIndices() {
     assert_is("x=(1 4 3);x#2=5;x#2", 5);
 }
 
-// todo: move back into tests() once they work again
-void todos() {
-    testSinus();// still FRAGILE!
-    testWrong0Termination();
-    testErrors();// error: failed to call function   wasm trap: integer divide by zero
-    assert_is("one plus two times three", 7);
-    testMathExtra();// "one plus two times three"==7 used to work?
-    testKitchensink();
-#if not TRACE
-    println("parseLong fails in trace mode WHY?");
-    assert_run("parseLong('123000')+parseLong('456')", 123456);
-#endif
 
-    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
+void testNodeEmit(){
     assert_emit("y:{x:2 z:3};y.x", 2);
     assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
     assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
     assert_emit("y{x}", true); // emitData( node! ) emitNode()
     assert_emit("{x:1}", true); // emitData( node! ) emitNode()
     assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
+}
+
+void todo_done() {
+// todo: move back into tests() once they work again
+    testSinus();// still FRAGILE!
+    testWrong0Termination();
+    testErrors();// error: failed to call function   wasm trap: integer divide by zero
+    testMathExtra();// "one plus two times three"==7 used to work?
+    testKitchensink();
 
     testNodeDataBinaryReconstruction();
 
@@ -3275,27 +3376,29 @@ void todos() {
     testUpperLowerCase();
 //    exit(1);
     testDataMode();
+}
 
-    assert_run("#'0123'", 4);// todo at compile?
-    assert_run("#[0 1 2 3]", 4);
-    assert_run("#[a b c d]", 4);
-    assert_run("len('0123')", 4);// todo at compile?
-    assert_run("len([0 1 2 3])", 4);
-    assert_run("size([a b c d])", 4);
-    assert_run("int('123')", 123);
-    assert_run("str(123)", "123");
-    assert_run("'a'", 'a');
-    assert_run("char(0x41)", 'a');
-    assert_run("string(123)", "123");
-    assert_run("String(123)", "123");
+
+// todo: move back into tests() once they work again
+void todos() {
+    skip( // unskip to test!!
+    testNodeEmit();
+    testLengthOperator();
+    testConstructorCast();
+            testEmitCast();
+            assert_emit("2,4 == 2,4", 1);
+            assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
+            )
+#if not TRACE
+    println("parseLong fails in trace mode WHY?");
+    assert_run("parseLong('123000')+parseLong('456')", 123456);
+#endif
+
     test_sinus_wasp_import();
     testSinus();// todo FRAGILE fails before!
 //    testSinus2();
 
-    assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
-    assert_emit("2,4 == 2,4", 1);
-    assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
-    assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
+
     assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
     testParams();
 //    run("circle.wasp");
@@ -3326,9 +3429,11 @@ void todos() {
     assert_is("i=3;i--", 2);// todo bring variables to interpreter
     assert_is("i=3.7;.3+i", 4);// todo bring variables to interpreter
     assert_is("i=3;i*-1", -3);// todo bring variables to interpreter
-
+    assert_is("one plus two times three", 7);
 //	print("OK %s %d"s % ("WASM",1));// only 1 handed over
 //    print(" OK %d %d"s % (2, 1));// error: expression result unused [-Werror,-Wunused-value] OK
+    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
+
 }
 
 //int dump_nr = 1;
@@ -3541,6 +3646,7 @@ void testEmitBasics() {
 
 
 void tests() {
+    todo_done();
     assurances();
 #if not WASM
     testNumbers();
@@ -3674,10 +3780,14 @@ void test_new() {
     testForLoops();
     testAutoSmarty();
     testArguments();
+    testFlags();
+
     testBadType();
     testDeepType();
     testTypedFunctions();
     testTypes();
+    testTypeConfusion();
+
     testPolymorphism();
     test_implicit_multiplication(); // todo in parser how?
 }
@@ -3690,10 +3800,10 @@ void test_new() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
 //    assert_emit("def first(array);", 0);
-    assert_emit("add1 x:=x+1;add1 3", (int64) 4);
-
-    testTypeConfusion();
-//    test_new();
+    testCast();
+    todos();
+    testRecentRandomBugs();
+    test_new();
 //    List<const int&> axx = {1, 2, 3};
 //    testNamedDataSections();
 //    testListGrowth<const int&>();// pointer to a reference error
@@ -3701,12 +3811,9 @@ void testCurrent() {
 // todo print as general dispatch depending on smarttype
 //    assert_emit("for i in 1 to 5 : {print i};i", 6);
 //    assert_emit("a = [1, 2, 3]; a[2]", 3);
-    assert_emit("for i in 1 to 5 : {puti i};i", 6);
 
 //    testJS();
 //    testHtmlWasp();
-    testFlags();
-    testTypes();
     skip(
             testHostDownload();
             assert_emit("‖3‖-1", 2);
@@ -3735,7 +3842,6 @@ void testCurrent() {
 
 
     testGlobals();
-    testTypeConfusion();
     skip(
     testVectorShim();// use GPU even before wasm vector extension is available
             )

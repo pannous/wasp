@@ -1562,7 +1562,7 @@ Code emitValue(Node &node, Function &context) {
     }
     if (node.type) {
         if (node.type->kind != flags)
-            code.add(cast(node, *node.type, context));
+            code.add(emit_cast(node, *node.type, context));
     }
     // code.push(last_type) only on return statement
     return code;
@@ -1870,7 +1870,7 @@ Code emitOperator(Node &node, Function &context) {
         code.add(cast(last_type, return_type));
         code.add(return_block);
     } else if (name == "as") {
-        code.add(emitCall("cast", context));
+        code.add(emitCall("emit_cast", context));
 
     } else if (name == "%") {// int cases handled above
         if (last_type == float32)
@@ -2769,12 +2769,13 @@ Code cast(Type from, Type to) {
 
 // casting in our case also means construction! (x, y) as point == point(x,y)
 [[nodiscard]]
-Code cast(Node &from, Node &to, Function &context) {
+Code emit_cast(Node &from, Node &to, Function &context) {
     // todo: only cast directly if from is compatible, don't cast string(pointer) to int in "'123' as int"
 //	if( wasm_compatible(from, to))return cast(mapTypeToWasm(from), mapTypeToWasm(to));
     if (to == IntegerType)return cast(mapTypeToWasm(from), i32);
     if (to == LongType)return cast(mapTypeToWasm(from), i64);
     if (to == DoubleType)return cast(mapTypeToWasm(from), float64);
+    // todo: call cast(Node &from, Node &to) in library!
     Node calle("cast");
     calle.add(from);
     calle.add(to);

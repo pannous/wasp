@@ -321,7 +321,7 @@ public:
             else
                 error("Number is complex");
         }
-        todo("Number cast to double for types "s + typeName(type));
+        todo("Number emit_cast to double for types "s + typeName(type));
         return 0;
     }
 

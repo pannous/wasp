@@ -4,6 +4,9 @@
 #include "Code.h"
 #include "wasm_reader.h"
 
+extern List<String> falseKeywords;
+extern List<String> nilKeywords;
+
 #if MY_WASM
 static bool hosted = true; // special functions for wasm
 #else
@@ -42,7 +45,7 @@ static chars funclet_list[] = {"pow", "powi", "pow_long", "log", "log10", "log2"
 
 static chars functor_list[] = {"if", "while", "for", "go", "do", "until", 0};// MUST END WITH 0, else BUG
 
-extern bool throwing;
+//extern
 extern List<Module *> libraries;// merged:
 //extern Map<String, Signature> functionSignatures;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 //extern Map<String, Function> library_functions;// use as import (implicit and explicit)

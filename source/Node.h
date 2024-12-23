@@ -14,7 +14,9 @@
 #include <cstdio>
 
 #ifndef WASM
+
 #include <initializer_list> // allow List x={1,2,3};
+
 #endif
 
 #define NODE_DEFAULT_CAPACITY 100
@@ -28,6 +30,8 @@ extern bool use_wasm_structs;
 extern bool use_wasm_strings; // used to work with wasm-as but Chrome removed flag?
 extern bool use_wasm_arrays;
 
+inline bool throwing = false;
+inline bool panicking = false;
 
 #define MAX_NODE_CAPACITY 100000 // debug only, let it run out of memory naturally!
 static int lastChild = 1;
@@ -36,10 +40,10 @@ Node *reconstructWasmNode(wasm_node_index pointer);
 
 // todo
 enum class NodeFlags { // class makes it typesafe (??)
-	is_mutable = 1, // reference / value ≠ let final , constant
-	is_required = 2, // not_nullable=2, // not_optional  strange default in 2022 but 'easy' unsafe c interaction ;)
-	is_static = 4, //
-	is_global = 8,
+    is_mutable = 1, // reference / value ≠ let final , constant
+    is_required = 2, // not_nullable=2, // not_optional  strange default in 2022 but 'easy' unsafe c interaction ;)
+    is_static = 4, //
+    is_global = 8,
 //    is_writable=2,
 //    is_readable=4,//?
 };
@@ -54,7 +58,6 @@ enum class NodeFlags { // class makes it typesafe (??)
 
 typedef unsigned char byte;
 typedef chars chars;
-
 
 
 class Node;
@@ -76,6 +79,7 @@ extern Node Nan;// = Node("NaN");
 //#define INFINITY  1e5000f
 
 void print(Node &n);
+
 void print(Node *n0);
 //void print(const Node &);
 
@@ -147,11 +151,11 @@ public:
     int capacity = NODE_DEFAULT_CAPACITY;
     int64 _hash = 0;// set by hash(); should copy! on *x=node / clone()
 #ifdef DEBUG
-// int code_position; // hash to external map
-	int lineNumber;
-	int column;
-    String *line = 0;// debug! EXPENSIVE for non ast node_pointer!
-	String *file = 0;
+    // int code_position; // hash to external map
+        int lineNumber;
+        int column;
+        String *line = 0;// debug! EXPENSIVE for non ast node_pointer!
+        String *file = 0;
 #endif
 
 // TODO REFERENCES can never be changed. which is exactly what we want, so use these AT CONSTRUCTION:
@@ -560,7 +564,7 @@ public:
     //	bool operator==(Node other);
     bool operator==(Node &other);// equals
     bool operator==(Node *other);// equals
-	bool operator==(Node const *other);// equals
+    bool operator==(Node const *other);// equals
 
     bool operator==(const Node &other);// equals
 
@@ -703,8 +707,8 @@ public:
             return value.longy;
         if (smart_pointer_header_mask & (smart_pointer_64) this)
             error("Node pointer out of reach > 2^48 ");
-	    return (smart_pointer_64) this |
-	           smart_pointer_node_signature; // we don't even care about the type! just return Node* !
+        return (smart_pointer_64) this |
+               smart_pointer_node_signature; // we don't even care about the type! just return Node* !
     }
 
     explicit operator int() const { return value.longy; }
