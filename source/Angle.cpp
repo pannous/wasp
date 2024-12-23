@@ -1397,7 +1397,6 @@ String &checkCanonicalName(String &name) {
     return name;
 }
 
-
 // √π -i ++j !true … not delete(x)
 bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
     if (prefixOperators.has(node.name)) {
@@ -1423,7 +1422,6 @@ Node &groupOperatorCall(Node &node, Function &function) {
         Node &grouped = groupOperators(node, function);// outer analysis id(3+3) => id(+(3,3))
         if (grouped.length > 0)
             for (Node &child: grouped) {// inner analysis while(i<3){i++}
-//				if (&child == 0)continue;
                 child = analyze(child, function);// REPLACE with their ast
             }
         if (is_function)
@@ -1534,8 +1532,6 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             rest.setType(expression);// todo f(1,2) vs f(1+2)
 //		if (hasFunction(rest) and rest.first().kind != groups)
 //				warn("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
-        if (rest.first().kind == groups)
-            rest = rest.first();
         // per-function precedence does NOT really increase readability or bug safety
         if (rest.value.data) {
             maxArity--;// ?
@@ -1547,18 +1543,9 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
                   "defaults and currying not yet supported"s % name % arg_length % minArity);
         } else if (arg_length == 0 and minArity > 0)
             error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
-//		else if (rest.first().kind == operators) { // random() + 1 == random + 1
-//			// keep whole expressiona for later analysis in groupOperators!
-//			return expressiona;
-//		} else if (arg_length >= maxArity) {
         Node &args = analyze(rest, context);// todo: could contain another call!
         node.add(args);
-        if (rest.kind == groups)
-            expressiona.remove(i + 1, i + 1);
-        else
-            expressiona.remove(i + 1, i + arg_length);
-//		} else
-//			todo("missing arity match case");
+        expressiona.remove(i + 1, i + arg_length);
     }
     return expressiona;
 }
@@ -1835,11 +1822,6 @@ Node &groupWhile(Node &n, Function &context) {
     if (n.has(":")) {
         condition = n.to(":");
         then = n.from(":");
-    } else if (n.has("do")) {
-        condition = n.to("do");
-        then = n.from("do");
-    } else if (condition.has(":")) {
-        then = condition.from(":");
     }
 
     // Handle standalone conditions and alternative grouping cases
