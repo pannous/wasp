@@ -245,7 +245,7 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
 //    auto WasiMod = CreateWasiModule();
 //    WasmEdge_VMRegisterModuleFromImport(VMCxt, WasiMod);
 
-    WasmEdge_Value Params[1];
+    WasmEdge_Value Params[0];
     WasmEdge_Value Returns[1];
     WasmEdge_String FuncName = WasmEdge_StringCreateByCString("wasp_main");
     WasmEdge_Result Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName, Params, 0, Returns, 1);
@@ -255,8 +255,6 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
         Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName2, Params, 0, Returns, 1);
     }
     const WasmEdge_ModuleInstanceContext *module_ctx = WasmEdge_VMGetActiveModule(VMCxt);
-
-
     auto mem = WasmEdge_StringCreateByCString("memory");
     WasmEdge_MemoryInstanceContext *memory_ctx = WasmEdge_ModuleInstanceFindMemory(module_ctx, mem);
     uint8_t *memo = WasmEdge_MemoryInstanceGetPointer(memory_ctx, 0, 0);
