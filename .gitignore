@@ -116,3 +116,5 @@ sourceMappingURL.txt
 main.c
 .aider*
 .env
+
+.cache
