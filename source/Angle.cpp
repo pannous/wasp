@@ -129,7 +129,7 @@ Map<String, Global> globals;
 
 short arrayElementSize(Node &node);
 
-Function *use_required(Function *function);
+Function *use_required_import(Function *function);
 
 void addLibrary(Module *modul);
 
@@ -1583,7 +1583,7 @@ bool eq(Module *x, Module *y) { return x->name == y->name; }// for List: librari
 Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))
-        return use_required(&functions[name]);// prevents read_wasm("lib")
+        return use_required_import(&functions[name]);// prevents read_wasm("lib")
 #if WASM
     if (loadRuntime().functions.has(name)){
         return use_required(&loadRuntime().functions[name]);
@@ -1604,7 +1604,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         print("GOT funclet "s + name);
         print(funclet.signature);
         addLibrary(&funclet_module);
-        return use_required(&funclet);
+        return use_required_import(&funclet);
     }
     if (name.in(function_list) and libraries.size() == 0)
         libraries.add(&loadModule("wasp-runtime.wasm"));// on demand
@@ -1616,7 +1616,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         int position = library->functions.position(name);
         if (position >= 0) {
             Function &func = library->functions.values[position];
-            return use_required(&func);
+            return use_required_import(&func);
         }
     }
     Function *function = 0;
@@ -1628,7 +1628,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     }
     auto normed = normOperator(name);
     if (normed == name)
-        return use_required(function);
+        return use_required_import(function);
     else
         return findLibraryFunction(normed, false);
 }
@@ -1640,7 +1640,7 @@ void addLibrary(Module *modul) {
     libraries.add(modul);// link it later via import or use its code directly?
 }
 
-Function *use_required(Function *function) {
+Function *use_required_import(Function *function) {
     if (!function or not function->name or function->name.empty())
         return 0;// todo how?
     addLibraryFunctionAsImport(*function);
@@ -1664,8 +1664,8 @@ Function *use_required(Function *function) {
     return function;
 }
 
+// todo see load_aliases(); -> aliases.wasp
 List<String> aliases(String name) {
-
     List<String> found;
 #if MY_WASM
     return found;

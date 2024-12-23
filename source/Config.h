@@ -4,8 +4,6 @@ static chars wasp_version = "0.1.29";
 
 static bool multi_value = false; // todo gather in one place: config.h
 
-static bool throwing = true;// otherwise fallover beautiful-soup style generous parsing
-static bool panicking = false;// false for error tests, webview, etc
 #ifdef RUNTIME_ONLY
 static bool debug = false;
 #else

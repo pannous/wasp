@@ -61,7 +61,7 @@ List<String> collect_locals(Node node, Function &context);
 Code cast(Valtype from, Valtype to);
 
 [[nodiscard]]
-Code cast(Node &from, Node &to, Function &context);
+Code emit_cast(Node &from, Node &to, Function &context);
 
 [[nodiscard]]
 Code cast(Type from, Type to);

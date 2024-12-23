@@ -1,0 +1,93 @@
+# format:
+# alias : variant (,variant)*
+# lists need comma separation because operators could act on expression
+
+# In an operator hierarchy one could implement fine grained comparisons:
+# ~ => ≃ => equivalent ≙  => ﹦ => identical ≡, exactly identical, ≣
+# also ternary a~b%c means a≙b wrt. c  (with respect to)
+
+### todo: 
+ fallback hierarchy
+ denote the "normed" form:  unequal => ≠  but increase => ++
+ move all uncommon forms to extended_unicode.wasp or unicode_extensions.wasp 
+ lookup all uncommon characters like `…else if code>0x80 load_and_lookup(code)`
+ one special char might result in loading 1MB of unicode data, or be smart (later;)
+ no todo: negative, negate, negation | approximate, approximation, approximately
+
+ char() and word() functions for normed form
+ char(unequal) = '≠'
+ word('|') = "pipe"
+###
+
+# := : be, ≔, ≝  # ⩦, ⭀,⥱   # ≕ <> set let var val ⪮ ⩷
+'//' : comment # stupid border cases ;)
+'[]' : index
+'#' : number # ℕ₁ based ≠ ℕ₀ based index can't be defined here ;)
+'#' : size, length, count # as PREFIX (and suffix?) but not as infix
+= : is, ﹦, ＝, ⁼  # used as defining AND as comparison!
+!= : unequal, ≠, ≢, ≭, <>, ↮, different, isnt, is_not, unlike, ≉, ≆, ≇, ≄ # separate from
+== : equals, ⩵, ≟, ≌, ≑, ≗, ≛, ≜,  equivalent, ≡, identical, ≣, ≙, ≍, ⩶, is_equal, equal, same, the same as     # even par ≷, ≶, ≸, ≹
+> : more, ≰, greater, bigger, larger, higher, longer # (…than)!
+< : less, ≱, lesser, smaller,lower,tinyer,shorter # ≵, 
+>= : greater_equal, ≥, ≳, ≳,  ≥, more_than_or_equal, at_least
+~ : like, similar, ⋍, ≈,⩯,⩰, ≊, ≌, ~~, circa, approximate, around,     #  about <> ± ∓
+! : not, ¬, ﹁ # , ⁜, ˜ ~
++= : increase…by increment…by raise…by ⩲ ⩱
+++ : ⇈, increase, increment // raise grow vs more >
+∊ : in, ∈, of, contains # vs ∉ ∋ ∍ ∌ item element ?  in≠from WTF!
+. : get, has, ∋, ∍ // '#' as selector
+¡ : puts, debug, printf, writeLine, println, echo // printf different!!
+¿ : ask, query, search, find, lookup, input, prompt, question, confirm #, get, read, 
+% : modulo, mod, mod_d # regarding, with respect, in context
+ƒ : func, function, fun, fn, def, defun, defn, define /*!?!*/, to…
+√ : sqrt, root, square_root
+| : pipe, then < or
+* : times, ×, *, ∗, ⋅, ⋆, ✕, ×, mul, mult, multiply, prod, product # x
++ : plus, add, mas, maš, increase by, ﹢, ＋, ⁺, ˖ ̟ ⁺ ᐩ ⁺ ₊ ﹢ ＋ 𒈦 // ∔ ⊕ ⊞
+- : minus,−,⁻,₋,∸ neg, negative, negate, negation  //   ;) negative only as prefix neg<>negate :(  -≠−!
+– : －, ﹣, hyphen, dash < range, minus
+… : ellipsis, range
+|> : as, cast, convert, convert_to
+|-> : ↦, from
+=> : ⇒, ⇨, ->, →, to, into, ->[], ↱, upto, arrow, right, pro, fore, forward
+<= : ←, ↤, ⇦, from, out_of, left, back, backward
+↑ : up, raise, ⇧
+↓ : down, lower, ⇩
+⇆ : ⇄, ↔, vs, versus, oppose, opposite, compare, connect, see, to_and_fro
+↩ : ↵, ⏎, repeat, back, turn, return
+combining_arrows: ⃔ ⃕ ⃖ ⃗ ⃡  
+arrows : ͍ ͎ ͢  ⃔ ⃕ ⃖ ⃗ ⃡  ← ↑ → ↓ ↔ ↕ ↖ ↗ ↘ ↙ ↚ ↛ ↜ ↝ ↞ ↟ ↠ ↡ ↢ ↣ ↤ ↥ ↦ ↧ ↨ ↩ ↪ ↫ ↬ ↭ ↮ ↯ ↰ ↱ ↲ ↳ ↴ ↵ ↶ ↷ ↸ ↹ ↺ ⇄ ⇅ ⇆ ⇇ ⇈ ⇉ ⇊ ⇍ ⇎ ⇏ ⇐ ⇑ ⇒ ⇓ ⇔ ⇕ ⇖ ⇗ ⇘ ⇙ ⇚ ⇛ ⇜ ⇝ ⇞ ⇟ ⇠ ⇡ ⇢ ⇣ ⇤ b ⇦ ⇧ ⇨ ⇩ ⇪ ⇫ ⇬ ⇭ ⇮ ⇯ ⇰ ⇱ ⇲ ⇳ ⌁ ⌃ ⌄ ⌤ ⍇ ⍈ ⍐ ⍗ ⎋ ⽮ ￩ ￪ ￫ ￬
+arrow_left: ➔ ➘ ➙ ➚ ➛ ➜ ➝ ➞ ➟ ➠ ➡ ➢ ➣ ➤ ➥ ➦ ➧ ➨ ➩ ➪ ➫ ➬ ➭ ➮ ➯ ➱ ➲ ➳ ➴ ➵ ➶ ➷ ➸ ➹ ➺ ➻ ➼ ➽ ➾ 
+
+#&#8594; &rarr;  →      
+#&#8592; &larr;  ←      Left arrow
+#&#8593; &uarr;  ↑      Up arrow
+#&#8595; &darr;  ↓      Down arrow
+
+# : number_of,length,size,count  // as prefix
+
+# todo : move to math library:
+log10: log₁₀, 10⌟, ⌞10
+log2: log₂, 2⌟, ⌞2
+lnₓ: logₓ, x⌟, x˅, ⌄x, ⌞x, logarithm_to_base_x
+ln: logₑ, ⌟,  ⌞, e⌟,  ⌞e, ⌟ℯ,  ⌞ℯ, ℯ˅, ⌄ℯ, natural_logarithm
+exp: ℯ, ℯ^,e^,euler
+infix ⌟ a b :=ln(a)/ln(b)
+
+square : ², ^2
+orthogonal : ⟂ ﬩ perpendicular
+inverse : ⁻¹ # ⅟ prefix
+sin : sine, sinus
+cos : cosinus, cosine, cosin
+asin : arcsine
+acos : arccos
+∞ : inf, infinity
+-∞ : neginf, minus infinity
+
+Ƥ: probability, Ｐ
+
+⊥: perp, perpendicular, orthogonal, right_angle, right_angle_to, right_angle_with, right_angle_to_the, right_angle_with_the
+⊥: false, no, not, wrong, incorrect, invalid, fail, error, errorneous, not_correct, not_right, not_true, not_valid, not_correct, not_proven
+⊤: true, yes, correct, right, valid, ok, good, correct, proven
+
+# superscript signs bind higher! `x²⁺³ == x⁵`

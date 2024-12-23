@@ -279,7 +279,7 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
 //        print(node1);
         auto smartPointer = node1->toSmartPointer();
         return smartPointer;
-    } else printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
+    } else error("WASM EDGE Error message: "s+ WasmEdge_ResultGetMessage(Res));
     return -1;
 }
 

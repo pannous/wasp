@@ -90,6 +90,10 @@ Node &wrapPattern(Node &n) { // y[1] => y:[1]
     return wrap;
 }
 
+List<String> falseKeywords = {"false", "False", "no", "No", "⊥","✖","✖\uFE0F", "wrong","Wrong"};// 𐄂 vs times! ƒ is function
+List<String> trueKeywords = {"true", "True", "yes", "Yes", "⊤", "ok", "OK", "✔","☑","✓","✓\uFE0F","✔\uFE0F"};// correct, right, valid, ok, good, correct, proven
+List<String> nilKeywords = {"NULL","nil", "null", "none", "None", "nothing", "Nothing", "⊥", "∅", "∅\uFE0F", "ø", "empty"};
+
 //List<codepoint>
 //List<chars> circumfixOperators/*Left*/ = {"‖", 0};
 //codepoint circumfixOperators[] = {u'‖', 0};
@@ -146,14 +150,14 @@ List<chars> operator_list = {"return", "+", "-", "*", "/", ":=", "≔", "else", 
 Map<String, List<String>> aliases;
 Map<int64/*hash*/, String *> hash_to_normed_alias;
 
-//bool aliases_loaded = false;
 bool aliases_loaded = true;// DON't load aliases!
+//bool aliases_loaded = false;
 
 void load_aliases() {
-    aliases.setDefault(List<String>());// uff!?
+//    aliases.setDefault(List<String>());// uff!?
     hash_to_normed_alias.setDefault(new String());
     data_mode = true;
-    auto list = parseFile("aliases.wasp");
+    auto list = parseFile("lib/aliases.wasp");
     for (auto key: list) {
         auto normed = key.name;
         aliases[normed] = key.toList();
@@ -162,6 +166,7 @@ void load_aliases() {
             hash_to_normed_alias[variant.hash()] = &normed.clone();
         }
     }
+	check(hash_to_normed_alias["times"s.hash()]=="*"s);
 //	check(hash_to_normed_alias["mod_d"s.hash()]=="mod"s);
     aliases_loaded = true;
 }
@@ -693,22 +698,6 @@ private:
             sign = ch;
             proceed(ch);
         }
-        // support for Infinity (could tweak to allow other words):
-        if (ch == 'I') {
-//			const Node &ok =
-            word();
-            return (sign == '-') ? NegInfinity : Infinity;
-        }
-
-        // support for NaN
-        if (ch == 'N') {
-//			const Node &ok =
-            word();
-//			bool ok = word();
-//			if (!ok) { parseError('expected word to be NaN'); }
-            // ignore sign as -NaN also is NaN
-            return Nan;
-        }
 
         // todo include ⅓ for consistency but 3⅓=3+⅓ ⅓π=⅓*π … !!
         while (atoi1(ch) >= 0) { // -1 if not
@@ -912,9 +901,10 @@ private:
                 return false;
             if (empty(next) or previous == '\n' or previous == '\r' or previous == 0)
                 inlineComment();
-            else if (next == '*' or next == '#')
+            else if (next == '*' or next == '#') { // #* or ### are block comments !
+                proceed('#');
                 blockComment();
-            else
+            }else
                 return false;
             previous = lastNonWhite = preserveLast;
             return true;
@@ -954,7 +944,7 @@ private:
     };
 
     static bool isNameStart(char i) {
-        return i > 'a' and i < 'Z';
+        return (i >= 'A' and i <= 'Z') or (i >= 'a' and i <= 'z') or i == '_' or i == '$' or i == '@';
     }
 
     bool token(String token) {
@@ -1009,36 +999,9 @@ private:
 //	const
     static Node resolve(Node node) {
         String &symbol = node.name;
-        if (symbol == "false")return False;
-        if (symbol == "False")return False;
-        if (symbol == "no")return False;
-        if (symbol == "No")return False;
-//		if (symbol == "ƒ")return False;// ‽ ƒ is function shorthand!
-        if (symbol == "⊥")return False;//
-//		if (node.name == "𐄂")return False; ambiguous: multiplication 𐄂 + / check 𐄂
-        if (symbol == "wrong")return False;
-        if (symbol == "Wrong")return False;
-        if (symbol == "⊤")return True; // + vs -
-        if (symbol == "true")return True;
-        if (symbol == "True")return True;
-        if (symbol == "yes")return True;
-        if (symbol == "Yes")return True;
-//		if (symbol == "correct")return True;
-//		if (symbol == "Correct")return True;
-        if (symbol == "✔")return True;
-        if (symbol == "✔\uefb88f")return True;// green ✔️ ~ ✔
-        if (symbol == "✔️")return True;
-        if (symbol == "✓️")return True;
-        if (symbol == "☑")return True;
-//		if (symbol == "🗸")return True;
-//		if (symbol == "🗹")return True;
-//		if (node.name == "Right")return True;// unless class!
-//		if (node.name == "right")return True;
-        if (symbol == "NIL")return NIL;
-        if (symbol == "null")return NIL;
-        if (symbol == "nill")return NIL;
-        if (symbol == "nil")return NIL;
-        if (symbol == "ø")return NIL;// nil not added to lists
+        if(falseKeywords.has(symbol))return False;
+        if(trueKeywords.has(symbol))return True;
+        if(nilKeywords.has(symbol))return NIL;
 //		if (node.name.in(operator_list))
         if (operator_list.has(symbol))
             node.setType(operators, false); // later: in angle!? NO! HERE: a xor {} != a xxx{}
@@ -1124,253 +1087,6 @@ private:
         if (expressionas.length > 1)
             return expressionas;
         else return node;
-    }
-
-    // Parse true, false, null, Infinity, NaN
-    Node word() {
-        switch (ch) {
-            case 't':
-                if (token("true")) { return True; }
-                break;
-            case 'T':
-                if (token("True")) { return True; }
-                break;
-            case 'f':
-                if (token("false")) { return False; }
-                break;
-            case 'F':
-                if (token("False")) { return False; }
-                break;
-            case 'n':
-                if (token("nil")) { return False; }
-                if (token("nill")) { return False; }
-                if (token("null")) { return False; }
-                if (token("none")) { return False; }
-                break;
-            case 'N':
-                if (token("NaN")) { return Nan; }
-                if (token("Nil")) { return False; }
-                if (token("Nill")) { return False; }
-                if (token("Null")) { return False; }
-                if (token("None")) { return False; }
-                break;
-            case 'I':
-                if (token("Infinity")) { return Infinity; }
-                break;
-            default:
-                break;
-        }
-        if (token("one")) { return True; }
-        if (token("two")) { return Node(2); }
-        parserError("Unexpected character "s + renderChar(text.charAt(at - 1)));// throws, but WASM still needs:
-        return ERROR;
-    };
-
-//	void pragma2(char prag = '\n') {// sende in wasp??
-//		auto level = 0;
-//		proceed();  // skip starting '('
-//		while (ch) {
-//			if (ch == ')') {
-//				if (level) { level--; } // embedded (...)
-//				else { // end of pragma
-//					proceed();  // skip ending ')'
-//					return pragma2(prag);
-//				}
-//			} else if (ch == '(') { level++; } // store as normal char
-//			// else - normal char
-//			prag += ch;
-//			proceed();
-//		}
-//
-//		parseError(UNEXPECT_END);
-//	};
-
-//	value,  // Place holder for the value function.
-
-    // Parse an array
-    Node array() {
-//		arr.type = arrays;
-        auto *array0 = static_cast<Node *>(alloc(sizeof(Node *), 100));// todo: GROW!
-//		arr.value.node = array0;
-        int len = 0;
-        proceed();  // skip the starting '['
-        white();
-        while (ch) {
-            if (ch == ']') {
-                proceed();
-                Node arr = Node(&array0);
-                arr.length = len;
-                return arr;   // Potentially empty array
-            }
-                // ES5 and Mark allow omitted elements in arrays, e.g. [,] and [,null]. JSON don't allow this.
-//			if (ch == ',') {
-//				parseError("Missing array element");
-//			}
-            else {
-                Node val = valueNode();// copy by value!
-                array0[len++] = val;
-//				array0.push(value());
-            }
-            white();
-
-            // comma is optional in Mark
-            if (ch == ',') { //  or ch == ';' not in list
-                proceed();
-                white();
-            }
-        }
-        parserError("Expecting ]");
-        return ERROR;
-    };
-
-    // {: 00aacc :} base64 values todo: USE
-    Node binary() {
-// Parse binary value
-
-        at++;  // skip the starting '{:'
-        if (next == '~') { // base85
-            at++;  // skip '~'
-            return decodeBase85(text);
-        } else { // base64
-            // code based on https://github.com/niklasvh/base64-arraybuffer
-            let buffer = decodeBase64(text);
-            // console.put('binary decoded length:', p);
-//			buffer.encoding = "b64";
-            return buffer;
-        }
-    };
-
-    Node decodeBase85(String text) {
-        // Use a lookup table to find the index.
-        byte lookup85[128];
-        for (auto i = 0; i < 128; i++)
-            lookup85[i] = 86;
-        for (auto i = 0; i < 128; i++) {
-            if (33 <= i and i <= 117)
-                lookup85[i] = i - 33;
-        }
-        lookup85[32] = lookup85[9] = lookup85[13] = lookup85[10] = 85;
-// ' ', \t', '\r', '\n' spaces also allowed in base85 stream
-
-        // code based on https://github.com/noseglid/base85/blob/master/lib/base85.js
-        auto end = text.indexOf('}', at + 1);  // scan binary end
-        if (end < 0) { parserError("Missing ascii85 end delimiter"); }
-
-        // first run decodes into base85 int values, and skip the spaces
-        auto p = 0;
-        byte base[end - at + 3];  // 3 extra bytes of padding
-        while (at < end) {
-            auto code = lookup85[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
-            if (code > 85) { parserError("Invalid ascii85 character"); }
-            if (code < 85) { base[p++] = code; }
-            // else skip spaces
-            at++;
-        }
-        at = end + 2;
-        proceed();  // skip '~}'
-        // check length
-        if (p % 5 == 1) { parserError("Invalid ascii85 stream length"); }
-
-        // second run decodes into actual binary data
-        auto dataLength = p, padding = (dataLength % 5 == 0) ? 0 : 5 - dataLength % 5;
-        int buffer[4 * dataLength / 5 - padding];
-//				bytes = new DataView(buffer),
-        int *bytes = buffer;// views:
-        auto *bytes8 = reinterpret_cast<byte *>(buffer);
-        auto *bytes16 = reinterpret_cast<short *>(buffer);
-        int trail = dataLength - 4;//buffer.byteLength - 4;
-        base[p] = base[p + 1] = base[p + 2] = 84;  // 3 extra bytes of padding
-        // console.put('base85 byte length: ', buffer.byteLength);
-        for (auto i = 0, p = 0; i < dataLength; i += 5, p += 4) {
-            auto num = (((base[i] * 85 + base[i + 1]) * 85 + base[i + 2]) * 85 + base[i + 3]) * 85 + base[i + 4];
-            // console.put("set byte to val:", p, num, String.fromCodePoint(num >> 24), String.fromCodePoint((num >> 16) & 0xff),
-            //	String.fromCodePoint((num >> 8) & 0xff), String.fromCodePoint(num & 0xff));
-            // write the uint32 value
-            if (p <= trail) { // bulk of bytes
-                bytes[p] = num; // big endian
-            } else { // trailing bytes
-                switch (padding) {
-                    case 1:
-                        bytes8[p + 2] = (num >> 8) & 0xff;  // fall through
-                    case 2:
-                        bytes16[p] = num >> 16;
-                        break;
-                    case 3:
-                        bytes8[p] = num >> 24;
-                    default:
-                        break;
-                }
-            }
-        }
-        return Node(buffer);// {buffer};
-    }
-
-    Node decodeBase64(String text) {
-
-        auto end = text.indexOf('}', at), bufEnd = end, pad = 0;  // scan binary end
-        if (end < 0) { parserError("Missing base64 end delimiter"); }
-
-        // Use a lookup table to find the index.
-        byte lookup64[128];
-        byte lookup85[128];
-
-        for (auto i = 0; i < 128; i++)
-            lookup64[i] = 65;
-        for (auto i = 0; i < 64; i++) {
-            char charCode = text.charCodeAt(i);
-            if (charCode < 0) // never true: charCode > 128 or
-                err(("Invalid binary charCode %d "_s % (int64) charCode) + text.substring(i, i + 2) + "" + text);
-            lookup64[(short) charCode] = i;// todo: what is this?
-        }
-        lookup64[32] = lookup64[9] = lookup64[13] = lookup64[10] = 64;
-// ' ', \t', '\r', '\n' spaces also allowed in base64 stream
-
-
-        // strip optional padding
-        if (text[bufEnd - 1] == '=') { // 1st padding
-            bufEnd--;
-            pad = 1;
-            if (text[bufEnd - 1] == '=') { // 2nd padding
-                bufEnd--;
-                pad = 2;
-            }
-        }
-        // console.put('binary char length: ', bufEnd - at);
-
-        // first run decodes into base64 int values, and skip the spaces
-        byte base[bufEnd - at];
-        auto p = 0;
-        while (at < bufEnd) {
-            auto code = lookup64[(short) text.charCodeAt(at)];  // console.put('bin: ', next, code);
-            if (code > 64) { parserError("Invalid base64 character"); }
-            if (code < 64) { base[p++] = code; }
-            // else skip spaces
-            at++;
-        }
-        at = end + 1;
-        proceed();  // skip '}'
-        // check length
-        if ((pad and (p + pad) % 4 != 0) or (!pad and p % 4 == 1)) {
-            parserError("Invalid base64 stream length");
-        }
-
-        // second run decodes into actual binary data
-        auto len = int(p * 0.75);
-        int code1, code2, code3, code4 = 0;
-        int buffer[len];
-        auto *bytes = reinterpret_cast<byte *>(buffer);// views:
-        // console.put('binary length: ', len);
-        for (auto i = 0, p = 0; p < len; i += 4) {
-            code1 = base[i];
-            code2 = base[i + 1];
-            code3 = base[i + 2];
-            code4 = base[i + 3];
-            bytes[p++] = (code1 << 2) | (code2 >> 4);
-            // extra undefined bytes casted into 0 by JS binary operator
-            bytes[p++] = ((code2 & 15) << 4) | (code3 >> 2);
-            bytes[p++] = ((code3 & 3) << 6) | (code4 & 63);
-        }
-        return Node(buffer);// {buffer};
     }
 
     bool isDigit(codepoint c) {

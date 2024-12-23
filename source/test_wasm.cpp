@@ -1067,6 +1067,8 @@ void testRecentRandomBugs() {
             assert_emit("i=ø; not i", true);// i not a setter if value ø
             assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
     )
+    assert_emit("for i in 1 to 5 : {puti i};i", 6);
+    assert_emit("add1 x:=x+1;add1 3", (int64) 4);
 }
 
 
