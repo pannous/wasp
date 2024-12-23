@@ -37,10 +37,21 @@ enum Valtype {
     void_block = 0x40, // ⚠️
     none = 0x40, // NOT voids!!!
 
-//    ref = 0x6b, // ≠ externref plus type id! vs 0xfb… for functions struct.new struct.get …  ≠ wasmtype_struct 0x5f
+// ≠ externref plus type id! vs 0xfb… for functions struct.new struct.get …  ≠ wasmtype_struct 0x5f
     wasm_struct = 0x6b, // ≠ wasmtype_struct = 0x5f in type section
     wasm_array = wasm_struct, // 0x6b ≠ wasmtype_array = 0x5e in type section
-    anyref = 0x6f,// was conceptually and namewise merged into externref
+/*
+ref                    // Abstract supertype of all references
+├── funcref            // References to WebAssembly functions
+├── externref          // References to host-managed objects (e.g., JS objects)
+└── eqref              // References to equality-comparable objects (e.g., GC structs, arrays)
+    └── i31ref             // References to immutable 31-bit integers
+    └── (ref null <type>)  // Typed nullable references (introduced by GC proposal) only if T is equality-comparable
+*/
+    ref = 0x6C, // followed by 0x00 for nullable, Followed by the index of the referenced type!
+    eqref = 0x6D, // gc structs, arrays
+    i31ref = 0x6E,
+    anyref = 0x6f,// was conceptually and name-wise merged into externref
     externref = 0x6f, // -0x11 111 (js)object !  ≠ 'ref'=wasm_struct!!
     object = externref,
     js_object = externref,
@@ -117,6 +128,7 @@ extern Node StringType;
 // needs to be stable: Kind is returned in multivalue and thus needs to be parsed by js!
 // todo change naming scheme: remove false plural 's' where inappropiate: 'strings' groups … … …
 // compare / merge(?) with enum Primitive? nah, primitive is internal / wasm only
+// e.g. Kind.longy is container for i32 i64 bool enums ...
 enum Kind /* 32 bit*/ {// todo: merge Node.kind with Node.class(?)
     // todo smartType4bit first 16 values!!
     // plurals because of namespace clash

@@ -212,19 +212,22 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     // most are enabled by default and need explicit disabling --disable-multi-value …
     // ⚠️ "Though the user can specify enabling the proposal, the support for the proposal is not implemented yet." :(
     // Those implemented have a check mark: ✔️	https://wasmedge.org/book/en/features/proposals.html
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_BulkMemoryOperations);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ReferenceTypes); // externref ≠ GC types! :(
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Annotations);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ImportExportMutGlobals);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiValue); // ✓
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiMemories); // ✓ --enable-multi-memory
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_BulkMemoryOperations);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Component);
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExtendedConst); // i32.add in global's init
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExceptionHandling);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_TailCall);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Memory64);
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_FunctionReferences);// function pointers!!
-//    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Threads);
-//    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_SIMD);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_GC);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ImportExportMutGlobals);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Memory64);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiValue); // ✓
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiMemories); // ✓ --enable-multi-memory
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_TailCall);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ReferenceTypes); // externref ≠ GC types! :(
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Threads);
+
+//    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_SIMD); BOYCOTT use WASM vector proposal instead!
 
     // --enable-function-reference NOT YET https://github.com/WasmEdge/WasmEdge/pull/2122
     // ⚠️ "Though the user can specify enabling the proposal, the support for the proposal is not implemented yet." :(
