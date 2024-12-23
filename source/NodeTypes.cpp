@@ -126,7 +126,7 @@ Type mapType(Node *arg) {
 }
 
 Type mapType(String arg, bool throws) {
-    if (arg.startsWith("const "))
+    if (arg.startsWith("const "))// todo modifiers!
         arg = arg.substring(6);
 //	if(arg=="const char*")return charp;
     if (arg.empty() or arg == "" or arg == " ") return voids;
@@ -213,6 +213,8 @@ Type mapType(String arg, bool throws) {
 
     else if (arg == "std::is_arithmetic<int>::value")return todoe;// WAT?? PURE_WASM should work without std!!
 
+    // wasm gc types
+    else if (arg == "array")return wasm_array;
 
         // IGNORE other INTERNAL TYPES:
     else if (arg == "Code")return ignore;
@@ -365,7 +367,7 @@ chars typeName(Kind t, bool throws) {
             if ((short) t == wasmtype_array)
                 return "array";
             if ((short) t == wasm_struct)
-                return "wasm_struct(…)";
+                return "struct(…)";
             if (throws)
                 error("MISSING Type Kind name mapping "s + (int) t);
             else return "";
@@ -465,7 +467,8 @@ Primitive mapTypeToPrimitive(Node &n) {
     else if (mapType(n.name, false) != unknown_type)
         return mapType(n.name, false).type;
 //    else error1("mapTypeToPrimitive "s + n.serialize());
-    else todo("mapTypeToPrimitive "s + n.serialize());
+    else
+        todo("mapTypeToPrimitive "s + n.serialize());
     return Primitive::unknown_type;
 }
 

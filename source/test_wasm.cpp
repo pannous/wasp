@@ -1267,7 +1267,7 @@ void testSmartReturn() {
 }
 
 void testWasmGC() {
-    return;
+
 //    assert_emit("y=(1 4 3)[1]", 4);
 //    assert_is("x=(1 4 3);x#2", 4);
 //assert_emit("42",42);
@@ -1388,7 +1388,9 @@ void testAllWasm() {
 	assert_emit("42", 42);
 	assert_emit("42+1", 43);
     testStringConcatWasm();
+    skip(
 	testWasmGC();
+            )
 //	data_mode = false;
     testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY
