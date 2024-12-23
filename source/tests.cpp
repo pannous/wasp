@@ -65,49 +65,18 @@ int test_wasmedge_gc() {
 
     // Run the `new_object` function
     WasmEdge_String FuncName = WasmEdge_StringCreateByCString("new_object");
-    WasmEdge_Value Params[1] = {WasmEdge_ValueGenI32(32)};
+    WasmEdge_Value Params[0] = {};//WasmEdge_ValueGenI32(32)};
     WasmEdge_Value Returns[1];
-//    WasmEdge_VMRunWasmFromBuffer()
-//    Result = WasmEdge_VMRunRegisteredFunction(VM, ModuleName.Buf, FuncName.Buf, Params, 1, Returns, 1);
-// Load the WASM module into a buffer
-    FILE *wasm_file = fopen(path, "rb");
-    if (!wasm_file) {
-        printf("Failed to open file: %s\n", path);
-        return 1;
-    }
-    fseek(wasm_file, 0, SEEK_END);
-    long wasm_file_size = ftell(wasm_file);
-    fseek(wasm_file, 0, SEEK_SET);
-
-    uint8_t *wasm_buffer = (uint8_t *) malloc(wasm_file_size);
-    if (wasm_buffer == NULL) {
-        printf("Failed to allocate memory for WASM buffer.\n");
-        fclose(wasm_file);
-        return 1;
-    }
-    fread(wasm_buffer, 1, wasm_file_size, wasm_file);
-    fclose(wasm_file);
-
-    // Run the WASM using the `WasmEdge_VMRunWasmFromBuffer` function
-//    WasmEdge_Value Params[1] = {WasmEdge_ValueGenI32(32)};
-//    WasmEdge_Value Returns[1];
-    Result = WasmEdge_VMRunWasmFromBuffer(VM, wasm_buffer, wasm_file_size, FuncName, Params, 1, Returns, 1);
-
-    free(wasm_buffer); // Free the allocated buffer after use
-
+    int wasm_file_size = 0;
+    const uint8_t *wasm_buffer = reinterpret_cast<const uint8_t *>(readFile(path, &wasm_file_size));
+    Result = WasmEdge_VMRunWasmFromBuffer(VM, wasm_buffer, wasm_file_size, FuncName, Params, 0, Returns, 1);
     if (!WasmEdge_ResultOK(Result)) {
         printf("Failed to execute function: %s\n", WasmEdge_ResultGetMessage(Result));
         return 1;
     }
-    if (!WasmEdge_ResultOK(Result)) {
-        printf("Failed to execute function: %s\n", WasmEdge_ResultGetMessage(Result));
-        return 1;
-    }
-
-
     auto mem = WasmEdge_StringCreateByCString("memory");
 //    WasmEdge_ModuleInstanceContext *module_ctx2 = WasmEdge_VMGetStoreContext(VM);
-    WasmEdge_StoreContext *storeContext = WasmEdge_VMGetStoreContext(VM);
+//    WasmEdge_StoreContext *storeContext = WasmEdge_VMGetStoreContext(VM);
     const WasmEdge_ModuleInstanceContext *module_ctx = WasmEdge_VMGetActiveModule(VM);
     WasmEdge_MemoryInstanceContext *memory_ctx = WasmEdge_ModuleInstanceFindMemory(module_ctx, mem);
     uint8_t *memo = WasmEdge_MemoryInstanceGetPointer(memory_ctx, 0, 0);
@@ -131,7 +100,7 @@ int test_wasmedge_gc() {
     printf("Result: %p\n", pVoid);
     printf("Result: %d\n", *(int*)pVoid);
     printf("Result: %d\n", WasmEdge_ValueGetI32(Return));
-    exit(0);
+//    exit(0);
 
     // Cleanup
     WasmEdge_VMDelete(VM);
