@@ -31,6 +31,23 @@ WitReader witReader;
 
 List<String> aliases(String name);
 
+Map<String, Node *> types = {.capacity=1000}; // builtin and defined Types
+//const Node LongType("LongType", clazz);
+//const Node DoubleType("DoubleType", clazz);//.setType(type);
+// todo : when do we really need THESE Nodes instead of Type / Primitives?
+Node LongType("LongType", clazz);
+Node DoubleType("DoubleType", clazz);//.setType(type);
+Node IntegerType("IntegerType", clazz);
+Node ByteType("Byte", clazz);// Byte conflicts with mac header
+Node ByteCharType("ByteCharType", clazz);// ugly by design: don't use ascii chars like that.
+Node ShortType("Short", clazz);// mainly for c abi interaction, not used internally (except for compact arrays)
+Node StringType("String", clazz);
+Node BoolType("BoolType", clazz);
+Node CodepointType("CodepointType", clazz);
+
+//const Node DoubleType{.name="DoubleType", .kind=classe};//.setType(type);
+//const Node DoubleType{name:"DoubleType", kind:classe};//.setType(type);
+
 
 //https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
 //List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
@@ -479,20 +496,13 @@ Node &groupIf(Node n, Function &context) {
         then = n.from("then");
     }
 
-    if (condition.kind == key and condition.value.data)// or condition.next // and !condition.next)
-        then = condition.values();
-
     if (n.has(":") /*before else: */) { // todo remove since ":" is always parsed immediate (right?)
         condition = n.to(":");
         if (condition.has("else"))
             condition = condition.to("else");// shouldn't happen?
         if (then.length == 0)
             then = n.from(":");
-    } else if (condition.has(":")) {// as child
-        then = condition.from(":");
-        //		condition = condition.interpret();// compile time evaluation?!
     }
-
     Node otherwise;
     if (n.has("else")) {
         otherwise = n["else"].values();
@@ -533,14 +543,6 @@ Node &groupIf(Node n, Function &context) {
     ef["condition"] = analyze(condition, context);
     ef["then"] = analyze(then, context);
     ef["else"] = analyze(otherwise, context);
-    //	condition = analyze(condition);
-    //	then = analyze(then);
-    //	otherwise = analyze(otherwise);
-    //	ef.add(condition); breaks even with clone() why??
-    //	ef.add(then);
-    //	ef.add(otherwise);
-    //	Node &node = ef["then"];// debug
-//	Node &node = ef[2];// debug
     analyzed[ef.hash()] = true;
     return ef;
 }
@@ -570,16 +572,7 @@ List<String> collectOperators(Node &expression) {
             operators.add(name);
         else if (op.kind == Kind::operators)
             operators.add(op.name);
-
-//else if (suffixOperators.has(op.name+"…"))
-//	operators.add(op.name);
-        //		if (op.name.in(function_list))
-        //			operators.add(op.name);
-        //		if (op.name.in(functor_list))
-        //			operators.add(op.name);
         previous = name;
-        if (contains(import_keywords, (chars) name.data))
-            break;
     }
     auto by_precedence = [](String &a, String &b) { return precedence(a) > precedence(b); };
     operators.sort(by_precedence);
@@ -606,7 +599,6 @@ bool isGlobal(Node &node, Function &function) {
     return false;
 }
 
-
 bool isPrimitive(Node &node) {
     // should never be cloned so always compare by reference ok?
     if (&node == &IntegerType)return true;
@@ -626,23 +618,6 @@ bool isPrimitive(Node &node) {
         return true;
     return false;
 }
-
-Map<String, Node *> types = {.capacity=1000}; // builtin and defined Types
-//const Node LongType("LongType", clazz);
-//const Node DoubleType("DoubleType", clazz);//.setType(type);
-// todo : when do we really need THESE Nodes instead of Type / Primitives?
-Node LongType("LongType", clazz);
-Node DoubleType("DoubleType", clazz);//.setType(type);
-Node IntegerType("IntegerType", clazz);
-Node ByteType("Byte", clazz);// Byte conflicts with mac header
-Node ByteCharType("ByteCharType", clazz);// ugly by design: don't use ascii chars like that.
-Node ShortType("Short", clazz);// mainly for c abi interaction, not used internally (except for compact arrays)
-Node StringType("String", clazz);
-Node BoolType("BoolType", clazz);
-Node CodepointType("CodepointType", clazz);
-
-//const Node DoubleType{.name="DoubleType", .kind=classe};//.setType(type);
-//const Node DoubleType{name:"DoubleType", kind:classe};//.setType(type);
 
 // todo: see NodeTypes.h for overlap with numerical returntype integer …
 // these are all boxed class types, for primitive types see Type and Kind
@@ -697,40 +672,12 @@ Node &groupTypes(Node &expression, Function &context) {
     if (expression.kind == declaration)
         return expression;// later
     if (types.size() == 0)initTypes();
-    if (isType(expression)) {// double \n x,y,z  extra case :(
-        Node &type = getType(expression);
-        auto is_primitive = isPrimitive(type);
-        if (not is_primitive and (type.kind == structs or type.kind == clazz)) // or type == wasmtype_struct
-            return constructInstance(expression, context);
 
-        if (expression.length > 0) {// point{x=1 y=2} point{x y}
-            for (Node &typed: expression) {// double \n x = 4
-                typed.setType(&type);
-                addLocal(context, typed.name, mapType(typed.name), false);
-            }
-            expression.name = "";// hack
-            expression.kind = groups;
-            return expression.flat();
-        } else if (expression.next) {
-            expression.next->type = expression.clone();
-            return *expression.next;
-        } else if (expression.length == 0) {
-            return *getType(expression).clone();
-        } else {
-            //  type name as variable name!
-            expression.type = getType(expression).clone();
-        }
-    }
 //	Node typed_list;
     for (int i = 0; i < expression.length; i++) {
         Node &node = expression.children[i];
         if (not isType(node))
             continue;
-        if (node.length > 0) {
-            node = groupTypes(node, context);// double (x,y,z)
-//			typed_list.add(node);
-            continue;
-        }
 //			if (operator_list.has(typed.name))
 //				continue; // 3.3 as int …
         if (not types.has(node.name))continue;
@@ -739,28 +686,10 @@ Node &groupTypes(Node &expression, Function &context) {
         expression.remove(i, i);// move type to type field of instance
 
         Node *typed = 0;
-        if (is_operator(expression.children[i].name[0])) {
-            i++;
-        }
+
         if (i < expression.length and not is_operator(expression.children[i].name[0])) {
             typed = &expression.children[i];
-        } else if (i > 1) { // special reverse syntax int x => x int, x as int
-            typed = &expression.children[i - 1];
-            if (typed->name == "as") { // danger edge cases!
-                expression.remove(i - 1, i);
-                expression.children[i - 2].type = aType;// todo bug, should be same as
-                typed = &expression.children[i - 2];
-                typed->type = aType;
-                continue;
-            }
-        } else {
-#ifdef DEBUG
-            error("Type without object: "s + node.serialize() + "\n" + node.Line());// may be ok
-#else
-            error("Type without object: "s+node.serialize());// may be ok
-#endif
-        }
-
+}
         while (isPrimitive(*typed) or
                (typed->kind == reference and typed->length == 0)) {// BAD criterion for next!
             typed->type = aType;// ref ok because types can't be deleted ... rIgHt?
@@ -841,18 +770,6 @@ bool compatibleTypes(Type type1, Type type2) {
     return false;
 }
 
-// todo ambiguous [2 x] [2,x] so only without space, BUT 2 km??
-// do it in parser cause otherwise lists [2,x] would be interpreted as 2*x
-Node &groupImplicitMultiplication(Node &node, Function &function) {
-    Node *left = &node;
-    Node *right = node.next;
-    Node *op = new Node("*");
-    op->setType(operators);
-    op->add(left);
-    op->add(right);
-    return *op;
-}
-
 Node &groupGlobal(Node &node, Function &function) {
     // todo: turn wasp_main variables into global variables
     if (node.first().name == "global")
@@ -896,10 +813,6 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
 ////		todo("addLocal");
 //	if (name == "if")
 //		todo("addLocal");
-    if (name.empty()) {
-        warn("empty reference in "s + context);
-        return true;// 'done' ;)
-    }
     // todo: kotlin style context sensitive symbols!
     if (builtin_constants.has(name))
         return true;
@@ -921,23 +834,8 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
 //#endif
 }
 
-Node &groupSetter(String name, Node &body, Function &context) {
-    Node *decl = new Node(name);//node.name+":={…}");
-    decl->setType(assignment);
-    decl->add(body.clone());// addChildren makes emitting harder
-    auto type = preEvaluateType(body, context);
-    if (not addLocal(context, name, type, false)) {
-        Local &local = context.locals[name];
-        local.type = type;// update type! todo: check if cast'able!
-    }
-    return *decl;
-}
-
 Node extractReturnTypes(Node decl, Node body);
-
-
 Node &classDeclaration(Node &node, Function &function);
-
 
 Node &classDeclaration(Node &node, Function &function) {
     if (node.length < 2)
@@ -1028,15 +926,7 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     function.name = name;
     function.is_declared = true;
     function.is_import = false;
-    // todo : un-merge x=1 x:1 vs x:=it function declarations for clarity?
-    if (setter_operators.has(name) or key_pair_operators.has(name)) {
-        body = analyze(body, function);
-        if (arguments.has("global")) {
-            auto global = Global{.index=globals.count(), .name=name, .type=mapType(body.type), .value=body.clone()};
-            globals.insert_or_assign(name, global);
-        }
-        return groupSetter(name, body, function);
-    }
+
 
     Signature &signature = groupFunctionArgs(function, arguments);
     if (signature.size() == 0 and function.locals.size() == 0 and body.has("it", false, 100)) {
@@ -1107,8 +997,6 @@ Node &groupFunctionDeclaration(Node &expression, Function &context) {
     auto left = expression.to(op);
     auto rest = expression.from(op);
     auto fun = left.first();
-    if (fun.name == ":=") // todo hack
-        fun = left;
     return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
 }
 
@@ -1146,23 +1034,12 @@ Node &groupDeclarations(Node &expression, Function &context) {
         }
     }
     for (Node &node: expression) {
-        if (&node == 0) {
-            todow("BUG &node==0");
-            continue;
-        }
         String &op = node.name;
         if (isKeyword(op))
             continue;
         if (isPrimitive(node) and node.isSetter()) {
-            if (globals.has(op)) {
-                warn("Cant set globals yet!");
-                continue;
-            }
             addLocal(context, op, preEvaluateType(node, context), false);
-            if (node.length >= 2)
-                info("c-style function?");
-            else
-                continue;
+            continue;
         }
         if ((node.kind == reference and not node.length) or
             (node.kind == key and maybeVariable(node))) {// only constructors here!
@@ -1401,18 +1278,8 @@ Node &groupOperators(Node &expression, Function &context) {
                         setter->value.node = node.clone();
                         node = *setter;
                     }
-
-                if (op == "::=") {
-                    if (prev.kind != reference)error("only references can be assigned global (::=)"s + var);
-//					if(function.locals.has(prev.name))error("global already known as local "s +prev.name);// let's see what happens;)
-                    if (globals.has(var))error("global already set "s + var);// todo reassign ok if …
-                    globals.add(var, Global{.index=globals.size(), .name=var, .type=unknown, .value=next.clone()});
-                    // type set in globalSection, after emitExpression
-                    // don't forget to emit
-                }
                 if (node.name == "?")
                     node = groupIf(node, context);// consumes prev and next
-//				analyzed.add(node.hash(), true);
                 if (i > 0)
                     expression.replace(i - 1, i + 1, node);
                 else {
