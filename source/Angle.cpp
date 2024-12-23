@@ -31,6 +31,56 @@ WitReader witReader;
 
 List<String> aliases(String name);
 
+
+//https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
+//List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
+//chars ras[] = {"=", "?:", "+=", "++", 0};
+//List<chars> rightAssociatives = List(ras);
+//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
+//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…",0};// a=b=1 == a=(b=1) => a=1
+List<String> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
+// compound assignment
+
+
+// still needs to check a-b vs -i !!
+List<chars> prefixOperators = {"abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
+                               "~", "&", "$", "return",
+                               "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
+List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", /* 23% vs 7%5 */ "％",
+                               "﹪", "٪",
+                               "‰"};// modulo % ≠ ％ percent
+//List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…"/*, "+…" /*useless!*/, "~…", "*…", "&…",
+//							  "sizeof", "new", "delete[]"};
+//List<chars> suffixOperators = { "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", "％", "﹪", "٪",
+//							   "‰"};// modulo % ≠ ％ percent
+
+
+
+List<chars> infixOperators = operator_list;
+// todo: norm all those unicode variants first!
+// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
+
+// handled different from other operators, because … they affect the namespace context
+List<chars> setter_operators = {"="};
+List<chars> return_keywords = {"return", "yield", "as", "=>", ":", "->"}; // "convert … to " vs "to print(){}"
+List<chars> function_operators = {":="};//, "=>", "->" ,"<-"};
+List<chars> function_keywords = {"def", "defn", "define", "to", "ƒ", "fn", "fun", "func", "function", "method",
+                                 "proc", "procedure"};
+List<String> function_modifiers = {"public", "static", "export", "import", "extern", "external", "C", "global",
+                                   "inline", "virtual",
+                                   "override", "final", "abstract", "private", "protected", "internal", "const",
+                                   "constexpr", "volatile", "mutable", "thread_local", "synchronized", "transient",
+                                   "native"};
+
+List<chars> closure_operators = {"::", ":>", "=>", "->"}; // |…| { … in } <- =: reserved for right assignment
+List<chars> key_pair_operators = {":"};// -> =>
+List<chars> declaration_operators = {":=", "=",
+                                     "::=" /*until global keyword*/}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
+
+// ... todo maybe unify variable symbles with function symbols at angle level and differentiate only when emitting code?
+// x=7
+// double:=it*2  // variable of type 'block' ?
+
 List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
 
 List<String> class_keywords = {"struct", "type", "class",
@@ -356,12 +406,6 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
         addLocal(function, arg.name, arg.type, true);
     }
 
-    if (params.value.node) {
-        Node &ret = params.values();
-        Type type = mapType(ret.name);
-        signature.returns(type);
-    }
-
     Function *variant = &function;
     if (already_defined /*but not yet polymorphic*/) {
         if (signature == function.signature)
@@ -377,7 +421,7 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
         function.signature = *new Signature();// empty
         function.variants.add(old_variant.clone());
         function.variants.add(new_variant.clone());
-    } else if (function.is_polymorphic) {
+    } else if (function.is_polymorphic) { // third … variant
         variant = new Function();
         for (Function *fun: function.variants)
             if (fun->signature == signature)
@@ -412,56 +456,6 @@ String extractFunctionName(Node &node) {
 // further right means higher prescedence/binding, gets grouped first
 // todo "=" ":" handled differently?
 
-
-
-//https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
-//List<String> rightAssociatives = {"=", "?:", "+=", "++:"};// a=b=1 == a=(b=1) => a=1
-//chars ras[] = {"=", "?:", "+=", "++", 0};
-//List<chars> rightAssociatives = List(ras);
-//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
-//List<chars> rightAssociatives = {"=", "?:", "-…", "+=", "++…",0};// a=b=1 == a=(b=1) => a=1
-List<String> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == a=(b=1) => a=1
-// compound assignment
-
-
-// still needs to check a-b vs -i !!
-List<chars> prefixOperators = {"abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
-                               "~", "&", "$", "return",
-                               "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
-List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", /* 23% vs 7%5 */ "％",
-                               "﹪", "٪",
-                               "‰"};// modulo % ≠ ％ percent
-//List<chars> prefixOperators = {"not", "!", "√", "-…" /*signflip*/, "--…", "++…"/*, "+…" /*useless!*/, "~…", "*…", "&…",
-//							  "sizeof", "new", "delete[]"};
-//List<chars> suffixOperators = { "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", "％", "﹪", "٪",
-//							   "‰"};// modulo % ≠ ％ percent
-
-
-
-List<chars> infixOperators = operator_list;
-// todo: norm all those unicode variants first!
-// ᵃᵇᶜᵈᵉᶠᵍʰᶥʲᵏˡᵐⁿᵒᵖʳˢᵗᵘᵛʷˣʸᶻ ⁻¹ ⁰ ⁺¹ ⁽⁾ ⁼ ⁿ
-
-// handled different from other operators, because … they affect the namespace context
-List<chars> setter_operators = {"="};
-List<chars> return_keywords = {"return", "yield", "as", "=>", ":", "->"}; // "convert … to " vs "to print(){}"
-List<chars> function_operators = {":="};//, "=>", "->" ,"<-"};
-List<chars> function_keywords = {"def", "defn", "define", "to", "ƒ", "fn", "fun", "func", "function", "method",
-                                 "proc", "procedure"};
-List<String> function_modifiers = {"public", "static", "export", "import", "extern", "external", "C", "global",
-                                   "inline", "virtual",
-                                   "override", "final", "abstract", "private", "protected", "internal", "const",
-                                   "constexpr", "volatile", "mutable", "thread_local", "synchronized", "transient",
-                                   "native"};
-
-List<chars> closure_operators = {"::", ":>", "=>", "->"}; // |…| { … in } <- =: reserved for right assignment
-List<chars> key_pair_operators = {":"};// -> =>
-List<chars> declaration_operators = {":=", "=",
-                                     "::=" /*until global keyword*/}; //  i:=it*2  vs i=1  OK?  NOT ":"! if 1 : 2 else 3
-
-// ... todo maybe unify variable symbles with function symbols at angle level and differentiate only when emitting code?
-// x=7
-// double:=it*2  // variable of type 'block' ?
 
 
 Node &groupIf(Node n, Function &context) {

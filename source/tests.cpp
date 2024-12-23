@@ -537,7 +537,7 @@ void testPolymorphism2() {
 
 void testPolymorphism3() {
     assert_emit("fun test(string a){return a};\nfun test(float b){return b+1};\ntest('ok')", "ok");
-    assert_emit("fun test(string a){return a};\nfun test(float b){return b+1};\ntest(1.0)", 2.0);
+    assert_emit("fun test(string a){return a};\nfun test(int a){return a};\nfun test(float b){return b+1};\ntest(1.0)", 2.0);
 }
 
 //#import "pow.h"

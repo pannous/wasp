@@ -215,15 +215,6 @@ short normChar(char c) {// 0..36 damn ;)
     }
 }
 
-// useless
-int ord(codepoint p) {
-    return p;
-}
-
-codepoint Char(int p) {
-    return p;
-}
-
 unsigned int wordHash(const char *str, int max_chars) { // unsigned
     if (!str) return 0;
     int maxNodes = 100000;
@@ -259,34 +250,6 @@ char *readFile(chars filename, int *size_out) {
 #endif
 }
 
-// abs, floor from math.h should work with wasm, but isn't found in pure toolchain or sometimes breaks
-// there is NO i32_abs in wasm, only f32_abs
-// but compiler should make use of /opt/wasm/wasi-sdk/share/wasi-sysroot/include/c++/v1/math.h !!
-//SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/) # also for WASM include!
-//#include <stdlib.h> // pulls in declaration of malloc, free
-//#include <math.h> // pow
-// c++ compiler emits abs as:
-//local.get 0
-//i32.const 31
-//i32.shr_s
-//local.tee 0
-//i32.add
-//local.get 0
-//i32.xor
-// inline int abs_i(int x) noexcept{
-//	return x > 0 ? x : -x;
-//}
-//inline int64 abs_l(int64 x) noexcept{
-//	return x > 0 ? x : -x;
-//}
-//// native to wasm
-//inline float abs_f(float x) noexcept {
-//	return x > 0 ? x : -x;
-//}
-//// native to wasm
-//inline float floor(float x) noexcept {
-//	x-(int64)x;// todo!
-//}
 bool similar(double a, double b) {
     if (a == b)return true;
     if (a == 0)return abs(b) < .0001;
@@ -295,19 +258,8 @@ bool similar(double a, double b) {
     bool ok = abs(a - b) <= epsilon;
     return ok;
 }
-//
-//double mod_d(double x, double y) {
-//	return x - trunc(x / y) * y;
-//}
 
 //void lowerCaseUTF(chars string, int length); // defined in lowerCaseUTF.c
-//#if !WASM // native include lowerCaseUTF.wasm !
-//void lowerCaseUTF(chars string, int length){
-////    auto myLowerCaseUTF=wasmlet<chars, chars>("lowerCaseUTF.wasm");
-////    chars lowered = myLowerCaseUTF(string);
-////    return lowered; in place!
-//}
-//#endif
 
 void lowerCase(char *string, int length) {
     if (!string || !*string) return;
@@ -323,7 +275,6 @@ void lowerCase(char *string, int length) {
 //        }
     }
 }
-
 
 int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
     bytes pStr1Low = 0;
@@ -449,22 +400,9 @@ float log(float y, float base) {
 //}
 
 String load(String file) {
-#if WASM
-    return "";
-#else
-    FILE *ptr;
-    ptr = fopen(file, "rb");  // r for read, b for binary
-    if (!ptr)error("File not found "s + file);
-    fseek(ptr, 0L, SEEK_END);
-    size_t size = ftell(ptr);
-    auto *buffer = (unsigned char *) malloc(size);
-    fseek(ptr, 0L, SEEK_SET);
-    size_t ok = fread(buffer, sizeof(buffer), size, ptr);
-    if (!ok and size > 8)error("Error reading "s + file + " of size "s + size);
-    auto binary = new String((char *) buffer, size, false);
-//	assert_equals(binary->length, size);
-    return *binary;
-#endif
+    int size ;
+    char *text = readFile(file, &size);
+    return String(text, size);
 }
 
 static String zerox = "0x00";
@@ -598,25 +536,10 @@ char *dropPath(char *file0) {
 
 }
 
-char *dropPath2(char *file) {
-	auto len = strlen(file);
-	for (int i = len; i > 0; --i)
-		if (file[i] == '/') {
-			file[i] = 0;
-			return file + 1;
-		}
-	return file;
-}
-
-
 String extractPath(String file) {
 	if (!file.contains("/"))return "/";
 	return file.substring(0, file.lastIndexOf("/"));
 }
-
-//String base64_encode(String program) {
-//
-//}
 
 
 // Base64 encoding table
