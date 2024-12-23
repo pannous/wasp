@@ -46,25 +46,35 @@ struct RustData {
 
 // allows boxed return of bigint via Address to longy Node …
 struct Reto {
-	int value;
-	Type type;
+    int value;
+//    unsigned long long type; // -Wreturn-type-c-linkage OK
+    Type type; // -Wno-return-type-c-linkage
 };
 
 struct Retol {
-	int64 value;
+    int64 value;
     Type type;
 };
+
+// example of multi-value return in C/C++ :
+// extern "C" Reto swap(int a, int b);
+//(func (export "add_and_subtract") (param i32 i32) (result i32 i32)
+//local.get 1
+//local.get 0
+//)
+
+
 
 
 typedef int usize;
 typedef int u32;
 struct AssemblyScriptData {
-	usize mmInfo;// 	-20 	usize 	Memory manager info
-	usize gcInfo;// 	-16 	usize 	Garbage collector info
-	usize gcInfo2;// 	-12 	usize 	Garbage collector info
-	u32 rtId;// 	-8 	u32 	Unique id of the concrete class
-	u32 rtSize;// 	-4 	u32 	Size of the data following the header
-	void *payload;// 0 	Payload starts here
+    usize mmInfo;// 	-20 	usize 	Memory manager info
+    usize gcInfo;// 	-16 	usize 	Garbage collector info
+    usize gcInfo2;// 	-12 	usize 	Garbage collector info
+    u32 rtId;// 	-8 	u32 	Unique id of the concrete class
+    u32 rtSize;// 	-4 	u32 	Size of the data following the header
+    void *payload;// 0 	Payload starts here
 };
 
 
@@ -126,3 +136,4 @@ static smart_pointer_64 smart_pointer_payload_mask = 0x0000FFFF00000000L; // tod
 static smart_pointer_64 smart_pointer_node_signature = 0xA000000000000000L;// ((smart_pointer_64)nodep) << 63; // 0xA0…0
 
 //    short smart_type_payload = (short)(smartPointer64 & 0x0000FFFF00000000L)>>16;// type payload including length (of array)
+

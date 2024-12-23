@@ -9,8 +9,17 @@ if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
     set(X86_64 1)
 endif ()
 
+
+set(SOURCE ".")
+if (NOT EXISTS "${SOURCE}")
+    set(SOURCE "source")
+endif ()
+
 include(FetchContent) # external projects like webview
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib") # save libwebview to lib ?
+
+# Suppress warnings for unused manually-specified variables
+#mark_as_advanced(Python3_EXECUTABLE Python_EXECUTABLE)
 
 # ⚠️ SET these configurations VIA TOOLCHAIN: via CLion Preferences… Build->CMake->Profiles
 #  MANUALLY force set these only for urgent debugging
@@ -160,7 +169,7 @@ if (WEBAPP)
     set(WASI 0)
     set(CONSOLE 0)
     #    SET(RUNTIME_ONLY 1) # we can emit to V8, right??
-    set(SOURCE_FILES ${SOURCE_FILES} source/ErrorHandler.cpp) # no SIGSEGV mac popup
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/ErrorHandler.cpp) # no SIGSEGV mac popup
 endif ()
 if (WASM)
     ADD_DEFINITIONS(-DWASM)
@@ -180,7 +189,7 @@ if (SDL)
     ADD_DEFINITIONS(-DSDL)
     remove_definitions(SERVER)
     include_directories(${SDL2_INCLUDE_DIRS})
-    set(SOURCE_FILES ${SOURCE_FILES} source/Paint.cpp) # if SDL
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Paint.cpp) # if SDL
     #    add_executable(wasp.sdl ${SOURCE_FILES}) # same as add_library, with or without --export-all
 endif ()
 
@@ -220,7 +229,7 @@ if (LINUX)
     ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
     ADD_COMPILE_FLAG("-Wno-writable-strings") # dangerous! fix assert_is("square 3", 9)
     # DEBIAN
-    # 2023-10-9 /wasp/source/tests.cpp:48:25: gcc internal compiler error
+    # 2023-10-9 /wasp/${SOURCE}/tests.cpp:48:25: gcc internal compiler error
     # todo remove when gcc fixed
     #    set(CMAKE_C_COMPILER clang)
     #    set(CMAKE_CXX_COMPILER clang++)
@@ -302,8 +311,8 @@ endif ()
 #ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
 
 # COMMON FOR ALL
-set(SOURCE_FILES ${SOURCE_FILES} source/String.cpp source/Node.cpp source/Map.cpp source/Util.cpp source/List.cpp
-        source/Wasp.cpp source/wasm_helpers.cpp source/Code.cpp source/NodeTypes.cpp source/smart_types.cpp)
+set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/String.cpp ${SOURCE}/Node.cpp ${SOURCE}/Map.cpp ${SOURCE}/Util.cpp ${SOURCE}/List.cpp
+        ${SOURCE}/Wasp.cpp ${SOURCE}/wasm_helpers.cpp ${SOURCE}/Code.cpp ${SOURCE}/NodeTypes.cpp ${SOURCE}/smart_types.cpp)
 
 
 if (CONSOLE)
@@ -311,7 +320,7 @@ if (CONSOLE)
     ADD_DEFINITIONS(-DCONSOLE)
     ADD_DEFINITIONS(-DUSE_READLINE)
     link_libraries(readline)
-    set(SOURCE_FILES ${SOURCE_FILES} source/console.cpp) # Needs to come after, because conflicting Function symbol
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/console.cpp) # Needs to come after, because conflicting Function symbol
 endif ()
 
 if (WASM)
@@ -323,14 +332,14 @@ endif ()
 if (CURL)
     find_package(CURL REQUIRED)
     include_directories(${CURL_INCLUDE_DIRS})
-    set(SOURCE_FILES ${SOURCE_FILES} source/Fetch.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Fetch.cpp)
     #    only 800 bytes via -lcurl !
 endif ()
 
 if (NO_TESTS)
     ADD_DEFINITIONS(-DNO_TESTS)
 else ()
-    set(SOURCE_FILES ${SOURCE_FILES} source/tests.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/tests.cpp)
 endif ()
 
 if (RUNTIME_ONLY)
@@ -339,35 +348,35 @@ if (RUNTIME_ONLY)
     set(INCLUDE_MERGER 0)
 else ()
     message("NOT RUNTIME_ONLY")
-    set(SOURCE_FILES ${SOURCE_FILES} source/Code.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/Angle.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/Interpret.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_emitter.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/DwarfEmitter.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/WitReader.h)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_reader.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Code.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Angle.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Interpret.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_emitter.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/DwarfEmitter.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/WitReader.h)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_reader.cpp)
 endif ()
 
 
 if (INCLUDE_MERGER)
     message(INCLUDE_MERGER)
     ADD_DEFINITIONS(-DINCLUDE_MERGER)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_linker.cpp)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/common.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader-linker.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-reader.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode-code-table.c)
-    #set(SOURCE_FILES ${SOURCE_FILES} FILES_MATCHING PATTERN "source/own_merge/*.cc")
-    #set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binary-writer-spec.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/binding-hash.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/feature.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/leb128.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/stream.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/opcode.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/utf8.cc)
-    set(SOURCE_FILES ${SOURCE_FILES} source/own_merge/ir.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_linker.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/common.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/binary.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/binary-writer.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/binary-reader-linker.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/binary-reader.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/opcode-code-table.c)
+    #set(SOURCE_FILES ${SOURCE_FILES} FILES_MATCHING PATTERN "${SOURCE}/own_merge/*.cc")
+    #set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/binary-writer-spec.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/binding-hash.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/feature.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/leb128.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/stream.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/opcode.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/utf8.cc)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/own_merge/ir.cc)
 endif ()
 
 
@@ -380,7 +389,9 @@ if (APPLE)
     ADD_COMPILE_FLAG("-Wno-unused-parameter") # always
     ADD_COMPILE_FLAG("-Wno-deprecated-copy-with-user-provided-copy") # what's this?
 endif ()
+#add_compile_options(-Wno-vla-cxx-extension) # allow array[len]
 add_compile_options(-Werror)
+add_compile_options(-Wno-return-type-c-linkage) # allow C functions to return multi-value struct / C++ types
 
 
 if (TRACE)
@@ -394,10 +405,12 @@ endif ()
 
 if (SANITIZE) #  OR TRACE
     message("SANITIZE")
-
+    message("Don't build with sanitizers.")
+    message("Just -g and -fno-omit-frame-pointer are enough for Valgrind.")
+    message("Mixing sanitizers and Valgrind usually doesn't work.")
     if (NOT EMSCRIPTEN)
         ADD_DEFINITIONS(-D_Backtrace_)
-        set(SOURCE_FILES ${SOURCE_FILES} source/Backtrace.cpp)
+        set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Backtrace.cpp)
     endif ()
 
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
@@ -451,13 +464,13 @@ if (SANITIZE) #  OR TRACE
 endif ()
 
 if (WASM)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_helpers_wasm.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_helpers_wasm.cpp)
     if (NO_TESTS)
     else ()
-        set(SOURCE_FILES ${SOURCE_FILES} source/test_browser.cpp)
+        set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/test_browser.cpp)
     endif ()
 else ()
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_helpers_host.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_helpers_host.cpp)
 endif ()
 
 #
@@ -567,7 +580,7 @@ if (WASM) # OR WASI)
         #relocation R_WASM_MEMORY_ADDR_SLEB cannot be used against symbol nil_name; recompile with -fPIC
         ADD_COMPILE_FLAG("-Wl,--compress-relocations") # incompatible with output debug information. Please pass --strip-debug
         ADD_COMPILE_FLAG("-Wl,--strip-debug") # DEBUG-RELEASE
-        set(SOURCE_FILES ${SOURCE_FILES} source/exceptions.cpp)
+        set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/exceptions.cpp)
         #    --no-validation   --debug
         ADD_COMPILE_FLAG("-Oz -Qn")
         ADD_COMPILE_FLAG("-Wl,-O4")
@@ -636,7 +649,7 @@ elseif (MICRO) # wasm-micro-vm:
         return()
     endif ()
 
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_micro.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_micro.cpp)
     message("USING INTERNAL WASM MICRO RUNTIME TO DEBUG (not Mac M1 ready!!)")
     #    quit()
     ADD_DEFINITIONS(-DWASM_ENABLE_INTERP)
@@ -693,7 +706,7 @@ elseif (WABT)
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
     #        include(wabt/cmake_install.cmake)
     #        add_subdirectory(wabt)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wabt.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_wabt.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wabt/include/)
     target_include_directories(wasp PUBLIC Frameworks/wabt/include/wabt)
@@ -702,15 +715,15 @@ elseif (WABT)
     target_link_libraries(wasp PRIVATE wasm)  # libwabt is called libwasm.dylib DANGER!
 elseif (WASMER)
     MESSAGE("USING WASMER")
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasmer_runner.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasmer_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasmer-c-api)
     target_link_libraries(wasp PRIVATE wasmer)
 elseif (WASMEDGE)
     MESSAGE("USING WASMEDGE")
     ADD_DEFINITIONS(-DWASMEDGE)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_edge.cpp)
-    set(SOURCE_FILES source/wasm_runner_edge.cpp ${SOURCE_FILES})
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_edge.cpp)
+    set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
     #    target_include_directories(wasp PUBLIC Frameworks/wasmedge)
     target_include_directories(wasp PUBLIC /opt/wasm/WasmEdge/include/api/)
@@ -725,7 +738,7 @@ elseif (WASMEDGE)
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
     ADD_DEFINITIONS(-DWASMTIME)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasmtime_runner.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
     #    BUILD_SHARED_LIBS is provided as a define if you would like to build a shared library instead.
     #    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Frameworks/wasmtime/crates/c-api ${CMAKE_CURRENT_BINARY_DIR}/wasmtime)
@@ -746,8 +759,8 @@ elseif (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
     # on Windows 11, developers and end-users must have the WebView2 runtime installed!
     # for standalone for Windows version check choc_WebView.h (1 MB)
-    include(source/WebView.cmake)
-    set(SOURCE_FILES ${SOURCE_FILES} source/WebApp.cpp source/WebServer.cpp)
+    include(${SOURCE}/WebView.cmake)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/WebApp.cpp ${SOURCE}/WebServer.cpp)
     add_executable(wasp-app ${SOURCE_FILES})
     target_link_libraries(wasp-app PUBLIC webview)
     target_include_directories(wasp-app PUBLIC Frameworks/webview)
@@ -765,8 +778,8 @@ elseif (WASM3)
     #    add_subdirectory(Frameworks/wasm3/source ${CMAKE_BINARY_DIR}/m3) # wat?
     include(Frameworks/uvwasi/cmake_install.cmake)
     include(Frameworks/wasm3/cmake_install.cmake)    #    // 2022-12: last release on Jun 2, 2021
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_wasm3.cpp)
-    #    source/types/Number.cpp source/types/Number.h
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_wasm3.cpp)
+    #    ${SOURCE}/types/Number.cpp ${SOURCE}/types/Number.h
     add_executable(wasp ${SOURCE_FILES})
     #    target_include_directories(wasp PUBLIC Frameworks/wasm3/platforms/cpp/wasm3_cpp/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm3/source)
@@ -779,12 +792,12 @@ elseif (WASM3)
     #    add_custom_target(BuildWasm3 ALL DEPENDS angle) #.exe
     #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
 elseif (WASMX)
-    set(SOURCE_FILES ${SOURCE_FILES} source/wasm_runner_console.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
 elseif (V8)
     MESSAGE("USING V8")
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
-    set(SOURCE_FILES source/wasm_runner_v8.cpp ${SOURCE_FILES})
+    set(SOURCE_FILES ${SOURCE}/wasm_runner_v8.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/v8/include/)
@@ -797,7 +810,7 @@ else () # NORMAL:
         add_executable(wasp ${SOURCE_FILES})
     endif ()
     #    add_custom_target(BuildWasp ALL DEPENDS angle)
-    target_include_directories(${PROJECT_NAME} PUBLIC source/own_merge)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${SOURCE}/own_merge)
     if (CURL)
         target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
         target_link_libraries(${PROJECT_NAME} -lcurl)

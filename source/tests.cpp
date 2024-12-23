@@ -22,6 +22,124 @@
 #include "own_merge/type.h"
 #include "own_merge/common.h"
 
+
+#include <wasmedge/wasmedge.h>
+#include <stdio.h>
+
+struct debug_struct {
+    byte a;
+    byte b;
+    byte c;
+    byte d;
+    byte e;
+    byte f;
+    byte g;
+    byte h;
+    int i;
+    int j;
+    int k;
+    int l;
+};
+
+typedef struct {
+    int32_t value;  // The single field in the struct
+} wasm_struct1;
+
+int test_wasmedge_gc() {
+    // Initialize WasmEdge runtime
+    WasmEdge_ConfigureContext *Conf = WasmEdge_ConfigureCreate();
+    WasmEdge_ConfigureAddProposal(Conf, WasmEdge_Proposal_ReferenceTypes);
+    WasmEdge_ConfigureAddProposal(Conf, WasmEdge_Proposal_GC);
+
+    WasmEdge_VMContext *VM = WasmEdge_VMCreate(Conf, NULL);
+
+    // Load the WASM module
+//    WasmEdge_String ModulePath = WasmEdge_StringCreateByCString("gc_example.wasm");
+    WasmEdge_String ModuleName = WasmEdge_StringCreateByCString("gc_example");
+    const char *path = "/Users/me/dev/script/wasm/gc_structs/gc_example.wasm";
+    WasmEdge_Result Result = WasmEdge_VMRegisterModuleFromFile(VM, ModuleName, path);
+    if (!WasmEdge_ResultOK(Result)) {
+        printf("Failed to load module: %s\n", WasmEdge_ResultGetMessage(Result));
+        return 1;
+    }
+
+    // Run the `new_object` function
+    WasmEdge_String FuncName = WasmEdge_StringCreateByCString("new_object");
+    WasmEdge_Value Params[1] = {WasmEdge_ValueGenI32(32)};
+    WasmEdge_Value Returns[1];
+//    WasmEdge_VMRunWasmFromBuffer()
+//    Result = WasmEdge_VMRunRegisteredFunction(VM, ModuleName.Buf, FuncName.Buf, Params, 1, Returns, 1);
+// Load the WASM module into a buffer
+    FILE *wasm_file = fopen(path, "rb");
+    if (!wasm_file) {
+        printf("Failed to open file: %s\n", path);
+        return 1;
+    }
+    fseek(wasm_file, 0, SEEK_END);
+    long wasm_file_size = ftell(wasm_file);
+    fseek(wasm_file, 0, SEEK_SET);
+
+    uint8_t *wasm_buffer = (uint8_t *) malloc(wasm_file_size);
+    if (wasm_buffer == NULL) {
+        printf("Failed to allocate memory for WASM buffer.\n");
+        fclose(wasm_file);
+        return 1;
+    }
+    fread(wasm_buffer, 1, wasm_file_size, wasm_file);
+    fclose(wasm_file);
+
+    // Run the WASM using the `WasmEdge_VMRunWasmFromBuffer` function
+//    WasmEdge_Value Params[1] = {WasmEdge_ValueGenI32(32)};
+//    WasmEdge_Value Returns[1];
+    Result = WasmEdge_VMRunWasmFromBuffer(VM, wasm_buffer, wasm_file_size, FuncName, Params, 1, Returns, 1);
+
+    free(wasm_buffer); // Free the allocated buffer after use
+
+    if (!WasmEdge_ResultOK(Result)) {
+        printf("Failed to execute function: %s\n", WasmEdge_ResultGetMessage(Result));
+        return 1;
+    }
+    if (!WasmEdge_ResultOK(Result)) {
+        printf("Failed to execute function: %s\n", WasmEdge_ResultGetMessage(Result));
+        return 1;
+    }
+
+
+    auto mem = WasmEdge_StringCreateByCString("memory");
+//    WasmEdge_ModuleInstanceContext *module_ctx2 = WasmEdge_VMGetStoreContext(VM);
+    WasmEdge_StoreContext *storeContext = WasmEdge_VMGetStoreContext(VM);
+    const WasmEdge_ModuleInstanceContext *module_ctx = WasmEdge_VMGetActiveModule(VM);
+    WasmEdge_MemoryInstanceContext *memory_ctx = WasmEdge_ModuleInstanceFindMemory(module_ctx, mem);
+    uint8_t *memo = WasmEdge_MemoryInstanceGetPointer(memory_ctx, 0, 0);
+    if (memo)
+        wasm_memory = memo;
+    else
+        warn("⚠️Can't connect wasmedge memory");
+
+
+    // Print the result (object reference)
+    WasmEdge_Value Return = Returns[0];
+    void *pVoid = WasmEdge_ValueGetExternRef(Return);
+    wasm_struct1 *gc_struct = (wasm_struct1 *)pVoid;
+    printf("Result: %d\n", gc_struct->value);
+    if(WasmEdge_ValTypeIsRef(Return.Type)) {
+        printf("Result REF: %p\n", pVoid);
+    } else {
+        printf("Result: %d\n", WasmEdge_ValueGetI32(Return));
+    }
+    debug_struct *debugs = (debug_struct *) pVoid;
+    printf("Result: %p\n", pVoid);
+    printf("Result: %d\n", *(int*)pVoid);
+    printf("Result: %d\n", WasmEdge_ValueGetI32(Return));
+    exit(0);
+
+    // Cleanup
+    WasmEdge_VMDelete(VM);
+    WasmEdge_ConfigureDelete(Conf);
+
+    return 0;
+}
+
 void testMatrixOrder() {
     assert_emit("m=([[1, 2], [3, 4]]);m[0][1]", 2);
     assert_emit("([[1, 2], [3, 4]])[0][1]", 2);
@@ -369,7 +487,6 @@ void testTypes2() {
     assert_equals(result1.type, &StringType);
     assert_equals(result1.name, "b");
 }
-
 
 
 void testTypedFunctions() {
@@ -2056,11 +2173,11 @@ void testListVarargs() {
     testListInitializerList();
     // ^^ OK just use List<int> oks = {1, 2, 3};
     skip(
-    const List<int> &list1 = List<int>(1, 2, 3, 0);
-    if (list1.size_ != 3)
-        breakpoint_helper
-    check(list1.size_ == 3);
-    check(list1[2] == 3);
+            const List<int> &list1 = List<int>(1, 2, 3, 0);
+            if (list1.size_ != 3)
+                breakpoint_helper
+                        check(list1.size_ == 3);
+            check(list1[2] == 3);
     )
 }
 
@@ -3294,13 +3411,13 @@ void testPaintWasm() {
         // todo: let compiler compute constant expressions like 1024*65536/4
 //    	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
     //out of bounds memory access if only one Memory page!
-    	assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
+        assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
         // wow, SLOWER in wasm-micro-runtime HOW!?
     //	exit(0);
 
     //(√((x-c)^2+(y-c)^2)<r?0:255)
     //(x-c)^2+(y-c)^2
-    	assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
+        assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
     ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
         char *wasm_paint_routine = "w=1920;c=500;r=100;surface=(1,2);i=0;"
                                    "while(i<1000000){"
@@ -3583,14 +3700,15 @@ void pleaseFix() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
 //    testMatrixOrder();
+    test_wasmedge_gc();
 //    List<const int&> axx = {1, 2, 3};
 //    testNamedDataSections();
 //    testListGrowth<const int&>();// pointer to a reference error
 
 // todo print as general dispatch depending on smarttype
 //    assert_emit("for i in 1 to 5 : {print i};i", 6);
+//    assert_emit("a = [1, 2, 3]; a[2]", 3);
     assert_emit("for i in 1 to 5 : {puti i};i", 6);
-
     testListGrowth<int>();
     testListGrowth<float>();
     testListGrowth<String>();
@@ -3640,7 +3758,7 @@ void testCurrent() {
     testPolymorphism();
 //    testPolymorphism2();
     skip(
-    testPolymorphism3();
+            testPolymorphism3();
             assert_emit("τ≈6.2831853", true);
     )
 

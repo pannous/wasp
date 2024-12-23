@@ -980,7 +980,7 @@ enum Sections {
     data_section = 11,
     // extensions:
     datacount = 12,
-    tag_section = 13,
+    tag_section = 13, // exception handling
     string_section = 14, // wasm stringref table
 };
 
