@@ -24,26 +24,7 @@
 
 
 #include <wasmedge/wasmedge.h>
-#include <stdio.h>
 
-struct debug_struct {
-    byte a;
-    byte b;
-    byte c;
-    byte d;
-    byte e;
-    byte f;
-    byte g;
-    byte h;
-    int i;
-    int j;
-    int k;
-    int l;
-};
-
-typedef struct {
-    int32_t value;  // The single field in the struct
-} wasm_struct1;
 
 int test_wasmedge_gc() {
     // Initialize WasmEdge runtime
@@ -89,16 +70,13 @@ int test_wasmedge_gc() {
     // Print the result (object reference)
     WasmEdge_Value Return = Returns[0];
     void *pVoid = WasmEdge_ValueGetExternRef(Return);
-    wasm_struct1 *gc_struct = (wasm_struct1 *)pVoid;
-    printf("Result: %d\n", gc_struct->value);
-    if(WasmEdge_ValTypeIsRef(Return.Type)) {
+    if (WasmEdge_ValTypeIsRef(Return.Type)) {
         printf("Result REF: %p\n", pVoid);
     } else {
         printf("Result: %d\n", WasmEdge_ValueGetI32(Return));
     }
-    debug_struct *debugs = (debug_struct *) pVoid;
     printf("Result: %p\n", pVoid);
-    printf("Result: %d\n", *(int*)pVoid);
+    printf("Result: %d\n", *(int *) pVoid);
     printf("Result: %d\n", WasmEdge_ValueGetI32(Return));
 //    exit(0);
 
@@ -146,6 +124,22 @@ void testListGrowthWithStrings() {
     check_eq(list[999], new String(999));
 }
 
+// test once
+void test_list_growth() {
+    testListGrowth<int>();
+    testListGrowth<float>();
+    testListGrowth<String>();
+    testListGrowth<Signature>();
+    testListGrowth<wabt::Index>();// just int
+    testListGrowth<wabt::Reloc>();
+    testListGrowth<wabt::Type>();
+    testListGrowth<wabt::Location>();
+    testListGrowth<wabt::Result>();
+    testListGrowth<wabt::TypeVector>();
+    testListGrowth<Function>(); // pretty slow with new List shared_ptr implementation
+//    testListGrowth<Map>();
+    testListGrowthWithStrings();
+}
 
 //void testDwarf();
 //void testSourceMap();
@@ -167,6 +161,7 @@ void testForLoops() {
 //    assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
 }
 
+// test once by looking at the output wasm/wat
 void testNamedDataSections() {
     assert_emit("fest='def';test='abc'", "abc");
     exit(0);
@@ -212,9 +207,10 @@ void testInclude() {
 
 void testExceptions() {
 //    assert_emit("(unclosed bracket",123);
-
-    assert_throws("x:int=1;x='ok'");
+    assert_throws("x:int=1;x='ok'"); // worked before, cleanup fail!
     assert_throws("x:int=1;x=1.1");
+    skip(
+            )
 //    assert_emit("x:int=1;x=1.0",1); // might be cast by compiler
 //    assert_emit("x=1;x='ok';x=1", 1); // untyped x can be reassigned
     assert_throws("'unclosed quote");
@@ -243,6 +239,7 @@ void testTypeConfusion() {
 }
 
 void testVectorShim() {
+//    unknown function matrix_multiply (matrix_multiply)
     assert_emit("v=[1 2 3];w=[2 3 4];v*w", 2 + 6 + 12);
 }
 
@@ -537,12 +534,15 @@ void testPolymorphism2() {
 
 void testPolymorphism3() {
     assert_emit("fun test(string a){return a};\nfun test(float b){return b+1};\ntest('ok')", "ok");
-    assert_emit("fun test(string a){return a};\nfun test(int a){return a};\nfun test(float b){return b+1};\ntest(1.0)", 2.0);
+    assert_emit("fun test(string a){return a};\nfun test(int a){return a};\nfun test(float b){return b+1};\ntest(1.0)",
+                2.0);
 }
 
-void testModifiers(){
-    assert_emit("public fun ignore(){3}",3);
-    assert_emit("public static export import extern external C global inline virtual override final abstract private protected internal const constexpr volatile mutable thread_local synchronized transient native fun ignore(){3}",3);
+void testModifiers() {
+    assert_emit("public fun ignore(){3}", 3);
+    assert_emit(
+            "public static export import extern external C global inline virtual override final abstract private protected internal const constexpr volatile mutable thread_local synchronized transient native fun ignore(){3}",
+            3);
 }
 
 //#import "pow.h"
@@ -3267,7 +3267,7 @@ void todos() {
     testNodeDataBinaryReconstruction();
 
     read_wasm("lib/stdio.wasm");
-    testStruct();
+//    testStruct();
 
     testWit();
     testColonImmediateBinding();
@@ -3666,6 +3666,22 @@ void pleaseFix() {
     assert_emit("(π/2)^2", pi * pi / 4);
 }
 
+void test_new() {
+//    testInclude();
+//    testMatrixOrder();
+    test_wasmedge_gc();
+    test_list_growth();
+    testForLoops();
+    testAutoSmarty();
+    testArguments();
+    testBadType();
+    testDeepType();
+    testTypedFunctions();
+    testTypes();
+    testPolymorphism();
+    test_implicit_multiplication(); // todo in parser how?
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
@@ -3673,8 +3689,11 @@ void pleaseFix() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
-//    testMatrixOrder();
-    test_wasmedge_gc();
+//    assert_emit("def first(array);", 0);
+    assert_emit("add1 x:=x+1;add1 3", (int64) 4);
+
+    testTypeConfusion();
+//    test_new();
 //    List<const int&> axx = {1, 2, 3};
 //    testNamedDataSections();
 //    testListGrowth<const int&>();// pointer to a reference error
@@ -3683,40 +3702,15 @@ void testCurrent() {
 //    assert_emit("for i in 1 to 5 : {print i};i", 6);
 //    assert_emit("a = [1, 2, 3]; a[2]", 3);
     assert_emit("for i in 1 to 5 : {puti i};i", 6);
-    testListGrowth<int>();
-    testListGrowth<float>();
-    testListGrowth<String>();
-    testListGrowth<Signature>();
-    testListGrowth<wabt::Index>();// just int
-    testListGrowth<wabt::Reloc>();
-    testListGrowth<wabt::Type>();
-    testListGrowth<wabt::Location>();
-    testListGrowth<wabt::Result>();
-    testListGrowth<wabt::TypeVector>();
-    testListGrowth<Function>(); // pretty slow with new List shared_ptr implementation
-//    testListGrowth<Map>();
-    testListGrowthWithStrings();
-    assert_emit("x='abcde';x#4='f';x[3]", 'f'); // SIGSEGV specifically at target_depths_.resize(num_targets); !!?!
-    assert_emit("x='abcde';x#4='x';x[3]", 'x'); // SIGSEGV
 
-    testForLoops();
-    skip(
-    )
-    testAutoSmarty();
-    testArguments();
-//    testSinus();
-//    assert_emit("1-‖3‖/-3", 2);
-//    testHostDownload();
 //    testJS();
 //    testHtmlWasp();
     testFlags();
     testTypes();
     skip(
+            testHostDownload();
             assert_emit("‖3‖-1", 2);
     )
-    assert_emit("1-‖3‖/-3", 2);
-    testSinus();
-    test_implicit_multiplication(); // todo in parser how?
 
     assert_emit("-42", -42)
 #if WEBAPP
@@ -3724,90 +3718,52 @@ void testCurrent() {
 #endif
     skip(
             testKebabCase();
-    )
-    testBadType();
-    testDeepType();
-    testTypedFunctions();
-    testTypes();
-    testPolymorphism();
-//    testPolymorphism2();
-    skip(
-            testModifiers();
+            testPolymorphism2();
             testPolymorphism3();
+            testModifiers();
             assert_emit("τ≈6.2831853", true);
+            check_is("τ≈6.2831853", true);
+    assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
+    assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
     )
 
-//	testDom();
-    assert_emit("global x=7", 7);
-    assert_eval("if 0:3", false);
+	testDom();
+    testExceptions();
 
-    read_wasm("lib/pow.wasm");
-//    read_wasm("lib/stdio.wasm");
-//    assert_emit("a=√3^2", 3);// todo 2 due to int type guess
-//    exit(42);
-    assert_emit("π/2^2", pi / 4);
-    assert_emit("(π/2)^2", pi * pi / 4);
-//    assert_emit("√3^0", 0.971); // very rough power approximation
-    assert_emit("√3^0", 1.0);
-//    assert_emit("√3^0", 1);
-
-//    testInclude();
-//    check_is("τ≈6.2831853",true);
-//    assert_emit("τ≈6.2831853", true);
-//    assert_emit("square := it*it; square 3", 9);
-//    assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
-//    assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
-//    exit(42);
-//    assert_emit("τ≈6.2831853",1);
-//    testExceptions();
-//    assert_emit("√ π ²", pi);
-//    assert_emit("√π²", pi);
+    assert_emit("√ π ²", pi);
+    assert_emit("√π²", pi);
 
 
-//    testGlobals();
-//    testTypeConfusion();
-
-
-//    testVectorShim();// use GPU even before wasm vector extension is available
-//    testSourceMap();
-//    return;
-
+    testGlobals();
+    testTypeConfusion();
+    skip(
+    testVectorShim();// use GPU even before wasm vector extension is available
+            )
+    testSourceMap();
 //	testDwarf();
-//	testFibonacci();
-//	initTypes();
-//	check_eq(types["u8"],types["byte"]);
-//	testUnicode_UTF16_UTF32();
-//	assert_emit("print('hi')", 0)
-//	assert_emit("puts('hi')", 8)
-//	testReplaceAll();
-//	return;
-//
-//	return;
+	testFibonacci();
+	testUnicode_UTF16_UTF32();
+	testReplaceAll();
 #if WEBAPP or MY_WASM
     testHostIntegration();
 #endif
-//	exit(1);
-//	testOldRandomBugs();
+#if not WASM
+//    testWasmGC();
+#endif
 
-//    assert_emit("3^2", 9);
-//	assert_emit("3**2", 9);
-//    exit(1);
-//	assert_emit("n=3;2ⁿ", 8);
-//	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
-//	assert_emit("'αβγδε'#3", U'γ');
-//	assert_emit("√9*-‖-3‖/-3", 3);
-
+	testOldRandomBugs();
+	assert_emit("n=3;2ⁿ", 8);
+	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
+	assert_emit("'αβγδε'#3", U'γ');
+	assert_emit("√9*-‖-3‖/-3", 3);
     skip(
             assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
             testGenerics();
     )
-#if not WASM
-    testWasmGC();
-#endif
-//    testRenameWasmFunction();
+
+    testRenameWasmFunction();
 //    testStruct();
-//    tests();// make sure all still ok before changes
 //    todos();
     tests();// make sure all still ok after messing with memory
 

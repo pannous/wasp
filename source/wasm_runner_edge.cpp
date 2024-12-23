@@ -74,6 +74,14 @@ WasmEdge_Result createHtml(void *Data, const FrameContext *CallFrameCxt,
 }
 
 
+WasmEdge_Result download(void *Data, const FrameContext *CallFrameCxt,
+                           const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    todo("host download");
+//    fetch()
+    return WasmEdge_Result_Success;
+}
+
+
 WasmEdge_Result getExternRefPropertyValue(void *Data,
                                      const FrameContext *CallFrameCxt,
                                      const WasmEdge_Value *In, WasmEdge_Value *Out) {

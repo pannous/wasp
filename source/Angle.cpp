@@ -31,11 +31,11 @@ WitReader witReader;
 
 List<String> aliases(String name);
 
-Map<String, Node *> types = {.capacity=1000}; // builtin and defined Types
+Map<String, Node *> types = {.capacity=100}; // builtin and defined Types
 //const Node LongType("LongType", clazz);
 //const Node DoubleType("DoubleType", clazz);//.setType(type);
 // todo : when do we really need THESE Nodes instead of Type / Primitives?
-Node LongType("LongType", clazz);
+Node LongType("LongType", clazz);// RealType FloatType
 Node DoubleType("DoubleType", clazz);//.setType(type);
 Node IntegerType("IntegerType", clazz);
 Node ByteType("Byte", clazz);// Byte conflicts with mac header
@@ -382,7 +382,10 @@ Node eval(String code) {
 Signature &groupFunctionArgs(Function &function, Node &params) {
     //			left = analyze(left, name) NO, we don't want args to become variables!
     List<Arg> args;
+
     Node *nextType = &DoubleType;
+//    Node *nextType = 0;//types preEvaluateType(params, &function);
+// todo: dynamic type in square / add1 x:=x+1;add1 3
     if (params.length == 0) {
         params = groupTypes(params, function);
         if (params.name != function.name)
@@ -601,6 +604,7 @@ bool isGlobal(Node &node, Function &function) {
 
 bool isPrimitive(Node &node) {
     // should never be cloned so always compare by reference ok?
+    if (&node == NULL)return false;
     if (&node == &IntegerType)return true;
     if (&node == &BoolType)return true;
     if (&node == &LongType)return true;
@@ -689,9 +693,9 @@ Node &groupTypes(Node &expression, Function &context) {
 
         if (i < expression.length and not is_operator(expression.children[i].name[0])) {
             typed = &expression.children[i];
-}
-        while (isPrimitive(*typed) or
-               (typed->kind == reference and typed->length == 0)) {// BAD criterion for next!
+        }
+        while (typed and (isPrimitive(*typed) or
+               (typed->kind == reference and typed->length == 0))) {// BAD criterion for next!
             typed->type = aType;// ref ok because types can't be deleted ... rIgHt?
             if (typed->kind == reference or typed->isSetter())
                 addLocal(context, typed->name, mapType(aType->name), false);
@@ -754,8 +758,7 @@ void updateLocal(Function &context, String name, Type type) {
             }
         } else {
             if (!compatibleTypes(oldType, type)) {
-//                warn
-                trace("local "s + name + " in context %s already known "s % context.name + " with type " +
+                error("local "s + name + " in context %s already known "s % context.name + " with type " +
                       typeName(oldType) + ", ignoring new type " + type_name);
             }
         }
@@ -805,14 +808,6 @@ Node &groupGlobal(Node &node, Function &function) {
 bool addLocal(Function &context, String name, Type type, bool is_param) {
     if (isKeyword(name))
         error("keyword as local name: "s + name);
-//	if (name == "conditon"){
-//		todo("addLocal");
-//	}
-//	if (eq(name.data, "condition"))
-//		return true;
-////		todo("addLocal");
-//	if (name == "if")
-//		todo("addLocal");
     // todo: kotlin style context sensitive symbols!
     if (builtin_constants.has(name))
         return true;
@@ -971,23 +966,23 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
     expression.children++;
     expression.length--;
     auto fun = expression.first();
-    Node return_type;
+    Node* return_type=0;
     Node arguments = groupTypes(fun.childs(), context); // children f(x,y)
     Node body;
     auto ret = expression.containsAny(return_keywords);
     if (ret) {
-        return_type = expression.from(ret);
+        return_type = &expression.from(ret);
         expression = expression.to(ret);
-        body = return_type.values(); // f(x,y) -> int { x+y }
-    } else if (expression.size() == 3) {// f(x,y) int { x+y }
-        return_type = expression[1];
+        body = return_type->values(); // f(x,y) -> int { x+y }
+    } else if (expression.length == 3) {// f(x,y) int { x+y }
+        return_type = &expression[1];
         body = expression.last();
     } else body = fun.values();
 
     auto opa = expression.containsAny(function_operators); // fun x := x+1
     if (opa)
         body = expression.from(opa);
-    return groupFunctionDeclaration(fun.name, &return_type, NIL, arguments, body, context);
+    return groupFunctionDeclaration(fun.name, return_type, NIL, arguments, body, context);
 }
 
 // f x:=x*x  vs groupFunctionDefinition fun x := x*x
@@ -1846,9 +1841,7 @@ Node &groupWhile(Node &n, Function &context) {
     return ef;
 }
 
-
 Node &groupOperatorCall(Node &node, Function &function);
-
 /*
  * ☢️ ⚛ Nuclear Core ⚠️ 🚧
  * turning some knobs might yield some great powers
