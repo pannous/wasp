@@ -540,6 +540,11 @@ void testPolymorphism3() {
     assert_emit("fun test(string a){return a};\nfun test(int a){return a};\nfun test(float b){return b+1};\ntest(1.0)", 2.0);
 }
 
+void testModifiers(){
+    assert_emit("public fun ignore(){3}",3);
+    assert_emit("public static export import extern external C global inline virtual override final abstract private protected internal const constexpr volatile mutable thread_local synchronized transient native fun ignore(){3}",3);
+}
+
 //#import "pow.h"
 //void testOwnPowerExponentialLogarithm() {
 //	check_is(exp(1), 2.718281828459045);
@@ -3727,6 +3732,7 @@ void testCurrent() {
     testPolymorphism();
 //    testPolymorphism2();
     skip(
+            testModifiers();
             testPolymorphism3();
             assert_emit("τ≈6.2831853", true);
     )
