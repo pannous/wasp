@@ -26,13 +26,13 @@
 #include <wasmedge/wasmedge.h>
 
 
-void testMinusMinus(){
-    assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
-//    assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !"
-//    assert_emit("1--3", 4);// todo parse error
-    assert_emit("1- -3", 4);// -1 uh ok?  warn "what are you doning?"
-    assert_emit("1 - -3", 4);// -1 uh ok?  warn "what are you doning?"
-//    assert_emit("1 - - 3", 4);// error ok todo parse error
+void testMinusMinus() {
+    assert_emit("1 - 3 - square 3+4", (int64) -51); // OK!
+    //    assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !"
+    //    assert_emit("1--3", 4);// todo parse error
+    assert_emit("1- -3", 4); // -1 uh ok?  warn "what are you doning?"
+    assert_emit("1 - -3", 4); // -1 uh ok?  warn "what are you doning?"
+    //    assert_emit("1 - - 3", 4);// error ok todo parse error
 }
 
 extern "C"
@@ -272,7 +272,7 @@ void testExceptions() {
 //    assert_emit("(unclosed bracket",123);
     assert_throws("x:int=1;x='ok'"); // worked before, cleanup fail!
     assert_throws("x:int=1;x=1.1");
-    skip(
+skip(
     )
 //    assert_emit("x:int=1;x=1.0",1); // might be cast by compiler
 //    assert_emit("x=1;x='ok';x=1", 1); // untyped x can be reassigned
@@ -489,7 +489,7 @@ void testTypesSimple() {
 
 void testTypesSimple2() {
     result = analyze(parse("a:chars"));
-//    assert_equals(result.kind, Kind::reference);
+    //    assert_equals(result.kind, Kind::reference);
     assert_equals(result.kind, Kind::key);
     assert_equals(result.type, &ByteCharType);
     assert_equals(result.name, "a");
@@ -574,7 +574,7 @@ void testTypes() {
     testTypeConfusion();
     skip(
         testTypesSimple2();
-            testEmptyTypedFunctions();
+    testEmptyTypedFunctions();
     )
 }
 
@@ -1533,12 +1533,12 @@ void testDataMode() {
     check(result.length == 4);// a b = c
 
     skip(
-            result = analyze(result);
-            print(result);
-            check(result.length == 1);// todo  todo => (a b)=c => =( (a b) c)
+        result = analyze(result);
+    print(result);
+    check(result.length == 1); // todo  todo => (a b)=c => =( (a b) c)
 
-            result = parse("<a href=link.html/>", ParserOptions{.data_mode=true, .use_tags=true});
-            check(result.length == 1);// a(b=c)
+    result = parse("<a href=link.html/>", ParserOptions{.data_mode = true, .use_tags = true});
+    check(result.length == 1); // a(b=c)
     )
 }
 
@@ -2681,11 +2681,11 @@ void testParams() {
     assert_parses("while(x<3){y:z}");
     skip(
             Node body2 = assert_parses(
-                    "body(style='blue'){style:green}");// is that whole xml compatibility a good idea?
-            skip(assert(body2["style"] ==
-                        "green", 0));// body has prescedence over param, semantically param provide extra data to body
-            assert(body2[".style"] == "blue");
-    )
+                     "body(style='blue'){style:green}"); // is that whole xml compatibility a good idea?
+skip(assert(body2["style"] ==
+            "green", 0)); // body has prescedence over param, semantically param provide extra data to body
+assert(body2[".style"] == "blue");
+)
 //	assert_parses("a(href='#'){'a link'}");
 //	assert_parses("(markdown link)[www]");
 }
@@ -3367,20 +3367,19 @@ void todo_done() {
 }
 
 
-
 // todo: move back into tests() once they work again
 void todos() {
     skip( // unskip to test!!
         testKitchensink();
             testNodeEmit();
-            testLengthOperator();
-            testConstructorCast();
-            testEmitCast();
-            assert_emit("2,4 == 2,4", 1);
-            assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
+    testLengthOperator();
+    testConstructorCast();
+    testEmitCast();
+    assert_emit("2,4 == 2,4", 1);
+    assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
             assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
-            assert_emit("1 +1 == [1 1]", 1);
-            assert_emit("1 +1 ≠ 1 + 1", 1);
+    assert_emit("1 +1 == [1 1]", 1);
+    assert_emit("1 +1 ≠ 1 + 1", 1);
     testWasmTypedGlobals();
     )
 
@@ -3399,11 +3398,11 @@ void todos() {
 //    Missing condition for while statement
     skip(
     assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
-            )
+    )
 
     assert_emit("use math;⅓ ≈ .3333333 ", 1);
     assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
-    assert_throws("i*=3");// well:
+    assert_throws("i*=3"); // well:
     assert_emit("i*=3", (int64) 0);
     // todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
     assert_throws("ceiling 3.7");
@@ -3823,24 +3822,24 @@ void testCurrent() {
             check_is("τ≈6.2831853", true);
             assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
             assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
-    )
+)
 
-    testDom();
-    testExceptions();
+testDom();
+testExceptions();
 
-    assert_emit("√ π ²", pi);
-    assert_emit("√π²", pi);
+assert_emit("√ π ²", pi);
+assert_emit("√π²", pi);
 
 
-    testGlobals();
-    skip(
-            testVectorShim();// use GPU even before wasm vector extension is available
+testGlobals();
+skip(
+            testVectorShim(); // use GPU even before wasm vector extension is available
     )
     testSourceMap();
 //	testDwarf();
     testFibonacci();
-    testUnicode_UTF16_UTF32();
-    testReplaceAll();
+testUnicode_UTF16_UTF32();
+testReplaceAll();
 #if WEBAPP or MY_WASM
     testHostIntegration();
 #endif
@@ -3848,15 +3847,15 @@ void testCurrent() {
 //    testWasmGC();
 #endif
 
-    testOldRandomBugs();
-    assert_emit("n=3;2ⁿ", 8);
-    assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
+testOldRandomBugs();
+assert_emit("n=3;2ⁿ", 8);
+assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
     assert_emit("'αβγδε'#3", U'γ');
     assert_emit("√9*-‖-3‖/-3", 3);
-    skip(
-            assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
-            assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
-            testGenerics();
+skip(
+    assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
+testGenerics();
     )
 
     testRenameWasmFunction();
