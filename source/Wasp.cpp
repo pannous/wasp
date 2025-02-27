@@ -1146,7 +1146,7 @@ private:
         if (next == 0)return true;
         if (lastNonWhite == ':')return true;
         if (lastNonWhite == '{' or next == '}')
-            return true;// todo: nextNonWhite
+            return true; // todo: nextNonWhite
         if (lastNonWhite == '(' or next == ')')return true;
         if (lastNonWhite == '[' or next == ']')return true;
         if (ch == ',' and next == ';')return true;// 1,2,3,; => 1,2,3;

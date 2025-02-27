@@ -1157,7 +1157,7 @@ assert_emit("global mut int k=7", 7); //   all globals without value are imports
 
 void testWasmMutableGlobal() {
     //	assert_emit("$k=7",7);// ruby style, conflicts with templates `hi $name`
-//    assert_emit("k::=7", 7);// global variable not visually marked as global, not as good as:
+    //    assert_emit("k::=7", 7);// global variable not visually marked as global, not as good as:
     assert_emit("global k=7", 7); // python style, as always the best
     assert_emit("global k:=7", 7);//  global or function?
     assert_emit("global k;k = 7", 7);// python style, as always the best
@@ -1411,7 +1411,7 @@ void testAllWasm() {
     skip(
         testWasmGC();
     )
-//	data_mode = false;
+    //	data_mode = false;
     testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY
     puts("RUNTIME_ONLY");
