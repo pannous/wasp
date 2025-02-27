@@ -10,10 +10,7 @@ if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
 endif ()
 
 
-set(SOURCE ".")
-if (NOT EXISTS "${SOURCE}")
-    set(SOURCE "source")
-endif ()
+set(SOURCE "source")
 
 include(FetchContent) # external projects like webview
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib") # save libwebview to lib ?
@@ -732,9 +729,9 @@ elseif (WASMER)
     target_link_libraries(wasp PRIVATE wasmer)
 elseif (WASMEDGE)
     MESSAGE("USING WASMEDGE")
+    MESSAGE("${SOURCE}")
     ADD_DEFINITIONS(-DWASMEDGE)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_edge.cpp)
-    set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
     #    target_include_directories(wasp PUBLIC Frameworks/wasmedge)
     target_include_directories(wasp PUBLIC /opt/wasm/WasmEdge/include/api/)

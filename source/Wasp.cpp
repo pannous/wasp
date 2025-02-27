@@ -1048,7 +1048,8 @@ private:
             if (text[pos] == ';' and braces == 0)return true;// end of statement!
             if (text[pos] == '=' and braces == 0)
                 return text[pos + 1] != '=' and text[pos - 1] != '=' and not is_operator(text[pos - 1]);// == != OK
-            if (text[pos] == '}')braces--;
+            if (text[pos] == '}')
+                braces--;
             pos++;
         }
         return false;// OK, no ambiguity
@@ -1144,7 +1145,8 @@ private:
     bool skipBorders(char ch) {// {\n} == {}
         if (next == 0)return true;
         if (lastNonWhite == ':')return true;
-        if (lastNonWhite == '{' or next == '}')return true;// todo: nextNonWhite
+        if (lastNonWhite == '{' or next == '}')
+            return true;// todo: nextNonWhite
         if (lastNonWhite == '(' or next == ')')return true;
         if (lastNonWhite == '[' or next == ']')return true;
         if (ch == ',' and next == ';')return true;// 1,2,3,; => 1,2,3;
@@ -1632,6 +1634,7 @@ private:
             }
         }
         if (close and not isWhite(close) and close != ';' and close != ',') {
+            // todo remember opening pair line
             parserError("unclosed pair "s + close);
         }
         return actual.flat();

@@ -695,7 +695,8 @@ Node &groupTypes(Node &expression, Function &context) {
             typed = &expression.children[i];
         }
         while (typed and (isPrimitive(*typed) or
-               (typed->kind == reference and typed->length == 0))) {// BAD criterion for next!
+                          (typed->kind == reference and typed->length == 0))) {
+            // BAD criterion for next!
             typed->type = aType;// ref ok because types can't be deleted ... rIgHt?
             if (typed->kind == reference or typed->isSetter())
                 addLocal(context, typed->name, mapType(aType->name), false);
@@ -830,6 +831,7 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
 }
 
 Node extractReturnTypes(Node decl, Node body);
+
 Node &classDeclaration(Node &node, Function &function);
 
 Node &classDeclaration(Node &node, Function &function) {
@@ -966,7 +968,7 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
     expression.children++;
     expression.length--;
     auto fun = expression.first();
-    Node* return_type=0;
+    Node *return_type = 0;
     Node arguments = groupTypes(fun.childs(), context); // children f(x,y)
     Node body;
     auto ret = expression.containsAny(return_keywords);
@@ -1842,6 +1844,7 @@ Node &groupWhile(Node &n, Function &context) {
 }
 
 Node &groupOperatorCall(Node &node, Function &function);
+
 /*
  * ☢️ ⚛ Nuclear Core ⚠️ 🚧
  * turning some knobs might yield some great powers

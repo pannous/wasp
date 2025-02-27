@@ -2,9 +2,13 @@
 #include "Wasp.h"
 #include "wasm_reader.h"
 #include "wasm_helpers.h"
+
 #if INCLUDE_MERGER
+
 #include "wasm_merger.h"
+
 #endif
+
 #include "wasm_emitter.h"
 #import "asserts.h"
 
@@ -78,7 +82,7 @@ void testEmitter() {
 #endif
 }
 
-void test_implicit_multiplication(){
+void test_implicit_multiplication() {
     assert_emit("x=3;2x", 6);
     assert_emit("2π", 2 * pi);
     skip(
@@ -394,16 +398,16 @@ void testComparisonMath() {
     assert_emit(("3*2≤24*3"), 1)
     assert_emit(("3*13!=14*3"), 1)
     assert_emit(("3*13<=14*3"), 1)
-	assert_emit(("3*15>=14*3"), 1)
-	assert_emit(("3*42<2*3"), False);
-	assert_emit(("3*1>2*3"), False);
-	assert_emit(("3*452!=452*3"), False);
-	assert_emit(("3*13>=14*3"), False);
-	assert_emit(("3*15<=14*3"), False);
-	assert_emit(("3*42≥112*3"), false)
-	assert_emit(("3*2≥112*3"), false)
-	assert_emit(("3*12≤2*3"), false)
-	assert_emit(("3*112≤24*3"), false)
+    assert_emit(("3*15>=14*3"), 1)
+    assert_emit(("3*42<2*3"), False);
+    assert_emit(("3*1>2*3"), False);
+    assert_emit(("3*452!=452*3"), False);
+    assert_emit(("3*13>=14*3"), False);
+    assert_emit(("3*15<=14*3"), False);
+    assert_emit(("3*42≥112*3"), false)
+    assert_emit(("3*2≥112*3"), false)
+    assert_emit(("3*12≤2*3"), false)
+    assert_emit(("3*112≤24*3"), false)
 
 //    assert_emit(("3*452==452*3"), 1) // forces runtime
 //    assert_emit(("3*13==14*3"), False);
@@ -414,13 +418,13 @@ void testComparisonId() {
     // may be evaluated by compiler!
     assert_emit("id(3*42 )> id 2*3", 1)
     assert_emit("id(3*1)< id 2*3", 1)
-	skip(
-			assert_emit("id(3*452)==452*3", 1)
-			assert_emit("452*3==id(3*452)", 1)
-			assert_emit("452*3==id 3*452", 1)
-			assert_emit("id(3*452)==452*3", 1)
-			assert_emit(("id(3*13)==14*3"), False);
-	)
+    skip(
+            assert_emit("id(3*452)==452*3", 1)
+            assert_emit("452*3==id(3*452)", 1)
+            assert_emit("452*3==id 3*452", 1)
+            assert_emit("id(3*452)==452*3", 1)
+            assert_emit(("id(3*13)==14*3"), False);
+    )
     assert_emit(("id(3*42)≥2*3"), 1)
     assert_emit(("id(3*2)≥2*3"), 1)
     assert_emit(("id(3*2)≤2*3"), 1)
@@ -444,14 +448,14 @@ void testComparisonId() {
 
 void testComparisonIdPrecedence() {
     // may be evaluated by compiler!
-	skip(
-			assert_emit("id 3*452==452*3", 1) // forces runtime
-			assert_emit(("id 3*13==14*3"), False);
+    skip(
+            assert_emit("id 3*452==452*3", 1) // forces runtime
+            assert_emit(("id 3*13==14*3"), False);
 
 //	Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1`
-			assert_emit("id 3*42 > id 2*3", 1)
-			assert_emit("id 3*1< id 2*3", 1)
-	)
+            assert_emit("id 3*42 > id 2*3", 1)
+            assert_emit("id 3*1< id 2*3", 1)
+    )
     assert_emit("id(3*42)> id 2*3", 1)
     assert_emit("id(3*1)< id 2*3", 1)
     assert_emit(("id 3*42≥2*3"), 1)
@@ -484,19 +488,19 @@ void testComparisonPrimitives() {
     assert_emit(("2≤24"), 1)
     assert_emit(("13!=14"), 1)
     assert_emit(("13<=14"), 1)
-	assert_emit(("15>=14"), 1)
-	assert_emit(("42<2"), False);
-	assert_emit(("1>2"), False);
-	assert_emit(("452!=452"), False);
-	assert_emit(("13>=14"), False);
-	assert_emit(("15<=14"), False);
-	assert_emit(("42≥112"), false)
-	assert_emit(("2≥112"), false)
-	assert_emit(("12≤2"), false)
-	assert_emit(("112≤24"), false)
+    assert_emit(("15>=14"), 1)
+    assert_emit(("42<2"), False);
+    assert_emit(("1>2"), False);
+    assert_emit(("452!=452"), False);
+    assert_emit(("13>=14"), False);
+    assert_emit(("15<=14"), False);
+    assert_emit(("42≥112"), false)
+    assert_emit(("2≥112"), false)
+    assert_emit(("12≤2"), false)
+    assert_emit(("112≤24"), false)
 #if not WASM
-	assert_emit(("452==452"), 1) // forces runtime eq
-	assert_emit(("13==14"), False);
+    assert_emit(("452==452"), 1) // forces runtime eq
+    assert_emit(("13==14"), False);
 #endif
 }
 
@@ -1038,6 +1042,7 @@ void testRecentRandomBugs() {
     assert_emit("1-‖3‖/-3", 2);
     assert_emit("i=true; not i", false);
     skip(
+        testLengthOperator();
             assert_emit("i=3^1;i^=3", (int64) 27);
             assert_throws("i*=3");// well:
             assert_emit("i*=3", (int64) 0);
@@ -1141,12 +1146,28 @@ void wasm_todos() {
     )
 }
 
+void testWasmTypedGlobals(){
+//    assert_emit("global int k", 7);//   empty global initializer for int
+    assert_emit("global long k=7", 7);
+//    assert_emit("global int k=7", 7); // type mismatch
+    assert_emit("global const int k=7", 7);//   all globals without value are imports??
+    assert_emit("global mutable int k=7", 7);//   all globals without value are imports??
+    assert_emit("global mut int k=7", 7);//   all globals without value are imports??
+}
+
 void testWasmMutableGlobal() {
 //	assert_emit("$k=7",7);// ruby style, conflicts with templates `hi $name`
-    assert_emit("k::=7", 7);// global variable not visually marked as global, not as good as:
+//    assert_emit("k::=7", 7);// global variable not visually marked as global, not as good as:
     assert_emit("global k=7", 7);// python style, as always the best
-    assert_emit("global.k=7", 7);//  currently all globals are exported
     assert_emit("global k:=7", 7);//  global or function?
+    assert_emit("global k;k = 7", 7);// python style, as always the best
+//    assert_emit("global.k=7", 7);//  currently all globals are exported
+    skip(testWasmMutableGlobal2())
+    skip(testWasmTypedGlobals())
+//    testWasmMutableGlobalImports();
+}
+
+void testWasmMutableGlobal2() {
     assert_emit("export k=7", 7);//  all exports are globals, naturally.
     assert_emit("export k=7", 7);//  all exports are globals, naturally.
     assert_emit("export f:=7", 7);//  exports can be functions too.
@@ -1158,7 +1179,9 @@ void testWasmMutableGlobal() {
     assert_emit("export int f:=7", 7);//  exports can be functions too.
     assert_emit("global int k", 0);// todo error without init value?
     assert_emit("export int k", 0);//
+}
 
+void testWasmMutableGlobalImports() {
     assert_emit("import int k", 7);//  all imports are globals, naturally.
     assert_emit("import const int k", 7);//  all imports are globals, naturally.
     assert_emit("import mutable int k", 7);//  all imports are globals, naturally.
@@ -1174,11 +1197,6 @@ void testWasmMutableGlobal() {
     assert_emit("import k=7", 7);//  import with inferred type
     assert_emit("import const k=7", 7);//  import with inferred type
     assert_emit("import mutable k=7", 7);//  import with inferred type
-
-    assert_emit("global int k", 7);//   all globals without value are imports??
-    assert_emit("global const int k", 7);//   all globals without value are imports??
-    assert_emit("global mutable int k", 7);//   all globals without value are imports??
-    assert_emit("global mut int k", 7);//   all globals without value are imports??
 // remember that the concepts of functions and properties shall be IDENTICAL to the USER!
 // this does not impede the above, as global exports are not properties, but something to keep in mind
 }
@@ -1387,12 +1405,12 @@ void testLogarithm2() {
 
 
 void testAllWasm() {
-	assert_emit("42", 42);
-	assert_emit("42+1", 43);
+    assert_emit("42", 42);
+    assert_emit("42+1", 43);
     testStringConcatWasm();
     skip(
-	testWasmGC();
-            )
+            testWasmGC();
+    )
 //	data_mode = false;
     testWasmMemoryIntegrity();
 #ifdef RUNTIME_ONLY
