@@ -1,0 +1,115 @@
+package wasp
+
+// Enum to represent the active type in the union `Value`
+enum ValueType {
+node = 0,
+string = 1,
+data   = 2,
+long  = 3,
+real  = 4,
+module = 5
+}
+
+// Kind Enum Definition
+enum Kind {
+undefined = 0,
+unknown = 1,
+objects = 2,
+strings = 0x9,
+call = 0x10,
+groups = 0x11,
+tuples = 0x11,
+patterns = 0x12,
+generics = 0x13,
+tags = 0x13,
+key = 0x14,
+fields = 0x15,
+reference = 0x16,
+global = 0x17,
+symbol = 0x18,
+operators = 0x19,
+functor = 0x1A,
+expression = 0x1B,
+declaration = 0x1C,
+assignment = 0x1D,
+buffers = 0x1E,
+bools = 0x1F,
+errors = 0x20,
+clazz = 0x21,
+arrays = 0x22,
+linked_list = 0x23,
+meta = 0x23,
+enums = 0x24,
+flags = 0x25,
+variants = 0x26,
+records = 0x27,
+constructor = 0x28,
+modul = 0x29,
+nils = 0x40,
+referencex = 0x41,
+number = 0x70,
+structs = 0x77,
+reals = 0x7C,
+realsF = 0x7D,
+longs = 0x7E,
+long32 = 0x7F,
+last_kind = 0x80,
+codepoint1 = 0xC4,
+urls = 0xC5
+}
+
+// String type representation in WASM
+type String struct {
+pointer: u32,
+length: u32
+}
+
+// Union to represent the Value structure
+union Value {
+Node(node: Node),
+String(string: String),
+Data(data: u64),
+Long(long: s64),
+Real(real: f64),
+Module(module: u64)
+}
+
+// Struct to represent a Node
+type Node struct {
+name: String,
+type: option<Node>,
+kind: ValueType,
+value: Value,
+length: u32,
+child: list<Node>,
+meta: option<Node>,
+parent: option<Node>,
+next: option<Node>,
+separator: u8
+}
+
+// Functions exposed for manipulating Nodes
+
+// Create a new Node with basic fields
+func create_node(name: String, kind: ValueType, value: Value) -> Node
+
+// Add a child Node to a parent Node
+func add_child(parent: Node, child: Node)
+
+// Set the meta Node for a given Node (nullable)
+func set_meta(node: Node, meta: option<Node>)
+
+// Set the parent Node for a given Node (nullable)
+func set_parent(node: Node, parent: option<Node>)
+
+// Set the next Node for a given Node (nullable)
+func set_next(node: Node, next: option<Node>)
+
+// Update the value of a Node
+func update_value(node: Node, value: Value)
+
+// Get the child Nodes of a given Node
+func get_children(node: Node) -> list<Node>
+
+// Debugging or utilities
+func print_node_debug(node: Node)

@@ -839,3 +839,8 @@ struct smart_value {
 smart_pointer_64 toSmartPointer(Node *n);
 
 void debugNode(Node &n);
+
+extern List<String> falseKeywords;
+extern List<String> nilKeywords;
+
+extern "C" Node cast(const Node &from, Type to_type);

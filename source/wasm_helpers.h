@@ -15,8 +15,8 @@ typedef const char *chars;
 typedef unsigned char *bytes;
 
 #if not WEBAPP
-[[noreturn]]
 #endif
+[[noreturn]]
 extern void error1(chars message, chars file, int line);
 
 // there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it

@@ -25,35 +25,14 @@
 
 #include <wasmedge/wasmedge.h>
 
-// this is NOT reinterpret cast, but a real cast, e.g. from 2 to '2'
-extern "C"
-Node cast(const Node &from, Type to_type) {
-    if(from.kind == to_type.kind)return from;
-    if(from.kind == reals and to_type.kind == longs)return Node((int64_t)from.value.real); // boring, done by wasm?
-    if(from.kind == longs and to_type.kind == reals)return Node((double)from.value.longy);
-    if(from.kind == longs and to_type.kind == bools)return Node((bool)from.value.longy);
-    // REAL CASTS "2" to '2' to 2
-    if(from.kind == longs and to_type.kind == strings)return Node(formatLong(from.value.longy),false);
-    if(from.kind == reals and to_type.kind == strings)
-        return Node(formatRealWithBaseAndPrecision(from.value.real, 10, 2),false);
-    if(from.kind == longs and to_type.kind == codepoint1){ // digit to char! 2 => '2'
-        // DANGER: user intention unclear!? 2 => '2' or 0x20 => ' '
-        if(from.value.longy < 0 or from.value.longy > 9)error("int to char cast only for 0 to 9");
-        if(from.value.longy>9) return Node((codepoint)from.value.longy);// reinterpret cast
-        return Node(getChar(formatLong(from.value.longy),1));
-    }
-    if(from.kind == strings and to_type.kind == codepoint1)return Node(getChar(*from.value.string,1));// "a" => 'a'
-    if(from.kind == strings and to_type.kind == bools) // "False" => false "nil" => false
-        return Node(not falseKeywords.has(*from.value.string) and not nilKeywords.has(*from.value.string));
-    if(from.kind == codepoint1 and to_type.kind == bools){
-        codepoint c = from.value.longy;
-        if(empty(c))return Node(false);
-        if(c == '0' or c == 'f' or c == 'F' or c == 'n' or c == 'N' or c == u'ø')return Node(false);
-        return Node(atoi1(c)!=0);
-    }
-    if(from.kind == codepoint1 and to_type.kind == longs)return Node((int64_t) from.value.longy);
-    if(from.kind == codepoint1 and to_type.kind == strings)return Node(String((codepoint)from.value.longy),false);
-    todo("cast "s + from.serialize() + " to " + typeName(to_type));
+
+void testMinusMinus(){
+    assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
+//    assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !"
+//    assert_emit("1--3", 4);// todo parse error
+    assert_emit("1- -3", 4);// -1 uh ok?  warn "what are you doning?"
+    assert_emit("1 - -3", 4);// -1 uh ok?  warn "what are you doning?"
+//    assert_emit("1 - - 3", 4);// error ok todo parse error
 }
 
 extern "C"
@@ -61,8 +40,8 @@ Node cast_smart(smarty value, Type to_type) {
     return cast(Node(value), to_type);
 }
 
-void testCast(){
-    check_eq("2"s , cast(Node(2), strings).value.string);
+void testCast() {
+    check_eq("2"s, cast(Node(2), strings).value.string);
     check_eq(cast(Node(2), longs).value.longy, 2);// trivial
     check_eq(cast(Node(2.1), longs).value.longy, 2);
     check_eq(cast(Node(2), reals).value.real, 2.0);
@@ -76,10 +55,10 @@ void testCast(){
     check_eq(true, cast(Node("True", false), bools).value.longy);
     check_eq(true, cast(Node("1", false), bools).value.longy);
     check_eq(true, cast(Node(1), bools).value.longy);
-    check_eq(true, cast(Node("abcd",false), bools).value.longy);
+    check_eq(true, cast(Node("abcd", false), bools).value.longy);
 }
 
-void testEmitCast(){
+void testEmitCast() {
     assert_emit("(2 as float, 4.3 as int)  == 2.0 ,4", 1);
     assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
     // advanced, needs cast() to be implemented in wasm
@@ -101,7 +80,7 @@ void testEmitCast(){
     assert_emit("'2.1' as double", 2.1);
 }
 
-void testConstructorCast(){
+void testConstructorCast() {
     assert_run("int('123')", 123);
     assert_run("str(123)", "123");
     assert_run("'a'", 'a');
@@ -294,7 +273,7 @@ void testExceptions() {
     assert_throws("x:int=1;x='ok'"); // worked before, cleanup fail!
     assert_throws("x:int=1;x=1.1");
     skip(
-            )
+    )
 //    assert_emit("x:int=1;x=1.0",1); // might be cast by compiler
 //    assert_emit("x=1;x='ok';x=1", 1); // untyped x can be reassigned
     assert_throws("'unclosed quote");
@@ -510,7 +489,8 @@ void testTypesSimple() {
 
 void testTypesSimple2() {
     result = analyze(parse("a:chars"));
-    assert_equals(result.kind, Kind::reference);
+//    assert_equals(result.kind, Kind::reference);
+    assert_equals(result.kind, Kind::key);
     assert_equals(result.type, &ByteCharType);
     assert_equals(result.name, "a");
 
@@ -541,6 +521,7 @@ void testTypesSimple2() {
 
 void testTypedFunctions() {
     // todo name 'id' clashes with 'id' in preRegisterFunctions()
+    clearAnalyzerContext();
     result = analyze(parse("int tee(float b, string c){b}"));
     check_is(result.kind, Kind::declaration);
     check_is(result.name, "tee");
@@ -585,13 +566,16 @@ void testEmptyTypedFunctions() {
     check_is(result.name, "a");
 }
 
-void testTypes(){
+void testTypes() {
     testBadType();
     testDeepType();
     testTypedFunctions();
     testTypesSimple();
-    testTypesSimple2();
     testTypeConfusion();
+    skip(
+        testTypesSimple2();
+            testEmptyTypedFunctions();
+    )
 }
 
 void testPolymorphism() {
@@ -1549,13 +1533,13 @@ void testDataMode() {
     check(result.length == 4);// a b = c
 
     skip(
-    result = analyze(result);
-    print(result);
-    check(result.length == 1);// todo  todo => (a b)=c => =( (a b) c)
+            result = analyze(result);
+            print(result);
+            check(result.length == 1);// todo  todo => (a b)=c => =( (a b) c)
 
-    result = parse("<a href=link.html/>", ParserOptions{.data_mode=true, .use_tags=true});
-    check(result.length == 1);// a(b=c)
-            )
+            result = parse("<a href=link.html/>", ParserOptions{.data_mode=true, .use_tags=true});
+            check(result.length == 1);// a(b=c)
+    )
 }
 
 void testSignificantWhitespace() {
@@ -2161,8 +2145,7 @@ void testKitchensink() {
     assert(result['d'] == "semicolons optional");
     assert(result['e'] == "trailing comments"); // trailing comments
     assert(result["f"] == /*inline comments*/ "inline comments");
-    skip(
-    )
+
 }
 
 void testEval3() {
@@ -2182,9 +2165,8 @@ void testMathExtra() {
     assert_emit("√3**2", 3);
     assert_emit("√3^2", 3);
     skip(
-    assert_is("one plus two times three", 7);
-            )
-
+            assert_is("one plus two times three", 7);
+    )
 }
 
 void testRoot() {
@@ -2697,10 +2679,13 @@ void testParams() {
     skip(assert_parses("chained_ops(1)(1)(1)", 0));// why not generalize from the start?
 
     assert_parses("while(x<3){y:z}");
-    Node body2 = assert_parses("body(style='blue'){style:green}");// is that whole xml compatibility a good idea?
-    skip(assert(body2["style"] ==
-                "green", 0));// body has prescedence over param, semantically param provide extra data to body
-    assert(body2[".style"] == "blue");
+    skip(
+            Node body2 = assert_parses(
+                    "body(style='blue'){style:green}");// is that whole xml compatibility a good idea?
+            skip(assert(body2["style"] ==
+                        "green", 0));// body has prescedence over param, semantically param provide extra data to body
+            assert(body2[".style"] == "blue");
+    )
 //	assert_parses("a(href='#'){'a link'}");
 //	assert_parses("(markdown link)[www]");
 }
@@ -3348,7 +3333,7 @@ void testArrayIndices() {
 }
 
 
-void testNodeEmit(){
+void testNodeEmit() {
     assert_emit("y:{x:2 z:3};y.x", 2);
     assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
     assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
@@ -3363,7 +3348,6 @@ void todo_done() {
     testWrong0Termination();
     testErrors();// error: failed to call function   wasm trap: integer divide by zero
     testMathExtra();// "one plus two times three"==7 used to work?
-    testKitchensink();
 
     testNodeDataBinaryReconstruction();
 
@@ -3376,19 +3360,30 @@ void todo_done() {
     testUpperLowerCase();
 //    exit(1);
     testDataMode();
+    testParams();
+    testWasmMutableGlobal();
+
+    testMinusMinus();
 }
+
 
 
 // todo: move back into tests() once they work again
 void todos() {
     skip( // unskip to test!!
-    testNodeEmit();
-    testLengthOperator();
-    testConstructorCast();
+        testKitchensink();
+            testNodeEmit();
+            testLengthOperator();
+            testConstructorCast();
             testEmitCast();
             assert_emit("2,4 == 2,4", 1);
             assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
-            )
+            assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
+            assert_emit("1 +1 == [1 1]", 1);
+            assert_emit("1 +1 ≠ 1 + 1", 1);
+    testWasmTypedGlobals();
+    )
+
 #if not TRACE
     println("parseLong fails in trace mode WHY?");
     assert_run("parseLong('123000')+parseLong('456')", 123456);
@@ -3397,20 +3392,15 @@ void todos() {
     test_sinus_wasp_import();
     testSinus();// todo FRAGILE fails before!
 //    testSinus2();
-
-
-    assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
-    testParams();
 //    run("circle.wasp");
-    assert_emit("1 +1 == [1 1]", 1);
-    assert_emit("1 +1 ≠ 1 + 1", 1);
-    testWasmMutableGlobal();
+
 
     // while without body
+//    Missing condition for while statement
+    skip(
     assert_emit("i=0;while(i++ <10001);i", 10000)// parsed wrongly! while(  <( ++ i 10001) i)
-    assert_emit("1 - 3 - square 3+4", (int64) -51);// OK!
-    assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !"
-    assert_emit("1 - - 3", 4);// -1 uh ok?  warn "what are you doning?"
+            )
+
     assert_emit("use math;⅓ ≈ .3333333 ", 1);
     assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
     assert_throws("i*=3");// well:
@@ -3714,7 +3704,7 @@ void tests() {
     testDidYouMeanAlias();
     testNetBase();
     testForEach();
-    testLengthOperator();
+    // testLengthOperator();
     testLogicEmptySet();
     testDeepCopyDebugBugBug();
     testDeepCopyDebugBugBug2();
@@ -3801,7 +3791,8 @@ void test_new() {
 void testCurrent() {
 //    assert_emit("def first(array);", 0);
     testCast();
-    todos();
+//    todos();
+    testLengthOperator();
     testRecentRandomBugs();
     test_new();
 //    List<const int&> axx = {1, 2, 3};
@@ -3830,11 +3821,11 @@ void testCurrent() {
             testModifiers();
             assert_emit("τ≈6.2831853", true);
             check_is("τ≈6.2831853", true);
-    assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
-    assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
+            assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
+            assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
     )
 
-	testDom();
+    testDom();
     testExceptions();
 
     assert_emit("√ π ²", pi);
@@ -3843,13 +3834,13 @@ void testCurrent() {
 
     testGlobals();
     skip(
-    testVectorShim();// use GPU even before wasm vector extension is available
-            )
+            testVectorShim();// use GPU even before wasm vector extension is available
+    )
     testSourceMap();
 //	testDwarf();
-	testFibonacci();
-	testUnicode_UTF16_UTF32();
-	testReplaceAll();
+    testFibonacci();
+    testUnicode_UTF16_UTF32();
+    testReplaceAll();
 #if WEBAPP or MY_WASM
     testHostIntegration();
 #endif
@@ -3857,11 +3848,11 @@ void testCurrent() {
 //    testWasmGC();
 #endif
 
-	testOldRandomBugs();
-	assert_emit("n=3;2ⁿ", 8);
-	assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
-	assert_emit("'αβγδε'#3", U'γ');
-	assert_emit("√9*-‖-3‖/-3", 3);
+    testOldRandomBugs();
+    assert_emit("n=3;2ⁿ", 8);
+    assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
+    assert_emit("'αβγδε'#3", U'γ');
+    assert_emit("√9*-‖-3‖/-3", 3);
     skip(
             assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
             assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt

@@ -93,6 +93,7 @@ void error1(chars message, chars file, int line) {
 	throw message; // [[noreturn]] should not return
 #else
     proc_exit(-1);
+    throw message;
 #endif
 }
 

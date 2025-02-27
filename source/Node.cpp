@@ -1560,3 +1560,38 @@ extern "C" Node *getField(Node *n, smart_pointer_64 field) {
 	}
 	return &n->operator[](*(int *) field);
 }
+
+
+// this is NOT reinterpret cast, but a real cast, e.g. from 2 to '2'
+extern "C"
+Node cast(const Node &from, Type to_type) {
+    if (from.kind == to_type.kind)return from;
+    if (from.kind == reals and to_type.kind == longs)return Node((int64_t) from.value.real); // boring, done by wasm?
+    if (from.kind == longs and to_type.kind == reals)return Node((double) from.value.longy);
+    if (from.kind == longs and to_type.kind == bools)return Node((bool) from.value.longy);
+    // REAL CASTS "2" to '2' to 2
+    if (from.kind == longs and to_type.kind == strings)return Node(formatLong(from.value.longy), false);
+    if (from.kind == reals and to_type.kind == strings)
+        return Node(formatRealWithBaseAndPrecision(from.value.real, 10, 2), false);
+    if (from.kind == longs and to_type.kind == codepoint1) {
+        // digit to char! 2 => '2'
+        // DANGER: user intention unclear!? 2 => '2' or 0x20 => ' '
+        if (from.value.longy < 0 or from.value.longy > 9)
+            error("int to char cast only for 0 to 9");
+        if (from.value.longy > 9) return Node((codepoint) from.value.longy); // reinterpret cast
+        return Node(getChar(formatLong(from.value.longy), 1));
+    }
+    if (from.kind == strings and to_type.kind == codepoint1)return Node(getChar(*from.value.string, 1)); // "a" => 'a'
+    if (from.kind == strings and to_type.kind == bools) // "False" => false "nil" => false
+        return Node(not falseKeywords.has(*from.value.string) and not nilKeywords.has(*from.value.string));
+    if (from.kind == codepoint1 and to_type.kind == bools) {
+        codepoint c = from.value.longy;
+        if (empty(c))return Node(false);
+        if (c == '0' or c == 'f' or c == 'F' or c == 'n' or c == 'N' or c == u'ø')return Node(false);
+        return Node(atoi1(c) != 0);
+    }
+    if (from.kind == codepoint1 and to_type.kind == longs)return Node((int64_t) from.value.longy);
+    if (from.kind == codepoint1 and to_type.kind == strings)return Node(String((codepoint) from.value.longy), false);
+    todo("cast "s + from.serialize() + " to " + typeName(to_type));
+    //    return ERROR;
+}
