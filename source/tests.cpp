@@ -3851,7 +3851,7 @@ testOldRandomBugs();
 assert_emit("n=3;2ⁿ", 8);
 assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
 assert_emit("'αβγδε'#3", U'γ');
-    assert_emit("√9*-‖-3‖/-3", 3);
+assert_emit("√9*-‖-3‖/-3", 3);
 skip(
     assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
 assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
