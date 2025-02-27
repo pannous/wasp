@@ -273,7 +273,7 @@ void testExceptions() {
     assert_throws("x:int=1;x='ok'"); // worked before, cleanup fail!
     assert_throws("x:int=1;x=1.1");
 skip(
-    )
+)
 //    assert_emit("x:int=1;x=1.0",1); // might be cast by compiler
 //    assert_emit("x=1;x='ok';x=1", 1); // untyped x can be reassigned
     assert_throws("'unclosed quote");
@@ -3376,8 +3376,8 @@ void todos() {
     testConstructorCast();
     testEmitCast();
     assert_emit("2,4 == 2,4", 1);
-    assert_emit("(2,4) == (2,4)", 1);// todo: array creation/ comparison
-            assert_emit("‖-2^2 - -2^3‖", 4);// Too many args for operator ‖,   a - b not grouped!
+    assert_emit("(2,4) == (2,4)", 1); // todo: array creation/ comparison
+    assert_emit("‖-2^2 - -2^3‖", 4); // Too many args for operator ‖,   a - b not grouped!
     assert_emit("1 +1 == [1 1]", 1);
     assert_emit("1 +1 ≠ 1 + 1", 1);
     testWasmTypedGlobals();
@@ -3833,9 +3833,9 @@ assert_emit("√π²", pi);
 
 testGlobals();
 skip(
-            testVectorShim(); // use GPU even before wasm vector extension is available
-    )
-    testSourceMap();
+    testVectorShim(); // use GPU even before wasm vector extension is available
+)
+testSourceMap();
 //	testDwarf();
     testFibonacci();
 testUnicode_UTF16_UTF32();
@@ -3850,15 +3850,15 @@ testReplaceAll();
 testOldRandomBugs();
 assert_emit("n=3;2ⁿ", 8);
 assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
-    assert_emit("'αβγδε'#3", U'γ');
+assert_emit("'αβγδε'#3", U'γ');
     assert_emit("√9*-‖-3‖/-3", 3);
 skip(
     assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
 assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
 testGenerics();
-    )
+)
 
-    testRenameWasmFunction();
+testRenameWasmFunction();
 //    testStruct();
 //    todos();
     tests();// make sure all still ok after messing with memory
