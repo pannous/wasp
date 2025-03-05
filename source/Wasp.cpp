@@ -98,7 +98,9 @@ List<String> nilKeywords = {"NULL","nil", "null", "none", "None", "nothing", "No
 //List<chars> circumfixOperators/*Left*/ = {"‖", 0};
 //codepoint circumfixOperators[] = {u'‖', 0};
 // minus common ones u'(', u'{', u'[',
-codepoint opening_special_brackets[] = {u'‖', u'﴾', u'﹙', u'（', u'⁽', u'⸨', u'﹛', u'｛', u'﹝', u'〔', u'〘',
+
+
+codepoint opening_special_brackets[] = {u'‖', u'⟨',u'﴾', u'﹙', u'（', u'⁽', u'⸨', u'﹛', u'｛', u'﹝', u'〔', u'〘',
                                         u'〚', u'〖', u'【', u'『', u'「', u'｢', u'⁅', u'«', u'《', u'〈',
                                         u'︷', u'︵', u'﹁', u'﹃', u'︹', u'︻', u'︽', 0};
 //codepoint closing_special_brackets[] = {}
@@ -110,7 +112,7 @@ codepoint grouper_list[] = {' ', ',', ';', ':', '\n', '\t', '(', ')', '{', '}', 
 // () ﴾ ﴿ ﹙﹚（ ） ⁽ ⁾  ⸨ ⸩
 // {} ﹛﹜｛｝    ﹝﹞〔〕〘〙  ‖…‖
 // [] 〚〛〖〗【】『』「」｢｣ ⁅⁆
-// «» 《》〈〉〈〉
+// <> ⟨⟩ «» 《》〈〉〈〉
 // ︷ ︵ ﹁ ﹃ ︹ ︻ ︽
 // ︸ ︶ ﹂ ﹄ ︺ ︼ ︾
 
@@ -166,7 +168,7 @@ void load_aliases() {
             hash_to_normed_alias[variant.hash()] = &normed.clone();
         }
     }
-	check(hash_to_normed_alias["times"s.hash()]=="*"s);
+	check(hash_to_normed_alias["times"s.hash()] == "*"s);
 //	check(hash_to_normed_alias["mod_d"s.hash()]=="mod"s);
     aliases_loaded = true;
 }
@@ -213,6 +215,8 @@ codepoint closingBracket(codepoint bracket) {
             return '\x0F'; // Shift In closes Shift Out??
         case '\x0F':
             return '\x0E'; // Shift Out closes '\x0F' Shift In
+        case '⟨':
+            return '⟩';
         case u'‖':
             return u'‖';
         case u'⸨':
@@ -999,9 +1003,9 @@ private:
 //	const
     static Node resolve(Node node) {
         String &symbol = node.name;
-        if(falseKeywords.has(symbol))return False;
-        if(trueKeywords.has(symbol))return True;
-        if(nilKeywords.has(symbol))return NIL;
+        if (falseKeywords.has(symbol)) return False;
+        if (trueKeywords.has(symbol)) return True;
+        if (nilKeywords.has(symbol)) return NIL;
 //		if (node.name.in(operator_list))
         if (operator_list.has(symbol))
             node.setType(operators, false); // later: in angle!? NO! HERE: a xor {} != a xxx{}
