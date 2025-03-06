@@ -206,8 +206,11 @@ public:
 //		if(debug)name = "[]";
     }
 
-        Node(const char * a, bool b): Node(String(a), b) {}
-        Node(const char * a, Kind b): Node(String(a), b) {}
+    Node(const char *a, bool b): Node(String(a), b) {
+    }
+
+    Node(const char *a, Kind b): Node(String(a), b) {
+    }
 
     void init_children(int nr = -1) {
         if (nr < 0)nr = capacity;
