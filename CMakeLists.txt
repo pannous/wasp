@@ -46,6 +46,11 @@ else ()
     ADD_DEFINITIONS(-DLINUX)
 endif ()
 
+if (SANITIZE)
+    message("SANITIZE")
+    message("just use lldb -- /Users/me/dev/apps/wasp/cmake-build-debug-sanitize/wasp test; run")
+endif ()
+
 if (X86_64)
     if (LINUX)
         LINK_DIRECTORIES(bin/linux/lib.x86)
@@ -78,12 +83,12 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         # NO engine has (c-api) support for wit / component model as of 2024-12
-        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
         #        SET(SPIN 1) WebAssembly Gateway Interface (WAGI) OK: Write to STDOUT, ENV[QUERY_STRING] for input, uploads through STDIN
 
         #        SET(WASMEDGE 0)
-        #        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
+        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #  set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
@@ -427,7 +432,7 @@ if (SANITIZE) #  OR TRACE
     MESSAGE("ASAN sanitize=address …")
     if (GCC)
         ADD_COMPILE_FLAG("-static-libasan")
-    else ()
+    elseif (NOT APPLE) # c++: error: static AddressSanitizer runtime is not supported on darwin
         ADD_COMPILE_FLAG("-static-libsan")
     endif ()
     if (VERBOSE)
@@ -507,10 +512,10 @@ if (WASM) # OR WASI)
         ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
     else ()
         ADD_COMPILE_FLAG("--target=wasm32-wasi") # default # IF USING OTHER CLANG ... as before switch
-#        ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
-#        set(CMAKE_CXX_STANDARD 20)
-#        set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#        ADD_COMPILE_FLAG("-march=wasm") unsupported option '-march=' for target 'wasm32-unknown-unknown-wasm'
+        #        ADD_COMPILE_FLAG("--target=wasm32-unknown-unknown-wasm") # default:wasi ok
+        #        set(CMAKE_CXX_STANDARD 20)
+        #        set(CMAKE_CXX_STANDARD_REQUIRED ON)
+        #        ADD_COMPILE_FLAG("-march=wasm") unsupported option '-march=' for target 'wasm32-unknown-unknown-wasm'
         ADD_COMPILE_FLAG("-nostdlib") #-v
         ADD_LINK_OPTIONS("-Wl,--no-entry") # if as library
     endif ()
@@ -562,21 +567,21 @@ if (WASM) # OR WASI)
     endif ()
     ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
     if (RELEASE)
-#        ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # preserve functions even if optimized
-#        ADD_COMPILE_FLAG("-fno-lto")
-#        ADD_COMPILE_FLAG("-fno-binaryen")
-#        ADD_COMPILE_FLAG("-fno-post-opt")
+        #        ADD_COMPILE_FLAG("-Wl,--no-gc-sections") # preserve functions even if optimized
+        #        ADD_COMPILE_FLAG("-fno-lto")
+        #        ADD_COMPILE_FLAG("-fno-binaryen")
+        #        ADD_COMPILE_FLAG("-fno-post-opt")
         ADD_COMPILE_FLAG("-Wl,--gc-sections")
         ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
 
-# https://github.com/llvm-project-tlp/llvm-project/commit/680315cd43d17e51e66181f045b7e993e39bfd48
-#        ADD_COMPILE_FLAG("--no-wasm-opt") # removes library functions!!
+        # https://github.com/llvm-project-tlp/llvm-project/commit/680315cd43d17e51e66181f045b7e993e39bfd48
+        #        ADD_COMPILE_FLAG("--no-wasm-opt") # removes library functions!!
 
         if (RUNTIME_ONLY)
             ADD_COMPILE_FLAG("-Wl,--export-all") # preserve functions even if optimized
             # wasmtime bug can't handle with exported globals
         else ()
-#            ADD_COMPILE_FLAG("-Wl,--export=_start") # deletes all unused functions!
+            #            ADD_COMPILE_FLAG("-Wl,--export=_start") # deletes all unused functions!
         endif ()
         #        ADD_COMPILE_FLAG("-Wl,--export-dynamic") #   Put symbols in the dynamic symbol table
         ADD_COMPILE_FLAG("-v")

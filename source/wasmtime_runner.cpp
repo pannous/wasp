@@ -89,7 +89,10 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 
     Module &meta = read_wasm(data, size);
     int import_count = meta.import_count;
-    wasmtime_extern_t imports[import_count];
+    List<wasmtime_extern_t> imports(import_count);
+    // std::vector<wasmtime_extern_t> imports(import_count);
+    // wasmtime_extern_t imports[import_count];
+    meta.functions["getElementById"].signature.add(charp, "id").returns(externref);
 
     int import_nr = 0;
     for (const String &import_name: meta.import_names) {
@@ -99,13 +102,14 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         const wasm_functype_t *type0 = funcType(signature);
         wasmtime_func_new(context, type0, link_import(import_name), NULL, NULL, &func);
         wasmtime_extern_t import = { .kind = WASMTIME_EXTERN_FUNC, .of.func = func };
-        imports[import_nr++] = import;
+        imports.add(import);
+        // imports[import_nr++] = import;
 //        wasm_functype_delete(type0);
     }
 
     wasmtime_instance_t instance;
     wasm_trap_t *trap = NULL;
-    error = wasmtime_instance_new(context, module0, imports, import_count, &instance, &trap);
+    error = wasmtime_instance_new(context, module0, imports.data(), import_count, &instance, &trap);
     wasmtime_module_delete(module0);
     if (error != NULL || trap != NULL) exit_with_error("Failed to instantiate module", error, trap);
 
@@ -464,8 +468,6 @@ wasm_wrap *link_import(String name) {
 //    throw Error((char *) message);// todo copy sprintf error_message backtrace;
 //}
 
-bool done = 0;
-
 #define own
 
 static inline own wasm_functype_t *wasm_functype_new_4_1(
@@ -480,7 +482,70 @@ static inline own wasm_functype_t *wasm_functype_new_4_1(
     return wasm_functype_new(&params, &results);
 }
 
+wasm_valkind_t mapTypeToWasmtime(Type type) {
+    /* enum wasm_valkind_enum {
+    WASM_I32,
+    WASM_I64,
+    WASM_F32,
+    WASM_F64,
+    WASM_EXTERNREF = 128,
+    WASM_FUNCREF,
+    };
+    */
+    switch (type.value) {
+        case int32:
+            return WASM_I32;
+        case i64:
+            return WASM_I64;
+        case float32:
+            return WASM_F32;
+        case float64:
+            return WASM_F64;
+        case externref:
+            return WASM_EXTERNREF;
+        case funcref:
+            return WASM_FUNCREF;
+        default:
+            error("unknown type for wasmtime "s + typeName(type));
+            return WASM_I32;
+    }
+}
+
 const wasm_functype_t *funcType(Signature &signature) {
+    int param_count = signature.parameters.size();
+
+    // Map return type
+    Type returnType = signature.return_types.last(none);
+    wasm_valtype_t *return_type = 0;
+    if(returnType != nils)
+        return_type = wasm_valtype_new(mapTypeToWasmtime(returnType));
+
+    // Allocate parameter types dynamically
+    wasm_valtype_vec_t params, results;
+    wasm_valtype_t **param_types = nullptr;
+
+    if (param_count > 0) {
+        param_types = new wasm_valtype_t *[param_count];
+        for (int i = 0; i < param_count; ++i) {
+            auto typ = signature.parameters[i].type;
+            auto valtype = mapTypeToWasmtime(typ);
+            param_types[i] = wasm_valtype_new(valtype);
+        }
+    }
+
+    wasm_valtype_vec_new(&params, param_count, param_types);
+    wasm_valtype_vec_new(&results, return_type ? 1 : 0, return_type ? &return_type : nullptr);
+
+    // Clean up allocated memory for parameters
+    for (int i = 0; i < param_count; ++i) {
+        wasm_valtype_delete(param_types[i]);
+    }
+    delete[] param_types;
+
+    return wasm_functype_new(&params, &results);
+}
+
+const wasm_functype_t *funcType2(Signature &signature) {
 // ⚠️ these CAN NOT BE REUSED! interrupted by signal 11: SIGSEGV or BIZARRE BUGS if you try!
 //     ⚠ wasm_valtype_t *i = wasm_valtype_new(WASM_I32);  ⚠️
 
