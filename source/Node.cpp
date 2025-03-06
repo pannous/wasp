@@ -1014,7 +1014,7 @@ chars Node::toString() {
 	return serialize();
 }
 
-chars Node::toString() const {
+String Node::toString() const {
 	return serialize();
 }
 

@@ -10,9 +10,13 @@
 
 #pragma GCC diagnostic ignored "-Wdeprecated"
 
-#import "test_angle.cpp"
-#import "test_wast.cpp"
-#import "test_wasm.cpp"
+#include "test_angle.cpp"
+#include "test_wast.cpp"
+#include "test_wasm.cpp"
+
+// #import "test_angle.cpp"
+// #import "test_wast.cpp"
+// #import "test_wasm.cpp"
 
 #pragma GCC diagnostic pop
 
@@ -24,6 +28,8 @@
 
 
 #include <wasmedge/wasmedge.h>
+
+#include "asserts.h"
 
 
 void testMinusMinus() {
@@ -57,6 +63,7 @@ void testCast() {
     check_eq(true, cast(Node(1), bools).value.longy);
     check_eq(true, cast(Node("abcd", false), bools).value.longy);
 }
+
 
 void testEmitCast() {
     assert_emit("(2 as float, 4.3 as int)  == 2.0 ,4", 1);
