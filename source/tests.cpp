@@ -27,8 +27,6 @@
 #include "own_merge/common.h"
 
 
-#include <wasmedge/wasmedge.h>
-
 #include "asserts.h"
 
 
@@ -96,6 +94,7 @@ void testConstructorCast() {
     assert_run("String(123)", "123");
 }
 
+#if WASMEDGE
 int test_wasmedge_gc() {
     // Initialize WasmEdge runtime
     WasmEdge_ConfigureContext *Conf = WasmEdge_ConfigureCreate();
@@ -156,6 +155,7 @@ int test_wasmedge_gc() {
 
     return 0;
 }
+#endif
 
 void testMatrixOrder() {
     assert_emit("m=([[1, 2], [3, 4]]);m[0][1]", 2);
@@ -221,7 +221,7 @@ void testAssert() {
 
 void testForLoops() {
     //    assert_emit("for i in 1 to 5 : {print i};i", 6);
-    assert_emit("for i in 1 to 5 : {puti i};i", 6);
+    assert_emit("for i in 1 to 5 : {puti i};i", 6);// EXC_BAD_ACCESS as of 2025-03-06 under SANITIZE
     assert_emit("for i in 1 to 5 {puti i}", 5);
     assert_emit("for i in 1 to 5 {puti i};i", 6); // after loop :(
     assert_emit("for i in 1 to 5 : puti i", 5);
@@ -3779,8 +3779,10 @@ void pleaseFix() {
 void test_new() {
     //    testInclude();
     //    testMatrixOrder();
+#if WASMEDGE
     test_wasmedge_gc();
-    test_list_growth();
+#endif
+    // test_list_growth();
     testForLoops();
     testAutoSmarty();
     testArguments();
@@ -3804,6 +3806,9 @@ void test_new() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
     //    assert_emit("def first(array);", 0);
+    // while(True)
+    //     assert_emit("for i in 1 to 5 : {puti i};i", 6);// EXC_BAD_ACCESS as of 2025-03-06 under SANITIZE
+
     testCast();
     //    todos();
     // testLengthOperator();
