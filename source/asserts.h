@@ -56,6 +56,9 @@ bool assert_equals_x(double a, double b, chars context = "");
 
 bool assert_equals_x(Node a, int b, chars context = "");
 
+bool assert_equals_x(const Node &a, chars b, chars context = "");
+
+
 static List<String> done;
 
 #if EMSCRIPTEN

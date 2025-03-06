@@ -9,6 +9,7 @@
 
 #endif
 
+#include "asserts.h"
 #include "wasm_emitter.h"
 #import "asserts.h"
 
