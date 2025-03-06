@@ -215,8 +215,8 @@ codepoint closingBracket(codepoint bracket) {
             return '\x0F'; // Shift In closes Shift Out??
         case '\x0F':
             return '\x0E'; // Shift Out closes '\x0F' Shift In
-        case '⟨':
-            return '⟩';
+        case u'⟨':
+            return u'⟩';
         case u'‖':
             return u'‖';
         case u'⸨':

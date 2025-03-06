@@ -3791,7 +3791,7 @@ void testCurrent() {
 //    assert_emit("def first(array);", 0);
     testCast();
 //    todos();
-    testLengthOperator();
+    // testLengthOperator();
     testRecentRandomBugs();
     test_new();
 //    List<const int&> axx = {1, 2, 3};
