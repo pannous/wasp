@@ -34,11 +34,11 @@ bool assert_equals_x(Node &a, char *b, chars context = "") {
 }
 
 
-// bool assert_equals_x(Node a, const char *b, chars context = "") {
-//     if (a.name != b)printf("FAILED assert_equals! %s should be %s %s\n", a.name.data, b, context);
-//     else printf(" OK %s==%s %s\n", a.name.data, b, context);
-//     return a == b;
-// }
+bool assert_equals_x(Node a, const char *b, chars context = "") {
+    if (a.name != b)printf("FAILED assert_equals! %s should be %s %s\n", a.name.data, b, context);
+    else printf(" OK %s==%s %s\n", a.name.data, b, context);
+    return a == b;
+}
 
 
 bool assert_equals_x(Node a, int b, chars context) {
@@ -48,11 +48,6 @@ bool assert_equals_x(Node a, int b, chars context) {
     else
         printf(" OK %lld==%lld\n", a.value.longy, (int64) b);
     return a == b;
-}
-bool assert_equals_x(const Node &a, chars b, chars context) {
-    if (a.toString() != b)print("\nFAILED assert_equals! %s should be %s %s\n"s % a.serialize().data % b % context);
-    else printf(" OK %s==%s %s\n", a.serialize().data, b, context);
-    return a.toString() == b;
 }
 
 bool assert_equals_x(Node a, char b, chars context = "") {

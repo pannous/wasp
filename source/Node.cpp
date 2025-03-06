@@ -1014,8 +1014,8 @@ chars Node::toString() {
 	return serialize();
 }
 
-String Node::toString() const {
-    return serialize();
+chars Node::toString() const {
+	return serialize();
 }
 
 String toString(Node &node) {
