@@ -76,11 +76,11 @@ ref                    // Abstract supertype of all references
 //  [Flexible Vectors](https://github.com/WebAssembly/flexible-vectors/blob/main/proposals/flexible-vectors/FlexibleVectors.md)
 
     // ⚠️ strange order!
-    float64 = 0x7C,
+    float64t = 0x7C,
     f64t = 0x7C,
 //    f64 = 0x7C, // typedef double f64; in m3
 
-    float32 = 0x7d,
+    float32t = 0x7d,
     f32t = 0x7d,
 //    f32s = 0x7d,
 //    f32 = 0x7d, typedef float f32 in wasm2c, we MAY encounter it more often…
@@ -98,13 +98,13 @@ ref                    // Abstract supertype of all references
 //    int64 = 0x7E,  // symbol now used as
 //    typedef int64 int64
 
-    int32 = 0X7F,
+    // int32t = 0X7F,
     int32t = 0X7F,
     i32t = 0x7f,
     i32 = 0x7f,
     i32s = 0x7f,
     size32 = 0x7f,
-    wasm_pointer = int32,
+    wasm_pointer = int32t,
 };
 
 // types
@@ -284,7 +284,7 @@ enum Primitive /*32*/ {
     byte_i8 = 0xB0, // when indexing uint8 byte array.
     byte_char = 0xBC, // when indexing ascii array. todo: maybe codepoint into UTF8!?
     shorty = 0xB16,
-    int16 = 0xB16,
+    int16t = 0xB16,
 //    THE 0xF0 … range is reserved for numbers
     // Type =>  must use 'enum' tag to refer to type 'Type' NAH!
 //	c_char = 0xB0, // when indexing byte array. todo: maybe codepoint into UTF8!?

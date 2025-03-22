@@ -498,13 +498,13 @@ int stackItemSize(Type type, bool throws) {
     if (type == byte_char)return 1;
     if (type == charp)return 1;// chars for now vs codepoint!
     if (type == stringp)return 1;// chars for now vs pointer!
-    if (type == int16)return 2;
+    if (type == int16t)return 2;
     if (type == codepoint32)return 4;
-    if (type == Valtype::int32)return 4;
+    if (type == Valtype::int32t)return 4;
     if (type == array)return 4;// pointer todo!
     if (type == Valtype::i64)return 8;
-    if (type == Valtype::float32)return 4;
-    if (type == Valtype::float64)return 8;
+    if (type == Valtype::float32t)return 4;
+    if (type == Valtype::float64t)return 8;
     if (type == void_block)return 4;// int32 pointer hack todo!
     if (type == unknown_type)return 4;
 //    if (type == node_pointer)return 4;
@@ -513,10 +513,10 @@ int stackItemSize(Type type, bool throws) {
 }
 
 int stackItemSize(Valtype type, bool throws) {
-    if (type == Valtype::int32)return 4;
+    if (type == Valtype::int32t)return 4;
     if (type == Valtype::i64)return 8;
-    if (type == Valtype::float32)return 4;
-    if (type == Valtype::float64)return 8;
+    if (type == Valtype::float32t)return 4;
+    if (type == Valtype::float64t)return 8;
     if (throws)
         error("int stackItemSize(Valtype valtype, bool throws = true);");
 	return 0;

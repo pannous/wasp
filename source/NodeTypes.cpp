@@ -139,12 +139,12 @@ Type mapType(String arg, bool throws) {
     else if (arg == "char32_t*")return codepoint1; // ≠ codepoint todo, not exactly: WITHOUT HEADER!
     else if (arg == "char const**")return pointer;
     else if (arg == "short")
-        return int32;// vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
-    else if (arg == "int")return int32;
+        return int32t;// vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
+    else if (arg == "int")return int32t;
     else if (arg == "IntegerType")return i32;
     else if (arg == "signed int")return i32s;
     else if (arg == "unsigned int")return i32;
-    else if (arg == "unsigned char")return int32;
+    else if (arg == "unsigned char")return int32t;
     else if (arg == "int*")return pointer;
     else if (arg == "void*")return pointer;
     else if (arg == "long")return i64;
@@ -155,11 +155,11 @@ Type mapType(String arg, bool throws) {
     else if (arg == "unsigned short")return shorty;
     else if (arg == "int64")return i64;
     else if (arg == "uint64")return i64;
-    else if (arg == "DoubleType")return float64;
-    else if (arg == "long double")return float64;
-    else if (arg == "double")return float64;
-    else if (arg == "float")return float32;
-    else if (arg == "bool")return int32;
+    else if (arg == "DoubleType")return float64t;
+    else if (arg == "long double")return float64t;
+    else if (arg == "double")return float64t;
+    else if (arg == "float")return float32t;
+    else if (arg == "bool")return int32t;
     else if (arg == "const char")return byte_char;
     else if (arg == "char")return byte_char;// c++ char < angle codepoint ok
     else if (arg == "signed char")return byte_i8;
@@ -171,8 +171,8 @@ Type mapType(String arg, bool throws) {
 
 
         // Some INTERNAL TYPES are reflected upon / exposed as abi :
-    else if (arg == "Type")return int32;// enum
-    else if (arg == "Kind")return int32;// enum (short, ok)
+    else if (arg == "Type")return int32t;// enum
+    else if (arg == "Kind")return int32t;// enum (short, ok)
     else if (arg == "Type")return type32;// enum
     else if (arg == "CodepointType")return charp;// enum
 
@@ -440,7 +440,7 @@ Valtype mapTypeToWasm(Type t) {
     if (type_node->node_header == node_header_32)
         return mapTypeToWasm(*type_node);// might crash
     todo("mapTypeToWasm %x %d %s"s % t.value % t.value % typeName(t));
-    return Valtype::int32;
+    return Valtype::int32t;
 }
 
 Primitive mapTypeToPrimitive(Node &n) {
@@ -449,7 +449,7 @@ Primitive mapTypeToPrimitive(Node &n) {
     if (n == ByteType)
         return Primitive::byte_i8;// careful in structs!
     if (n == ShortType)
-        return Primitive::int16;
+        return Primitive::int16t;
     if (n == LongType)
         return Primitive::wasm_int64;
     if (n == DoubleType)
@@ -482,7 +482,7 @@ Valtype mapTypeToWasm(Node &n) {
     if (n == LongType)
         return i64;
     if (n == DoubleType)
-        return float64;
+        return float64t;
     if (n == CodepointType)
         return (Valtype) codepoint32;
 
@@ -507,11 +507,11 @@ Valtype mapTypeToWasm(Node &n) {
     // int is not a true angle type, just an alias for int64.
     // todo: but what about interactions with other APIs? add explicit i32 !
     // todo: in fact hide most of this under 'number' magic umbrella
-    if (n.kind == bools)return int32;
+    if (n.kind == bools)return int32t;
     if (n.kind == nils)return voids;// mapped to int32 later: ø=0
 //	if (n.kind == reals)return float32;// float64; todo why 32???
-    if (n.kind == reals)return float64;
-    if (n.kind == longs)return int32;// int64; todo!!
+    if (n.kind == reals)return float64t;
+    if (n.kind == longs)return int32t;// int64; todo!!
     if (n.kind == reference)return (Valtype) pointer;// todo? //	if and not functionIndices.has(n.name)
     if (n.kind == strings)
         return (Valtype) stringp;// special internal Valtype, represented as i32 index to data / pointer!
@@ -530,9 +530,9 @@ Valtype mapTypeToWasm(Node &n) {
     if (n.kind == flags)
         return i64;
     if (n.kind == enums) return i64;
-    if (n.kind == unknown) return int32;// blasphemy!
+    if (n.kind == unknown) return int32t;// blasphemy!
     Node first = n.first();
-    if (first == n)return int32;// array of sorts
+    if (first == n)return int32t;// array of sorts
     if (n.kind == generics)return mapTypeToWasm(first);// todo
     if (n.kind == assignment)return mapTypeToWasm(first);// todo
     if (n.kind == operators)return mapTypeToWasm(first);// todo
@@ -650,9 +650,9 @@ chars typeName(Valtype t, bool fail) {
             return "i32";
         case Valtype::i64:
             return "i64";
-        case Valtype::float32:
+        case Valtype::float32t:
             return "f32";
-        case Valtype::float64:
+        case Valtype::float64t:
             return "f64";
 //		case Primitive::node_pointer:
 //			return "node";
@@ -695,15 +695,15 @@ Valtype mapTypeToWasm(Primitive p) {
         case wasm_leb:
             error("wasm_leb in wasm write stage");
         case wasm_float64:
-            return Valtype::float64;
+            return Valtype::float64t;
         case wasm_f32:
-            return Valtype::float32;
+            return Valtype::float32t;
         case wasm_int64:
             return Valtype::i64;
         case wasm_int32:
-            return Valtype::int32;
+            return Valtype::int32t;
         case type32:
-            return Valtype::int32;
+            return Valtype::int32t;
         case stringp:
             if (use_wasm_strings)
                 return string_ref;
@@ -726,11 +726,11 @@ Valtype mapTypeToWasm(Primitive p) {
         case charp:
             return Valtype::wasm_pointer;
         case codepoint32:
-            return Valtype::int32;// easy ;)
+            return Valtype::int32t;// easy ;)
 
         case node:
             if (allow_untyped_nodes)
-                return Valtype::int32;// todo!
+                return Valtype::int32t;// todo!
         case string_struct:
             //      a String struct is unrolled in the c/wasm-abi
             error("string struct in final stage");
@@ -747,12 +747,12 @@ Valtype mapTypeToWasm(Primitive p) {
         case ignore:
             return Valtype::none;
         case byte_i8:
-        case int16:
+        case int16t:
             // ⚠️ careful in arrays we may write byte_i8 as Byte !
-            return Valtype::int32;
+            return Valtype::int32t;
         case byte_char:
             // ⚠️ careful in arrays we may write byte_char as ByteCharType !
-            return Valtype::int32;
+            return Valtype::int32t;
 //        case c_string:// charp
         case leb_string:
         case utf16_string:

@@ -58,6 +58,10 @@ RETURN VALUE: 42
 int square_x(wasm_exec_env_t exec_env, int x) {
     return x * x;
 }
+void fd_write_host(int FD, char **strp, int *len, int *nwritten);
+// void fd_write_host(int FD, char **strp, int *len, int *nwritten) {
+//     printf("%s", *strp);
+// }
 
 // f:float F:double i:int I:int64 no comma in arg list pow :: (FF)F
 
@@ -74,8 +78,8 @@ int square_x(wasm_exec_env_t exec_env, int x) {
 static NativeSymbol native_symbols[] =
         {        // WAVM can call f(float) f(char*)! No JS restrictions!!
                 {
-                        "get_pow",            // the name of WASM function name
-                        (void *) get_pow,            // the native function pointer
+                        "powi",            // the name of WASM function name
+                        (void *) powi,            // the native function pointer
                         "(ii)i",            // the function prototype signature, avoid to use i32
                         NULL,                // attachment is NULL
                         false
@@ -91,7 +95,7 @@ static NativeSymbol native_symbols[] =
                 {"puts", (void *) puts, "(i)", NULL, false},// pointer
                 {"pow", (void *) powd, "(FF)F", NULL, false},
                 {"powd", (void *) powd, "(FF)F", NULL, false},
-                {"powf", (void *) powf, "(ff)f", NULL, false},
+                // {"powf", (void *) powf, "(ff)f", NULL, false},
                 {"powi", (void *) powi, "(ii)I", NULL, false},
 //				{       "powl",              (void *) powi,          "(II)I", NULL, false},
                 {"__cxa_begin_catch", (void *) powi, "(*)i", NULL, false},
@@ -121,7 +125,9 @@ void logi2(wasm_exec_env_t exec_env, int x) {
 
 int fail(chars format, chars val) {
     printf(format, val);
-//	throw "FAIL";
+    // if(throwing)
+    raise("FAIL");
+	throw "FAIL";
     return -1;
 }
 
@@ -166,7 +172,7 @@ void init_vm(RuntimeInitArgs init_args, NativeSymbol *native_symbols, int symbol
 }
 
 int64 run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) {
-    try {
+    // try {
         if (not init_args0) {
             static RuntimeInitArgs init_args;
             memset(&init_args, 0, sizeof(RuntimeInitArgs));
@@ -208,6 +214,7 @@ int64 run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) 
         } //else warn("wasm module has no memory (OK)");
 
         uint32 argv[0];
+        // uint64 argv[0];
         argv[0] = 10000;
 //	memcpy(&argv[1], &arg_d, sizeof(arg_d));
 
@@ -232,8 +239,9 @@ int64 run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) 
         /////////////////////////
 
         wasm_function_inst_t _start;
-        if (!(_start = wasm_runtime_lookup_function(module_inst, "wasp_main", NULL))) {
-            if (!(_start = wasm_runtime_lookup_function(module_inst, "_start", NULL))) {
+        if (!(_start = wasm_runtime_lookup_function(module_inst, "wasp_main"))) {
+            if (!(_start = wasm_runtime_lookup_function(module_inst, "_start"))) {
+                // (type (;0;) (func (result i64)))
                 return fail("The main function is not found.\n");
             }
         }
@@ -281,10 +289,10 @@ int64 run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) 
         wasm_runtime_destroy();
         return result;
 
-    } catch (chars err) {
-        printf("\n⚠️ERROR\n");
-        printf("%s", err);
-    }
+    // } catch (chars err) {
+    //     printf("\n⚠️ERROR\n");
+    //     printf("%s", err);
+    // }
     return 1;
 }
 
