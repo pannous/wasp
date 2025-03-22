@@ -222,7 +222,7 @@ int64 run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) 
     //		wasm_function_inst_t func = NULL;
     //		if (!(func = wasm_runtime_lookup_function(module_inst, "generate_float", NULL))) {
     //			fail("The generate_float wasm function is not found.\n");
-////			return -1;
+    ////			return -1;
 //		}
 //
 //		// pass 4 elements for function arguments

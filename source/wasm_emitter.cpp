@@ -3463,8 +3463,8 @@ Code emitCodeSection(Node &root) {
         i32_const, 1, // stdout
         local_get, 0, // string* or char** ⚠️ use put_chars for char*
         i32_const, 1, // #string
-        i32_const, 8,// out chars written => &trash
-                              call_, (byte) fd_write_import, nop_, nop_,
+        i32_const, 8, // out chars written => &trash
+        call_, (byte) fd_write_import, nop_, nop_,
                               end_block};
 
     // char* in wasp abi always have header at -8
@@ -3474,7 +3474,7 @@ Code emitCodeSection(Node &root) {
         local_get, 0, // string* or char** ⚠️ use put_chars for char*
         i32_const, 8, i32_sub, //  char* in wasp abi always have header at -8
         i32_const, 1, // #string
-                        i32_const, 8,// out chars written => &trash
+        i32_const, 8, // out chars written => &trash
                         call_, (byte) fd_write_import, nop_, nop_,
                         end_block};
 
@@ -3499,7 +3499,7 @@ Code emitCodeSection(Node &root) {
         0x20, 0x01, //                     | local.get 1
         0xa3, //                     | f64.div
         0x9d, //                     | f64.trunc
-                                 0x20, 0x01, //                     | local.get 1
+        0x20, 0x01, //                     | local.get 1
                                  0xa2,       //                     | f64.mul
                                  0xa1,       //                     | f64.sub
                                  0x0b        //                     | end
