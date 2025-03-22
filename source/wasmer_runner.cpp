@@ -508,7 +508,7 @@ const wasm_functype_t *funcType(Signature &signature) {
 			case none:
 			case voids:
 				return wasm_functype_new_0_0();
-			case int32:
+			case int32t:
 				return wasm_functype_new_0_1(i);
 			default:
 				break;
@@ -517,32 +517,32 @@ const wasm_functype_t *funcType(Signature &signature) {
 	if (param_count == 1) {
         switch (signature.parameter_types[0]) {
             case charp:
-            case float32:
+            case float32t:
                 switch (returnType) {
                     case none:
                     case voids:
                         return wasm_functype_new_1_0(f);
-                    case float32:
+                    case float32t:
                         return wasm_functype_new_1_1(f, f1);
                     default:
                         break;
                 }
-            case float64:
+            case float64t:
                 switch (returnType) {
                     case none:
                     case voids:
                         return wasm_functype_new_1_0(F);
-                    case float64:
+                    case float64t:
                         return wasm_functype_new_1_1(F, F);
                     default:
                         break;
                 }
-            case int32:
+            case int32t:
 				switch (returnType) {
 					case none:
 					case voids:
 						return wasm_functype_new_1_0(i);
-					case int32:
+					case int32t:
 						return wasm_functype_new_1_1(i, i);
 					default:
 						break;
@@ -553,13 +553,13 @@ const wasm_functype_t *funcType(Signature &signature) {
 	}
 	if (param_count == 2) {
 		switch (returnType) {
-            case int32:
+            case int32t:
                 return wasm_functype_new_2_1(i, i, i); // printf(i32,i32)i32
             case i64:
                 return wasm_functype_new_2_1(i, i, I);
-            case float32:
+            case float32t:
                 return wasm_functype_new_2_1(f, f, f);
-            case float64:
+            case float64t:
                 return wasm_functype_new_2_1(F, F, F); // powd(f64,f64)f64
             default:
                 break;

@@ -602,7 +602,7 @@ void testPolymorphism() {
     check_is(function.variants[0]->signature.parameters[0].type, (Type) stringp);
     auto variant = function.variants[1];
     check_is(variant->signature.size(), 1);
-    check_is(variant->signature.parameters[0].type, (Type) float32);
+    check_is(variant->signature.parameters[0].type, (Type) float32t);
 }
 
 void testPolymorphism2() {
@@ -613,9 +613,9 @@ void testPolymorphism2() {
     check_is(function.is_polymorphic, true);
     check_is(function.variants.size(), 2);
     check_is(function.variants[0]->signature.size(), 1);
-    check_is(function.variants[0]->signature.parameters[0].type, (Type) int32);
+    check_is(function.variants[0]->signature.parameters[0].type, (Type) int32t);
     check_is(function.variants[1]->signature.size(), 1);
-    check_is(function.variants[1]->signature.parameters[0].type, (Type) float32);
+    check_is(function.variants[1]->signature.parameters[0].type, (Type) float32t);
 }
 
 
@@ -647,7 +647,7 @@ void testModifiers() {
 //}
 
 void testGenerics() {
-    auto type = Type(Generics{.kind = array, .value_type = int16});
+    auto type = Type(Generics{.kind = array, .value_type = int16t});
     //    auto header= type.value & array;
     //    auto header= type.value & 0xFFFF0000; // todo <<
     auto header = type.value & 0x0000FFFF; //todo ??
@@ -2097,6 +2097,7 @@ void testAddField() {
 
 void testErrors() {
     // use assert_throws
+    throwing = true;
     assert_throws("0/0");
 #if WASI or WASM
     skip("can't catch ERROR in wasm")
@@ -3805,7 +3806,7 @@ void test_new() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
-// 2025-03-01 : 5 sec WITH runtime_emit, wasmtime on M1
+// 2025-03-23 : 5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
     // testKebabCase(); // needed here:

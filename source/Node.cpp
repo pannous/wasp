@@ -1461,7 +1461,7 @@ Node *reconstructArray(int *array_struct) {
 		else if (value_kind == Primitive::byte_i8)chile = new Node((int64) *val);
 		else if (value_kind == Primitive::codepoint32)chile = new Node((codepoint) *(int64 *) val);
 		else if (value_kind == wasm_int32)chile = new Node(*(int *) val);
-		else if (value_kind == int16)chile = new Node(*(short *) val);
+		else if (value_kind == int16t)chile = new Node(*(short *) val);
 		else if ((int) value_kind == longs)chile = new Node(*(int64 *) val);
 		else if ((int) value_kind == reals)chile = new Node(*(double *) val);
 		else todo("smartNode of array with element kind "s + typeName((Kind)value_kind));

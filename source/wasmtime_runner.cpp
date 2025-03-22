@@ -504,13 +504,13 @@ wasm_valkind_t mapTypeToWasmtime(Type type) {
     };
     */
     switch (type.value) {
-        case int32:
+        case int32t:
             return WASM_I32;
         case i64:
             return WASM_I64;
-        case float32:
+        case float32t:
             return WASM_F32;
-        case float64:
+        case float64t:
             return WASM_F64;
         case externref:
             return WASM_EXTERNREF;
@@ -572,7 +572,7 @@ const wasm_functype_t *funcType2(Signature &signature) {
             case none:
             case voids:
                 return wasm_functype_new_0_0();
-            case int32:
+            case int32t:
                 return wasm_functype_new_0_1(wasm_valtype_new(WASM_I32));
             case i64:
                 return wasm_functype_new_0_1(wasm_valtype_new(WASM_I64));
@@ -584,11 +584,11 @@ const wasm_functype_t *funcType2(Signature &signature) {
         Type &type = signature.parameters[0].type;
         Valtype valtype = mapTypeToWasm(type);
         switch (valtype) {
-            case int32:
+            case int32t:
                 switch (returnType) {
                     case none:
                         return wasm_functype_new_1_0(wasm_valtype_new(WASM_I32));
-                    case int32:
+                    case int32t:
                         return wasm_functype_new_1_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32));
                     default:
                         break;
@@ -603,22 +603,22 @@ const wasm_functype_t *funcType2(Signature &signature) {
                     default:
                         break;
                 }
-            case float32:
+            case float32t:
                 switch (returnType) {
                     case none:
                     case voids:
                         return wasm_functype_new_1_0(wasm_valtype_new(WASM_F32));
-                    case float32:
+                    case float32t:
                         return wasm_functype_new_1_1(wasm_valtype_new(WASM_F32), wasm_valtype_new(WASM_F32));
                     default:
                         break;
                 }
-            case float64:
+            case float64t:
                 switch (returnType) {
                     case none:
                     case voids:
                         return wasm_functype_new_1_0(wasm_valtype_new(WASM_F64));
-                    case float64:
+                    case float64t:
                         return wasm_functype_new_1_1(wasm_valtype_new(WASM_F64), wasm_valtype_new(WASM_F64));
                     default:
                         break;
@@ -629,16 +629,16 @@ const wasm_functype_t *funcType2(Signature &signature) {
     }
     if (param_count == 2) {
         switch (returnType) {
-            case int32:
+            case int32t:
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
                                              wasm_valtype_new(WASM_I32)); // printf(i32,i32)i32
             case i64:
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
                                              wasm_valtype_new(WASM_I64));
-            case float32:
+            case float32t:
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_F32), wasm_valtype_new(WASM_F32),
                                              wasm_valtype_new(WASM_F32));
-            case float64: // why broken in wasmtime??
+            case float64t: // why broken in wasmtime??
                 return wasm_functype_new_2_1(wasm_valtype_new(WASM_F64), wasm_valtype_new(WASM_F64),
                                              wasm_valtype_new(WASM_F64)); // powd(f64,f64)f64
             default:
