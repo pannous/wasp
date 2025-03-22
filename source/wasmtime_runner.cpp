@@ -321,7 +321,7 @@ wrap(nop) {
     return NULL;
 }
 
-wrap(getElementById){
+wrap(getElementById) {
     return NULL;
 }
 
