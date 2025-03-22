@@ -114,6 +114,7 @@ double powd(double x, double y) {
     return pow(x, y);
 }
 
+// todo: move newline "\n" UP the call chain, we need a version WITHOUT!
 extern "C" void put_chars(chars c, size_t len) {
 #if MY_WASM // and …
     printf("%s", c); // console.log adds newline

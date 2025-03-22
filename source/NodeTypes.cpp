@@ -432,7 +432,9 @@ Valtype mapTypeToWasm(Type t) {
     Node *type_node = (Node *) (long) t.value;
 #else
     Node *type_node = (Node *) (long) t.value;
-    error("Type32 can't hold pointer on 64bit systems");
+    warn("Type32 can't hold pointer on 64bit systems");
+    warn("VERY UNSAFE"); // todo
+    // error("Type32 can't hold pointer on 64bit systems");
 #endif
     warn("Insecure mapTypeToWasm %x %d as Node*"s % t.value % t.value);
     if (type_node->node_header == node_header_32)
