@@ -3807,7 +3807,7 @@ void test_new() {
 void testCurrent() {
     //    assert_emit("def first(array);", 0);
     // while(True)
-    //     assert_emit("for i in 1 to 5 : {puti i};i", 6);// EXC_BAD_ACCESS as of 2025-03-06 under SANITIZE
+    assert_emit("for i in 1 to 5 : {puti i};i", 6); // EXC_BAD_ACCESS as of 2025-03-06 under SANITIZE
 
     testCast();
     //    todos();
