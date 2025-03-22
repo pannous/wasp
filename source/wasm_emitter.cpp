@@ -2734,7 +2734,7 @@ Code cast(Valtype from, Valtype to) {
 
     //    if (from == string_ref and to == i64)return stringRefLength();
     //    if (from == string_ref and to == i64)return castRefToChars();
-//	if (from == void_block and to == i32)
+    //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
     error("incompatible valtypes "s + (int) from + "->" + (int) to + " / " + typeName(from) + " => " + typeName(to));
     return nop;
@@ -3461,8 +3461,8 @@ Code emitCodeSection(Node &root) {
     byte code_put_string[] = {
         1/*locals_count*/, 1 /*one of type*/, int32t /* string& */ ,
         i32_const, 1, // stdout
-        local_get, 0,// string* or char** ⚠️ use put_chars for char*
-                              i32_const, 1,// #string
+        local_get, 0, // string* or char** ⚠️ use put_chars for char*
+        i32_const, 1,// #string
                               i32_const, 8,// out chars written => &trash
                               call_, (byte) fd_write_import, nop_, nop_,
                               end_block};
@@ -3472,7 +3472,7 @@ Code emitCodeSection(Node &root) {
         1/*locals_count*/, 1 /*one of type*/, int32t /* string& */ ,
         i32_const, 1, // stdout
         local_get, 0, // string* or char** ⚠️ use put_chars for char*
-                        i32_const, 8, i32_sub,//  char* in wasp abi always have header at -8
+        i32_const, 8, i32_sub,//  char* in wasp abi always have header at -8
                         i32_const, 1,// #string
                         i32_const, 8,// out chars written => &trash
                         call_, (byte) fd_write_import, nop_, nop_,
@@ -3483,8 +3483,8 @@ Code emitCodeSection(Node &root) {
         1/*locals_count*/, 1 /*one of type*/, int32t /* wasm_pointer */ ,
         local_get, 0, // any structure in Wasp ABI
         i32_const, 4, // length is second field in ALL Wasp structs!
-                       i32_add, // offset = base + 4
-                       i32_load, 2, 0, end_block};
+        i32_add, // offset = base + 4
+        i32_load, 2, 0, end_block};
 
     // slightly confusing locals variable declaration count scheme:
     byte code_modulo_float[] = {
@@ -3495,8 +3495,8 @@ Code emitCodeSection(Node &root) {
         1 /*locals variable declarations:*/, 2 /*two of type*/, float64t,
         0x20, 0x00, //                     | local.get 0
         0x20, 0x00, //                     | local.get 0
-                                 0x20, 0x01, //                     | local.get 1
-                                 0xa3,       //                     | f64.div
+        0x20, 0x01, //                     | local.get 1
+        0xa3,       //                     | f64.div
                                  0x9d,       //                     | f64.trunc
                                  0x20, 0x01, //                     | local.get 1
                                  0xa2,       //                     | f64.mul
@@ -3598,10 +3598,10 @@ if (use_wasi) {
     if (call_indices["_start"])
         start_offset = call_indices["_start"];
         mainExport = mainExport + encodeString("_start") + (byte) func_export + Code(start_offset);
-    }
+}
 #endif
 
-    Code globalExports;
+Code globalExports;
     for (int i = 0; i < globals.size(); i++) {
         String &name = globals.keys[i];
         if (globals[name].index != i)

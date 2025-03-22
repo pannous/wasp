@@ -82,8 +82,8 @@ static NativeSymbol native_symbols[] =
                     "powi", // the name of WASM function name
                     (void *) powi, // the native function pointer
                     "(ii)i", // the function prototype signature, avoid to use i32
-                    NULL,                // attachment is NULL
-                        false
+                    NULL, // attachment is NULL
+                    false
                 },
 //				{"square", (void *) squarl, "(I)I", NULL, false},
 //				{"square", (void *) squari, "(i)i", NULL, false},
@@ -220,7 +220,7 @@ int64 run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) 
     //	memcpy(&argv[1], &arg_d, sizeof(arg_d));
 
     //		wasm_function_inst_t func = NULL;
-//		if (!(func = wasm_runtime_lookup_function(module_inst, "generate_float", NULL))) {
+    //		if (!(func = wasm_runtime_lookup_function(module_inst, "generate_float", NULL))) {
 //			fail("The generate_float wasm function is not found.\n");
 ////			return -1;
 //		}
