@@ -1172,7 +1172,7 @@ Node &groupOperators(Node &expression, Function &context) {
         Node prev;
 if (i > 0) {
     prev = expression.children[i - 1];
-            // if(prev.kind == Kind::groups) prev.setType(Kind::expression);
+    // if(prev.kind == Kind::groups) prev.setType(Kind::expression);
     prev = analyze(prev, context);
 }
 //            prev = expression.to(op);

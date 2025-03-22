@@ -1857,8 +1857,8 @@ Code emitOperator(Node &node, Function &context) {
         else if (last_type == float32) code.add(emitCall("powf", context));
         else if (last_type == float64) code.add(emitCall("pow", context));
         else if (last_type == int64s) code.add(emitCall("pow_long", context));
-        else todo("^ power with type "s + typeName(last_type));
-        // else code.add(emitCall("pow_long", context));
+else todo("^ power with type "s + typeName(last_type));
+// else code.add(emitCall("pow_long", context));
 //#endif
 //         'powi' is a builtin with type 'long double (long double, long double)'
     } else if (name.startsWith("-")) {

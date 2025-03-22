@@ -150,8 +150,9 @@ struct ParserOptions { // not just for parser but also for serialize!!
     bool use_tags = false;// <html> or
     bool use_generics = false;// generic list<abc> , "less than" requires spaces, a<b can still be resolved as 'smaller' in analyzer
 bool kebab_case = true; // ;// kebab-case means: parse "-" as hypen instead of minus, or 1900 - 2000AD (easy with units)
-bool kebab_case_plus = false;//  parse ANY "-" as hypen instead of minus      // a-b can still be resolved as minus in analyzer
-	bool space_brace = false;// resolve a {x} as a{x}
+bool kebab_case_plus = false;
+//  parse ANY "-" as hypen instead of minus      // a-b can still be resolved as minus in analyzer
+bool space_brace = false;// resolve a {x} as a{x}
 	String current_dir = "./"; // where to look for includes
 };
 
