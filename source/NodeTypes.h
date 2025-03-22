@@ -100,7 +100,7 @@ f32t = 0x7d,
 
     // int32t = 0X7F,
 int32t = 0X7F,
-    i32t = 0x7f,
+i32t = 0x7f,
     i32 = 0x7f,
     i32s = 0x7f,
     size32 = 0x7f,

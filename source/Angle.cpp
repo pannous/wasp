@@ -1988,7 +1988,7 @@ void preRegisterFunctions() {
 
     functions["proc_exit"].import();
     functions["proc_exit"].signature.add(int32t, "exit_code"); // file descriptor
-//	wasp-runtime.wasm needs to be recompiled too!
+    //	wasp-runtime.wasm needs to be recompiled too!
 #if WASMEDGE
     functions["proc_exit"].module = new Module{.name="wasi_snapshot_preview1"};
 #else
