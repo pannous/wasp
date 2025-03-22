@@ -59,6 +59,7 @@ int square_x(wasm_exec_env_t exec_env, int x) {
     return x * x;
 }
 void fd_write_host(int FD, char **strp, int *len, int *nwritten);
+
 // void fd_write_host(int FD, char **strp, int *len, int *nwritten) {
 //     printf("%s", *strp);
 // }
@@ -78,9 +79,9 @@ void fd_write_host(int FD, char **strp, int *len, int *nwritten);
 static NativeSymbol native_symbols[] =
         {        // WAVM can call f(float) f(char*)! No JS restrictions!!
                 {
-                        "powi",            // the name of WASM function name
-                        (void *) powi,            // the native function pointer
-                        "(ii)i",            // the function prototype signature, avoid to use i32
+                    "powi", // the name of WASM function name
+                    (void *) powi, // the native function pointer
+                    "(ii)i",            // the function prototype signature, avoid to use i32
                         NULL,                // attachment is NULL
                         false
                 },
@@ -96,7 +97,7 @@ static NativeSymbol native_symbols[] =
                 {"pow", (void *) powd, "(FF)F", NULL, false},
                 {"powd", (void *) powd, "(FF)F", NULL, false},
                 // {"powf", (void *) powf, "(ff)f", NULL, false},
-                {"powi", (void *) powi, "(ii)I", NULL, false},
+{"powi", (void *) powi, "(ii)I", NULL, false},
 //				{       "powl",              (void *) powi,          "(II)I", NULL, false},
                 {"__cxa_begin_catch", (void *) powi, "(*)i", NULL, false},
 #ifdef SDL
@@ -216,7 +217,7 @@ int64 run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) 
         uint32 argv[0];
         // uint64 argv[0];
         argv[0] = 10000;
-//	memcpy(&argv[1], &arg_d, sizeof(arg_d));
+    //	memcpy(&argv[1], &arg_d, sizeof(arg_d));
 
 //		wasm_function_inst_t func = NULL;
 //		if (!(func = wasm_runtime_lookup_function(module_inst, "generate_float", NULL))) {
