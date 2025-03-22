@@ -747,7 +747,7 @@ void print(Type type) {
 
 void print(Arg &arg) {
     print(arg.name);
-    print(":");
+    printf(":");
     print(arg.type);
 }
 
@@ -758,11 +758,11 @@ void print(Signature& signature) {
         print(" ");
 #endif
     }
-    print(":");
+    printf(":");
     for (auto &type: signature.return_types) {
         print(type);
 #if not WASM
-        print(" ");
+        printf(" ");
 #endif
     }
 //        print(signature.debug_name);

@@ -104,7 +104,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         wasmtime_extern_t import = { .kind = WASMTIME_EXTERN_FUNC, .of.func = func };
         imports.add(import);
         // imports[import_nr++] = import;
-//        wasm_functype_delete(type0);
+        //        wasm_functype_delete(type0);
     }
 
     wasmtime_instance_t instance;
@@ -517,7 +517,7 @@ const wasm_functype_t *funcType(Signature &signature) {
     // Map return type
     Type returnType = signature.return_types.last(none);
     wasm_valtype_t *return_type = 0;
-    if(returnType != nils)
+    if (returnType != nils)
         return_type = wasm_valtype_new(mapTypeToWasmtime(returnType));
 
     // Allocate parameter types dynamically
