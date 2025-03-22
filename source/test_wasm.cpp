@@ -72,7 +72,7 @@ void testWasmStuff();
 
 
 void testEmitter() {
-#ifndef RUNTIME_ONLY
+#if not RUNTIME_ONLY
     clearAnalyzerContext();
     clearEmitterContext();
     Node node = Node(42);
@@ -728,7 +728,7 @@ void testWasmWhile() {
 
 void testWasmMemoryIntegrity() {
     return;
-#ifndef WASM
+#if not WASM
 #endif
 
     if (!MAX_MEM) {
@@ -970,7 +970,7 @@ void testObjectPropertiesWasm() {
 }
 
 void testArrayIndicesWasm() {
-#ifndef WEBAPP
+#if not WEBAPP
     assert_throws("surface=(1,2,3);i=1;k#i=4;k#i")// no such k!
 //	caught in wrong place?
 #endif
@@ -1062,7 +1062,7 @@ void testRecentRandomBugs() {
 //    assert_emit("puts('ok');", 0);
     assert_parsesx("{ç:☺}");
     assert(result["ç"] == "☺");
-#ifndef WASMTIME
+#if not WASMTIME
     assert_run("x=123;x + 4 is 127", true);
     assert_emit("n=3;2ⁿ", 8);
     //	function attempted to return an incompatible value WHAT DO YOU MEAN!?
@@ -1098,7 +1098,7 @@ void testSquareExpWasm() {
     assert_emit("√9", 3);
 //	assert_emit("√-9 is -3i", -3);// if «use complex numbers»
     assert_emit(".1", .1);
-#ifndef WASMTIME
+#if not WASMTIME
     skip(
             assert_emit("i=-9;√-i", 3);
             assert_emit("n=3;2ⁿ", 8);
@@ -1242,7 +1242,7 @@ void testImportWasm() {
 
 void testMathLibrary() {
     // todo generic power i as builtin
-#ifndef WASMTIME
+#if not WASMTIME
     skip(
     // REGRESSION 2023-01-20 variable x-c in context wasp_main emitted as node data:
             assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);

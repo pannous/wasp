@@ -44,6 +44,7 @@
       <file path="$PROJECT_DIR$/source/old" />
       <file path="$PROJECT_DIR$/test/merge" />
       <file path="$PROJECT_DIR$/wapm" />
+      <file path="$PROJECT_DIR$/wasp-jetbrains-plugin" />
       <file path="$PROJECT_DIR$/xxx" />
     </excludeRoots>
   </component>

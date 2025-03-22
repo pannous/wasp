@@ -3805,13 +3805,14 @@ void test_new() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
+// 2025-03-01 : 5 sec WITH runtime_emit, wasmtime on M1
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
-    assert_throws("0/0");
-    //    assert_emit("def first(array);", 0);
-    // while(True)
-    assert_emit("for i in 1 to 5 : {puti i};i", 6); // EXC_BAD_ACCESS as of 2025-03-06 under SANITIZE
+    // testKebabCase(); // needed here:
+    // assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+    assert_is("(1 4 3)#2", 4); //
 
+    // assert_throws("0/0");
     testCast();
     //    todos();
     // testLengthOperator();
