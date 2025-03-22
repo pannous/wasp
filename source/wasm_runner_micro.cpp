@@ -225,7 +225,7 @@ int64 run_wasm(uint8 *buffer, uint32 buf_size, RuntimeInitArgs *init_args0 = 0) 
     ////			return -1;
     //		}
     //
-//		// pass 4 elements for function arguments
+    //		// pass 4 elements for function arguments
 //		if (!wasm_runtime_call_wasm(exec_env, func, 4, argv)) {
 //			fail("call wasm function generate_float FAILED. %s\n", wasm_runtime_get_exception(module_inst));
 ////			return
