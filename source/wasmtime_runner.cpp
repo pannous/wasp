@@ -70,7 +70,8 @@ static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_t
         wasm_byte_vec_delete(&trap_message);
         wasm_trap_delete(trap);
     }
-    exit(1);
+    raise("Error in Wasmtime call: "s + message);
+    // exit(1);
 }
 
 typedef wasm_trap_t *(wasm_wrap)(void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t);
@@ -99,9 +100,11 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         if (import_name.empty()) break;
         wasmtime_func_t func;
         Signature &signature = meta.functions[import_name].signature;
+        print(import_name);
+        print(signature.format());
         const wasm_functype_t *type0 = funcType(signature);
         wasmtime_func_new(context, type0, link_import(import_name), NULL, NULL, &func);
-        wasmtime_extern_t import = { .kind = WASMTIME_EXTERN_FUNC, .of.func = func };
+        wasmtime_extern_t import = {.kind = WASMTIME_EXTERN_FUNC, .of.func = func};
         imports.add(import);
         // imports[import_nr++] = import;
         //        wasm_functype_delete(type0);
@@ -139,9 +142,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 }
 
 
-
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap);
-
 
 
 // ⚠️  'fun' needs to be a Locally accessible symbol (via include, ...)
@@ -165,24 +166,25 @@ size_t nresults\
 
 
 static wasm_trap_t *hello_callback(
-        void *env,
-        wasmtime_caller_t *caller,
-        const wasmtime_val_t *args,
-        size_t nargs,
-        wasmtime_val_t *results,
-        size_t nresults
+    void *env,
+    wasmtime_caller_t *caller,
+    const wasmtime_val_t *args,
+    size_t nargs,
+    wasmtime_val_t *results,
+    size_t nresults
 ) {
     printf("Calling back...\n");
     printf("> Hello World!\n");
-//	results=wasm_valtype_new_i32();
+    //	results=wasm_valtype_new_i32();
     int n = args[0].of.i32;
     results[0].of.i32 = n * n;
-//	results[0].kind.
+    //	results[0].kind.
     return NULL;
 }
 
 // could be unified with wasmer via #define get(0,i32) args[0].data->of.i32 / args[0].of.i32
-wrap(square) {// stupid basic test, wasm import => runtime linking, of cause not useful
+wrap(square) {
+    // stupid basic test, wasm import => runtime linking, of cause not useful
     int n = args[0].of.i32;
     results[0].of.i32 = n * n;
     return NULL;
@@ -234,7 +236,7 @@ wrap(putl) {
 
 wrap(putf) {
     if ((int64) args == 0x08)
-        return NULL;// BUG!
+        return NULL; // BUG!
     float f = args[0].of.f32;
     printf("%f", f);
     return NULL;
@@ -246,11 +248,11 @@ wrap(putf) {
 //};
 
 wrap(fd_write) {
-//    auto fd = args[0].of.i32;
+    //    auto fd = args[0].of.i32;
     auto iovs_offset = args[1].of.i32;
     int string_offset = *(int *) (((char *) wasm_memory) + iovs_offset);
     char *s = ((char *) wasm_memory) + string_offset;
-//    size_t iovs_count = args[2].of.i32;
+    //    size_t iovs_count = args[2].of.i32;
     if (!wasm_memory)
         printf("wasm_memory not linked");
     else
@@ -265,8 +267,9 @@ wrap(putd) {
     return NULL;
 }
 
-wrap(args_sizes_get) { // mock
-//int args_sizes_get(char **argv, int *argc);
+wrap(args_sizes_get) {
+    // mock
+    //int args_sizes_get(char **argv, int *argc);
     int argc = args[0].of.i32;
     int buf_len = args[1].of.i32;
     if (wasm_memory) {
@@ -282,7 +285,8 @@ wrap(args_get) {
     return NULL;
 }
 
-wrap(putc) {// put_char
+wrap(putc) {
+    // put_char
     int i = args[0].of.i32;
     printf("%c", i);
     return NULL;
@@ -305,15 +309,19 @@ wrap(powd) {
 wrap(download) {
     char *url = (char *) wasm_memory + args[0].of.i32;
     chars result = fetch(url);
-//    uint64 pointer = (uint64) (void *) result;
+    //    uint64 pointer = (uint64) (void *) result;
     uint64 pointer = 0x100000; // INTERNAL POINTER instead of wasm_memory
     results[0].of.i32 = pointer;
-//    results[0].of.i64 = pointer;
-    strcpy((char *) wasm_memory + pointer, result);// todo HEAP!
+    //    results[0].of.i64 = pointer;
+    strcpy((char *) wasm_memory + pointer, result); // todo HEAP!
     return NULL;
 }
 
 wrap(nop) {
+    return NULL;
+}
+
+wrap(getElementById){
     return NULL;
 }
 
@@ -325,10 +333,11 @@ wrap(atoi) {
     return NULL;
 }
 
-wrap(exit) { // proc_exit
+wrap(exit) {
+    // proc_exit
     printf("\nEXIT!\n (only wasm instance, not host;)\n");
     todow("how to stop instance?");
-//    throw "how to stop instance?";
+    //    throw "how to stop instance?";
     exit(42);
     return NULL;
 }
@@ -350,14 +359,15 @@ wrap(todo) {
 }
 
 wrap(absi) {
-//	todo("this function should not be a wasm import, but part of the runtime!!");
+    //	todo("this function should not be a wasm import, but part of the runtime!!");
     int64 i = args[0].of.i32;
     results[0].of.i32 = i > 0 ? i : -1;
     return NULL;
 }
 
-wrap(absf) {// todo remove, we have f64.abs!
-//	todo("this function should not be a wasm import, but part of the runtime!!");
+wrap(absf) {
+    // todo remove, we have f64.abs!
+    //	todo("this function should not be a wasm import, but part of the runtime!!");
     double i = args[0].of.f32;
     results[0].of.f32 = i > 0 ? i : -1;
     return NULL;
@@ -374,40 +384,40 @@ void test_lambda() {
 #define wrap_fun(fun) [](void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
 
 wasm_wrap *link_import(String name) {
-// own WASI mock instead of https://docs.wasmtime.dev/c-api/wasi_8h.html
+    // own WASI mock instead of https://docs.wasmtime.dev/c-api/wasi_8h.html
     if (name == "fd_write") return &wrap_fd_write;
     if (name == "args_get")return &wrap_args_get;
     if (name == "args_sizes_get")return &wrap_args_sizes_get;
 
     if (name == "todo") return &wrap_todo;
-    if (name == "memset") return &wrap_memset;// should be provided by wasp!!
+    if (name == "memset") return &wrap_memset; // should be provided by wasp!!
     if (name == "calloc") return &wrap_calloc;
-    if (name == "_Z5abs_ff") return &wrap_absf;// why??
-// todo get rid of these again!
+    if (name == "_Z5abs_ff") return &wrap_absf; // why??
+    // todo get rid of these again!
     if (name == "_Z7consolev") return &wrap_nop;
 
-    if (name == "__cxa_guard_acquire") return &wrap_nop;// todo!?
-    if (name == "__cxa_guard_release") return &wrap_nop;// todo!?
+    if (name == "__cxa_guard_acquire") return &wrap_nop; // todo!?
+    if (name == "__cxa_guard_release") return &wrap_nop; // todo!?
     if (name == "_Z13init_graphicsv") return &wrap_nop;
     if (name == "_Z21requestAnimationFramev") return wrap_fun(test_lambda);
-//	if (name == "_Z21requestAnimationFramev") return  wrap_fun(requestAnimationFrame);
+    //	if (name == "_Z21requestAnimationFramev") return  wrap_fun(requestAnimationFrame);
 
 
-// catch these with #ifdef s !!!
-    if (name == "_Z13run_wasm_filePKc") return &wrap_nop;// todo!?
-//	if (name == "_Z8typeName7Valtype") return &wrap_nop;// todo!?
-//	if (name == "_Z8run_wasmPhi") return &wrap_nop;
-//	if (name == "_Z11testCurrentv") return &wrap_nop;// hmmm self test?
+    // catch these with #ifdef s !!!
+    if (name == "_Z13run_wasm_filePKc") return &wrap_nop; // todo!?
+    //	if (name == "_Z8typeName7Valtype") return &wrap_nop;// todo!?
+    //	if (name == "_Z8run_wasmPhi") return &wrap_nop;
+    //	if (name == "_Z11testCurrentv") return &wrap_nop;// hmmm self test?
 
-    if (name == "fopen") return &wrap_nop;// todo!?
-    if (name == "fseek") return &wrap_nop;// todo!?
-    if (name == "ftell") return &wrap_nop;// todo!?
-    if (name == "fread") return &wrap_nop;// todo!?
-    if (name == "system") return &wrap_nop;// danger!
+    if (name == "fopen") return &wrap_nop; // todo!?
+    if (name == "fseek") return &wrap_nop; // todo!?
+    if (name == "ftell") return &wrap_nop; // todo!?
+    if (name == "fread") return &wrap_nop; // todo!?
+    if (name == "system") return &wrap_nop; // danger!
 
 
     if (name == "__cxa_begin_catch") return &wrap_nop;
-    if (name == "_ZdlPv") return &wrap_nop;// delete
+    if (name == "_ZdlPv") return &wrap_nop; // delete
 
     // todo: merge!
     if (name == "_Z5raisePKc") return &wrap_exit;
@@ -426,27 +436,28 @@ wasm_wrap *link_import(String name) {
 
     if (name == "printf") return &wrap_puts;
     if (name == "print") return &wrap_puts;
-//	if (name == "logs") return &wrap_puts;
-//	if (name == "logi") return &wrap_puti;
-//    if (name == "logc") return &wrap_putc;
-// todo: map these to mangled print_xyz !
+    //	if (name == "logs") return &wrap_puts;
+    //	if (name == "logi") return &wrap_puti;
+    //    if (name == "logc") return &wrap_putc;
+    // todo: map these to mangled print_xyz !
     if (name == "putx") return &wrap_putx;
     if (name == "puti") return &wrap_puti;
     if (name == "putl") return &wrap_puti;
     if (name == "puts") return &wrap_puts;
     if (name == "putf") return &wrap_putf;
     if (name == "putd") return &wrap_putd;
-    if (name == "pow") return &wrap_pow;// logd
+    if (name == "pow") return &wrap_pow; // logd
 
-    if (name == "log") return &wrap_logd;// logd
-    if (name == "logd") return &wrap_logd;// logd
+    if (name == "log") return &wrap_logd; // logd
+    if (name == "logd") return &wrap_logd; // logd
     if (name == "putc") return &wrap_putc;
-//    if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
-    if (name == "put_char") return &wrap_putc;// todo: remove duplicates!
+    //    if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
+    if (name == "put_char") return &wrap_putc; // todo: remove duplicates!
     if (name == "download") return &wrap_download;
+    if (name == "getElementById") return &wrap_getElementById;
     if (name == "wasp_main") return &hello_callback;
     if (name == "memory")
-        return 0;// not a funciton
+        return 0; // not a funciton
     error("unmapped import "s + name);
     return 0;
 }
@@ -471,8 +482,8 @@ wasm_wrap *link_import(String name) {
 #define own
 
 static inline own wasm_functype_t *wasm_functype_new_4_1(
-        own wasm_valtype_t *p1, own wasm_valtype_t *p2, own wasm_valtype_t *p3, own wasm_valtype_t *p4,
-        own wasm_valtype_t *r
+    own wasm_valtype_t *p1, own wasm_valtype_t *p2, own wasm_valtype_t *p3, own wasm_valtype_t *p4,
+    own wasm_valtype_t *r
 ) {
     wasm_valtype_t *ps[4] = {p1, p2, p3, p4};
     wasm_valtype_t *rs[1] = {r};
@@ -505,11 +516,14 @@ wasm_valkind_t mapTypeToWasmtime(Type type) {
             return WASM_EXTERNREF;
         case funcref:
             return WASM_FUNCREF;
+        case charp:
+            return WASM_I32;
         default:
             error("unknown type for wasmtime "s + typeName(type));
             return WASM_I32;
     }
 }
+
 
 const wasm_functype_t *funcType(Signature &signature) {
     int param_count = signature.parameters.size();
@@ -537,22 +551,22 @@ const wasm_functype_t *funcType(Signature &signature) {
     wasm_valtype_vec_new(&results, return_type ? 1 : 0, return_type ? &return_type : nullptr);
 
     // Clean up allocated memory for parameters
-    for (int i = 0; i < param_count; ++i) {
-        wasm_valtype_delete(param_types[i]);
-    }
-    delete[] param_types;
+    // for (int i = 0; i < param_count; ++i) {
+    //     wasm_valtype_delete(param_types[i]);
+    // }
+    // delete[] param_types;
 
     return wasm_functype_new(&params, &results);
 }
 
 const wasm_functype_t *funcType2(Signature &signature) {
-// ⚠️ these CAN NOT BE REUSED! interrupted by signal 11: SIGSEGV or BIZARRE BUGS if you try!
-//     ⚠ wasm_valtype_t *i = wasm_valtype_new(WASM_I32);  ⚠️
+    // ⚠️ these CAN NOT BE REUSED! interrupted by signal 11: SIGSEGV or BIZARRE BUGS if you try!
+    //     ⚠ wasm_valtype_t *i = wasm_valtype_new(WASM_I32);  ⚠️
 
     // todo multi-value
     Type returnType0 = signature.return_types.last(none);
     Valtype returnType = mapTypeToWasm(returnType0);
-	int param_count = signature.parameters.size();
+    int param_count = signature.parameters.size();
     if (param_count == 0) {
         switch (returnType) {
             case none:
@@ -567,8 +581,8 @@ const wasm_functype_t *funcType2(Signature &signature) {
         }
     }
     if (param_count == 1) {
-	    Type &type = signature.parameters[0].type;
-	    Valtype valtype = mapTypeToWasm(type);
+        Type &type = signature.parameters[0].type;
+        Valtype valtype = mapTypeToWasm(type);
         switch (valtype) {
             case int32:
                 switch (returnType) {
