@@ -1312,7 +1312,7 @@ Code emitData(Node &node, Function &context) {
                 return emitNode(node, context);
                 //                error("locals dont belong in emitData!");
             else if (referenceIndices.has(name)) todo("emitData reference makes no sense? "s + name) else
-                error("can't save unknown reference pointer "s + name);
+            error("can't save unknown reference pointer "s + name);
             break;
         case strings:
             return emitString(node, context);
