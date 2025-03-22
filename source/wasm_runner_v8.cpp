@@ -207,7 +207,7 @@ char *wasm_valtype_name(wasm_valtype_t *wasm_valtype) {
 // 2025-03 WORKS but takes 4 sec and imports/exports/calls VERY fragile so fuck it
 int test_v8() {
     // Initialize.
-    if(!done)init_wasm();
+    if (!done)init_wasm();
     // own wasm_engine_t *engine = wasm_engine_new();
     // own wasm_store_t *store = wasm_store_new(engine);
 
@@ -258,7 +258,7 @@ int test_v8() {
     if (exports.size == 0) {
         printf("> Error accessing exports!\n");
         return 1;
-    }else {
+    } else {
         printf("> %zu exports\n", exports.size);
     }
     const wasm_func_t *run_func = wasm_extern_as_func(exports.data[1]);
@@ -297,7 +297,7 @@ int test_v8_BROKEN() {
     // printf("Initializing...\n");
     // own wasm_engine_t *engine = wasm_engine_new();
     // own wasm_store_t *store = wasm_store_new(engine);
-    if(!done)init_wasm();
+    if (!done)init_wasm();
 
     // Load binary.
     printf("Loading binary...\n");
