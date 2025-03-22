@@ -83,13 +83,13 @@ if (NOT WASM)
         # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         # NO engine has (c-api) support for wit / component model as of 2024-12
-        #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
         #        SET(SPIN 1) WebAssembly Gateway Interface (WAGI) OK: Write to STDOUT, ENV[QUERY_STRING] for input, uploads through STDIN
 
         #        SET(WASMEDGE 0)
 
-        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
+        #        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #  set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( 2022-12: last release on Jun 2, 2021
         #  set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
