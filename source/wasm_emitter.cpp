@@ -1240,7 +1240,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
 //	if (size == 1)last_type = codepoint32;// todo only if accessing codepoint1, not when pointing into UTF8 byte!!
     if (size == 1) {
         last_type = byte_char;
-        last_type = int32t;// ! even bool is represented as int in wasm!!!
+        last_type = int32t; // ! even bool is represented as int in wasm!!!
     }   //last_type = byte_char;
     else if (size <= 4)last_type = int32t;
     else last_type = i64;
@@ -1704,7 +1704,7 @@ Code emitReferenceAttribute(Node &object, Node field_name, Function &function) {
     code.addOpcode(struct_get);
     code.add(type_index);
     code.add(field_index);
-    last_type = int32t;// todo get type from field
+    last_type = int32t; // todo get type from field
     return code;
 }
 
@@ -1786,7 +1786,7 @@ Code emitOperator(Node &node, Function &context) {
     unsigned short opcode = opcodes(name, mapTypeToWasm(last_type), mapTypeToWasm(arg_type));
 
     if (opcode >= 0x8b and opcode <= 0x98)
-        code.add(cast(last_type, float32t));// float ops
+        code.add(cast(last_type, float32t)); // float ops
     if (opcode >= 0x99 and opcode <= 0xA6)
         code.add(cast(last_type, float64t)); // double ops
 
@@ -1853,10 +1853,10 @@ Code emitOperator(Node &node, Function &context) {
 //        getWaspFunction("pow");
 //        code.add(emitCall("pow", context));
 //#else
-        if (last_type == int32t) code.add(emitCall("powi", context));
-        else if (last_type == float32t) code.add(emitCall("powf", context));
-        else if (last_type == float64t) code.add(emitCall("pow", context));
-        else if (last_type == int64s) code.add(emitCall("pow_long", context));
+if (last_type == int32t) code.add(emitCall("powi", context));
+else if (last_type == float32t) code.add(emitCall("powf", context));
+else if (last_type == float64t) code.add(emitCall("pow", context));
+else if (last_type == int64s) code.add(emitCall("pow_long", context));
 else todo("^ power with type "s + typeName(last_type));
 // else code.add(emitCall("pow_long", context));
 //#endif
@@ -1883,13 +1883,13 @@ else todo("^ power with type "s + typeName(last_type));
         return emitSimilar(node, context);
     } else if (name == "ⁿ") {
         if (node.length == 1) {
-            code.add(cast(last_type, float64t));// todo all casts should be auto-cast (in emitCall) now, right?
+            code.add(cast(last_type, float64t)); // todo all casts should be auto-cast (in emitCall) now, right?
         }
         if (node.length <= 1) {// use stack
             if (not context.locals.has("n"))error("unknown n");
             code.add(get_local);
             code.addInt(context.locals["n"].position);
-            code.add(cast(context.locals["n"].type, float64t));// todo all casts should be auto-cast now, right?
+            code.add(cast(context.locals["n"].type, float64t)); // todo all casts should be auto-cast now, right?
         }
         code.add(emitCall("pow", context));
 //		else
@@ -1921,7 +1921,7 @@ Type commonType(Type lhs, Type rhs) {
     if (lhs == float64t or rhs == float64t)return float64t;
     if (lhs == float32t or rhs == float32t)return float32t;
     return lhs; // todo!
-//    return none;
+    //    return none;
 }
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string) {
@@ -2699,20 +2699,20 @@ Code cast(Valtype from, Valtype to) {
     if (from == float32t and to == float64t)return Code(f64_from_f32);
     if (from == float32t and to == i32t) return Code(f32_cast_to_i32_s);
     if (from == i32t and to == float32t)return Code(f32_from_int32);
-//	if (from == i32t and to == float64)return Code(i32_cast_to_f64_s);
+    //	if (from == i32t and to == float64)return Code(i32_cast_to_f64_s);
     if (from == i64 and to == i32) return Code(i32_wrap_i64);
     if (from == float32t and to == i32) return Code(i32_trunc_f32_s);
-//	if(from==f32u and to==i32)	return Code(i32_trunc_f32_𝗎);
+    //	if(from==f32u and to==i32)	return Code(i32_trunc_f32_𝗎);
     if (from == float64t and to == i32) return Code(i32_trunc_f64_s);
-//	if(from==f64u and to==i32)	return Code(i32_trunc_𝖿𝟨𝟦_𝗎);
+    //	if(from==f64u and to==i32)	return Code(i32_trunc_𝖿𝟨𝟦_𝗎);
     if (from == i32 and to == i64) return Code(i64_extend_i32_s);
 //	if(from==i32u and to==i64)	return Code(i64_extend_i32_𝗎);
     if (from == float32t and to == i64) return Code(i64_trunc_f32_s);
-//	if(from==f32u and to==i64)	return Code(i64_trunc_f32_𝗎);
+    //	if(from==f32u and to==i64)	return Code(i64_trunc_f32_𝗎);
     if (from == float64t and to == i64) return Code(i64_trunc_f64_s);
-//	if(from==f64u and to==i64)	return Code(i64_trunc_𝖿𝟨𝟦_𝗎);
+    //	if(from==f64u and to==i64)	return Code(i64_trunc_𝖿𝟨𝟦_𝗎);
     if (from == i32 and to == float32t) return Code(f32_convert_i32_s);
-//	if(from==i32u and to==f32)	return Code(f32_convert_i32_𝗎);
+    //	if(from==i32u and to==f32)	return Code(f32_convert_i32_𝗎);
     if (from == i64 and to == float32t)
         return Code(f32_convert_i64_s);
 //	if(from==f64u and to==f32)	return Code(f32_convert_i64_𝗎);
@@ -2732,7 +2732,7 @@ Code cast(Valtype from, Valtype to) {
 //	if(from==i64 and to==f64)	return Code(f64_reinterpret_i64);
     if (from == i64 and to == float32t) return Code(f64_convert_i64_s).addByte(f32_from_f64);
 
-//    if (from == string_ref and to == i64)return stringRefLength();
+    //    if (from == string_ref and to == i64)return stringRefLength();
 //    if (from == string_ref and to == i64)return castRefToChars();
 //	if (from == void_block and to == i32)
 //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
@@ -2761,7 +2761,7 @@ Code cast(Type from, Type to) {
         return Code(i64_extend_i32_s);
     if (from == array and to == i64)return Code(i64_extend_i32_u);;// pray / assume i32 is a pointer here. todo!
     if (from == i32t and to == array)return nop;// pray / assume i32 is a pointer here. todo!
-    if (from == float32t and to == array)return nop;// pray / assume f32 is a pointer here. LOL NO todo!
+    if (from == float32t and to == array)return nop; // pray / assume f32 is a pointer here. LOL NO todo!
     if (from == i64 and to == array)return Code(i32_wrap_i64);;// pray / assume i32 is a pointer here. todo!
 //    if(Valtype)
     return cast(mapTypeToWasm(from), mapTypeToWasm(to));
@@ -3033,7 +3033,7 @@ Code castToSmartPointer(Type from, Type return_type, Function &context, bool &ne
     } else if (from.kind == reference) {
 //			if (from==charp)
 //				block.addConst(string_header_64).addByte(i64_or);
-        todo("from ref");
+todo("from ref");
     } else if (from == float64t and context.name == start) {
         // hack smart pointers as main return: f64 has range which is never hit by int
         block.addByte(
@@ -3107,7 +3107,7 @@ Code emitBlock(Node &node, Function &context) {
         block.addByte(1);// count! todo: group by type nah
         if (type == unknown_type)
             type = int32t;
-// todo		internal_error("unknown type should be inferred by now for local "s + name);
+        // todo		internal_error("unknown type should be inferred by now for local "s + name);
         if (type == none or type == voids)
             type = int32t;
         if (type == charp or type == array)
@@ -3458,8 +3458,9 @@ Code emitCodeSection(Node &root) {
 //                        end_block};
 
     // put_string(string&) / put_string(char**)
-    byte code_put_string[] = {1/*locals_count*/, 1 /*one of type*/, int32t /* string& */ ,
-                              i32_const, 1,// stdout
+    byte code_put_string[] = {
+        1/*locals_count*/, 1 /*one of type*/, int32t /* string& */ ,
+        i32_const, 1,// stdout
                               local_get, 0,// string* or char** ⚠️ use put_chars for char*
                               i32_const, 1,// #string
                               i32_const, 8,// out chars written => &trash
@@ -3467,8 +3468,9 @@ Code emitCodeSection(Node &root) {
                               end_block};
 
     // char* in wasp abi always have header at -8
-    byte code_puts[] = {1/*locals_count*/, 1 /*one of type*/, int32t /* string& */ ,
-                        i32_const, 1,// stdout
+    byte code_puts[] = {
+        1/*locals_count*/, 1 /*one of type*/, int32t /* string& */ ,
+        i32_const, 1,// stdout
                         local_get, 0,// string* or char** ⚠️ use put_chars for char*
                         i32_const, 8, i32_sub,//  char* in wasp abi always have header at -8
                         i32_const, 1,// #string
@@ -3477,17 +3479,19 @@ Code emitCodeSection(Node &root) {
                         end_block};
 
 
-    byte code_len[] = {1/*locals_count*/, 1 /*one of type*/, int32t /* wasm_pointer */ ,
-                       local_get, 0,// any structure in Wasp ABI
+    byte code_len[] = {
+        1/*locals_count*/, 1 /*one of type*/, int32t /* wasm_pointer */ ,
+        local_get, 0, // any structure in Wasp ABI
                        i32_const, 4,// length is second field in ALL Wasp structs!
                        i32_add, // offset = base + 4
                        i32_load, 2, 0, end_block};
 
     // slightly confusing locals variable declaration count scheme:
-    byte code_modulo_float[] = {1 /*locals declarations*/, 2 /*two of type*/, float32t,
-                                0x20, 0x00, 0x20, 0x00, 0x20, 0x01, 0x95, 0x8f, 0x20, 0x01, 0x94, 0x93, 0x0b};
+    byte code_modulo_float[] = {
+        1 /*locals declarations*/, 2 /*two of type*/, float32t,
+        0x20, 0x00, 0x20, 0x00, 0x20, 0x01, 0x95, 0x8f, 0x20, 0x01, 0x94, 0x93, 0x0b};
     byte code_modulo_double[] = {1 /*locals variable declarations:*/, 2 /*two of type*/, float64t,
-                                 0x20, 0x00, //                     | local.get 0
+        0x20, 0x00, //                     | local.get 0
                                  0x20, 0x00, //                     | local.get 0
                                  0x20, 0x01, //                     | local.get 1
                                  0xa3,       //                     | f64.div
@@ -3586,9 +3590,9 @@ Code emitExportSection() {
     }
     Code mainExport = encodeString(start) + (byte) func_export + Code(main_offset);
 #if not MICRO // WAMR doesn't like _start with return as per spec OK
-    if (use_wasi) {
-        exports_count++;
-        int start_offset = main_offset;
+if (use_wasi) {
+    exports_count++;
+    int start_offset = main_offset;
         if (call_indices["_start"])
             start_offset = call_indices["_start"];
         mainExport = mainExport + encodeString("_start") + (byte) func_export + Code(start_offset);

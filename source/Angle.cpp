@@ -1337,7 +1337,7 @@ Type preEvaluateType(Node &node, Function &context) {
         return mapType(node.name);
     }
     if (node.kind == operators) {
-        if (node.name == "√")return float64t;// todo generalize
+        if (node.name == "√")return float64t; // todo generalize
         Node &lhs = node[0];
         auto lhs_type = preEvaluateType(lhs, context);
         if (node.length == 1)
@@ -1904,7 +1904,7 @@ Node &analyze(Node &node, Function &function) {
     // add: func(a: float32, b: float32) -> float32
 
     if ((type == expression and not name.empty() and not name.contains("-")))
-        addLocal(function, name, int32t, false);//  todo deep type analysis x = π * fun() % 4
+        addLocal(function, name, int32t, false); //  todo deep type analysis x = π * fun() % 4
     if (type == key) {
         if (node.value.node /* i=ø has no node */)
             node.value.node = analyze(*node.value.node, function).clone();
@@ -1987,7 +1987,7 @@ void preRegisterFunctions() {
 //        runtime.functions.values[i].is_used = false; // reset after last used, as libraries are shared between tests
 
     functions["proc_exit"].import();
-    functions["proc_exit"].signature.add(int32t, "exit_code");// file descriptor
+    functions["proc_exit"].signature.add(int32t, "exit_code"); // file descriptor
 //	wasp-runtime.wasm needs to be recompiled too!
 #if WASMEDGE
     functions["proc_exit"].module = new Module{.name="wasi_snapshot_preview1"};
@@ -1995,7 +1995,7 @@ void preRegisterFunctions() {
     functions["proc_exit"].module = new Module{.name="wasi_unstable"};
 #endif
     functions["fd_write"].import();
-    functions["fd_write"].signature.add(int32t, "fd");// file descriptor
+    functions["fd_write"].signature.add(int32t, "fd"); // file descriptor
     functions["fd_write"].signature.add(pointer, "iovs");
     functions["fd_write"].signature.add(size32, "iovs_len");
     functions["fd_write"].signature.add(pointer, "nwritten");// size_t *  out !
@@ -2053,10 +2053,10 @@ void preRegisterFunctions() {
 //	functions["$"].signature.add(strings).returns(referencex);
 
     functions["puts"].builtin();
-    functions["puts"].signature.add(stringp).returns(int32t);// stdio conform!!
+    functions["puts"].signature.add(stringp).returns(int32t); // stdio conform!!
 
     functions["len"].builtin();// via wasp abi len(any)=*(&any)[1]
-    functions["len"].signature.add(array).returns(int32t);// todo any wasp type
+    functions["len"].signature.add(array).returns(int32t); // todo any wasp type
 
     functions["quit"].builtin();// no args, calls proc_exit(0)
 
@@ -2263,7 +2263,7 @@ Function getWaspFunction(String name) { // signature only, code must be loaded f
         else if (name == "registerWasmFunction");
         else if (name.startsWith("test"));
         else if (name == "powi")f.signature.add(int64s).add(int64s).returns(int64s);// as import?
-        else if (name == "pow")f.signature.add(float64t).add(float64t).returns(float64t);// as import?
+        else if (name == "pow")f.signature.add(float64t).add(float64t).returns(float64t); // as import?
         else todo("getWaspFunction "s + name);
     }
     if (!runtime.functions.has(f.name)) {
