@@ -2735,7 +2735,7 @@ Code cast(Valtype from, Valtype to) {
     //    if (from == string_ref and to == i64)return stringRefLength();
     //    if (from == string_ref and to == i64)return castRefToChars();
     //	if (from == void_block and to == i32)
-//		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
+    //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
     error("incompatible valtypes "s + (int) from + "->" + (int) to + " / " + typeName(from) + " => " + typeName(to));
     return nop;
 }
@@ -3462,8 +3462,8 @@ Code emitCodeSection(Node &root) {
         1/*locals_count*/, 1 /*one of type*/, int32t /* string& */ ,
         i32_const, 1, // stdout
         local_get, 0, // string* or char** ⚠️ use put_chars for char*
-        i32_const, 1,// #string
-                              i32_const, 8,// out chars written => &trash
+        i32_const, 1, // #string
+        i32_const, 8,// out chars written => &trash
                               call_, (byte) fd_write_import, nop_, nop_,
                               end_block};
 
@@ -3472,8 +3472,8 @@ Code emitCodeSection(Node &root) {
         1/*locals_count*/, 1 /*one of type*/, int32t /* string& */ ,
         i32_const, 1, // stdout
         local_get, 0, // string* or char** ⚠️ use put_chars for char*
-        i32_const, 8, i32_sub,//  char* in wasp abi always have header at -8
-                        i32_const, 1,// #string
+        i32_const, 8, i32_sub, //  char* in wasp abi always have header at -8
+        i32_const, 1, // #string
                         i32_const, 8,// out chars written => &trash
                         call_, (byte) fd_write_import, nop_, nop_,
                         end_block};
@@ -3484,7 +3484,8 @@ Code emitCodeSection(Node &root) {
         local_get, 0, // any structure in Wasp ABI
         i32_const, 4, // length is second field in ALL Wasp structs!
         i32_add, // offset = base + 4
-        i32_load, 2, 0, end_block};
+        i32_load, 2, 0, end_block
+    };
 
     // slightly confusing locals variable declaration count scheme:
     byte code_modulo_float[] = {
@@ -3496,8 +3497,8 @@ Code emitCodeSection(Node &root) {
         0x20, 0x00, //                     | local.get 0
         0x20, 0x00, //                     | local.get 0
         0x20, 0x01, //                     | local.get 1
-        0xa3,       //                     | f64.div
-                                 0x9d,       //                     | f64.trunc
+        0xa3, //                     | f64.div
+        0x9d, //                     | f64.trunc
                                  0x20, 0x01, //                     | local.get 1
                                  0xa2,       //                     | f64.mul
                                  0xa1,       //                     | f64.sub
