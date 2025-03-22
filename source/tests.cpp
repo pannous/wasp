@@ -452,6 +452,7 @@ void testHostDownload() {
 
 void testHostIntegration() {
     testHostDownload();
+#if not WASMTIME
     test_getElementById();
     testDom();
     testDomProperty();
@@ -459,6 +460,7 @@ void testHostIntegration() {
     testInnerHtml();
     testJS();
     testFetch();
+#endif
 }
 
 
@@ -3805,6 +3807,7 @@ void test_new() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    assert_throws("0/0");
     //    assert_emit("def first(array);", 0);
     // while(True)
     assert_emit("for i in 1 to 5 : {puti i};i", 6); // EXC_BAD_ACCESS as of 2025-03-06 under SANITIZE
@@ -3844,7 +3847,7 @@ void testCurrent() {
         assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
     )
 
-    testDom();
+    // testDom();
     testExceptions();
 
     assert_emit("√ π ²", pi);
