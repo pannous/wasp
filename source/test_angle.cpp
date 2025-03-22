@@ -27,10 +27,10 @@ void testFunctionParams() {
 
 
 void testCall() {
-#if WASMTIME
-	warn("square 3  => SIGABRT in WASMTIME! must be bug there!?");
-	return ;
-#endif
+// #if WASMTIME
+// 	warn("square 3  => SIGABRT in WASMTIME! must be bug there!?");
+// 	return ;
+// #endif
     assert_is("square 3", 9)
     assert_is("square(3)", 9)
 //	functionSignatures["square"] = (*new Signature()).add(i32t).returns(i32t).import();
