@@ -60,7 +60,7 @@ List<String> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == 
 
 
 // still needs to check a-b vs -i !!
-List<chars> prefixOperators = {"abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
+List<chars> prefixOperators = {"exp","abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
                                "~", "&", "$", "return",
                                "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
 List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", /* 23% vs 7%5 */ "％",
@@ -1207,7 +1207,7 @@ if (i > 0) {
                 findLibraryFunction("concat", true);
                 findLibraryFunction("_Z6concatPKcS0_", true);
             }
-            if (op == "^" or op == "^^" or op == "**") {// todo NORM operators earlier
+            if (op == "^" or op == "^^" or op == "**" or op=="exp" or op == "ℇ") {// todo NORM operators earlier
                 findLibraryFunction("pow", false);
 //                findLibraryFunction("powi", false);
 //                functions["pow"].is_used = true;
@@ -1891,17 +1891,18 @@ Node &analyze(Node &node, Function &function) {
         module->name = node.string(); // todo: use?
         return NUL;
     }
-#if not WASM
+#if not WASM // todo why not??
+    // class declaration!
     if (not firstName.empty() and class_keywords.contains(firstName))
         return classDeclaration(node, function);
 #endif
-    if (node.kind == referencex) // external reference, e.g. html
+    if (node.kind == referencex) // external reference, e.g. html $id
         functions["getElementById"].is_used = true;
-    // if(function_operators.contains(name))...
-    if (node.kind == key and node.values().name == "func")
+
+    // add: func(a: float32, b: float32) -> float32
+    if (node.kind == key and node.values().name == "func") // todo move edge case to witReader
         return funcDeclaration(node.name, node.values(), NUL /* no body here */ , 0, function.module);
 //        return witReader.analyzeWit(node);
-    // add: func(a: float32, b: float32) -> float32
 
     if ((type == expression and not name.empty() and not name.contains("-")))
         addLocal(function, name, int32t, false); //  todo deep type analysis x = π * fun() % 4
@@ -1927,13 +1928,12 @@ Node &analyze(Node &node, Function &function) {
 
     if (isGlobal(node, function))
         return groupGlobal(node, function);
-//        return node.setType(global, false);
     if (isPrimitive(node)) {
         if (maybeVariable(node))
             addLocal(function, name, mapType(node), false);
         return node;// nothing to be analyzed!
     }
-//    if(function_keywords.contains(firstName))
+    // function_keywords.has(node.name / values)
     if (node.containsAny(function_keywords, false))
         return groupFunctionDefinition(node, function);
 
@@ -1948,7 +1948,7 @@ Node &analyze(Node &node, Function &function) {
     analyzed.insert_or_assign(grouped.hash(), 1);
 
 //    Node& last;
-    if (isGroup(type)) {
+    if (isGroup(type)) { // handle lists, arrays, objects, … (statements)
         if (grouped.length > 0)
             for (Node &child: grouped) { // children of lists analyzed individually
                 if (!child.name.empty() and wit_keywords.contains(child.name) and child.kind != strings /* TODO … */)
