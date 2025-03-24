@@ -85,6 +85,22 @@ void testEmitCast() {
     assert_emit("'2.1' as double", 2.1);
 }
 
+void testExp() {
+    // todo parsed same:
+    assert_is("ℯ^0", 1);
+    assert_is("ℯ^1", e);
+    assert_is("π^0", 1);
+    assert_is("π^1", pi);
+    assert_is("π*√163", 40.1091); // ok
+    assert_is("π√163", 40.1091);
+    assert_is("(π*√163)==(π√163)", 1);
+    assert_is("π*√163==(π√163)", 1);
+    assert_is("π*√163==π√163", 1);
+    // assert_is("exp(π√163)", 1);
+    assert_is("ℯ^(π*√163)", 262537412640768743.99999999999925);
+    // assert_is("exp(0)", 1);
+}
+
 void testConstructorCast() {
     assert_run("int('123')", 123);
     assert_run("str(123)", "123");
@@ -3812,7 +3828,9 @@ void testCurrent() {
     // testKebabCase(); // needed here:
     // assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
     assert_is("(1 4 3)#2", 4); //
-
+    skip(
+        testExp(); // todo!
+    )
     // assert_throws("0/0");
     testCast();
     //    todos();
