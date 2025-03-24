@@ -60,8 +60,9 @@ List<String> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == 
 
 
 // still needs to check a-b vs -i !!
-List<chars> prefixOperators = {"exp","abs",/*norm*/  "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
-                               "~", "&", "$", "return",
+List<chars> prefixOperators = {
+    "exp", "abs",/*norm*/ "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
+    "~", "&", "$", "return",
                                "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke"};
 List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", /* 23% vs 7%5 */ "％",
                                "﹪", "٪",
@@ -1207,7 +1208,8 @@ if (i > 0) {
                 findLibraryFunction("concat", true);
                 findLibraryFunction("_Z6concatPKcS0_", true);
             }
-            if (op == "^" or op == "^^" or op == "**" or op=="exp" or op == "ℇ") {// todo NORM operators earlier
+            if (op == "^" or op == "^^" or op == "**" or op == "exp" or op == "ℇ") {
+                // todo NORM operators earlier
                 findLibraryFunction("pow", false);
 //                findLibraryFunction("powi", false);
 //                functions["pow"].is_used = true;
@@ -1948,7 +1950,8 @@ Node &analyze(Node &node, Function &function) {
     analyzed.insert_or_assign(grouped.hash(), 1);
 
 //    Node& last;
-    if (isGroup(type)) { // handle lists, arrays, objects, … (statements)
+    if (isGroup(type)) {
+        // handle lists, arrays, objects, … (statements)
         if (grouped.length > 0)
             for (Node &child: grouped) { // children of lists analyzed individually
                 if (!child.name.empty() and wit_keywords.contains(child.name) and child.kind != strings /* TODO … */)
