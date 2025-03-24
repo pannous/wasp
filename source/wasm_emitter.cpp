@@ -1875,7 +1875,7 @@ Code emitOperator(Node &node, Function &context) {
     } else if (name == "+=") {
         //
         error(" += usually handled in analyze!");
-    // } else if (name == "exp" or name == "ℇ") {
+        // } else if (name == "exp" or name == "ℇ") {
     } else if (name == "**" or name == "to the" or name == "^" or name == "^^" or name == "exp" or name == "ℇ") {
         //        code.add(cast(last_type, Primitive::wasm_float64));
         //        code.add(emitCall("pow", context));
@@ -2150,7 +2150,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
                     if (node.isSetter())
                         return emitSetter(node, node, context);
                     return emitGetGlobal(node);
-                } else if (name == "exp"){
+                } else if (name == "exp") {
                     todo("rewrite as ℯ^x");
                     // node.name = "pow";
                     // node.add(Node(2.7182818284590));
