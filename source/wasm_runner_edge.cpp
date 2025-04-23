@@ -34,6 +34,7 @@ WasmEdge_Result ExternSquare(void *Data,
 
 
 // TODO Why are these not provided by WASM Edge WASI?
+// TODO undo commit 81146284bfc411dae072caf257df376d12a97b4b "had to add 10 dummy functions WHY?"
 WasmEdge_Result fd_write_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     printf("fd_write_wrap TODO\n");
     return WasmEdge_Result_Success;
