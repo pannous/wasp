@@ -1312,7 +1312,7 @@ Code emitData(Node &node, Function &context) {
                 return emitNode(node, context);
                 //                error("locals dont belong in emitData!");
             else if (referenceIndices.has(name)) todo("emitData reference makes no sense? "s + name) else
-            error("can't save unknown reference pointer "s + name);
+                error("can't save unknown reference pointer "s + name);
             break;
         case strings:
             return emitString(node, context);
@@ -2165,8 +2165,8 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
                     //                    print(context.locals)
 
                     if (not node.type)
-    if(!name.empty())
-                        error("UNKNOWN local symbol ‘"s + name + "’ in context " + context);
+                        if (!name.empty() and name.length>0)
+                            error("UNKNOWN local symbol ‘"s + name + "’ in context " + context);
                 } else {
                     error("local symbol ‘"s + name.trim() + "’ in " + context + " should be registered in analyze()!");
                 }

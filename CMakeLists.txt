@@ -122,7 +122,7 @@ ENDFUNCTION()
 
 
 if (WASM)
-    set(WASI 0) # increases size by factor 10!! 100873 wasp.wasm => 1074221 wasp.wasm_10x_with_WASI
+    set(WASI 0) # increases size by factor 10!! 100873 wasp => 1074221 wasp.wasm_10x_with_WASI
     set(MY_WASI 1) # manually write via fd_write, NOT via wasi-sdk printf=>fd_write
     ADD_DEFINITIONS(-DMY_WASI)
     ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
@@ -130,7 +130,7 @@ if (WASM)
         message("WASM DEBUG with DWARF!")
         ADD_COMPILE_FLAG(-g3)
         ADD_COMPILE_FLAG(-gdwarf-4)
-        #        ADD_COMPILE_FLAG(-gdwarf-5) # /opt/homebrew/bin/wasmtime -D debug-info=y --dir . wasp.wasm --allow-unknown-exports test
+        #        ADD_COMPILE_FLAG(-gdwarf-5) # /opt/homebrew/bin/wasmtime -D debug-info=y --dir . wasp --allow-unknown-exports test
         #        ADD_COMPILE_FLAG(-gembed-source)
         ADD_COMPILE_FLAG(-fforce-dwarf-frame)
     endif ()
@@ -166,9 +166,9 @@ endif ()
 
 
 # V8 has wasm, so no m3 needed in release. can we even debug through V8??
-# interestingly if we have a native app we don't need our wasp.wasm runtime because it's c++ compiled into app.
+# interestingly if we have a native app we don't need our wasp runtime because it's c++ compiled into app.
 # but we would need a million bindings and calls, also we would LEAVE OUR SANDBOX,
-# so definitely ship wasp.wasm runtime in release!
+# so definitely ship wasp runtime in release!
 
 if (WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
@@ -581,7 +581,7 @@ if (WASM) # OR WASI)
         #        ADD_COMPILE_FLAG("-fno-binaryen")
         #        ADD_COMPILE_FLAG("-fno-post-opt")
         ADD_COMPILE_FLAG("-Wl,--gc-sections")
-        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp.wasm only 30 kb (without tests) YAY
+        ADD_COMPILE_FLAG("-flto") # Add metadata for link-time optimizations => wasp only 30 kb (without tests) YAY
 
         # https://github.com/llvm-project-tlp/llvm-project/commit/680315cd43d17e51e66181f045b7e993e39bfd48
         #        ADD_COMPILE_FLAG("--no-wasm-opt") # removes library functions!!
@@ -614,40 +614,40 @@ if (WASM) # OR WASI)
             ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
         endif ()
     endif ()
-    #    add_library(wasp.wasm SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
+    #    add_library(wasp SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
     if (RUNTIME_ONLY) # not tests, compiler, ... 100kb as of 2024-04
-        add_executable(wasp-runtime.wasm ${SOURCE_FILES}) # same as add_library, with or without --export-all
+        add_executable(wasp-runtime ${SOURCE_FILES}) # same as add_library, with or without --export-all
     elseif (WASP_FULL) # including merger
-        add_executable(wasp-full.wasm ${SOURCE_FILES})
+        add_executable(wasp-full ${SOURCE_FILES})
     elseif (MY_WASM) # hosted
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
         ADD_COMPILE_FLAG("-g")
         #        ADD_COMPILE_FLAG("-g -gsource-map") # emcc only :( // --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map")
-        add_executable(wasp-hosted.wasm ${SOURCE_FILES}) # run_wasm() put() panic() ...
+        add_executable(wasp-hosted ${SOURCE_FILES}) # run_wasm() put() panic() ...
         add_custom_command(
-                TARGET wasp-hosted.wasm POST_BUILD
+                TARGET wasp-hosted POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E echo "Generating source map for wasp-hosted.wasm"
                 COMMAND ${CMAKE_COMMAND} -E echo "Extracting debug symbols"
-                #                COMMAND llvm-dwarfdump -debug-info ${CMAKE_BINARY_DIR}/wasp-hosted.wasm | wasm-sourcemap ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
-                #                COMMAND llvm-dwarfdump -debug-info ${CMAKE_BINARY_DIR}/wasp-hosted.wasm > ${CMAKE_BINARY_DIR}/wasp-hosted.dwarf
-                #                COMMAND emcc --source-map --output ${CMAKE_BINARY_DIR}/wasp-hosted.wasm ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
+                #                COMMAND llvm-dwarfdump -debug-info ${CMAKE_BINARY_DIR}/wasp-hosted | wasm-sourcemap ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
+                #                COMMAND llvm-dwarfdump -debug-info ${CMAKE_BINARY_DIR}/wasp-hosted > ${CMAKE_BINARY_DIR}/wasp-hosted.dwarf
+                #                COMMAND emcc --source-map --output ${CMAKE_BINARY_DIR}/wasp-hosted ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
                 #                COMMAND wasm2wat --generate-names --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map -o ${CMAKE_BINARY_DIR}/wasp-hosted.wat ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
                 COMMAND python3 /Users/me/dev/script/wasm/wasm-sourcemap.py ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
                 COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../source/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
 
-                #                COMMAND wasm-opt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -g -o ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
+                #                COMMAND wasm-opt ${CMAKE_BINARY_DIR}/wasp-hosted -g -o ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
                 #                COMMAND wasm2js --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
-                #                COMMAND llvm-dsymutil ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
-                #                COMMAND /opt/wasm/wasi-sdk/bin/wasm-ld --strip-debug=false --export-dynamic -o wasp-hosted.wasm source.o
+                #                COMMAND llvm-dsymutil ${CMAKE_BINARY_DIR}/wasp-hosted -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
+                #                COMMAND /opt/wasm/wasi-sdk/bin/wasm-ld --strip-debug=false --export-dynamic -o wasp-hosted source.o
                 COMMAND ${CMAKE_COMMAND} -E echo "Source map generated: ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map"
         )
-        #        add_executable(wasp.wasm ${SOURCE_FILES})
+        #        add_executable(wasp ${SOURCE_FILES})
     elseif (WASI OR PURE_WASM)
-        add_executable(wasp-standalone.wasm ${SOURCE_FILES}) # custom WASI without host vs emcc WASI:
+        add_executable(wasp-standalone ${SOURCE_FILES}) # custom WASI without host vs emcc WASI:
     else () # normal release
-        #        add_executable(wasp-standalone.wasm ${SOURCE_FILES}) # custom WASI without host vs emcc WASI:
-        add_executable(wasp.wasm ${SOURCE_FILES}) # release: 188kb as of 2024-04 … 3.7MB debug
+        #        add_executable(wasp-standalone ${SOURCE_FILES}) # custom WASI without host vs emcc WASI:
+        add_executable(wasp ${SOURCE_FILES}) # release: 188kb as of 2024-04 … 3.7MB debug
     endif ()
 elseif (WASI)
     MESSAGE("USING PURE WASI")
@@ -662,7 +662,7 @@ elseif (WASI)
     #    endif()
     #  ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
-    add_executable(wasp.wasm ${SOURCE_FILES})
+    add_executable(wasp ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
 elseif (MICRO) # wasm-micro-vm:
     MESSAGE("USING WASM MICRO VM")
@@ -864,8 +864,8 @@ if (CONSOLE AND NOT WEBAPP)
         #            set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/FindReadline.cmake")
         #            set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/ReadlineConfig.cmake")
         #            find_package(Readline)
-        #        target_include_directories(wasp.wasm PRIVATE ${READLINE_INCLUDE_DIR})
-        TARGET_LINK_LIBRARIES(wasp.wasm PRIVATE readline) # => libreadline
+        #        target_include_directories(wasp PRIVATE ${READLINE_INCLUDE_DIR})
+        TARGET_LINK_LIBRARIES(wasp PRIVATE readline) # => libreadline
     else ()
         find_package(Readline)
         target_include_directories(wasp PRIVATE ${READLINE_INCLUDE_DIR})
