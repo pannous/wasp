@@ -1,6 +1,6 @@
 #include "Util.h"
 
-static chars wasp_version = "0.1.106";
+static chars wasp_version = "0.1.107";
 
 static bool multi_value = false; // todo gather in one place: config.h
 
