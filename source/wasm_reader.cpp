@@ -464,8 +464,8 @@ void consumeExportSection() {
     module->export_data = exports_vector.rest();
     Code &payload = module->export_data;
     for (int i = 0; i < exportCount; i++) {
-        print("FUNCTION EXPORT %d\n"s % i);
-        if(i==6)return;// hack js bug!
+        // print("FUNCTION EXPORT %d\n"s % i);
+        // if (i == 6)return; // DANGER hack js bug!
         String &export_name = name(payload);
         int export_type = unsignedLEB128(payload); // don't confuse with function_type if export_type==0
         int index = unsignedLEB128(payload);// for all types!

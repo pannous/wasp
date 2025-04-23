@@ -236,7 +236,10 @@ void testAssert() {
 }
 
 void testForLoops() {
-    //    assert_emit("for i in 1 to 5 : {print i};i", 6);
+    // assert_emit("for i in 1 to 5 : {print i};i", 6);
+    // assert_emit("for i in 1 to 5 : {put(i)};i", 6);
+    // assert_emit("for i in 1 to 5 : {puti(i)};i", 6);
+    // assert_emit("for i in 1 to 5 : {put i};i", 6);
     assert_emit("for i in 1 to 5 : {puti i};i", 6); // EXC_BAD_ACCESS as of 2025-03-06 under SANITIZE
     assert_emit("for i in 1 to 5 {puti i}", 5);
     assert_emit("for i in 1 to 5 {puti i};i", 6); // after loop :(
