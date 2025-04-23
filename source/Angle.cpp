@@ -1605,7 +1605,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
                 warn("WASP function "s + name + " getWaspFunclet todo");
                 auto pFunction = getWaspFunction(name).clone();
                 pFunction->import();
-                return use_required(pFunction);
+                return use_required_import(pFunction);
 #endif
         print("loading funclet "s + name);
         Module &funclet_module = read_wasm(findFile(name, "lib"));

@@ -1593,5 +1593,5 @@ Node cast(const Node &from, Type to_type) {
     if (from.kind == codepoint1 and to_type.kind == longs)return Node((int64_t) from.value.longy);
     if (from.kind == codepoint1 and to_type.kind == strings)return Node(String((codepoint) from.value.longy), false);
     todo("cast "s + from.serialize() + " to " + typeName(to_type));
-    //    return ERROR;
+    return ERROR;
 }

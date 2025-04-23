@@ -2163,7 +2163,9 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
                     return emitValue(*new Node(pi), context);
                 else if (!node.isSetter()) {
                     //                    print(context.locals)
+
                     if (not node.type)
+    if(!name.empty())
                         error("UNKNOWN local symbol ‘"s + name + "’ in context " + context);
                 } else {
                     error("local symbol ‘"s + name.trim() + "’ in " + context + " should be registered in analyze()!");
