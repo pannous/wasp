@@ -390,7 +390,7 @@ if (APPLE)
     ADD_COMPILE_FLAG("-Wno-unused-parameter") # always
     ADD_COMPILE_FLAG("-Wno-deprecated-copy-with-user-provided-copy") # what's this?
 endif ()
-#add_compile_options(-Wno-vla-cxx-extension) # allow array[len]
+add_compile_options(-Wno-vla-cxx-extension) # allow array[len]
 add_compile_options(-Werror)
 add_compile_options(-Wno-return-type-c-linkage) # allow C functions to return multi-value struct / C++ types
 
@@ -624,7 +624,7 @@ if (WASM) # OR WASI)
                 #                COMMAND emcc --source-map --output ${CMAKE_BINARY_DIR}/wasp-hosted.wasm ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
                 #                COMMAND wasm2wat --generate-names --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map -o ${CMAKE_BINARY_DIR}/wasp-hosted.wat ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
                 COMMAND python3 /Users/me/dev/script/wasm/wasm-sourcemap.py ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
-                COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../Frameworks/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
+                COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../source/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
 
                 #                COMMAND wasm-opt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -g -o ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
                 #                COMMAND wasm2js --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
