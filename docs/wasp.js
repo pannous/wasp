@@ -889,7 +889,8 @@ var expect_test_result = 0; // set before running in semi sync tests!
 // todo don't confuse app (wasp runtime) with app_instance (compiled wasm module)
 // todo wasm_data = fetch(WASP_FILE) vs runtime_bytes = fetch(WASP_RUNTIME)
 // wasp compiler and wasp runtime are different things here!
-async function link_runtime() {
+async function soft_link_runtime() {
+  // SOFT LINK TO RUNTIME : just add it in instantiate (vs compile hard link)
   const memory = new WebAssembly.Memory({initial: 16384, maximum: 65536});
   const table = new WebAssembly.Table({initial: 2, element: "anyfunc"});
   try {
@@ -950,17 +951,6 @@ function binary_diff(old_mem, new_mem) {
   }
 }
 
-// let compiler link/merge emitted wasm with small runtime
-function copy_runtime_bytes_to_compiler() {
-  let length = runtime_bytes.byteLength
-  let pointer = HEAP_END
-  let src = new Uint8Array(runtime_bytes, 0, length);
-  let dest = new Uint8Array(memory.buffer, HEAP_END, length);
-  dest.set(src) // memcpy ⚠️ todo MAY FUCK UP compiler bytes!!!
-  HEAP_END += length
-  // compiler_exports.testRuntime(pointer, length)
-}
-
 // minimal demangler for wasm functions does not offer full reflection
 getArguments = function (func) {
   const symbols = func.toString();
@@ -971,7 +961,7 @@ getArguments = function (func) {
   start = symbols.indexOf('(', start);
   end = symbols.indexOf(')', start);
   const args = [];
-  symbols.substr(start + 1, end - start - 1).split(',').forEach(function (argument) {
+  symbols.substring(start + 1, end - start - 1).split(',').forEach(function (argument) {
     args.push(argument);
   });
   return args;
@@ -1027,13 +1017,15 @@ function load_runtime_bytes() {
   if (!runtime_bytes)
     fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
         runtime_bytes = buffer
+      if (typeof (compiler_exports) == undefined)
+        console.error("compiler needs to be loaded before runtime")
         copy_runtime_bytes_to_compiler()
         WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
-          //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
+          runtime_instance = obj.instance
+          runtime_exports = runtime_instance.exports
+          // addSynonyms(runtime_exports) // better use full names from compiler!
+          wasp_ready()
           // debug(obj.instance.exports._ZN6StringC2EPKcb)
-          // debug(obj.instance.exports._ZN6StringC2EPKcb.length)
-          // debug(obj.instance.exports._ZN6StringC2EPKcb.arguments)
-          // debug(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
           // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
         })
       }
@@ -1041,34 +1033,15 @@ function load_runtime_bytes() {
 }
 
 
-// obsolete? see WASP_COMPILER compiler_exports
-function load_release_runtime() {
-  if (!runtime_bytes)
-    fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
-      runtime_bytes = buffer
-      WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
-        runtime_instance = obj.instance
-        runtime_exports = runtime_instance.exports
-        addSynonyms(runtime_exports)
-        HEAP = runtime_exports.__heap_base; // ~68000
-        DATA_END = runtime_exports.__data_end
-        HEAP_END = HEAP || DATA_END || runtime_exports.__heap_end;
-        HEAP_END += 0x100000
-        memory = runtime_exports.memory || runtime_exports._memory || memory
-        buffer = new Uint8Array(memory.buffer, 0, memory.length);
-        main = runtime_instance.start || runtime_exports.teste || runtime_exports.main || runtime_exports.wasp_main || runtime_exports._start
-        // main = runtime_instance._Z11testCurrentv || main  via wasp_tests()
-        if (main) {
-          debug("got main")
-          result = main()
-        } else {
-          console.error("missing main function in wasp module!")
-          result = runtime_instance.exports//show what we've got
-        }
-        debug(result);
-        wasp_ready()
-      });
-    });
+// let compiler link/merge emitted wasm with small runtime
+function copy_runtime_bytes_to_compiler() {
+  let length = runtime_bytes.byteLength
+  let pointer = HEAP_END
+  let src = new Uint8Array(runtime_bytes, 0, length);
+  let dest = new Uint8Array(memory.buffer, HEAP_END, length);
+  dest.set(src) // memcpy ⚠️ todo MAY FUCK UP compiler bytes!!!
+  HEAP_END += length
+  compiler_exports.testRuntime(pointer, length)
 }
 
 
@@ -1094,6 +1067,11 @@ async function test() {
   }
 }
 
+function compiler_ready() {
+  if (!use_big_runtime) load_runtime_bytes()
+  else wasp_ready()
+}
+
 function wasp_ready() {
   debug("wasp is ready")
   // moduleReflection(wasm_data);
@@ -1109,20 +1087,12 @@ function wasp_ready() {
 }
 
 
-// todo: CONFUSION between runtime, compiler and app!  todo: unified memory possible without components?
+// todo: CONFUSION between runtime, compiler and app!
+// todo: unified/multi memory possible without components?
 // WHICH memory, HEAP etc… => node() string() of which memory ??
 // todo let app IMPORT its memory when using runtime as a module!
 // todo let app EXPORT its memory when being standalone!
 // todo how can IMPORTED memory be cleanly initialized with data?
-function load_runtime() {
-  if (typeof runtime_exports !== 'undefined') return
-  if (!use_big_runtime)
-    load_runtime_bytes()
-  // load_release_runtime()
-  // else
-  load_compiler() // always!
-}
-
 function load_compiler() {
   if (typeof compiler_exports !== 'undefined') {
     debug("compiler_exports already loaded")
@@ -1151,7 +1121,7 @@ function load_compiler() {
         result = compiler_instance.exports//show what we've got
       }
     debug(result);
-      wasp_ready()
+    compiler_ready()
     }
   ).catch(err => {
     console.error(err)
@@ -1271,5 +1241,4 @@ function readFile() {// via classic html, not wasp
   reader.readAsText(file, 'UTF-8')
 }
 
-load_runtime()
-
+load_compiler()
