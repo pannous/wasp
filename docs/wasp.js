@@ -8,13 +8,14 @@
 let Wasp = {}
 let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and shortcuts
 // let WASP_COMPILER = 'assets/wasp-release.wasm' // hard link 300k without tests
-// let WASP_RUNTIME = 'wasp-runtime.wasm' // now in :
+let WASP_RUNTIME = 'wasp-runtime.wasm' // now in :
 let lib_folder_url = "assets/lib/"
 // let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false;
-const use_big_runtime = true; // use compiler as runtime for now
+// const use_big_runtime = true; // use compiler as runtime for now
+const use_big_runtime = false; // use small runtime IN compiler
 const run_tests = false; // todo NOT IN PRODUCTION!
 let app_module;
 let kinds = {}
@@ -1023,19 +1024,51 @@ function addSynonyms(exports) {
 // 1. the wasm module is already standalone and doesn't import any functions from the runtime
 // 2. the host environment uses the full wasp.wasm (with compiler) as runtime
 function load_runtime_bytes() {
-  fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
+  if (!runtime_bytes)
+    fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
+        runtime_bytes = buffer
+        copy_runtime_bytes_to_compiler()
+        WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
+          //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
+          // debug(obj.instance.exports._ZN6StringC2EPKcb)
+          // debug(obj.instance.exports._ZN6StringC2EPKcb.length)
+          // debug(obj.instance.exports._ZN6StringC2EPKcb.arguments)
+          // debug(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
+          // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
+        })
+      }
+    )
+}
+
+
+// obsolete? see WASP_COMPILER compiler_exports
+function load_release_runtime() {
+  if (!runtime_bytes)
+    fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
       runtime_bytes = buffer
       WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
-        //  (func (;5;) (type 5) (param i32 i32 i32) (result i32)
-        // debug(obj.instance.exports._ZN6StringC2EPKcb)
-        // debug(obj.instance.exports._ZN6StringC2EPKcb.length)
-        // debug(obj.instance.exports._ZN6StringC2EPKcb.arguments)
-        // debug(obj.instance.exports._ZN6StringC2EPKcb.getArguments())
-        // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
-      })
-      // copy_runtime_bytes()
-    }
-  )
+        runtime_instance = obj.instance
+        runtime_exports = runtime_instance.exports
+        addSynonyms(runtime_exports)
+        HEAP = runtime_exports.__heap_base; // ~68000
+        DATA_END = runtime_exports.__data_end
+        HEAP_END = HEAP || DATA_END || runtime_exports.__heap_end;
+        HEAP_END += 0x100000
+        memory = runtime_exports.memory || runtime_exports._memory || memory
+        buffer = new Uint8Array(memory.buffer, 0, memory.length);
+        main = runtime_instance.start || runtime_exports.teste || runtime_exports.main || runtime_exports.wasp_main || runtime_exports._start
+        // main = runtime_instance._Z11testCurrentv || main  via wasp_tests()
+        if (main) {
+          debug("got main")
+          result = main()
+        } else {
+          console.error("missing main function in wasp module!")
+          result = runtime_instance.exports//show what we've got
+        }
+        debug(result);
+        wasp_ready()
+      });
+    });
 }
 
 
@@ -1084,37 +1117,10 @@ function wasp_ready() {
 function load_runtime() {
   if (typeof runtime_exports !== 'undefined') return
   if (!use_big_runtime)
-    load_release_runtime()
-  else load_compiler()
-}
-
-// obsolete? see WASP_COMPILER compiler_exports
-function load_release_runtime() {
-  fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
-    runtime_bytes = buffer
-    WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
-      runtime_instance = obj.instance
-      runtime_exports = runtime_instance.exports
-      addSynonyms(runtime_exports)
-      HEAP = runtime_exports.__heap_base; // ~68000
-      DATA_END = runtime_exports.__data_end
-      HEAP_END = HEAP || DATA_END || runtime_exports.__heap_end;
-      HEAP_END += 0x100000
-      memory = runtime_exports.memory || runtime_exports._memory || memory
-      buffer = new Uint8Array(memory.buffer, 0, memory.length);
-      main = runtime_instance.start || runtime_exports.teste || runtime_exports.main || runtime_exports.wasp_main || runtime_exports._start
-      // main = runtime_instance._Z11testCurrentv || main  via wasp_tests()
-      if (main) {
-        debug("got main")
-        result = main()
-      } else {
-        console.error("missing main function in wasp module!")
-        result = runtime_instance.exports//show what we've got
-      }
-      debug(result);
-      wasp_ready()
-    });
-  });
+    load_runtime_bytes()
+  // load_release_runtime()
+  // else
+  load_compiler() // always!
 }
 
 function load_compiler() {
@@ -1167,7 +1173,7 @@ async function run_wasm(buf_pointer, buf_size) {
     } else
       needs_runtime = false
 
-    if (needs_runtime) {
+    if (needs_runtime) { // runtime_bytes should be linked by/inside compiler!
       app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
       // app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
       print("compiled wasm app/script loaded")
