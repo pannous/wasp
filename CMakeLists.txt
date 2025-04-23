@@ -150,12 +150,18 @@ if (RELEASE)
     MESSAGE(RELEASE)
     ADD_DEFINITIONS(-DRELEASE)
 
-    #    set(RUNTIME_ONLY 1)
-    set(NO_TESTS 1)
+    if (WASM)
+        # Keep function names in WASM even in release builds
+        ADD_COMPILE_FLAG("-g1")  # Minimal debug info for function names
+        #        ADD_COMPILE_FLAG("-g")  # we need function names, strip rest later!
+    else ()
+    endif ()
     SET(COPY_PHASE_STRIP YES)
     SET(STRIP_INSTALLED_PRODUCT YES)
     SET(STRIP_STYLE all)
     SET(SEPARATE_STRIP YES)
+    #    set(RUNTIME_ONLY 1)
+    set(NO_TESTS 1)
 endif ()
 
 
