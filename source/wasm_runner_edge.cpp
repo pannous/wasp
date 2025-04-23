@@ -33,49 +33,61 @@ WasmEdge_Result ExternSquare(void *Data,
 }
 
 
-WasmEdge_Result fd_write_wrap(void *Data,
-                              const FrameContext *CallFrameCxt,
-                              const WasmEdge_Value *In, WasmEdge_Value *Out) {
+// TODO Why are these not provided by WASM Edge WASI?
+WasmEdge_Result fd_write_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     printf("fd_write_wrap TODO\n");
     return WasmEdge_Result_Success;
 }
 
+WasmEdge_Result fclose(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    printf("fclose TODO\n");
+    return WasmEdge_Result_Success;
+}
 
-WasmEdge_Result print_wrap(void *Data,
-                           const FrameContext *CallFrameCxt,
-                           const WasmEdge_Value *In, WasmEdge_Value *Out) {
+
+
+WasmEdge_Result print_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     printf("print_wrap TODO\n");
     return WasmEdge_Result_Success;
 }
 
 
-WasmEdge_Result proc_exit_wrap(void *Data,
-                               const FrameContext *CallFrameCxt,
-                               const WasmEdge_Value *In, WasmEdge_Value *Out) {
+WasmEdge_Result proc_exit_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     exit(WasmEdge_ValueGetI32(In[0]));
     return WasmEdge_Result_Success;
 }
 
-WasmEdge_Result getElementById(void *Data,
-                               const FrameContext *CallFrameCxt,
-                               const WasmEdge_Value *In, WasmEdge_Value *Out) {
+
+WasmEdge_Result getenv(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    return WasmEdge_Result_Success;// todo
+}
+
+
+WasmEdge_Result fopen(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    // Out. readfile(In[0]);
+    return WasmEdge_Result_Success;// todo
+}
+
+
+WasmEdge_Result fprintf(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    return WasmEdge_Result_Success;// todo
+}
+
+WasmEdge_Result getElementById(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     return WasmEdge_Result_Success;
 }
 
 
-WasmEdge_Result getDocumentBody(void *Data, const FrameContext *CallFrameCxt,
-                               const WasmEdge_Value *In, WasmEdge_Value *Out) {
+WasmEdge_Result getDocumentBody(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
 	return WasmEdge_Result_Success;
 }
 
-WasmEdge_Result createHtml(void *Data, const FrameContext *CallFrameCxt,
-                           const WasmEdge_Value *In, WasmEdge_Value *Out) {
+WasmEdge_Result createHtml(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     return WasmEdge_Result_Success;
 }
 
 
-WasmEdge_Result download(void *Data, const FrameContext *CallFrameCxt,
-                           const WasmEdge_Value *In, WasmEdge_Value *Out) {
+WasmEdge_Result download(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     todo("host download");
 //    fetch()
     return WasmEdge_Result_Success;
@@ -83,8 +95,7 @@ WasmEdge_Result download(void *Data, const FrameContext *CallFrameCxt,
 
 
 WasmEdge_Result getExternRefPropertyValue(void *Data,
-                                     const FrameContext *CallFrameCxt,
-                                     const WasmEdge_Value *In, WasmEdge_Value *Out) {
+        const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     // just a dummy! todo print the id anyways
 // Function type: {externref, i32} -> {i32}
 //	uint32_t (*Func)(uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
@@ -92,6 +103,19 @@ WasmEdge_Result getExternRefPropertyValue(void *Data,
 //	Out[0] = WasmEdge_ValueGenI32(C);
     return WasmEdge_Result_Success;
 }
+
+
+WasmEdge_Result exit_edge(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    exit(WasmEdge_ValueGetI32(In[0]));
+    return WasmEdge_Result_Success;
+}
+
+
+WasmEdge_Result fgetc(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    return WasmEdge_Result_Success; // todo
+}
+
+
 
 
 // Host function to call `AddFunc` by external reference
@@ -154,7 +178,86 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     HostName = WasmEdge_StringCreateByCString("env");// extern_module
     if (not HostMod) HostMod = WasmEdge_ModuleInstanceCreate(HostName);
 
+
+  {
+        WasmEdge_ValType P[1], R[0];
+        // R[0] = WasmEdge_ValTypeGenI32();
+        P[0] = WasmEdge_ValTypeGenI32(); // string
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 0);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, exit_edge, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("exit");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+
+  {
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenI32(); // string
+        P[0] = WasmEdge_ValTypeGenI32(); // string
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getenv, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("getenv");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+
+
+  {
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenI32();
+        P[0] = WasmEdge_ValTypeGenI32(); // pipe e.g. stdin
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fgetc, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("fgetc");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+
+
+  {
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenI32(); // OK?
+        P[0] = WasmEdge_ValTypeGenI32(); // pipe e.g. stdin
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fclose, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("fclose");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+
+
+  {
+        WasmEdge_ValType P[2], R[1];
+        R[0] = WasmEdge_ValTypeGenI32(); // string
+        P[0] = WasmEdge_ValTypeGenI32(); // string filename
+        P[1] = WasmEdge_ValTypeGenI32(); // string type "r" …
+        HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fopen, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("fopen");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+
     {
+        WasmEdge_ValType P[3], R[1];
+        R[0] = WasmEdge_ValTypeGenI32();
+        P[0] = WasmEdge_ValTypeGenI32();
+        P[1] = WasmEdge_ValTypeGenI32();
+        P[2] = WasmEdge_ValTypeGenI32();
+        HostFType = WasmEdge_FunctionTypeCreate(P, 3, R, 1);
+	    HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fprintf, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+	    HostName = WasmEdge_StringCreateByCString("fprintf");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+
+{
         WasmEdge_ValType P[2], R[1];
         R[0] = WasmEdge_ValTypeGenI64();
         P[0] = WasmEdge_ValTypeGenExternRef();
@@ -178,6 +281,7 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
         WasmEdge_StringDelete(HostName);
     }
+
 
     {
         WasmEdge_ValType P[1], R[1];

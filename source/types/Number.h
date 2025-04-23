@@ -225,7 +225,7 @@ union SmartNumberUnion {
 };
 
 bool isInt(int64 i) {
-    return i < 0x80000000 and i >= -0x80000000l;
+    return (i < 0x80000000ll) and (i >= -0x80000000ll);
 }
 
 class Number {
