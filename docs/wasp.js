@@ -1036,54 +1036,13 @@ function load_runtime_bytes() {
 // let compiler link/merge emitted wasm with small runtime
 function copy_runtime_bytes_to_compiler() {
   let length = runtime_bytes.byteLength
+  HEAP_END += 1000000 // some random offset
   let pointer = HEAP_END
   let src = new Uint8Array(runtime_bytes, 0, length);
   let dest = new Uint8Array(memory.buffer, HEAP_END, length);
   dest.set(src) // memcpy ⚠️ todo MAY FUCK UP compiler bytes!!!
   HEAP_END += length
   compiler_exports.testRuntime(pointer, length)
-}
-
-
-// var work = new Worker("wasp_tests.js");
-// work.postMessage({ a:8, b:9 });
-// work.onmessage = (evt) => { debug(evt.data); };
-
-async function test() {
-  try {
-    // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
-    var test_async = WebAssembly.promising(exports.test_async)
-    test_async().then(result => {
-      debug("test_async result", result)
-    })
-
-
-    if (typeof (wasp_tests) !== "undefined")
-      await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
-  } catch (x) {
-    if (x instanceof YieldThread)
-      debug("⚠️ CANNOT USE assert_emit in wasp_tests() or testCurrent() ONLY via testRun()")
-    throw x
-  }
-}
-
-function compiler_ready() {
-  if (!use_big_runtime) load_runtime_bytes()
-  else wasp_ready()
-}
-
-function wasp_ready() {
-  debug("wasp is ready")
-  // moduleReflection(wasm_data);
-  loadKindMap()
-  try {
-    register_wasp_functions(compiler_instance.exports)
-  } catch (err) {
-    error(err)
-  }
-  // testRun1()
-  if (run_tests)
-    setTimeout(test, 1);// make sync
 }
 
 
@@ -1132,7 +1091,7 @@ async function run_wasm(buf_pointer, buf_size) {
   try { // WE WANT PURE STACK TRACE
     wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
     // wasm_to_wat(wasm_buffer)
-    // download_file(wasm_buffer, "emit.wasm", "wasm")
+    // download_file(wasm_buffer, "compiled.wasm", "wasm")
 
     app_module = await WebAssembly.compile(wasm_buffer, {builtins: ['js-string']})
     if (WebAssembly.Module.imports(app_module).length > 0) {
@@ -1226,7 +1185,7 @@ async function run_wasm(buf_pointer, buf_size) {
 // }
 
 
-function readFile() {// via classic html, not wasp
+function readFile() {// upload via classic html, not wasp
   debug("readFile")
   const file = input_file.files[0]
   const reader = new FileReader
@@ -1240,5 +1199,48 @@ function readFile() {// via classic html, not wasp
   })
   reader.readAsText(file, 'UTF-8')
 }
+
+
+// var work = new Worker("wasp_tests.js");
+// work.postMessage({ a:8, b:9 });
+// work.onmessage = (evt) => { debug(evt.data); };
+
+async function test() {
+  try {
+    // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
+    var test_async = WebAssembly.promising(exports.test_async)
+    test_async().then(result => {
+      debug("test_async result", result)
+    })
+
+
+    if (typeof (wasp_tests) !== "undefined")
+      await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
+  } catch (x) {
+    if (x instanceof YieldThread)
+      debug("⚠️ CANNOT USE assert_emit in wasp_tests() or testCurrent() ONLY via testRun()")
+    throw x
+  }
+}
+
+function compiler_ready() {
+  if (!use_big_runtime) load_runtime_bytes()
+  else wasp_ready()
+}
+
+function wasp_ready() {
+  debug("wasp is ready")
+  // moduleReflection(wasm_data);
+  loadKindMap()
+  try {
+    register_wasp_functions(compiler_instance.exports)
+  } catch (err) {
+    error(err)
+  }
+  // testRun1()
+  if (run_tests)
+    setTimeout(test, 1);// make sync
+}
+
 
 load_compiler()

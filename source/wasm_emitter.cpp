@@ -676,8 +676,6 @@ Code castRefToChars() {
 
 Code emitLength(Node &node, Function &context) {
     Code code;
-    //    code.addConst32(42);
-    //    return code;
     Type type = node.kind;
     if (context.locals.contains(node.name)) {
         Local local = context.locals[node.name];
@@ -703,7 +701,6 @@ Code emitLength(Node &node, Function &context) {
         } else {
             code.addConst32(8); // offset to string length in our struct, from data pointer!
             code.addOpcode(i32_add);
-            //			code.addOpcode(i8_load);
             code.addOpcode(i32_load);
             code.add(0);
             code.add(0);
@@ -1980,6 +1977,9 @@ Code emitStringOp(Node &op, Function &context) {
         //        op = Node("_Z2eqR6StringPKc");//  careful : various signatures
         last_type = charp; //stringp;
         return Code(i32_const) + Code(-1) + emitCall(op, context); // third param required!
+    } else if (op == "length" or op == "len" or op == "size" or op == "count" or op == "strlen") {
+        print("emitLength to get string length: %s\n"s % op.serialize());
+        return emitLength(op.first(), context);
     } else if (op == "#") {
         // todo: all different index / op matches
         if (op.length == 1)
