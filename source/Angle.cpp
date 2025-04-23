@@ -62,7 +62,7 @@ List<String> rightAssociatives = {"=", "?:", "-…", "+=", "++…"};// a=b=1 == 
 // still needs to check a-b vs -i !!
 List<chars> prefixOperators = {
     "exp", "abs",/*norm*/ "not", "¬", "!", "√", "-" /*signflip*/, "--", "++", /*"+" useless!*/
-    "~", "&", "$", "return", "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke", "len", "puti"
+    "~", "&", "$", "return", "sizeof", "new", "delete[]", "floor", "round", "ceil", "peek", "poke", "len"
 };
 List<chars> suffixOperators = {"++", "--", "…++", "…--", "⁻¹", "⁰", /*"¹",*/ "²", "³", "ⁿ", "…%", /* 23% vs 7%5 */ "％",
                                "﹪", "٪",
