@@ -7,8 +7,9 @@ set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 #set(CROSSCOMPILE x86) # needs more work / just use different docker images
 if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64")
     set(X86_64 1)
+elseif (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "arm64")
+    set(APPLE 1) # todo: linux !?
 endif ()
-
 
 set(SOURCE "source")
 
@@ -84,13 +85,13 @@ if (NOT WASM)
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         # ⚠️ NO engine has (c-api) support for wit / component model as of 2025-03 !!! ⚠️
         # https://github.com/bytecodealliance/wasmtime/issues/6987
-        #                SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
         #        SET(SPIN 1) WebAssembly Gateway Interface (WAGI) OK: Write to STDOUT, ENV[QUERY_STRING] for input, uploads through STDIN
         #        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #  set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( last release 2021
-        set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
+        #        set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
         #        SET(V8 1) # 2024-04 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
         #  set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
         #  set(WASMX 1)  # doesn't work: cannot insert imports or function types!
@@ -226,6 +227,9 @@ ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corrupt
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
 ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
+#ADD_COMPILE_FLAG("-Wl,--allow-undefined") # really?
+ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
+
 if (LINUX)
     ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
     ADD_COMPILE_FLAG("-Wno-writable-strings") # dangerous! fix assert_is("square 3", 9)

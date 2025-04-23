@@ -914,7 +914,10 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     todo("is_operator!"s + name);// remove if it doesn't happen
 
     if (name and not function_operators.has(name)) {
-        if (context.name != "wasp_main") todo("inner functions");
+        if (context.name != "wasp_main"){
+print("broken context");
+print(context.name);
+}
         if (not functions.has(name)) {
             Function fun{.name=name};
             functions.add(name, fun);

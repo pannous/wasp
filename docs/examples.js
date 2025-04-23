@@ -7,7 +7,7 @@ let exampleCode = {
   math: `1+2*√3^2`,
   hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
   math2: `√π²`,
-  function: `square := it*it; square 3`,
+  function: `square := it*it; square 3`, // error square already defined
   lists: `a = [1, 2, 3]; a[1] == a#2`,
   lists2: `a = [1, 2] + [3, 4]; a[2] == a#3 == 3`,
   strings: `a = "Hello " +"🌎"; a#7 == '🌎'`,

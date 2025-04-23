@@ -749,7 +749,7 @@ class node {
     if (this.kind == kinds.long) return Number(this.value);
     if (this.kind == kinds.bool) return Boolean(this.value);
     if (this.kind == kinds.real) return reinterpretInt64AsFloat64(this.value);
-    if (this.kind == 124) return reinterpretInt64AsFloat64(this.value);
+    // if (this.kind == 124) return reinterpretInt64AsFloat64(this.value);
     if (this.kind == kinds.node) return new node(this.value); //.Value();
     if (this.kind == kinds.codepoint) return String.fromCodePoint(this.value)
     if (this.kind == kinds.unknown) return this.Content || this.name;// todo? bug?
