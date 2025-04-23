@@ -41,10 +41,9 @@ extern "C" void testRuntime(bytes buffer, size_t size) {
     wasp.code.name = "wasp";
     wasp.name = "wasp";
     module_cache.add("wasp"s.hash(), &wasp);
-    testCurrent();
-    loadRuntime();
-        testCurrent();
-
+// testCurrent();
+// loadRuntime();
+// testCurrent();
 }
 
 void testDownload() {

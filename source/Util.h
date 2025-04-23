@@ -10,11 +10,15 @@
 #if WASM
 //typedef unsigned long size_t;
 //char* dropPath(char* str);
-//// printf in WASM messes up the stack, so we can't use it
-//#define debug_line() print(__FILE__);print(":");print(__LINE__);
-//#define debug_line() printf("\n%s:%d\n",dropPath(__FILE__),__LINE__);
-//#define debug_line() printf("\n    at mapTypeToWasm(Type32) (%s:%d)\n",dropPath(__FILE__),__LINE__);
-#define debug_line() printf("\nfile://%s\n%s:%d\n",__FILE__,__FILE__,__LINE__);
+// #define debug_line() printf("\n%s:%d\n",dropPath(__FILE__),__LINE__);
+// #define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
+// #define debug_line() printf("\nfile://%s\n%s:%d\n",__FILE__,__FILE__,__LINE__);
+// #define debug_line() printf("\nfile://%s:%d\n",__FILE__,__LINE__);
+// cd / && python3 -m http.server 8000
+// #define debug_line() printf("\nhttp://localhost:8000%s\n",__FILE__);
+// #define debug_line() printf("\nhttp://localhost:8000/%s\n%s:%d\n",__FILE__,__FILE__,__LINE__);
+// #define debug_line() printf("\nhttp://localhost:8000/%s:%d\n",__FILE__,__LINE__);
+#define debug_line() printf("\nvscode:%s?line=%d\n",__FILE__,__LINE__);
 #else
 #define debug_line() printf("\n%s:%d\n",__FILE__,__LINE__);
 #endif
