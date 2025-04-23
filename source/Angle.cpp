@@ -1593,7 +1593,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         return use_required_import(&functions[name]);// prevents read_wasm("lib")
 #if WASM
     if (loadRuntime().functions.has(name)){
-        return use_required(&loadRuntime().functions[name]);
+        return use_required_import(&loadRuntime().functions[name]);
     }
 #endif
     if (contains(funclet_list, name)) {
@@ -2277,11 +2277,14 @@ Function getWaspFunction(String name) { // signature only, code must be loaded f
     return f;
 }
 
+// called by js why? if we parse runtime all module functions should be there?
+// add Synonyms to mangled?
 extern "C" void registerWasmFunction(chars name, chars mangled) {
     if ("floor"s == name)return; // use builtin!
     if ("loor"s == name)return; // BUG!
+    return;
     getWaspFunction(name);
-//    if (!functions.has(name))functions.add(name, getWaspFunction(name));
+    if (!functions.has(name))functions.add(name, getWaspFunction(name));
 //    if (!loadRuntime().functions.has(mangled))
 //	    loadRuntime().functions.add(mangled, getWaspFunction(name));
 }
