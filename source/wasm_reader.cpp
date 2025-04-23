@@ -18,8 +18,8 @@ bool build_module = true; // for funclets … and wasm runtime merge?
 bool build_module = true;
 #endif
 
-bool debug_reader = tracing;
-//bool debug_reader = true;
+// bool debug_reader = tracing;
+bool debug_reader = true;
 
 typedef unsigned char *bytes;
 int pos = 0;
