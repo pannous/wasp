@@ -2165,7 +2165,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
                     //                    print(context.locals)
 
                     if (not node.type)
-                        if (!name.empty() and name.length>0)
+                        if (!name.empty() and name.length > 0) // todo simplify
                             error("UNKNOWN local symbol ‘"s + name + "’ in context " + context);
                 } else {
                     error("local symbol ‘"s + name.trim() + "’ in " + context + " should be registered in analyze()!");
