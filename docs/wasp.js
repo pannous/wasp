@@ -14,8 +14,8 @@ let lib_folder_url = "assets/lib/"
 
 let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false;
-// const use_big_runtime = true; // use compiler as runtime for now
-const use_big_runtime = false; // use small runtime IN compiler
+const use_big_runtime = true; // use compiler as runtime for now
+// const use_big_runtime = false; // use small runtime IN compiler
 const run_tests = false; // todo NOT IN PRODUCTION!
 let app_module;
 let kinds = {}
