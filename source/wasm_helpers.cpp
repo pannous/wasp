@@ -78,7 +78,7 @@ void error1(chars message, chars file, int line) {
 #endif
 #if WASM
 	put_chars("\n⚠️ERROR\n");
-	put_chars(""s+file+":"+line);
+	put_chars("vscode:"s+file+":"+line);
 //    put_chars((char *)file);
 //    put_chars(":");
 //    puti(line); !!?

@@ -19,7 +19,7 @@ extern int MAX_MEM;
 extern "C" byte *getHeapEnd() { return heap_end; }
 
 extern "C" void setHeapEnd(byte *neu) {
-    check_silent(neu >= heap_end); // don't allow overwrite!
+    // check_silent(neu >= heap_end); // don't allow overwrite! except in reset_heap()
     heap_end = neu;
 }
 

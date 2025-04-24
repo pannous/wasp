@@ -189,6 +189,7 @@ void testWasmFunctionCalls() {
     assert_emit("ceil 3.7", 4);
     assert_emit("square 3", 9);
     //    assert_emit("putf 3.1", 0);
+    assert_emit("print 3", 3); // todo ()
     assert_emit("putf 3.1", 3.1);
     assert_emit("puti 3", (int64) 3);
     //    assert_emit("puti 3", 0);
@@ -1041,13 +1042,15 @@ void testWasmStuff() {
 
 bool testRecentRandomBugsAgain = true;
 
+// ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testRecentRandomBugs() {
     if (!testRecentRandomBugsAgain)return;
     testRecentRandomBugsAgain = false;
 
-    // these fail LATER in tests!!
     assert_emit("1-‖3‖/-3", 2);
     assert_emit("i=true; not i", false);
+    // these fail LATER in tests!!
+
     skip(
         testLengthOperator();
         assert_emit("i=3^1;i^=3", (int64) 27);
@@ -1107,10 +1110,10 @@ void testSquareExpWasm() {
     assert_emit(".1", .1);
 #if not WASMTIME
     skip(
-            assert_emit("i=-9;√-i", 3);
-            assert_emit("n=3;2ⁿ", 8);
-            assert_emit("n=3.0;2.0ⁿ", 8);
-    //	function attempted to return an incompatible value WHAT DO YOU MEAN!?
+        assert_emit("i=-9;√-i", 3);
+        assert_emit("n=3;2ⁿ", 8);
+        assert_emit("n=3.0;2.0ⁿ", 8);
+        //	function attempted to return an incompatible value WHAT DO YOU MEAN!?
     )
 #endif
 }
@@ -1251,8 +1254,8 @@ void testMathLibrary() {
     // todo generic power i as builtin
 #if not WASMTIME
     skip(
-    // REGRESSION 2023-01-20 variable x-c in context wasp_main emitted as node data:
-            assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+        // REGRESSION 2023-01-20 variable x-c in context wasp_main emitted as node data:
+        assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
     )
 #endif
     assert_emit("i=-9;√-i", 3);
@@ -1408,10 +1411,59 @@ void testLogarithm2() {
     )
 }
 
+void testForLoops() {
+    // assert_emit("for i in 1 to 5 : {print i};i", 6);
+    // assert_emit("for i in 1 to 5 : {put(i)};i", 6);
+    // assert_emit("for i in 1 to 5 : {puti(i)};i", 6);
+    // assert_emit("for i in 1 to 5 : {put i};i", 6);
+    assert_emit("for i in 1 to 5 : {print i};i", 6);
+    assert_emit("for i in 1 to 5 : {print i};i", 6); // EXC_BAD_ACCESS as of 2025-03-06 under SANITIZE
+    assert_emit("for i in 1 to 5 {print i}", 5);
+    assert_emit("for i in 1 to 5 {print i};i", 6); // after loop :(
+    assert_emit("for i in 1 to 5 : print i", 5);
+    assert_emit("for i in 1 to 5\n  print i\ni", 5);
+    assert_emit("for i in 1 to 5\n  print i\ni", 5);
+    //    assert_emit("sum=0\nfor i in (1..3) {sum+=i}\nsum", 6);
+    //    assert_emit("sum=0;for i in (1..3) {sum+=i};sum", 6);
+    //    assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
+}
 
+
+//void testDwarf();
+//void testSourceMap();
+void testAssert() {
+    assert_emit("assert 1", 1);
+    assert_throws("assert 0"); // todo make wasm throw, not compile error?
+}
+
+
+// test once by looking at the output wasm/wat
+void testNamedDataSections() {
+    assert_emit("fest='def';test='abc'", "abc");
+    exit(0);
+}
+
+void testAutoSmarty() {
+    assert_emit("11", 11);
+    assert_emit("'c'", 'c');
+    assert_emit("'cc'", "cc");
+    assert_emit("π", pi);
+    //    assert_emit("{a:b}", new Node{.name="a"));
+}
+
+void testArguments() {
+    assert_emit("#params", 0); // no args, but create empty List anyway
+    // todo add context to wasp variable $params
+}
+
+
+// ⚠️ ALL tests containing assert_emit must go here! testCurrent() only for basics
 void testAllWasm() {
     assert_emit("42", 42);
     assert_emit("42+1", 43);
+    testForLoops();
+    testAutoSmarty();
+    testArguments();
     testStringConcatWasm();
     skip(
         testWasmGC();

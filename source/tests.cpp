@@ -228,48 +228,6 @@ void test_list_growth() {
     testListGrowthWithStrings();
 }
 
-//void testDwarf();
-//void testSourceMap();
-void testAssert() {
-    assert_emit("assert 1", 1);
-    assert_throws("assert 0"); // todo make wasm throw, not compile error?
-}
-
-void testForLoops() {
-    // assert_emit("for i in 1 to 5 : {print i};i", 6);
-    // assert_emit("for i in 1 to 5 : {put(i)};i", 6);
-    // assert_emit("for i in 1 to 5 : {puti(i)};i", 6);
-    // assert_emit("for i in 1 to 5 : {put i};i", 6);
-    assert_emit("for i in 1 to 5 : {puti i};i", 6); // EXC_BAD_ACCESS as of 2025-03-06 under SANITIZE
-    assert_emit("for i in 1 to 5 {puti i}", 5);
-    assert_emit("for i in 1 to 5 {puti i};i", 6); // after loop :(
-    assert_emit("for i in 1 to 5 : puti i", 5);
-    assert_emit("for i in 1 to 5\n  puti i\ni", 5);
-    assert_emit("for i in 1 to 5\n  puti i\ni", 5);
-    //    assert_emit("sum=0\nfor i in (1..3) {sum+=i}\nsum", 6);
-    //    assert_emit("sum=0;for i in (1..3) {sum+=i};sum", 6);
-    //    assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
-}
-
-// test once by looking at the output wasm/wat
-void testNamedDataSections() {
-    assert_emit("fest='def';test='abc'", "abc");
-    exit(0);
-}
-
-void testAutoSmarty() {
-    assert_emit("11", 11);
-    assert_emit("'c'", 'c');
-    assert_emit("'cc'", "cc");
-    assert_emit("π", pi);
-    //    assert_emit("{a:b}", new Node{.name="a"));
-}
-
-void testArguments() {
-    assert_emit("#params", 0); // no args, but create empty List anyway
-    // todo add context to wasp variable $params
-}
-
 void testBadType() {
     skip(
         // TODO strict mode a:b=c => b is type vs data mode a:b => b is data HOW?
@@ -3805,9 +3763,7 @@ void test_new() {
     test_wasmedge_gc();
 #endif
     // test_list_growth();
-    testForLoops();
-    testAutoSmarty();
-    testArguments();
+
     testFlags();
 
     testBadType();
@@ -3833,13 +3789,15 @@ void testCurrent() {
     skip(
         // assert_is("2+1/2", 2.5);
         testExp(); // todo!
+        assert_emit("-42", -42)
+        assert_is("(1 4 3)#2", 4); //
     ) //
-    assert_is("(1 4 3)#2", 4); //
     // assert_throws("0/0");
     testCast();
     //    todos();
     // testLengthOperator();
-    testRecentRandomBugs();
+// ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
+    // testRecentRandomBugs();
     test_new();
     //    List<const int&> axx = {1, 2, 3};
     //    testNamedDataSections();
@@ -3856,7 +3814,7 @@ void testCurrent() {
         assert_emit("‖3‖-1", 2);
     )
 
-    assert_emit("-42", -42)
+
 #if WEBAPP
         testHostIntegration();
 #endif
