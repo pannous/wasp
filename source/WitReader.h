@@ -249,7 +249,7 @@ class WitReader {
         if (not functions.has(name))
             functions.add(name, {.name=name});// todo …
         if (!func) {
-            node.setType(functor).setValue({.data=&functions[name]});
+            node.setKind(functor).setValue({.data=&functions[name]});
             return node;// with empty body
 //            error("missing func");
         }

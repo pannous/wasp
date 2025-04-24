@@ -61,7 +61,7 @@ Node Node::interpret(bool expectOperator /* = true*/) {
             right.kind = expression;
             right = right.interpret();
             this->clear();
-            this->setType(operators, false);// restore
+            this->setKind(operators, false); // restore
             if (right == this)
                 error("no value for operator");
             return apply_op(NIL, *this, right);
@@ -309,7 +309,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
         if (right.kind == reals)
             left.addSmart(Node(sqrt1(right.value.real)));
         if (right.kind == longs)
-            left.addSmart(Node(sqrt1(right.value.longy)).setType(reals));
+            left.addSmart(Node(sqrt1(right.value.longy)).setKind(reals));
         return left.interpret();
     }
 

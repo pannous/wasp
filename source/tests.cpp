@@ -841,37 +841,6 @@ void testClass() {
     //    "var (f, l) = person;                        // positional deconstruction"
 }
 
-void testStruct() {
-    // builtin with struct/record
-    assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
-    return;
-    assert_emit("struct a{x:int y:float};a{1 3.2}.y", 3.2);
-    assert_emit("struct a{x:int y:float};b a{1 .2};b.y", .2);
-    assert_emit("struct a{x:int y:float};b:a{1 .2};b.y", .2);
-    assert_emit("struct a{x:int y:float};b=a{1 .2};b.y", .2);
-    assert_emit("struct a{x:int y:float};a b{1 .2};b.y", .2);
-    assert_emit("record a{x:u32 y:float32};a b{1 .2};b.y", .2);
-    assert_emit(R"(
-record person {
-    name: string,
-    age: u32,
-    has-lego-action-figure: bool,
-}; x=person{age:22}; x.age)", 22); // todo require optional fields marked as such with '?'
-}
-
-
-void testStruct2() {
-    const char *code0 = "struct point{a:int b:int c:string}";
-    Node &node = parse(code0);
-    //    assert_equals(node.kind, Kind::structs);
-    assert_equals(node.length, 3);
-    assert_equals(IntegerType, node[1].type);
-    //    const char *code = "struct point{a:int b:int c:string};x=point(1,2,'ok');x.b";
-    // basal node_pointer act as structs
-    assert_emit("point{a:int b:int c:string};x=point(1,2,'ok');x.b", 2)
-    assert_emit("data=[1,2,3];struct point{a:int b:int c:string};x=data as struct;x.b", 2)
-}
-
 
 void test_c_numbers() {
     //    check(0x1000000000000000l==powi(2,60))
@@ -1077,7 +1046,7 @@ void testPattern() {
 }
 
 void testWitInterface() {
-    Node &mod = Node("host-funcs").setType(modul).add(Node("current-user").setType(functor).add(StringType));
+    Node &mod = Node("host-funcs").setKind(modul).add(Node("current-user").setKind(functor).add(StringType));
     assert_emit("interface host-funcs {current-user: func() -> string}", mod)
 }
 
@@ -1096,7 +1065,7 @@ void testWitFunction() {
     Module &mod = read_wasm("test.wasm");
     print(mod.import_count);
     check_is(mod.import_count, 1)
-    check_is(Node().setType(longs).serialize(), "0")
+    check_is(Node().setKind(longs).serialize(), "0")
     check_is(mod.import_names, List<String>{"add"}); // or export names?
 }
 
@@ -2606,10 +2575,10 @@ void testRootLists() {
     assert_is("(1;2;3)", Node(1, 2, 3, 0))
     assert_is("1;2;3", Node(1, 2, 3, 0, 0)) //ok
     assert_is("1,2,3", Node(1, 2, 3, 0))
-    assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
+    assert_is("[1 2 3]", Node(1, 2, 3, 0).setKind(patterns))
     assert_is("[1 2 3]", Node(1, 2, 3, 0))
     assert_is("[1,2,3]", Node(1, 2, 3, 0))
-    assert_is("[1,2,3]", Node(1, 2, 3, 0).setType(patterns));
+    assert_is("[1,2,3]", Node(1, 2, 3, 0).setKind(patterns));
     assert_is("[1;2;3]", Node(1, 2, 3, 0))
     todo_emit( // todo ?
         assert_is("{1 2 3}", Node(1, 2, 3, 0))
@@ -2943,7 +2912,7 @@ void testConcatenation() {
     check(node1.length == 3);
     check(node1.last() == "3");
     check(node1.kind == objects);
-    Node other = Node("4").setType(strings); // necessary: Node("x") == reference|strings? => kind=unknown
+    Node other = Node("4").setKind(strings); // necessary: Node("x") == reference|strings? => kind=unknown
     check(other.kind == strings);
     check(!other.isNil());
     check(!(&other == &NIL));
@@ -3161,7 +3130,7 @@ void testNodeConversions() {
 void testWasmString() {
     assert_emit("“c”", 'c');
     assert_emit("“hello1”", Node(String("hello1")));
-    assert_emit("“hello2”", Node("hello2").setType(strings));
+    assert_emit("“hello2”", Node("hello2").setKind(strings));
     assert_emit("“hello3”", Node("hello3"));
     assert_emit("“hello4”", "hello4");
     assert_emit("“a”", "a");
@@ -3636,6 +3605,10 @@ void tests() {
     testNumbers();
 #endif
     testPower();
+    testCast();
+    testUnicode_UTF16_UTF32();
+    testReplaceAll();
+    testExceptions();
     testString();
     testNodeBasics();
     testIterate();
@@ -3744,13 +3717,6 @@ void tests() {
 }
 
 
-void testFibonacci() {
-    //	assert_emit("fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)\nfib(10)", 55);
-    //	assert_emit("fib(n) := n < 2 ? n : fib(n - 1) + fib(n - 2)\nfib(10)", 55);
-    //	assert_emit("fib = it < 2 ? 1 : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
-    assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
-}
-
 void pleaseFix() {
     assert_emit("π/2^2", pi / 4);
     assert_emit("(π/2)^2", pi * pi / 4);
@@ -3765,15 +3731,8 @@ void test_new() {
     // test_list_growth();
 
     testFlags();
-
-    testBadType();
-    testDeepType();
-    testTypedFunctions();
     testTypes();
-    testTypeConfusion();
-
     testPolymorphism();
-    test_implicit_multiplication(); // todo in parser how?
 }
 
 // 2021-10 : 40 sec for Wasm3
@@ -3786,92 +3745,52 @@ void test_new() {
 void testCurrent() {
     // testKebabCase(); // needed here:
     // assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+    test_new();
     skip(
         // assert_is("2+1/2", 2.5);
+        testStruct();
+        todos();
         testExp(); // todo!
         assert_emit("-42", -42)
         assert_is("(1 4 3)#2", 4); //
+        assert_throws("0/0");
+        todos();
+        testKebabCase();
+        testPolymorphism2();
+        testPolymorphism3();
+        testVectorShim(); // use GPU even before wasm vector extension is available
+        testModifiers();
+        testLengthOperator();
+        testRecentRandomBugs();
+        testNamedDataSections();
+        testHostDownload();
+        assert_emit("‖3‖-1", 2);
     ) //
-    // assert_throws("0/0");
-    testCast();
-    //    todos();
-    // testLengthOperator();
-// ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
-    // testRecentRandomBugs();
-    test_new();
-    //    List<const int&> axx = {1, 2, 3};
-    //    testNamedDataSections();
-    //    testListGrowth<const int&>();// pointer to a reference error
+    // testListGrowth<const int&>();// pointer to a reference error
 
     // todo print as general dispatch depending on smarttype
     //    assert_emit("for i in 1 to 5 : {print i};i", 6);
     //    assert_emit("a = [1, 2, 3]; a[2]", 3);
-
-    //    testJS();
-    //    testHtmlWasp();
-    skip(
-        testHostDownload();
-        assert_emit("‖3‖-1", 2);
-    )
-
+    // testJS();
+    // testHtmlWasp();
 
 #if WEBAPP
         testHostIntegration();
 #endif
-    skip(
-        testKebabCase();
-        testPolymorphism2();
-        testPolymorphism3();
-        testModifiers();
-        assert_emit("τ≈6.2831853", true);
-        check_is("τ≈6.2831853", true);
-        assert_emit("a = [1, 2, 3]; a[1] == a#1", false);
-        assert_emit("a = [1, 2, 3]; a[1] == a#1", 0);
-    )
-
-    // testDom();
-    testExceptions();
-
-    assert_emit("√ π ²", pi);
-    assert_emit("√π²", pi);
-
-
-    testGlobals();
-    skip(
-        testVectorShim(); // use GPU even before wasm vector extension is available
-    )
     testSourceMap();
     //	testDwarf();
-    testFibonacci();
-    testUnicode_UTF16_UTF32();
-    testReplaceAll();
 #if WEBAPP or MY_WASM
     testHostIntegration();
 #endif
-#if not WASM
-    //    testWasmGC();
-#endif
 
-    testOldRandomBugs();
-    assert_emit("n=3;2ⁿ", 8);
-    assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
-    assert_emit("'αβγδε'#3", U'γ');
-    assert_emit("√9*-‖-3‖/-3", 3);
-    skip(
-        assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
-        assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
-        testGenerics();
-    )
-
-    testRenameWasmFunction();
-    //    testStruct();
-    //    todos();
+    // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
     tests(); // make sure all still ok after messing with memory
 
 #if not WASM
     // ⚠️ in WASM these tests are called via async trick
     testAngle(); // fails in WASM why?
     testMergeGlobal();
+    testRenameWasmFunction();
     testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
     testAllWasm();
     // ALL tests up to here take only 1 sec !

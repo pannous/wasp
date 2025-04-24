@@ -1349,7 +1349,7 @@ Code emitStringRef(Node &node, Function &context) {
 }
 
 Code emitString(const String &text, Function &context) {
-    return emitString((new Node(text))->setType(strings), context); // todo: ?
+    return emitString((new Node(text))->setKind(strings), context); // todo: ?
     //    return emitStringRef(*new Node(text), context);
 }
 
@@ -1835,7 +1835,7 @@ Code emitOperator(Node &node, Function &context) {
     } else if (name == "*" and isArrayType(last_type)) {
         code.add(emitCall("matrix_multiply", context)); // gpu / vector shim
     } else if (name == "++" or name == "--") {
-        Node increased = Node(name[0]).setType(operators);
+        Node increased = Node(name[0]).setKind(operators);
         increased.add(first); // if not first emitted
         increased.add(new Node(1)); // todo polymorph operator++ instead of +1 !
         code.add(emitSetter(first, increased, context));
@@ -1903,9 +1903,9 @@ Code emitOperator(Node &node, Function &context) {
     } else if (name == "%") {
         // int cases handled above
         if (last_type == float32t)
-            return code.add(emitCall(Node("modulo_float").setType(call), context)); // mod_f
+            return code.add(emitCall(Node("modulo_float").setKind(call), context)); // mod_f
         else
-            return code.add(emitCall(Node("modulo_double").setType(call), context)); // mod_d
+            return code.add(emitCall(Node("modulo_double").setKind(call), context)); // mod_d
     } else if (name == "?") {
         return emitIf(node, context);
     } else if (name == "≈") {
@@ -2483,7 +2483,7 @@ Code emitFor(Node &node, Function &context) {
 
     // Emit initialization (e.g., 'i = start')
     Node assignment = Node("=");
-    assignment.setType(operators);
+    assignment.setKind(operators);
     assignment.add(variable);
     assignment.add(begin);
     code = code + emitExpression(assignment, context);
@@ -2496,7 +2496,7 @@ Code emitFor(Node &node, Function &context) {
     Node condition("<=");
     if (upto.value.longy) // 1 upto 4 = 1 2 3
         condition = Node("<");
-    condition.setType(operators);
+    condition.setKind(operators);
     condition.add(variable);
     condition.add(end);
     code = code + emitExpression(condition, context);
@@ -2517,13 +2517,13 @@ Code emitFor(Node &node, Function &context) {
     // Emit increment (e.g., 'i += step')
     // Create the addition expression: i + step
     Node addition = Node("+");
-    addition.setType(operators);
+    addition.setKind(operators);
     addition.add(variable); // Left operand: i
     addition.add(step); // Right operand: step (e.g., 1)
 
     // Create the assignment: i = (i + step)
     Node reassignment = Node("=");
-    reassignment.setType(operators);
+    reassignment.setKind(operators);
     reassignment.add(variable); // Left-hand side: i
     reassignment.add(addition); // Right-hand side: result of (i + step)
 
