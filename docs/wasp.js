@@ -16,6 +16,7 @@ let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
+const run_tests = true; // todo NOT IN PRODUCTION!
 const run_tests = false; // todo NOT IN PRODUCTION!
 let app_module;
 let kinds = {}
@@ -1010,7 +1011,7 @@ function load_runtime_bytes() {
   if (runtime_bytes) return warn("runtime_bytes already loaded")
   fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
       runtime_bytes = buffer
-      if (typeof (compiler_exports) == undefined)
+    if (typeof (compiler_exports) == 'undefined')
         console.error("compiler needs to be loaded before runtime")
       copy_runtime_bytes_to_compiler()
       WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
@@ -1213,13 +1214,13 @@ function readFile() {// upload via classic html, not wasp
 
 async function test() {
   try {
-    // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
-    var test_async = WebAssembly.promising(exports.test_async)
-    test_async().then(result => {
-      debug("test_async result", result)
-    })
-
-
+    if (typeof (WebAssembly.promising) != 'undefined') {
+      // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
+      var test_async = WebAssembly.promising(exports.test_async)
+      test_async().then(result => {
+        debug("test_async result", result)
+      })
+    }
     if (typeof (wasp_tests) !== "undefined")
       await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
   } catch (x) {
