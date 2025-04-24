@@ -425,7 +425,7 @@ extern "C" void __wasm_call_ctors();
 extern "C" void _start() {
     // •	&__data_end yields a plain offset because it’s statically laid out.
     // •	&__heap_base may yield a host pointer due to toolchain/runtime behavior.
-	heap_end = &__heap_base;
+    heap_end = &__heap_base;
 	__wasm_call_ctors();
 	__initial_heap_end = heap_end; // after internal initialization, safely(?) reset on different runs / as "GC" ?
     trace("__heap_base");
