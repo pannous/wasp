@@ -1528,7 +1528,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 
         Function *ok = findLibraryFunction(name, true);
         if (not ok and not functions.has(name)) // todo load lib!
-        error("missing import for function "s + name);
+            error("missing import for function "s + name);
         Function &function = functions[name];
         Signature &signature = function.signature;
         function.is_used = true;
