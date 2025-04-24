@@ -17,7 +17,7 @@ let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
 const run_tests = true; // todo NOT IN PRODUCTION!
-const run_tests = false; // todo NOT IN PRODUCTION!
+// const run_tests = false; // todo NOT IN PRODUCTION!
 let app_module;
 let kinds = {}
 
@@ -506,6 +506,10 @@ function string(data, mem = memory) { // wasm<>js interop
     case "bigint":
     case "number":
     default:
+      if (typeof data === "bigint") {
+        if (data > 0xFFFFFFFFn) todo("bigint pointer");
+        data = Number(data);
+      }
       let pointer = read_int32(data, mem);
       let length = read_int32(data + 4, mem);
       let kind = read_int32(data + 8, mem); // todo not part of string ABI!
@@ -681,6 +685,10 @@ class node {
     this.memory = mem // may be lost, or does JS GC keep it?
     this.pointer = pointer
     if (!pointer) return;//throw "avoid 0 pointer node constructor"
+    if (typeof pointer === "bigint") {
+      if (pointer > 0xFFFFFFFFn) todo("bigint pointer");
+      pointer = Number(pointer);
+    }
     // check_eq(read_int32(pointer, mem), node_header_32, "read_int32(pointer, mem)==node_header_32 @pointer:" + pointer)
     pointer += 4;
     this.length = read_int32(pointer, mem);
@@ -692,7 +700,7 @@ class node {
     this.child_pointer = read_int32(pointer, mem);
     pointer += wasm_pointer_size;// LIST, not link. block body content
     // debug(pointer,pointer%8) // must be %8=0 by now
-    this.value = read_int64(pointer, mem);
+    this.value = read_int64(pointer, mem);// BIGINT!! NOT the same as this.Value() or this.Content !!
     // this.value = parseInt(read_int64(pointer, mem));
     pointer += 8; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
     this.name = string(pointer, mem);
@@ -855,7 +863,6 @@ function smartValue(data0, type /*int32*/, memory) {
   // debug("smartNode")
   type = data0 >> BigInt(32) // shift 32 bits ==
   let data = Number(BigInt.asIntN(32, data0))// drop high bits
-  debug("smartNode data 0x" + hex(data) + " type 0x" + hex(type));
   if (type == string_header_32 || type == string_header_32 >> 8)
     return string(data, memory) || load_chars(data, length = -1, memory, format = 'utf8')
   if (type == array_header_32 || type == array_header_32 >> 8)
