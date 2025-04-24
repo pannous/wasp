@@ -17,7 +17,8 @@
 
 extern int MAX_MEM;
 
-extern "C" byte *getHeapEnd(){return heap_end;}
+extern "C" byte *getHeapEnd() { return heap_end; }
+
 extern "C" void setHeapEnd(byte *neu) {
     check_silent(neu >= heap_end); // don't allow overwrite!
     heap_end = neu;
@@ -422,17 +423,17 @@ extern "C" void __wasm_call_ctors();
 
 // un-export at link time to use main:_start
 extern "C" void _start() {
-	// •	&__data_end yields a plain offset because it’s statically laid out.
-	// •	&__heap_base may yield a host pointer due to toolchain/runtime behavior.
+    // •	&__data_end yields a plain offset because it’s statically laid out.
+    // •	&__heap_base may yield a host pointer due to toolchain/runtime behavior.
 	heap_end = &__heap_base;
 	__wasm_call_ctors();
 	__initial_heap_end = heap_end; // after internal initialization, safely(?) reset on different runs / as "GC" ?
-	trace("__heap_base");
-	trace(&__heap_base); // ok 0xf5be20
+    trace("__heap_base");
+    trace(&__heap_base); // ok 0xf5be20
     // once was VERY HIGH 0x54641ddb0 to mapped wasm memory in runtime?
     // does NOT always represent a WASM byte offset (0x00000000 to 0xFFFFFFFF for 4GB max)?
-	trace("__data_end");
-	trace(&__data_end);// perfect 541dda4 ⚠️ Unused! set by runtime once
+    trace("__data_end");
+    trace(&__data_end); // perfect 541dda4 ⚠️ Unused! set by runtime once
     check_silent(&__data_end<=&__heap_base)
 //    current = (char*) &__data_end;
 //    trace("__global_base");
