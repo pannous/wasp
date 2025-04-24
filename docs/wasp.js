@@ -519,7 +519,8 @@ function string(data, mem = memory) { // wasm<>js interop
         // todo mixing string_header_32 for strings and other chars BAD!!
         if (!kind) return load_chars(pointer, length, mem);// todo messed up ABI!!
         return load_chars(data, -1, mem);
-      } else debug("found string_header_32", pointer, length, data)
+      }
+      // else debug("found string_header_32", pointer, length, data)
       if (!pointer) {
         debug("NO chars to read")
         debugMemory(data - 10, 20, mem)
@@ -626,10 +627,11 @@ function read_int64(pointer, mem = memory) { // little endian
 // NOT COMPATIBLE WITH ASYNC CALLS!
 function reset_heap() {
   // todo: this is for the compiler, not runtime/app!
-  HEAP = compiler_exports.__heap_base; // ~68000
+  HEAP = compiler_exports.__heap_base; // ~68000 Todo: INCREASE after load_runtime_bytes() !?
   DATA_END = compiler_exports.__data_end
   HEAP_END = HEAP || DATA_END;
-  HEAP_END += 0x100000 * run++; // todo
+  // HEAP_END += 0x100000 * run++; // todo
+  compiler_exports.setHeapEnd(HEAP_END);
 }
 
 function compile_and_run(code) {
@@ -1045,10 +1047,9 @@ function copy_runtime_bytes_to_compiler() {
   dest.set(src) // memcpy ⚠️ todo MAY FUCK UP compiler bytes!!!
   print("HEAP", compiler_exports.getHeapEnd(), HEAP_END);
   HEAP_END += length
-  return // ⚠️
+  // return // ⚠️
   compiler_exports.setHeapEnd(HEAP_END) // resync!
   HEAP_END += 10000000 // extra space for demangle
-
   print("HEAP parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
   compiler_exports.parseRuntime(pointer, length) // sets HEAP_END too!
   syncHeap()

@@ -141,8 +141,8 @@ var STOP = 0
 
 async function testAll() {
   try {
+    console.log("💡 starting testRunAsync 💡")
     while (!STOP) { // loop and re-enter async wasm function
-      // console.log("starting new testRunAsync")
       // reset_heap()
       // copy_of_last_state = memory.buffer.slice(0, memory.length);
       await testRunAsync()
@@ -189,7 +189,9 @@ async function wasp_tests() {
   testReverse();
   testParse();
   // testMemoryDiff();
-  compiler_exports.testCurrent()  // internal tests of the wasp.wasm runtime INSIDE WASM
+
+// ⚠️ CANNOT USE assert_emit in testCurrent! LATER via void testRun();
+  compiler_exports.testCurrent()  // internal synchronous(!) tests of the wasp.wasm runtime INSIDE WASM
 
   let runmode = 3
   switch (runmode) {
