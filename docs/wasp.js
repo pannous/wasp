@@ -418,13 +418,6 @@ let imports = {
     puti: x => debug(x), // allows debugging of ints without format String allocation!
     js_demangle: x => chars(demangle(chars(x))),
     __cxa_demangle: (name, buf, len, status_p) => chars(demangle(chars(name))),
-    // _Z7compile6Stringb: nop, // todo bug! why is this called?
-    // _Z9read_wasmPhi: nop, // todo bug! why is this called?
-    // _Z11loadRuntimev: nop, // todo bug! why is this called?
-    // _Z10testWasmGCv: nop, // todo bug! why is this called?
-    // _Z11testAllWasmv: nop, // todo bug! why is this called?
-    // _Z11testAllEmitv: nop, // todo bug! why is this called?
-    // _Z12testAllAnglev: nop, // todo bug! why is this called?
   },
   wasi_unstable: {
     fd_write, // printf
@@ -1036,13 +1029,12 @@ function load_runtime_bytes() {
 // let compiler link/merge emitted wasm with small runtime
 function copy_runtime_bytes_to_compiler() {
   let length = runtime_bytes.byteLength
-  HEAP_END += 1000000 // some random offset
   let pointer = HEAP_END
   let src = new Uint8Array(runtime_bytes, 0, length);
   let dest = new Uint8Array(memory.buffer, HEAP_END, length);
   dest.set(src) // memcpy ⚠️ todo MAY FUCK UP compiler bytes!!!
-  HEAP_END += length
-  compiler_exports.testRuntime(pointer, length)
+  HEAP_END += length * 4 // todo HEAP_END fucked up by demangle why?
+  compiler_exports.testRuntime(pointer, length) // sets HEAP_END too!
 }
 
 
@@ -1241,6 +1233,5 @@ function wasp_ready() {
   if (run_tests)
     setTimeout(test, 1);// make sync
 }
-
 
 load_compiler()
