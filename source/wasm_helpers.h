@@ -9,7 +9,8 @@
 #include "smart_types.h"
 
 
-typedef char32_t codepoint;// 'letter' ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
+typedef char32_t codepoint;
+// 'letter' ☃ is a single code point but 3 UTF-8 code units (char's), and 1 UTF-16 code unit (char16_t)
 
 typedef const char *chars;
 typedef unsigned char *bytes;
@@ -22,8 +23,9 @@ extern void error1(chars message, chars file, int line);
 // there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it
 // worse there is the native_runtime which may hold the wasm_runtime running in the VM!
 // todo : depends on clang_options! Sometimes it is needed sometimes it can't be there
-extern "C" unsigned int *memory;// =0; always, BUT heap_offset/current is higher from beginning!
-extern void *wasm_memory;// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
+extern "C" unsigned int *memory; // =0; always, BUT heap_offset/current is higher from beginning!
+extern void *wasm_memory;
+// this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
 
 #ifndef MAX_MEM
 #ifdef WASM
@@ -33,13 +35,18 @@ extern int MAX_MEM;
 #endif
 #endif
 
-typedef unsigned char byte;//!
-// __heap_base is provided by host and its ADDRESS position &__heap_base is the start of the heap area.
-extern byte __heap_base;// set via -Wl,--export=__heap_base
-extern byte __data_end;
-extern byte *__initial_heap_end;
-extern "C" byte *heap_end;// memory + heap_offset // todo merge with __data_end ?
-extern "C" void panic();//
+typedef unsigned char byte; //!
+// __heap_base is provided by host and its ADDRESS &__heap_base is the start of the heap area.
+extern byte __heap_base; // set via -Wl,--export=__heap_base
+extern byte __data_end; // ⚠️ set by runtime once, Unused: using __heap_base instead as one should!
+extern byte *__initial_heap_end; // safely(?) reset to after gc?
+extern "C" byte *heap_end; // &__heap_base + heap_offset
+extern "C" byte *getHeapEnd();
+
+extern "C" void setHeapEnd(byte *neu);
+
+extern "C" void panic();
+
 
 #ifndef WASM
 int raise(chars error); // conflicts with signal.h if 'extern'
@@ -65,10 +72,11 @@ extern "C" void *memcpy(void *__restrict__ __dst, const void *__restrict__ __src
 extern "C" void *memmove(void *__dst, const void *__src, size_t __n) __attribute__((__nothrow__, __leaf__, __nonnull__(1, 2)));
 #else
 extern "C" void *memcpy(void *, const void *, size_t);
+
 extern "C" void *memset(void *ptr, int value, size_t num);
+
 extern "C" void *memmove(void *__dst, const void *__src, size_t num);
 #endif
-
 
 
 //__attribute__((import_module("env"), import_name("memcpy")));;
@@ -80,32 +88,40 @@ void memcpy1(bytes dest, bytes source, int i);
 // if MY_WASI make sure to IMPLEMENT THEM ALL via fd_write !!
 // todo: alias all to print
 extern "C" void put_chars(chars c, size_t len = 0);
+
 //extern "C" void put_chars(char* c, size_t len = 0);
 
 class String;
 
 extern "C" //  destroys the export type signature! but required by stdio.h:178:6:
-int puts(const char *);// stdio
+int puts(const char *); // stdio
 extern "C" String *put_string(String *);
-extern "C" void *putp(void *f);// pointer
+
+extern "C" void *putp(void *f); // pointer
 extern "C" int puti(int i);
+
 extern "C" int64 putl(int64 l);
+
 extern "C" int64 putx(int64 l);
+
 extern "C" float putf(float f);
+
 extern "C" double putd(double f);
+
 //void putp(int64 *char_pointer);
 extern "C" codepoint put_char(codepoint c);
+
 //void put_char(char c);
 //extern "C" int putchar(int c);// stdio
 
-int square(int n);// test wasm
+int square(int n); // test wasm
 
 double powd(double x, double y);
 
-int64 squarel(int64 n);// test wasm, otherwise use x² => x*x in analyze!
-double square_double(double n);// test wasm
+int64 squarel(int64 n); // test wasm, otherwise use x² => x*x in analyze!
+double square_double(double n); // test wasm
 
-extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
+extern double sqrt1(double a); // wasm has own, egal only used in Interpret.cpp
 
 
 //extern "C" double pow2(double x, double y);
@@ -120,7 +136,8 @@ extern double sqrt1(double a);// wasm has own, egal only used in Interpret.cpp
 //void printf(int);
 
 extern "C" char *run(chars code);
-void *alloc(int num, int size);// => malloc / calloc
+
+void *alloc(int num, int size); // => malloc / calloc
 #if WASM
 extern "C" void *malloc(size_t size);
 //extern "C" void *malloc(size_t __size) __attribute__((__malloc__, __warn_unused_result__));
@@ -163,6 +180,7 @@ void print(int l);
 
 //void print(long l);
 void print(int64 l);
+
 //void print(Primitive l);
 
 void print(double l); // _Z5printd
@@ -259,6 +277,7 @@ void proc_exit(int exitcode);
 
 WASI(fd_write)
 int fd_write(int fd, c_io_vector *iovs, size_t iovs_count, size_t *nwritten);
+
 //void fd_write_host(int FD, char **strp, int *ignore, int *ignore) compatible signature
 
 /**

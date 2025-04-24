@@ -680,7 +680,7 @@ class node {
     this.memory = mem // may be lost, or does JS GC keep it?
     this.pointer = pointer
     if (!pointer) return;//throw "avoid 0 pointer node constructor"
-    check_eq(read_int32(pointer, mem), node_header_32, "read_int32(pointer, mem)==node_header_32 @pointer:" + pointer)
+    // check_eq(read_int32(pointer, mem), node_header_32, "read_int32(pointer, mem)==node_header_32 @pointer:" + pointer)
     pointer += 4;
     this.length = read_int32(pointer, mem);
     pointer += 4;
@@ -1033,10 +1033,22 @@ function copy_runtime_bytes_to_compiler() {
   let src = new Uint8Array(runtime_bytes, 0, length);
   let dest = new Uint8Array(memory.buffer, HEAP_END, length);
   dest.set(src) // memcpy ⚠️ todo MAY FUCK UP compiler bytes!!!
-  HEAP_END += length * 4 // todo HEAP_END fucked up by demangle why?
-  compiler_exports.testRuntime(pointer, length) // sets HEAP_END too!
+  print("HEAP", compiler_exports.getHeapEnd(), HEAP_END);
+  HEAP_END += length
+  return // ⚠️
+  compiler_exports.setHeapEnd(HEAP_END) // resync!
+  HEAP_END += 10000000 // extra space for demangle
+
+  print("HEAP parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
+  compiler_exports.parseRuntime(pointer, length) // sets HEAP_END too!
+  syncHeap()
 }
 
+function syncHeap() {
+  neu = compiler_exports.getHeapEnd()
+  if (neu > HEAP_END) HEAP_END = neu
+  else compiler_exports.setHeapEnd(HEAP_END) // resync!
+}
 
 // todo: CONFUSION between runtime, compiler and app!
 // todo: unified/multi memory possible without components?

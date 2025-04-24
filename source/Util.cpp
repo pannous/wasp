@@ -329,7 +329,11 @@ chars concat(chars a, chars b) {
     return concat(a, b, la, lb);
 }
 
-extern "C" byte *heap_end;
+// extern "C" byte *heap_end;
+// extern "C" byte *testHeap() {
+//     return heap_end;// TODO ⚠️ NOT influenced by js HEAP_END += length !!!
+// }
+
 
 chars concat(chars a, chars b, uint la, uint lb) {
     if (!a or a[0] == 0 or la == 0)return b;
