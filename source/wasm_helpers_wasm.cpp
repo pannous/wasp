@@ -4,7 +4,6 @@
 //
 
 // ALL FUNCTIONS IN THIS FILE WILL BE COMPILED IN WASM CONTEXT: the wasp.wasm runtime.
-
 // ASSUME everything is MY_WASI from now on!
 
 #include "wasm_helpers.h"
@@ -427,7 +426,7 @@ extern "C" void _start() {
     // •	&__heap_base may yield a host pointer due to toolchain/runtime behavior.
     heap_end = &__heap_base;
     __wasm_call_ctors();
-	__initial_heap_end = heap_end; // after internal initialization, safely(?) reset on different runs / as "GC" ?
+    __initial_heap_end = heap_end; // after internal initialization, safely(?) reset on different runs / as "GC" ?
     trace("__heap_base");
     trace(&__heap_base); // ok 0xf5be20
     // once was VERY HIGH 0x54641ddb0 to mapped wasm memory in runtime?
