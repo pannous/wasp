@@ -13,9 +13,9 @@ let lib_folder_url = "assets/lib/"
 // let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
-let needs_runtime = false;
-const use_big_runtime = true; // use compiler as runtime for now
-// const use_big_runtime = false; // use small runtime IN compiler
+let needs_runtime = false; // set per app!
+// const use_big_runtime = true; // use compiler as runtime for now
+const use_big_runtime = false; // link / use small runtime IN compiler
 const run_tests = false; // todo NOT IN PRODUCTION!
 let app_module;
 let kinds = {}
@@ -107,7 +107,7 @@ function getWasmFunclet(funclet_name, size_p) {
 }
 
 function parse(data) {
-  let node_pointer = runtime_exports.Parse(chars(data))// also calls run()!
+  let node_pointer = compiler_exports.Parse(chars(data))// also calls run()!
   let nod = new node(node_pointer);
   return nod
 }
@@ -649,7 +649,7 @@ function reinterpretInt64AsFloat64(n) { // aka reinterpret_cast long to double
 
 function loadKindMap() {
   for (let i = 0; i < 255; i++) {
-    let kinda = runtime_exports.kindName(i); // might be stripped
+    let kinda = compiler_exports.kindName(i); // might be stripped
     // let kinda = compiler_exports.kindName(i);
     let kindName = chars(kinda)
     if (!kinda || !kindName) continue
@@ -724,7 +724,7 @@ class node {
     let list = []
     let l = this.length;
     let i = 0
-    let node_size = runtime_exports.size_of_node()
+    let node_size = compiler_exports.size_of_node()
     while (l-- > 0) {
       list.push(new node(this.child_pointer + i * node_size, this.memory));
       i++
@@ -764,7 +764,7 @@ class node {
     if (!this.pointer) todo("only wasp nodes can be serialized");
     if (!this.memory == memory)
       todo("needs to serialize inside the correct memory!") // app.serialize()
-    return chars(runtime_exports.serialize(this.pointer));
+    return chars(compiler_exports.serialize(this.pointer));
   }
 
   toString() {
@@ -863,7 +863,7 @@ function smartValue(data0, type /*int32*/, memory) {
   if (type == 0) return data
   if (type == node_header_32 || type == node_header_32 >> 8)
     return new node(data, memory)
-  let nod = new node(runtime_exports.smartNode(data0, memory));
+  let nod = new node(compiler_exports.smartNode(data0, memory));
   if (nod.kind == kinds.real || nod.kind == kinds.bool || nod.kind == kinds.long || nod.kind == kinds.codepoint)
     return nod.Value() // primitives independent of memory
   // if (nod.kind == kinds.object)
@@ -1007,22 +1007,24 @@ function addSynonyms(exports) {
 // 1. the wasm module is already standalone and doesn't import any functions from the runtime
 // 2. the host environment uses the full wasp.wasm (with compiler) as runtime
 function load_runtime_bytes() {
-  if (!runtime_bytes)
-    fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
-        runtime_bytes = buffer
+  if (runtime_bytes) return warn("runtime_bytes already loaded")
+  fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
+      runtime_bytes = buffer
       if (typeof (compiler_exports) == undefined)
         console.error("compiler needs to be loaded before runtime")
-        copy_runtime_bytes_to_compiler()
-        WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
-          runtime_instance = obj.instance
-          runtime_exports = runtime_instance.exports
-          // addSynonyms(runtime_exports) // better use full names from compiler!
-          wasp_ready()
-          // debug(obj.instance.exports._ZN6StringC2EPKcb)
-          // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
-        })
-      }
-    )
+      copy_runtime_bytes_to_compiler()
+      WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
+        runtime_instance = obj.instance
+        runtime_exports = runtime_instance.exports
+        // addSynonyms(runtime_exports) // better use full names from compiler!
+        wasp_ready()
+        // debug(obj.instance.exports._ZN6StringC2EPKcb)
+        // getArguments(obj.instance.exports._ZN6StringC2EPKcb)
+      }).catch(err => {
+        error(err)
+      })
+    }
+  )
 }
 
 
@@ -1067,7 +1069,7 @@ function load_compiler() {
       compiler_exports = compiler_instance.exports
       // global.
       addSynonyms(compiler_exports)
-      runtime_exports = compiler_exports
+    // runtime_exports = compiler_exports
       HEAP = compiler_exports.__heap_base; // ~68000
       DATA_END = compiler_exports.__data_end
       HEAP_END = HEAP || DATA_END || runtime_exports.__heap_end;
@@ -1228,7 +1230,11 @@ async function test() {
 }
 
 function compiler_ready() {
-  if (!use_big_runtime) load_runtime_bytes()
+  if (!use_big_runtime) try {
+    load_runtime_bytes()
+  } catch (x) {
+    error("CANNOT LOAD runtime_bytes")
+  }
   else wasp_ready()
 }
 
