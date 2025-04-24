@@ -24,8 +24,8 @@ extern "C" String *testFromJS(String *s) {
 
 extern byte *stack_hack;
 
-extern "C" void testRuntime(bytes buffer, size_t size) {
-// ⚠️ Problem arises before even doing anything with data…  :
+extern "C" void parseRuntime(bytes buffer, size_t size) {
+    // ⚠️ Problem arises before even doing anything with data…  :
 //    testCurrent();// messes with the heap just filled with the wasm file
 
     heap_end = buffer + size;
