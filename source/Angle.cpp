@@ -557,9 +557,9 @@ Node &groupIf(Node n, Function &context) {
     Node &ef = *eff;
     ef.kind = expression;
     //	ef.kind = ifStatement;
-    if (condition.length > 0)condition.setType(expression); // so far treated as group!
-    if (then.length > 0)then.setType(expression);
-    if (otherwise.length > 0)otherwise.setType(expression);
+    if (condition.length > 0)condition.setKind(expression); // so far treated as group!
+    if (then.length > 0)then.setKind(expression);
+    if (otherwise.length > 0)otherwise.setKind(expression);
 
     ef["condition"] = analyze(condition, context);
     ef["then"] = analyze(then, context);
@@ -798,7 +798,7 @@ Node &groupGlobal(Node &node, Function &function) {
     if (node.length > 1) {
         node = node.flat();
         if (node.first().kind == reference)
-            node.first().setType(global, false);
+            node.first().setKind(global, false);
         else
             error("global declaration not a reference "s + node.first());
         Node &grouped = groupOperators(node, function).flat();
@@ -815,7 +815,7 @@ Node &groupGlobal(Node &node, Function &function) {
             addGlobal(function, node.name, unknown_type, false, 0);
         // todo update type later
     }
-    node.setType(global, false);
+    node.setKind(global, false);
     //    node.setType(reference, false);
     return node;
 }
@@ -904,7 +904,7 @@ Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module
     if (returns and function.signature.return_types.size() == 0)
         function.signature.returns(mapType(returns->name));
     functions.insert_or_assign(name, function);
-    return Node().setType(functor).setValue(Value{.data = &function}); // todo: clone!  todo functor => Function* !?!?
+    return Node().setKind(functor).setValue(Value{.data = &function}); // todo: clone!  todo functor => Function* !?!?
 }
 
 
@@ -958,7 +958,7 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     if (return_type)
         signature.returns(mapType(return_type)); // explicit double sin(){} // todo other syntaxes+ multi
     Node &decl = *new Node(name); //node.name+":={…}");
-    decl.setType(declaration);
+    decl.setKind(declaration);
     decl.add(body.clone());
     function.body = body.clone(); //.flat(); // debug or use?
     //	decl["signature"]=*new Node("signature");
@@ -1335,7 +1335,7 @@ Node &groupKebabMinus(Node &node, Function &context) {
     auto re = name.substring(0, name.indexOf('-'));
     auto lhs = Node(re, true);
     if (context.locals.has(re) or globals.has(re)) {
-        Node op = Node("-").setType(operators, true);
+        Node op = Node("-").setKind(operators, true);
         auto right = name.substring(name.indexOf('-') + 1);
         auto rhs = analyze(*new Node(right, true), context); // todo expression!
         op.add(lhs);
@@ -1468,7 +1468,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
     if (expressiona.kind == declaration)return expressiona; // handled before
     Function *import = findLibraryFunction(expressiona.name, false);
     if (import or isFunction(expressiona)) {
-        expressiona.setType(call, false);
+        expressiona.setKind(call, false);
         if (not functions.has(expressiona.name))
             error("! missing import for function "s + expressiona.name);
         //		if (not expressiona.value.node and arity>0)error("missing args");
@@ -1550,7 +1550,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             // todo expressiona[i+1].length>=minArity
             rest = expressiona[i + 1];
             if (rest.length > 1)
-                rest.setType(expression);
+                rest.setKind(expression);
             Node args = analyze(rest, context);
             node.add(args);
             expressiona.remove(i + 1, i + 1);
@@ -1562,9 +1562,9 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         if (not arg_length and rest.kind == reference) arg_length = 1;
         if (not arg_length and rest.value.data) arg_length = 1;
         if (arg_length > 1)
-            rest.setType(expression); // SUUURE?
+            rest.setKind(expression); // SUUURE?
         if (rest.kind == groups or rest.kind == objects) // and rest.has(operator))
-            rest.setType(expression); // todo f(1,2) vs f(1+2)
+            rest.setKind(expression); // todo f(1,2) vs f(1+2)
         //		if (hasFunction(rest) and rest.first().kind != groups)
         //				warn("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
         // per-function precedence does NOT really increase readability or bug safety
@@ -1794,18 +1794,20 @@ Node &groupForIn(Node &n, Function &context) {
     // for i in 0 to 10 {}
     // for i in 1 < 3 {}
     //    todo : for i < 3
-    if (n[2].name != "in" or (n[4] != "to" and n[4] != "upto" and n[4] != "<" and n[4] != "<="))
-        error("Invalid 'for' loop structure. Expected: for i in begin to end {}");
+    List<String> ops = {"to", "…", "upto", "<", "<=", "..", "..<", "until", ">", ">=", "...", "downto"};
+    if (n[2].name != "in" or not ops.has(n[4].name))
+    error("Invalid 'for' loop structure. Expected: for i in begin to end {}");
     Node &variable = n[1];
     addLocal(context, variable.name, int32t, false);
     Node &begin = n[3];
     Node &end = n[5];
     Node &body = end.values(); // for i in 1 to 5 : {print i}
-    if (n.length == 6) body = n[6];
+    if (n.length == 6) body = n[5];
     if (n.length > 6) body = n.from(6);
     if (n.length > 6 and n[6].name == ":") body = n.from(7);
 
-    body.setType(expression); // if …
+    if (body.kind != longs) // todo: hacky! put in there ?
+        body.setKind(expression); // if …
     Node *foro = new Node("for");
     Node &ef = *foro;
     ef.kind = expression;

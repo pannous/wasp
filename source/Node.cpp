@@ -58,14 +58,14 @@
 //const Node NaN = Node("NaN");
 
 // must never be used in non-const references!
-const Node NIL = Node(String(nil_name, false)).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
-Node Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
-Node Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
-Node Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
+const Node NIL = Node(String(nil_name, false)).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
+Node Unknown = Node("unknown").setKind(nils).setValue(0); // maybe-existent
+Node Undefined = Node("undefined").setKind(nils).setValue(0); // maybe-existent, maybe error
+Node Missing = Node("missing").setKind(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
 //
-Node ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
-Node True = Node("True").setType(bools).setValue(true);
-Node False = Node("False").setType(bools).setValue(false);
+Node ERROR = Node("ERROR").setKind(errors);// internal error ≠ Error class ≠ NIL
+Node True = Node("True").setKind(bools).setValue(true);
+Node False = Node("False").setKind(bools).setValue(false);
 Node Ignore = Node("Ignore");
 Node Infinity = Node("Infinity");
 Node NegInfinity = Node("-Infinity");
@@ -89,13 +89,13 @@ void initSymbols() {
 //    nil_name = "nil";
 	EMPTY = "";
 	EMPTY = String('\0');
-	((Node) NIL) = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
+	((Node) NIL) = Node(nil_name).setKind(nils).setValue(0);// non-existent. NOT a value, but a keyword!
 //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 //	Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
 //	Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
-	ERROR = Node("ERROR").setType(errors);// internal error ≠ Error class ≠ NIL
-	True = Node("True").setType(bools).setValue(true);
-	False = Node("False").setType(bools);
+	ERROR = Node("ERROR").setKind(errors);// internal error ≠ Error class ≠ NIL
+	True = Node("True").setKind(bools).setValue(true);
+	False = Node("False").setKind(bools);
 	Infinity = Node("Infinity");
 	NegInfinity = Node("-Infinity");
 	Nan = Node("NaN");
@@ -1249,7 +1249,7 @@ void print(Node *n0) {
 }
 
 
-Node &Node::setType(Kind kin, bool check) {
+Node &Node::setKind(Kind kin, bool check) {
 	if (kind == kin)return *this;
 	if (kind == modul and kin == key)
 		return *this;// todo   import host: host-funcs     module{.name=host}.value=host-funcs
@@ -1412,7 +1412,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
 		char *string = ((char *) wasm_memory) + value;
 		String *pString = new String(string, true /*copy!*/ );
 		Node &pNode = *new Node(pString, false /* not identifier*/);
-		pNode.setType(strings);
+		pNode.setKind(strings);
 		return &pNode;
 	}
 	if (smart_type64 == codepoint_header_64)

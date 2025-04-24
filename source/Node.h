@@ -778,7 +778,7 @@ public:
     }
 
     // can't rename to setKind WTH !?
-    Node &setType(Kind kin, bool check = true);
+    Node &setKind(Kind kin, bool check = true);
 
     // ≠ setKind ≠
     void setType(Type type);
