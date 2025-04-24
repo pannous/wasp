@@ -28,13 +28,6 @@ extern "C" void testRuntime(bytes buffer, size_t size) {
 // ⚠️ Problem arises before even doing anything with data…  :
 //    testCurrent();// messes with the heap just filled with the wasm file
 
-    print("read_wasm size");
-    print(size);
-    print(buffer);
-    print(buffer[0]);
-    print(buffer[1]);
-    print(buffer[2]);
-    print(buffer[3]);
     heap_end = buffer + size;
 //    Code(buffer, size, false).debug();
     Module &wasp = read_wasm(buffer, size);

@@ -81,6 +81,7 @@ static bool I_know_what_I_am_doing = false;
 static bool tracing = false;  // todo
 #else
 #if MY_WASM and DEBUG
+// static bool tracing = false;
 static bool tracing = true;
 #elif DEBUG
 //static bool tracing = true;
