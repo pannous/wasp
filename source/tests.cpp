@@ -2399,9 +2399,9 @@ void testTruthiness() {
     )
 
     todo_emit( // UNKNOWN local symbol ‘x’ in context main OK
-    assert_is("x", false);
-    assert_is("{x}", false);
-    assert_is("cat{}", false);
+        assert_is("x", false);
+        assert_is("{x}", false);
+        assert_is("cat{}", false);
     )
 
     // empty referenceIndices are falsey! OK
@@ -2654,23 +2654,23 @@ void testRootLists() {
     assert_is("[1,2,3]", Node(1, 2, 3, 0).setType(patterns));
     assert_is("[1;2;3]", Node(1, 2, 3, 0))
     todo_emit( // todo ?
-    assert_is("{1 2 3}", Node(1, 2, 3, 0))
-    assert_is("{1,2,3}", Node(1, 2, 3, 0))
-    assert_is("{1;2;3}", Node(1, 2, 3, 0))
+        assert_is("{1 2 3}", Node(1, 2, 3, 0))
+        assert_is("{1,2,3}", Node(1, 2, 3, 0))
+        assert_is("{1;2;3}", Node(1, 2, 3, 0))
     )
     todo_emit( // todo symbolic wasm
-    assert_is("(a,b,c)", Node("a", "b", "c", 0))
-    assert_is("(a;b;c)", Node("a", "b", "c", 0))
-    assert_is("a;b;c", Node("a", "b", "c", 0))
-    assert_is("a,b,c", Node("a", "b", "c", 0))
-    assert_is("{a b c}", Node("a", "b", "c", 0))
-    assert_is("{a,b,c}", Node("a", "b", "c", 0))
-    assert_is("[a,b,c]", Node("a", "b", "c", 0))
-    assert_is("(a b c)", Node("a", "b", "c", 0))
-    assert_is("[a;b;c]", Node("a", "b", "c", 0))
-    assert_is("a b c", Node("a", "b", "c", 0, 0))
-    assert_is("{a;b;c}", Node("a", "b", "c", 0))
-    assert_is("[a b c]", Node("a", "b", "c", 0))
+        assert_is("(a,b,c)", Node("a", "b", "c", 0))
+        assert_is("(a;b;c)", Node("a", "b", "c", 0))
+        assert_is("a;b;c", Node("a", "b", "c", 0))
+        assert_is("a,b,c", Node("a", "b", "c", 0))
+        assert_is("{a b c}", Node("a", "b", "c", 0))
+        assert_is("{a,b,c}", Node("a", "b", "c", 0))
+        assert_is("[a,b,c]", Node("a", "b", "c", 0))
+        assert_is("(a b c)", Node("a", "b", "c", 0))
+        assert_is("[a;b;c]", Node("a", "b", "c", 0))
+        assert_is("a b c", Node("a", "b", "c", 0, 0))
+        assert_is("{a;b;c}", Node("a", "b", "c", 0))
+        assert_is("[a b c]", Node("a", "b", "c", 0))
     )
 }
 
@@ -2767,7 +2767,7 @@ void testNodeName() {
 
 void testIndentAsBlock() {
     todo_emit(
-    assert_is((char *) "a\n\tb", "a{b}")
+        assert_is((char *) "a\n\tb", "a{b}")
     )
     // 0x0E 	SO 	␎ 	^N 		Shift Out
     // 0x0F 	SI 	␏ 	^O 		Shift In
@@ -3106,14 +3106,14 @@ void testIndex() {
         assert_is("[a b c]#2", "b");
     )
     todo_emit(
-    assert_is("{a:1 b:2}.a", 1)
-    assert_is("a of {a:1 b:2}", 1)
-    assert_is("a in {a:1 b:2}", 1)
-    assert_is("{a:1 b:2}[a]", 1)
-    assert_is("{a:1 b:2}.b", 2)
-    assert_is("b of {a:1 b:2}", 2)
-    assert_is("b in {a:1 b:2}", 2)
-    assert_is("{a:1 b:2}[b]", 2)
+        assert_is("{a:1 b:2}.a", 1)
+        assert_is("a of {a:1 b:2}", 1)
+        assert_is("a in {a:1 b:2}", 1)
+        assert_is("{a:1 b:2}[a]", 1)
+        assert_is("{a:1 b:2}.b", 2)
+        assert_is("b of {a:1 b:2}", 2)
+        assert_is("b in {a:1 b:2}", 2)
+        assert_is("{a:1 b:2}[b]", 2)
     )
 }
 
