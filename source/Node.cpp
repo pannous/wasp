@@ -90,7 +90,7 @@ void initSymbols() {
 	EMPTY = "";
 	EMPTY = String('\0');
     ((Node) NIL) = Node(nil_name).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
-//	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
+    //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
 //	Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
 //	Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
     ERROR = Node("ERROR").setKind(errors); // internal error ≠ Error class ≠ NIL
