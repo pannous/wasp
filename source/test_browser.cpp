@@ -46,6 +46,12 @@ void testDownload() {
 #endif
 }
 
+void testAllWasm();
+
+void testAllEmit();
+
+void testAllAngle();
+
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
     if (done.empty())
