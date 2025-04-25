@@ -354,7 +354,7 @@ void testAllAngle() {// emmitting or not
     testLogicPrecedence();
 //	testSmartTypes();
     testIf();
-    testCall();
+    // testCall(); in testTodoBrowser()
     skip(
             testSwitch();
     )

@@ -337,7 +337,10 @@ let imports = {
     }, // allow wasm modules to run plugins / compiler output
     assert_expect: x => {
       value = new node(x).Value()
+      try {
       print("assert_expect", x, value)
+      } catch (ignore) {
+      }
       if (expect_test_result)
         error("already expecting value " + expect_test_result + " -> " + x + "\n Did you emit in testCurrent?")
       expect_test_result = value
@@ -753,9 +756,10 @@ class node {
   }
 
   Value() {
-    if (this.kind == kinds.string) return string(this.value) || this.name;
+    if (this.kind == kinds.nil) return null;
     if (this.kind == kinds.long) return Number(this.value);
     if (this.kind == kinds.bool) return Boolean(this.value);
+    if (this.kind == kinds.string) return string(this.value) || this.name;
     if (this.kind == kinds.real) return reinterpretInt64AsFloat64(this.value);
     // if (this.kind == 124) return reinterpretInt64AsFloat64(this.value);
     if (this.kind == kinds.node) return new node(this.value); //.Value();

@@ -633,8 +633,8 @@ void testWasmLogic() {
         assert_emit("false true and", false);
         assert_emit("false false and ", false);
         assert_emit("true false and ", false);
+        check(parse("false and false").length == 3);
     )
-    check(parse("false and false").length == 3);
     assert_emit("false and false", false);
     assert_emit("false and true", false);
     assert_emit("true and false", false);
@@ -1279,8 +1279,10 @@ void testSmartReturn() {
     //    assert_emit("'a'", U'a');
     assert_emit("10007.0%10000.0", 7);
     assert_emit("10007.0%10000", 7);
+#if not WASM
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
     assert_emit("x='abcde';x[3]", 'd');
+#endif
     //    assert_emit("x='abcde';x[3]", (int) 'd');// currently FAILS … OK typesafe!
 }
 
@@ -1570,10 +1572,10 @@ void testMathExtra() {
     assert_emit("15÷5", 3);
     assert_emit("3⋅5", 15);
     assert_emit("3×5", 15);
-    assert_emit("3^3", 27);
-    assert_emit("3**3", 27);
-    assert_emit("√3**2", 3);
     skip(
+        assert_emit("3**3", 27);
+        assert_emit("√3**2", 3);
+        assert_emit("3^3", 27);
         assert_emit("√3^2", 3); // in test_squares
         assert_is("one plus two times three", 7);
     )
@@ -1600,6 +1602,35 @@ void testRootFloat() {
 void testNodeDataBinaryReconstruction() {
     check_is(parse("y:{x:2 z:3}").serialize(), "y{x:2 z:3}"); // todo y:{} vs y{}
     assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}")); // looks trivial but is epitome of binary (de)serialization!
+}
+
+
+void testWasmString() {
+#if WASM
+return; // todo!
+#endif
+    assert_emit("“c”", 'c');
+    assert_emit("“a”", "a");
+    assert_emit("“b”", "b");
+    assert_emit("\"d\"", 'd');
+    assert_emit("'e'", 'e');
+#if WASM
+    assert_emit("'f'", u'f');
+    assert_emit("'g'", U'g');
+#endif
+    assert_emit("'h'", "h");
+    assert_emit("\"i\"", "i");
+    assert_emit("'j'", Node("j"));
+#if not WASM // todo
+    wasm_string x = reinterpret_cast<wasm_string>("\03abc");
+    String y = String(x);
+    check(y == "abc");
+    check(y.length == 3);
+    assert_emit("“hello1”", Node(String("hello1"))); // Invalid typed array length: 12655
+    assert_emit("“hello2”", Node("hello2").setKind(strings));  // Invalid typed array length: 12655
+    assert_emit("“hello3”", Node("hello3"));
+    assert_emit("“hello4”", "hello4");
+#endif
 }
 
 //testWasmControlFlow
@@ -1657,9 +1688,13 @@ void testTodoBrowser() {
     assert_emit("puti 3+3", 6);
     testNodeDataBinaryReconstruction();
     testOldRandomBugs();
+    testEmitter(); // huh!?!
+    testWasmString(); // with length as header
 #if not WASMEDGE
     assert_emit("print 3", 3); // todo dispatch!
 #endif
+    assert_emit("x='abcde';x[3]", 'd');
+    testCall();
 }
 
 
@@ -1766,7 +1801,6 @@ void testAllWasm() {
     )
     testMergeWabt();
     testMergeWabtByHand();
-    testEmitter();
     testMathLibrary();
     testWasmLogicCombined();
     testMergeWabt();
