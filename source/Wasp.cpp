@@ -751,8 +751,8 @@ private:
             Node &mult = *new Node("*");
             mult.kind = operators;// binops;
             mult.add(number_node);
-            mult.add(Node(identifier()).setKind(reference).clone());
-            return mult;
+mult.add(Node(identifier()).setKind(reference).clone());
+return mult;
         }
     };
 
@@ -777,10 +777,10 @@ private:
             parserError("Unterminated string");
         String substring = text.substring(start, at);
         proceed();
-        return Node(substring).setKind(strings);// DONT do "3"==3 (here or ever)!
+        return Node(substring).setKind(strings); // DONT do "3"==3 (here or ever)!
     }
 
-//// Parse a string value.
+    //// Parse a string value.
 //    [[maybe_unused]] Node string2(char delim = '"') {
 //		auto hex = 0;
 //		auto i = 0;
@@ -976,7 +976,7 @@ private:
     Node &operatorr() {
         Node &node = *new Node(ch);
         node.value.longy = 0;
-        node.setKind(operators);// todo ++
+        node.setKind(operators); // todo ++
         proceed();
         while (ch == '=' or ch == previous) {// allow *= += ++ -- **  …
             node.name += ch;
@@ -1009,7 +1009,7 @@ private:
 //		if (node.name.in(operator_list))
         if (operator_list.has(symbol))
             node.setKind(operators, false); // later: in angle!? NO! HERE: a xor {} != a xxx{}
-//		put("resolve NOT FOUND");
+        //		put("resolve NOT FOUND");
 //		put(symbol);
         return node;
     }
@@ -1026,7 +1026,7 @@ private:
         if (ch == u'‖') {
             proceed();// todo: better ;)
             return (*new Node("‖")).add(valueNode(u'‖').clone()).setKind(operators, false);
-//			return (*new Node("abs")).setType(Kind::call, false);
+            //			return (*new Node("abs")).setType(Kind::call, false);
         }
         if (ch == '$' and parserOptions.dollar_names and is_identifier(next))
             proceed(); // $name
@@ -1235,7 +1235,7 @@ private:
         // A JSON value could be an object, an array, a string, a number, or a word.
         Node &actual = *new Node();// current already used in super context
         actual.parent = parent;
-        actual.setKind(groups);// may be changed later, default (1 2)==1,2
+        actual.setKind(groups); // may be changed later, default (1 2)==1,2
 #if DEBUG
         if (line != "}") // why?
             actual.line = &line;
@@ -1273,7 +1273,7 @@ private:
                 proceed();
                 auto body = valueNode(closingBracket(grouper));
                 Node group(grouper);
-                group.setKind(operators, false);// name==« (without »)
+                group.setKind(operators, false); // name==« (without »)
                 group.add(body);
 //				group.type = type("group")["field"]=grouper;
                 actual.add(group);
@@ -1415,7 +1415,7 @@ private:
                         Node *last = &actual.last();// don't ref here, else actual.last gets overwritten!
                         while (last->value.node and last->kind == key)
                             last = last->value.node;// a:b:c:d
-                        last->setValue({.node=&node}).setKind(key, false);
+                        last->setValue({.node = &node}).setKind(key, false);
                         break;//
                         continue;
                     }
@@ -1460,7 +1460,7 @@ private:
                         close = 0; // ok, we are done
                     }
                     Node id = Node(text.substring(start, at));
-                    id.setKind(Kind::strings);// todo "3" could have be resolved as number? DONT do js magifuckery
+                    id.setKind(Kind::strings); // todo "3" could have be resolved as number? DONT do js magifuckery
                     actual.add(id);
                     break;
                 }
@@ -1518,7 +1518,7 @@ private:
                     Node &val = valueNode(closer, &key);// applies to WHOLE expression
                     if (add_to_whole_expression and actual.length > 1 and not add_raw) {
                         if (actual.value.node) todo("multi-body a:{b}{c}");
-                        actual.setKind(Kind::key, false);// lose type group/expression etc ! ok?
+                        actual.setKind(Kind::key, false); // lose type group/expression etc ! ok?
                         // todo: might still be expression!
 //						object.setType(Type::valueExpression);
                         actual.value.node = &val;
@@ -1646,7 +1646,7 @@ private:
     };
 
     bool isWhite(codepoint c) {
-        return c == ' ' or c == '\t' or c == '\n' or c == '\r' or c==u'';// shift out
+        return c == ' ' or c == '\t' or c == '\n' or c == '\r' or c == u''; // shift out
     }
 
     bool isKebabBridge() { // isHyphen(Bridge) e.g. a-b in special ids like in component model

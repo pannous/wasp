@@ -1457,7 +1457,7 @@ void testForLoops() {
     assert_emit("for i in 1 to 5 : {puti(i)}", 5);
     assert_emit("for i in 1 to 5 : {puti i};i", 6); // after loop :(
     assert_emit("for i in 1 to 5 : puti i", 5);
-    assert_emit("for i in 1 to 5\n  puti i", 5);// unclosed pair  	<control>: SHIFT OUT
+    assert_emit("for i in 1 to 5\n  puti i", 5); // unclosed pair  	<control>: SHIFT OUT
     assert_emit("for i in 1 to 5\n  puti i\ni", 6);
     assert_emit("for i in 1…5 : puti i", 5);
     assert_emit("for i in 1 … 5 : puti i", 5);
@@ -1466,12 +1466,12 @@ void testForLoops() {
     assert_emit("for i in 1 ... 5\n  puti i", 5);
 #endif
     skip(
-    assert_emit("sum=0\nfor i in 1…3 {sum+=i}\nsum", 6);// todo range
-    assert_emit("sum=0\nfor i in 1 to 3 : sum+=i\nsum", 6);// todo range
-    assert_emit("sum=0\nfor i in (1 ... 3) {sum+=i}\nsum", 6);// todo range
-    assert_emit("sum=0\nfor i in (1..3) {sum+=i}\nsum", 6);// todo (1. 0.3) range
-    assert_emit("sum=0;for i in (1..3) {sum+=i};sum", 6);
-    assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
+        assert_emit("sum=0\nfor i in 1…3 {sum+=i}\nsum", 6); // todo range
+        assert_emit("sum=0\nfor i in 1 to 3 : sum+=i\nsum", 6); // todo range
+        assert_emit("sum=0\nfor i in (1 ... 3) {sum+=i}\nsum", 6); // todo range
+        assert_emit("sum=0\nfor i in (1..3) {sum+=i}\nsum", 6); // todo (1. 0.3) range
+        assert_emit("sum=0;for i in (1..3) {sum+=i};sum", 6);
+        assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
     )
 }
 
@@ -1621,8 +1621,6 @@ void testAllWasm() {
     // Test that IMPLICITLY use runtime /  assert_run
     assert_emit("x=(1 4 3);x#2", 4);
     testStringIndicesWasm();
-
-
     //    skip(
     //            test_get_local();
     //            testCustomOperators();
