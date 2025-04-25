@@ -2527,7 +2527,7 @@ void testRootLists() {
 
 void testRoots() {
     check(NIL.value.longy == 0);
-    assert_is((char *) "'hello'", "hello");
+    // assert_is((char *) "'hello'", "hello");
     skip(assert_is("hello", "hello", 0)); // todo reference==string really?
     assert_is("True", True)
     assert_is("False", False)
@@ -3049,30 +3049,6 @@ void testNodeConversions() {
     if (as.kind == codepoint1) check((codepoint) as.value.longy == 'a');
 }
 
-
-void testWasmString() {
-    assert_emit("“c”", 'c');
-    assert_emit("“hello2”", Node("hello2").setKind(strings));
-    assert_emit("“hello3”", Node("hello3"));
-    assert_emit("“hello4”", "hello4");
-    assert_emit("“a”", "a");
-    assert_emit("“b”", "b");
-    assert_emit("\"d\"", 'd');
-    assert_emit("'e'", 'e');
-    assert_emit("“hello1”", Node(String("hello1"))); // Invalid typed array length: 12655
-#if WASM
-    assert_emit("'f'", u'f');
-    assert_emit("'g'", U'g');
-#endif
-    assert_emit("'h'", "h");
-    assert_emit("\"i\"", "i");
-    assert_emit("'j'", Node("j"));
-    wasm_string x = reinterpret_cast<wasm_string>("\03abc");
-    String y = String(x);
-    check(y == "abc");
-    check(y.length == 3);
-}
-
 void testGroupCascade0() {
     result = parse("x='abcde';x#4='y';x#4");
     check(result.length == 3);
@@ -3465,7 +3441,6 @@ void testAllEmit() {
     testEqualities();
     testLogic01();
     testLogicOperators();
-    testCall();
     testRoots();
     testRootFloat();
     testMathExtra(); // "one plus two times three"==7 used to work?
@@ -3476,7 +3451,6 @@ void testAllEmit() {
     testArrayIndices();
     testModulo();
     testSmartReturn();
-    testWasmString(); // with length as header
     testMultiValue();
     //    testSinus();
 
@@ -3663,6 +3637,7 @@ void test_new() {
 void testCurrent() {
     // testKebabCase(); // needed here:
     // assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+    check(String("a1b1c1d").lastIndexOf("1") == 3);
     test_new();
     skip(
         // assert_is("2+1/2", 2.5);

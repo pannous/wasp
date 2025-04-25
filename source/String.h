@@ -1041,8 +1041,8 @@ public:
 	}
 
 	int lastIndexOf(const char *string) {
-		return indexOf(string, true);
-	}
+        return indexOf(string, 0, true);
+    }
 
 	bool contains(chars string) {
 		return indexOf(string) >= 0;
