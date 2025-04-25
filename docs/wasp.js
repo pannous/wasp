@@ -7,17 +7,18 @@
 * */
 let Wasp = {}
 let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and shortcuts
-// let WASP_COMPILER = 'assets/wasp-release.wasm' // hard link 300k without tests
+// let WASP_COMPILER = 'assets/wasp-release-debug.wasm' // hard link 300k without tests
+// let WASP_COMPILER = 'assets/wasp-debug-release.wasm' // hard link 300k without tests
 let WASP_RUNTIME = 'wasp-runtime.wasm' // now in :
 let lib_folder_url = "assets/lib/"
 // let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false; // set per app!
-// const use_big_runtime = true; // use compiler as runtime for now
-const use_big_runtime = false; // link / use small runtime IN compiler
-const run_tests = true; // todo NOT IN PRODUCTION!
-// const run_tests = false; // todo NOT IN PRODUCTION!
+const use_big_runtime = true; // use compiler as runtime for now
+// const use_big_runtime = false; // link / use small runtime IN compiler
+// const run_tests = true; // todo NOT IN PRODUCTION!
+const run_tests = false;
 let app_module;
 let kinds = {}
 
