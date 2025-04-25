@@ -1620,13 +1620,15 @@ void test_wasm_todos() {
     assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
     assert_emit("grows:=it*2; grows 3*42 > grows 2*3", 1)
 #endif
-    assert_emit(("42.1"), 42.1) // main returns int, should be pointer to value! result & array_header_32 => smart pointer!
+    assert_emit(("42.1"), 42.1)
+    // main returns int, should be pointer to value! result & array_header_32 => smart pointer!
 
     //			Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1`
     assert_emit("id 3*42 > id 2*3", 1)
     // is there a situation where a COMPARISON is ambivalent?
     // sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
 }
+
 // SIMILAR AS:
 void testTodoBrowser() {
 #if WASM
