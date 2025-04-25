@@ -1768,7 +1768,7 @@ void load_parser_initialization() {
     // todo: remove thx to __wasm_call_ctors
     if (operator_list.size() == 0)
         //		warn("operator_list should have been constructed in __wasm_call_ctors @ _start");
-        error("operator_list should have been constructed in __wasm_call_ctors @ _start");
+    error("operator_list should have been constructed in __wasm_call_ctors @ _start");
     //	operator_list = List<chars>(operator_list0);// wasm hack
     //	load_aliases();
 }
