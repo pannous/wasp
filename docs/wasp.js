@@ -637,7 +637,7 @@ function reset_heap() {
   DATA_END = compiler_exports.__data_end
   HEAP_END = HEAP || DATA_END;
   // HEAP_END += 0x100000 * run++; // todo
-  // compiler_exports.setHeapEnd(HEAP_END);
+  // compiler_exports.setHeapEnd(HEAP_END); BAD!!
 }
 
 function compile_and_run(code) {
