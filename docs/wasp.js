@@ -632,6 +632,8 @@ function read_int64(pointer, mem = memory) { // little endian
 // reset at each run, discard previous data!
 // NOT COMPATIBLE WITH ASYNC CALLS!
 function reset_heap() {
+  print("Todo reset_heap, currently BAD!")
+  return
   // todo: this is for the compiler, not runtime/app!
   HEAP = compiler_exports.__heap_base; // ~68000 Todo: INCREASE after load_runtime_bytes() !?
   DATA_END = compiler_exports.__data_end
