@@ -336,9 +336,11 @@ let imports = {
       }
     }, // allow wasm modules to run plugins / compiler output
     assert_expect: x => {
+      value = new node(x).Value()
+      print("assert_expect", x, value)
       if (expect_test_result)
         error("already expecting value " + expect_test_result + " -> " + x + "\n Did you emit in testCurrent?")
-      expect_test_result = new node(x).Value()
+      expect_test_result = value
     },
     // HTML DOM JS functions
     // download: new WebAssembly.Suspending(download_async),
@@ -703,7 +705,8 @@ class node {
     pointer += wasm_pointer_size;// LIST, not link. block body content
     // debug(pointer,pointer%8) // must be %8=0 by now
     this.value = read_int64(pointer, mem);// BIGINT!! NOT the same as this.Value() or this.Content !!
-    // this.value = parseInt(read_int64(pointer, mem));
+    if (typeof this.value === "bigint" && this.value < 0x100000000n)
+      this.value = Number(this.value);
     pointer += 8; // value.node and next are NOT REDUNDANT  label(for:password):'Passwort' but children could be merged!?
     this.name = string(pointer, mem);
     // post processing
