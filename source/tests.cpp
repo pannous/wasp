@@ -304,8 +304,8 @@ void testJS() {
     // todo remove (local $getContext i32)  !
     eval("$canvas.getContext('2d')"); // => invokeReference(canvas, getContext, '2d')
     skip(
-    eval("js{alert('Hello')}"); // => <script>alert('Hello')</script>
-    eval("script{alert('Hello')}"); // => <script>alert('Hello')</script>
+        eval("js{alert('Hello')}"); // => <script>alert('Hello')</script>
+        eval("script{alert('Hello')}"); // => <script>alert('Hello')</script>
     )
 }
 
@@ -2072,7 +2072,6 @@ void testEval3() {
 }
 
 
-
 void testDeepLists() {
     assert_parses("{a:1 name:'ok' x:[1,2,3]}");
     assert(result.length == 3);
@@ -3499,9 +3498,6 @@ void testAllEmit() {
 }
 
 
-
-
-
 void testHostIntegration() {
 #if WASMTIME or WASMEDGE
     return;
@@ -3516,7 +3512,7 @@ void testHostIntegration() {
     testJS();
     testFetch();
     skip(
-    testCanvas();// attribute setter missing value breaks browser
+        testCanvas(); // attribute setter missing value breaks browser
     )
 }
 
