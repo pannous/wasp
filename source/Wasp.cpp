@@ -1975,7 +1975,7 @@ int main(int argc, char **argv) {
     } catch (String err) {
         print("ERROR");
         print(err);
-    } catch (const Error& err) {
+    } catch (const Error &err) {
         print("ERROR");
         print(err.message);
     } catch (SyntaxError *err) {

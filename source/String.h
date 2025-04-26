@@ -162,7 +162,8 @@ chars ftoa(double num);
 
 // #include <exception>
 
-class Error { // : public std::exception {
+class Error {
+    // : public std::exception {
 public:
     char *message;
 

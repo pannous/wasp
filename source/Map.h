@@ -32,15 +32,15 @@ public: // todo careful Map<char*,…> eq
     int map_header = map_header_32;
 
 
-    Map(int initial_capacity=MAP_INITIAL_CAPACITY) {
+    Map(int initial_capacity = MAP_INITIAL_CAPACITY) {
         capacity = initial_capacity;
         _size = 0;
         keys = (S *) calloc(sizeof(S), capacity);
         values = (T *) calloc(sizeof(T), capacity);
     }
 
-    Map(std::initializer_list<std::pair<S, T>> init_list) {
-        for (const auto& pair : init_list) {
+    Map(std::initializer_list<std::pair<S, T> > init_list) {
+        for (const auto &pair: init_list) {
             add(pair.first, pair.second);
         }
     }
@@ -164,8 +164,8 @@ public: // todo careful Map<char*,…> eq
             print(values[found]);
             print("NEW VALUE: ");
             print(value);
-            if (memcmp(&values[found], &value, sizeof(T)) == 0){
-            // if((const T)values[found]==value) {
+            if (memcmp(&values[found], &value, sizeof(T)) == 0) {
+                // if((const T)values[found]==value) {
                 warn("redundant VALUE for: "s + key);
                 return _size;
             }

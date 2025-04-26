@@ -137,7 +137,7 @@ int raise(chars error) {
 #if not WEBAPP // ⚠️ not caught in std::thread teste(testCurrent); => crashes WebApp
     if (throwing)
         throw error;
-        // throw Error(error);
+    // throw Error(error);
 #endif
     return -1;
 }
