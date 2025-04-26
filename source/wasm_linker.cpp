@@ -984,8 +984,9 @@ void Linker::RemoveAllExports() {
         short pos = -1;
         for (short i = 0; i < bin->exports.size();) {
             Export &ex = bin->exports[i];
-            if (ex.kind == ExternalKind::Func and ( ex.name.empty()
-                or not ( ex.name == "wasp_main" or ex.name == "_start" or ex.name == "main"))) {
+            if (ex.kind == ExternalKind::Func and (ex.name.empty()
+                                                   or not(ex.name == "wasp_main" or ex.name == "_start" or ex.name ==
+                                                          "main"))) {
                 bin->exports.remove(i);
                 // do NOT increment i because items shift left
             } else {
