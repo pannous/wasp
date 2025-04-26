@@ -3735,14 +3735,9 @@ void testWaspRuntimeModule() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
     print("💡 starting Current tests 💡");
-    // testWaspRuntimeModule();
+    testWaspRuntimeModule();
     // assert_emit("test42+1", 43); // OK in WASM too?
-#if WASM
-    print("testCurrent DEACTIVATED!");
-    return;
-#else
-    assert_run("test42+1", 43); // OK in WASM too?
-#endif
+
 
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     // testKebabCase(); // needed here:

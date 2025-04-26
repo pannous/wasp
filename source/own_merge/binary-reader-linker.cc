@@ -268,11 +268,13 @@ namespace wabt {
             }
 
             Result BinaryReaderLinker::OnExport(Index index, ExternalKind kind, Index item_index, String name) {
-                binary_->exports.add();
-                Export *export_ = &binary_->exports.back();
-                export_->name = name.data;
+                Export *export_ = new Export();
+                // if(item_index > 524)
+                //     print("⚠️⚠️GOT NAME "s + name); // OK!!  _start …
+                export_->name = name;//.clone();
                 export_->kind = kind;
                 export_->index = item_index;
+                binary_->exports.add(*export_);
                 return Result::Ok;
             }
 

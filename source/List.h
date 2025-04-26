@@ -332,7 +332,8 @@ public:
 
     bool remove(short position) {
         if (position < 0 or size_ <= 0 or position >= size_)return false;
-        memmove((void *) (items + position), (void *) (items + position + 1), (size_ - position) * sizeof(S));
+        if (position < size_ - 1)
+            memmove((void *) (items + position), (void *) (items + position + 1), (size_ - position - 1) * sizeof(S));
         size_--;
         return true;
     }
