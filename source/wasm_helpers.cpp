@@ -9,7 +9,7 @@
 
 // call this from builtin _start => wasp_main !
 extern "C" void printNode(smart_pointer_64 node) {
-	print(smartNode(node));
+    print(smartNode(node));
 }
 
 const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm compiled as 'RUNTIME_ONLY'";
@@ -62,7 +62,7 @@ void testCurrent(){}// why??
 // https://stackoverflow.com/questions/49980381/find-the-start-of-heap-using-lld-and-s2wasm
 
 int isalnum0(int c) {
-	return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z');// todo lol
+    return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z'); // todo lol
 }
 
 // todo put to util
@@ -71,9 +71,9 @@ int isalnum0(int c) {
 #endif
 void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
-	//	Backtrace(2);// later, in raise
+    //	Backtrace(2);// later, in raise
 #endif
-	printf("%s", message);
+    printf("%s", message);
 #if WEBAPP
 #endif
 #if WASM
@@ -86,12 +86,12 @@ void error1(chars message, chars file, int line) {
 	put_chars((char *) (message));
 	proc_exit(-1);// wasmtime hack to print backtrace:  exit with invalid exit status outside of [0..126) ;)
 #else
-	if (file)printf("\n%s:%d\n", file, line);
-	raise(message);
+    if (file)printf("\n%s:%d\n", file, line);
+    raise(message);
 #endif
 #if not WEBAPP
-//	if (throwing)
-	throw message; // [[noreturn]] should not return
+    //	if (throwing)
+    throw message; // [[noreturn]] should not return
 #else
     proc_exit(-1);
     throw message;
@@ -100,29 +100,29 @@ void error1(chars message, chars file, int line) {
 
 
 void newline() {
-	put_chars("\n", 1);
-//    put_char('\n');
+    put_chars("\n", 1);
+    //    put_char('\n');
 }
 
 void info(chars msg) {
-	if (not tracing)return;// todo finer levels!
+    if (not tracing)return; // todo finer levels!
 #if not RELEASE
-	print(msg);
+    print(msg);
 #endif
 }
 
 void warn(chars warning) {
-	print(warning);
+    print(warning);
 }
 
 void warn(String warning) {
 #if not RELEASE
-	printf("%s\n", warning.data);
+    printf("%s\n", warning.data);
 #endif
 }
 
 void warning(chars warning) {
-	print(warning);// for now
+    print(warning); // for now
 }
 
 int raise(chars error) {
@@ -131,13 +131,13 @@ int raise(chars error) {
 	put_chars((char *) error);
 	put_chars("\n");
 #endif
-	if (panicking)
-		proc_exit(-1);
+    if (panicking)
+        proc_exit(-1);
 #if not WEBAPP // ⚠️ not caught in std::thread teste(testCurrent); => crashes WebApp
-	if (throwing)
-		throw error;
+    if (throwing)
+        throw error;
 #endif
-	return -1;
+    return -1;
 }
 
 
@@ -146,9 +146,10 @@ int raise(chars error) {
 // https://developer.fermyon.com/wasm-languages/c
 // >> https://deislabs.io/posts/introducing-wagi-easiest-way-to-build-webassembly-microservices/ <<
 // wrapper to serve functions in wasp
-void serve(chars path = "") { // todo called from _start !
+void serve(chars path = "") {
+    // todo called from _start !
     if (getenv("SERVER_SOFTWARE"))
-        printf("Content-Type: text/plain\n\n");// todo html
+        printf("Content-Type: text/plain\n\n"); // todo html
     const char *p = getenv("QUERY_STRING");
     String query = p;
     Strings queries = query.split("&");
@@ -161,8 +162,8 @@ void serve(chars path = "") { // todo called from _start !
         }
     }
     // todo: call wasp function here
-//    auto args=params;
-//    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
+    //    auto args=params;
+    //    smart_pointer_32 result = main(args.size(), (char **) args.capacity /*hack ;)*/);
     printf("Hello, World!\n");
 }
 
@@ -211,13 +212,13 @@ double sqrt1(double a) {
 	__asm("local.set 0");
 	return a;
 #else
-	return sqrt(a);
+    return sqrt(a);
 #endif
 }
 
 // todo: remove this useless test function
 int square(int a) {
-	return a * a;
+    return a * a;
 }
 
 #if NO_TESTS

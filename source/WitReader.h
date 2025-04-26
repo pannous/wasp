@@ -13,26 +13,26 @@ Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module
 
 // https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md
 static List<String> wit_keywords = {
-        "world",
-        "module",
-        "static",
-        "interface",
-        "type",
-        "resource",
-        "record",
-        "func",
-        "variant",
-        "flags",
-        "enum",
-        "tuple",
-        "union",
-        "future",
-        "stream",
-        "option",
-        "char",
-        "u8", "u16", "u32", "u64",
-        "s8", "s16", "s32", "s64",
-        "float32", "float64",
+    "world",
+    "module",
+    "static",
+    "interface",
+    "type",
+    "resource",
+    "record",
+    "func",
+    "variant",
+    "flags",
+    "enum",
+    "tuple",
+    "union",
+    "future",
+    "stream",
+    "option",
+    "char",
+    "u8", "u16", "u32", "u64",
+    "s8", "s16", "s32", "s64",
+    "float32", "float64",
 };
 
 /*
@@ -92,25 +92,25 @@ class WitReader {
             if (node.length == 2)
                 node.value.node = &node[0];
             else {
-                warn("no type");// bug
+                warn("no type"); // bug
                 return alias;
             }
-//                error("no type");
+            //                error("no type");
         }
         Node &type = analyzeType(node.value.node);
         if (types.has(type.name))
             type = *types[type.name];
         else {
-            type.kind = clazz;// losing generics, only in meta
+            type.kind = clazz; // losing generics, only in meta
             types.add(type.name, type.clone());
         }
-//        Node &alias = node.from(3); // dataMode=false
+        //        Node &alias = node.from(3); // dataMode=false
         alias.kind = clazz;
-//        if(!type["aliases"].has(alias.name))
+        //        if(!type["aliases"].has(alias.name))
         type.metas()["aliases"].add(alias);
         String &name = alias.name;
         if (!types.has(name))
-            types.add(name, type.clone());// direct mapping!
+            types.add(name, type.clone()); // direct mapping!
         else if (types[name] != type)
             error(""s + name + " already aliased to " + types[name]->name + "! Can't remap to " + type.name);
 
@@ -131,7 +131,7 @@ class WitReader {
             member.kind = fields;
         }
         if (!types.has(resource.name))
-            types.add(resource.name, resource.clone());// direct mapping!
+            types.add(resource.name, resource.clone()); // direct mapping!
         else if (types[resource.name] != resource)
             error("resource already known:\n"s + resource.serialize());
         else warn(("resource already known: "s + resource.name));
@@ -159,19 +159,19 @@ class WitReader {
         Function modulHolder;
         modulHolder.module = &mod;
         for (auto field: interface) {
-//            Node &member =
+            //            Node &member =
             analyze(field, modulHolder);
 
-//            Node &member = analyzeWit(field);
-//            member.kind = fields;
+            //            Node &member = analyzeWit(field);
+            //            member.kind = fields;
         }
-//        interface.kind = clazz;// we don't distinguish between prototype classes with/without fields
-//        if (!types.has(interface.name))
-//            types.add(interface.name, interface.clone());// direct mapping!
-//        else if (types[interface.name] != interface)
-//            error("interface already known:\n"s + interface.serialize());
-//        else
-//            warn("interface already known: "s + interface.name);
+        //        interface.kind = clazz;// we don't distinguish between prototype classes with/without fields
+        //        if (!types.has(interface.name))
+        //            types.add(interface.name, interface.clone());// direct mapping!
+        //        else if (types[interface.name] != interface)
+        //            error("interface already known:\n"s + interface.serialize());
+        //        else
+        //            warn("interface already known: "s + interface.name);
         // todo: module namespacing ,
         //  fuzzing?
 
@@ -181,18 +181,19 @@ class WitReader {
     }
 
     Node &readEnum(Node &node, Kind kind) {
-        if (node.length == 0)return node;/* enum %bool { %false, %true, } nonsense */
+        if (node.length == 0)return node; /* enum %bool { %false, %true, } nonsense */
         Node &enuma = node[1];
         String &name = enuma.name;
         enuma.kind = kind;
         if (not types.has(name))
             types.add(name, enuma.clone(true));
         else if (types[name] !=
-                 enuma) { // todo other-colors(orange purple black {}) ≠ other-colors(orange:0 purple:1 black:2 0)
+                 enuma) {
+            // todo other-colors(orange purple black {}) ≠ other-colors(orange:0 purple:1 black:2 0)
             warn("different enum already known:\n"s + enuma.serialize() + "\n≠\n" + types[name]->serialize());
             return *types[name];
         } else {
-            warn("enum already known: "s + name);// ok, same layout
+            warn("enum already known: "s + name); // ok, same layout
             return *types[name];
         }
         enuma = *types[name]; // switch to clone (be sure to be long living)
@@ -205,7 +206,7 @@ class WitReader {
             if (name.empty())
                 continue; // todo fix in valueNode
             if (kind == flags) {
-                field.value.longy = value;// for boolean option1 and option2 …
+                field.value.longy = value; // for boolean option1 and option2 …
                 value *= 2;
             } else
                 field.value.longy = value++;
@@ -213,8 +214,10 @@ class WitReader {
 #ifndef RUNTIME_ONLY
             addGlobal(field);
             String &namespaced = enuma.name + "." + field.name;
-            globals.add(namespaced, Global{globals.count(), field.name, mapType(field),
-                                           &field});// options.ok vs result.ok … to avoid name clashing
+            globals.add(namespaced, Global{
+                            globals.count(), field.name, mapType(field),
+                            &field
+                        }); // options.ok vs result.ok … to avoid name clashing
 #endif
         }
         trace("\nwit enum/flags/option/variant:");
@@ -247,15 +250,15 @@ class WitReader {
             name = node.name = node[1].name;
         Node *func = node.value.node;
         if (not functions.has(name))
-            functions.add(name, {.name=name});// todo …
+            functions.add(name, {.name = name}); // todo …
         if (!func) {
-            node.setKind(functor).setValue({.data=&functions[name]});
-            return node;// with empty body
-//            error("missing func");
+            node.setKind(functor).setValue({.data = &functions[name]});
+            return node; // with empty body
+            //            error("missing func");
         }
         Node returns = func->values();
         Module *mod = current_module.size() > 0 ? current_module.last() : 0;
-//        body.children = func->children;
+        //        body.children = func->children;
         trace("\nwit func signature:");
         trace(name);
         trace(returns);
@@ -265,11 +268,11 @@ class WitReader {
 #else
         return funcDeclaration(name, node, NUL, &returns, mod);
 #endif
-//        return *func;
+        //        return *func;
     }
 
     Node &readModule(Node &node) {
-//        if (node.length < 2) todow("empty world");
+        //        if (node.length < 2) todow("empty world");
         Node &world = node.last();
         Module &mod = findOrCreateModule(world.name);
         current_module.add(&mod);
@@ -278,8 +281,8 @@ class WitReader {
         world.value.module = &mod;
         world.kind = modul;
         for (auto field: world) {
-//            Node &member = analyze(field, modulHolder);
-//            Node &member =
+            //            Node &member = analyze(field, modulHolder);
+            //            Node &member =
             analyzeWit(field);
         }
         trace("\nwit module:");
@@ -296,17 +299,16 @@ class WitReader {
         Signature signature;
         signature.functions.add(&fun);
         for (int i = 1; i < node.length; ++i) {
-//            Node &arg = node[i];
-//            if(arg.name)
+            //            Node &arg = node[i];
+            //            if(arg.name)
         }
         return func;
     }
 
 public:
-
     Node &analyzeWit(Node &node) {
         if (node.kind == enums)
-            return node;// how did we get here?
+            return node; // how did we get here?
         Node &first = node.first();
         bool keys = node.kind == key or (node.kind == groups and node.length == 2);
         keys = keys or (node.length == 3 and node[2].name == "interface");
@@ -318,7 +320,7 @@ public:
         if (entry == "type")
             return readType(node);
         if (entry == "@witx") {
-//            node.remove(0, 0);
+            //            node.remove(0, 0);
         } else if (entry == "@interface") {
             if (node.length > 1 and node[1] == "func")
                 return readFunc(node);
@@ -342,8 +344,8 @@ public:
         if (entry.empty())
             entry = n.first().name;
         if (entry == "@witx")
-            return analyzeWitEntry(n.from(1));//skip
-//        if (n.length == 0)n.add(n.next).add(n.next);// todo: oterh ;)
+            return analyzeWitEntry(n.from(1)); //skip
+        //        if (n.length == 0)n.add(n.next).add(n.next);// todo: oterh ;)
         if (entry == "static")
             if (n.length == 0)return NUL;
             else return readFunc(n);
@@ -358,7 +360,7 @@ public:
         } else if (entry == "enum") {
             return readEnum(n, enums);
         } else if (entry == "option") {
-//                todo("ignore, since all node_pointer are optionals by default unless marked as required!")
+            //                todo("ignore, since all node_pointer are optionals by default unless marked as required!")
         } else if (entry == "world") {
             return readModule(n);
         } else if (entry == "module") {
@@ -367,12 +369,13 @@ public:
             return readModule(n);
         } else if (entry == "interface") {
             return readModule(n);
-//            return readInterface(n);
+            //            return readInterface(n);
         } else if (entry == "record") {
             return readRecord(n);
         } else if (entry == "func") {
             return readFunc(n);
-        } else if (n.values().name == "func") { // todo what is this? js style? current-user: func() -> string
+        } else if (n.values().name == "func") {
+            // todo what is this? js style? current-user: func() -> string
             return readFunc(n);
         } else if (n.kind == key and n.value.node->name == "func") {
             return readFunc(n);
@@ -380,7 +383,7 @@ public:
             warn("wit % nonsense "s + n.serialize());
         } else if (n.kind == groups) {
             if (n.first().name == "default")
-                return analyzeWitEntry(n.last());// default export interface …
+                return analyzeWitEntry(n.last()); // default export interface …
             for (Node &c: n)
                 c = analyzeWit(c);
             return n;
@@ -393,22 +396,21 @@ public:
 
     Node &read(String file) {
         ParserOptions options{
-                .data_mode = true, // treat = as : (type external-dep)=string
-//                .data_mode = false, // keep = as expression
-                .arrow = true,
-                .dollar_names=true,
-                .percent_names=true,
-                .at_names = true,
-                .use_tags = true,
-                .use_generics=true,
-                .kebab_case = true,
-                .kebab_case_plus = true,
-                .space_brace = true,
+            .data_mode = true, // treat = as : (type external-dep)=string
+            //                .data_mode = false, // keep = as expression
+            .arrow = true,
+            .dollar_names = true,
+            .percent_names = true,
+            .at_names = true,
+            .use_tags = true,
+            .use_generics = true,
+            .kebab_case = true,
+            .kebab_case_plus = true,
+            .space_brace = true,
         };
         Node &node = parse(file.data, options);
         return analyzeWit(node);
     }
-
 };
 
 

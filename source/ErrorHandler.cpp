@@ -69,12 +69,12 @@ typedef char const *chars;
 
 // NICE, BREAKPOINT WORKS!!!
 static void signal_segv(int signum, siginfo_t *info, void *ptr) {
-	static chars si_codes[4] = {"", "SEGV_MAPERR", "SEGV_ACCERR", "SIGABRT"};
-	int i, f = 0;
-	ucontext_t *ucontext = (ucontext_t *) ptr;
-	Dl_info dlinfo;
-	void **bp = 0;
-	void *ip = 0;
+    static chars si_codes[4] = {"", "SEGV_MAPERR", "SEGV_ACCERR", "SIGABRT"};
+    int i, f = 0;
+    ucontext_t *ucontext = (ucontext_t *) ptr;
+    Dl_info dlinfo;
+    void **bp = 0;
+    void *ip = 0;
 #ifdef HAS_ULSLIB
 	//#ifndef MAC
 		sigsegv_outp("Segmentation Fault!");
@@ -138,8 +138,9 @@ static void signal_segv(int signum, siginfo_t *info, void *ptr) {
 		sigsegv_outp("Not printing stack strace.");
 #endif
 #endif
-//	_exit(-1);
+    //	_exit(-1);
 }
+
 // Alternative: turn SIGSEGV into c++ exception https://stackoverflow.com/questions/2350489/how-to-catch-segmentation-fault-in-linux
 // Alternative: check if pointer is 'good' in advance … use rarely!!
 
@@ -148,22 +149,22 @@ static void signal_segv(int signum, siginfo_t *info, void *ptr) {
 static void handler(int sig, siginfo_t *si, void *context) {
     printf("Got SIGSEGV at address: 0x%lx\n", (unsigned long) si->si_addr);
     printf("Implements the handler only\n");
-//	Backtrace();
+    //	Backtrace();
 }
 
 
 static void __attribute__((constructor)) setup_sigsegv() {
-	struct sigaction action;
-	memset(&action, 0, sizeof(action));
-	action.sa_sigaction = signal_segv;
-	action.sa_flags = SA_SIGINFO;
-	if (sigaction(SIGSEGV, &action, NULL) < 0)
-		perror("sigaction");
+    struct sigaction action;
+    memset(&action, 0, sizeof(action));
+    action.sa_sigaction = signal_segv;
+    action.sa_flags = SA_SIGINFO;
+    if (sigaction(SIGSEGV, &action, NULL) < 0)
+        perror("sigaction");
 }
 
 
 void register_global_signal_exception_handler() {
-	setup_sigsegv();
+    setup_sigsegv();
 }
 
 #endif

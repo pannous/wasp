@@ -59,5 +59,4 @@ extern "C" {
 //    exit(0);
 //    // __cxa_throw never returns
 //}
-
 } // extern "C"

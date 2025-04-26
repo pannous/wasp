@@ -39,8 +39,8 @@ bool eq(chars dest, chars src, int length) {
     if (length == 0)return !src[0] and !dest[0];
     if (dest[0] == 0)return !src[0];
     if (src[0] == 0)return !dest[0];
-//	be sure check to src.length == dest.length before:
-//	length>0 forces comparison of reference strings terminated by length, not by 0!
+    //	be sure check to src.length == dest.length before:
+    //	length>0 forces comparison of reference strings terminated by length, not by 0!
     if (length < 0 and strlen(dest) != strlen(src))
         return false;
     int i = 0;
@@ -54,20 +54,21 @@ bool eq(chars dest, chars src, int length) {
             return false;
         i++;
     }
-    if (length > 0 and src[i] and not dest[i])// reference strings must be ≠0 for whole length
+    if (length > 0 and src[i] and not dest[i]) // reference strings must be ≠0 for whole length
         return false;
     return true;
 }
 
 // needs manual 0 termination, or copy with length + 1
-void strcpy2(char *dest, chars src, int length) {// =-1
+void strcpy2(char *dest, chars src, int length) {
+    // =-1
     if (!dest || !src)
         return;
     int i = 0;
     if (length < 0)length = strlen(src);
     if (length <= 0)return;
-//	if(strlen(src)<length)error(string("Illegal strcpy2 length"));// could be filled with 0 :(
-//	if(strlen(dest)<length)error("Illegal strcpy2 length"_s);// could be filled with 0 :(
+    //	if(strlen(src)<length)error(string("Illegal strcpy2 length"));// could be filled with 0 :(
+    //	if(strlen(dest)<length)error("Illegal strcpy2 length"_s);// could be filled with 0 :(
     while (char c = src[i]) {
         if (length-- == 0)break;
         dest[i] = c;
@@ -132,13 +133,17 @@ Some start with 1…9 missing 0
  */
 // todo 0x2080, 0x2070 subscript OPERATOR vs x²⁺³ == x⁵
 // unicode ranges 0...9
-static int zeros[] = {0x1D7F6, 0x1D7EC, 0x1D7E2, 0x1D7D8, 0x1D7CE, 0x11066, 0x1810, 0x17E0, 0x1040, 0x0F20, 0x0ED0,
-                      0x0E50,
-                      0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0, 0};
+static int zeros[] = {
+    0x1D7F6, 0x1D7EC, 0x1D7E2, 0x1D7D8, 0x1D7CE, 0x11066, 0x1810, 0x17E0, 0x1040, 0x0F20, 0x0ED0,
+    0x0E50,
+    0x0CE6, 0x0C66, 0x0BE7, 0x0B66, 0x0AE6, 0x09E6, 0x0966, 0x06F0, 0x0660, 0, 0
+};
 // unicode ranges 1...9
-static int ones[] = {0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 0x102EA, 0x10858, 0x10916,
-                     0x10320,
-                     0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0, 0};
+static int ones[] = {
+    0x278A, 0x2780, 0x2776, 0x2488, 0x2474, 0x2460, 0x11052, 0x10107, 0x102EA, 0x10858, 0x10916,
+    0x10320,
+    0x1D360, 0x102E1, 0x3021, 0x2170, 0x2160, 0x1372, 0x2469, 0, 0
+};
 
 // unlike atoi0 returns -1 if not a digit!
 int atoi1(codepoint c) {
@@ -154,7 +159,7 @@ int atoi1(codepoint c) {
     while (ones[++offset]) {
         int k = ones[offset];
         short n = c - k + 1;
-        if (n >= 1 and n <= 9)// most dont have #10
+        if (n >= 1 and n <= 9) // most dont have #10
             return n;
     }
     return -1;
@@ -173,7 +178,7 @@ int64 parseLong(chars str) {
     while (*str) {
         int64 n;
         short len;
-        n = atoi1(decode_unicode_character(str, &len));// inline!
+        n = atoi1(decode_unicode_character(str, &len)); // inline!
         if (n < 0 or n > 9)break;
         str += len;
         if (k < 0)k = 0;
@@ -198,7 +203,7 @@ int atoi(char *s) {
 //extern "C" long double __floatditf (long i); // long double is float128!! we don't want that!
 
 double parseDouble(chars string) {
-// __extenddftf2
+    // __extenddftf2
     double result = 0.0;
     if (!string) return result;
 
@@ -241,10 +246,10 @@ char *formatLongWithBase(int64 num, int base = 10) {
     if (base == 16)return hex(num);
     // length 22 -> put(num)/2+2 for base 10
     static char str[23];
-//    char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
-//	int addr=(int)(int64)str;
-//	if(addr<0 or addr>memory_size)
-//		error("OUT OF MEMORY");
+    //    char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
+    //	int addr=(int)(int64)str;
+    //	if(addr<0 or addr>memory_size)
+    //		error("OUT OF MEMORY");
     int len = 0;
     bool isNegative = false;
     /* Handle 0 explicitely, otherwise empty string is printed for 0 */
@@ -282,25 +287,27 @@ char *ltoa(int64 num) {
     return formatLongWithBase(num, 10);
 }
 
-char *itoa0(int64 num) {// todo remove once you know the right call
+char *itoa0(int64 num) {
+    // todo remove once you know the right call
     return formatLongWithBase(num, 10);
 }
 
 //#define pow(val,exp)
-chars formatRealWithBaseAndPrecision(double num, int base = 10, int digits_after_zero = 4) {/*significant_digits*/
-//	int p = powi(base,digits_after_zero+1);
+chars formatRealWithBaseAndPrecision(double num, int base = 10, int digits_after_zero = 4) {
+    /*significant_digits*/
+    //	int p = powi(base,digits_after_zero+1);
     auto remainder = std::abs(num) - std::abs(int64(num));
-//	auto remainder = abs_f(num) - abs_l(int64(num));
-//	auto remainder = itoa0(abs(int((num - (int64) num) * p)), base);
+    //	auto remainder = abs_f(num) - abs_l(int64(num));
+    //	auto remainder = itoa0(abs(int((num - (int64) num) * p)), base);
     chars f = concat(formatLongWithBase(int(num), base), ".");
-//	significant_digits-=strlen(f)-1
+    //	significant_digits-=strlen(f)-1
     while (digits_after_zero-- > 0) {
         remainder *= base;
         auto digit = formatLongWithBase(int(remainder), base);
         remainder -= int(remainder);
         f = concat(f, digit);
     }
-    int len = strlen(f);// cut trailing 0 : 1.1000 -> 1.1
+    int len = strlen(f); // cut trailing 0 : 1.1000 -> 1.1
     for (int i = 1; i < len; ++i) {
         if (f[len - i] == '0') ((char *) f)[len - i] = 0;
         else break;
@@ -308,12 +315,14 @@ chars formatRealWithBaseAndPrecision(double num, int base = 10, int digits_after
     return f;
 }
 
-chars formatRealWithSignificantDigits(double num, int digits_after_zero = 4) {/*significant_digits*/
+chars formatRealWithSignificantDigits(double num, int digits_after_zero = 4) {
+    /*significant_digits*/
     return formatRealWithBaseAndPrecision(num, 10, digits_after_zero);
 }
 
 // todo: alias elsewhere
-extern "C" chars formatReal(double num) {/*significant_digits*/
+extern "C" chars formatReal(double num) {
+    /*significant_digits*/
     return formatRealWithBaseAndPrecision(num, 10, 4);
 }
 
@@ -331,7 +340,7 @@ chars ftoa2(float num, int significant_digits) {
         num *= 10;
         exp--;
     }
-    char *f = static_cast<char *>(malloc(significant_digits + 8));// -123.4E-100\0
+    char *f = static_cast<char *>(malloc(significant_digits + 8)); // -123.4E-100\0
     int pos = 0;
     if (num < 0)f[pos++] = '-';
     f[pos++] = '0' + int(num);
@@ -343,13 +352,13 @@ chars ftoa2(float num, int significant_digits) {
     }
     while (pos > 0 and f[pos] == '0')f[pos--] = 0;
     f[pos++] = 'E';
-//	strcpy2(&f[pos],"×10^");
+    //	strcpy2(&f[pos],"×10^");
     strcpy2(&f[pos], formatLong(exp));
     return f;
 }
 
 void reverseInPlace(char *str, int len) {
-    if(len<=0)len = strlen(str);
+    if (len <= 0)len = strlen(str);
     for (int i = 0; i < len / 2; i++) {
         char t = str[len - 1 - i];
         str[len - 1 - i] = str[i];
@@ -378,9 +387,6 @@ class Node;
 //#import "Node.cpp"
 
 
-
-
-
 //void put(Node &node) {
 //	Node node2 = node;
 //	put(node2);
@@ -407,12 +413,14 @@ class Node;
 //String operator "" _s(chars c, int x) {// invalid literal operator parameter type 'int', did you mean 'unsigned number'
 //	return String(c);
 //}
-String operator "" _s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
+String operator "" _s(chars c, unsigned long t) {
+    // function signature contains illegal type WHYY??
     return String(c, (int) t);
 }
 
 // ""s is reserved for std::string or future standardization
-String operator "" s(chars c, unsigned long t) {// function signature contains illegal type WHYY??
+String operator "" s(chars c, unsigned long t) {
+    // function signature contains illegal type WHYY??
     return String(c, (int) t);
 }
 
@@ -445,12 +453,13 @@ String s(chars &s) {
 #pragma clang diagnostic pop
 
 // can mostly be omitted via operator bool(){} / operator char *() const { return data; }!!
-bool String::empty() const {//this==0 in testMarkMulti!
-//	if(memory_size and data and (int64) data > memory_size/*bug!*/)
-////		return true;
+bool String::empty() const {
+    //this==0 in testMarkMulti!
+    //	if(memory_size and data and (int64) data > memory_size/*bug!*/)
+    ////		return true;
     if (this == 0)return true;
     if (codepoints and codepoint_count > 0)return false;
-    if ((int64) this < 8)return true;// zero page broken object hack
+    if ((int64) this < 8)return true; // zero page broken object hack
     if (length == 0)return true;
     if (this->data == 0)return true;
     return false;
@@ -534,7 +543,7 @@ short utf8_byte_count(codepoint ucs_character) {
     if (ucs_character <= 0xFFFF) return 3;
     if (ucs_character <= 0x1FFFFF) return 4;
     if (ucs_character <= 0x3FFFFFF) return 5;
-// if (ucs_character <= 0x7FFFFFFF)
+    // if (ucs_character <= 0x7FFFFFFF)
     return 6;
 }
 
@@ -556,7 +565,7 @@ codepoint *String::extractCodepoints(bool again) {
     codepoint_count = 0;
     codepoints = (codepoint *) calloc(length, sizeof(codepoint));
     for (int i = 0; i < length;) {
-        short count;// = utf8_byte_count(data[i]);
+        short count; // = utf8_byte_count(data[i]);
         codepoints[codepoint_count++] = decode_unicode_character(&data[i], &count);
         i += count;
     }
@@ -564,14 +573,14 @@ codepoint *String::extractCodepoints(bool again) {
 }
 
 bool String::startsWith(chars string, int from) {
-	int len1 = strlen(string);
-	if (len1 > length)return false;
-	return eq(data + from, string, len1);
+    int len1 = strlen(string);
+    if (len1 > length)return false;
+    return eq(data + from, string, len1);
 }
 
 bool String::endsWith(const char *string) {
     int len1 = strlen(string);
-    length = strlen(data);// todo LOST WHEN?
+    length = strlen(data); // todo LOST WHEN?
     return len1 <= length and eq(data + length - len1, string, len1);
 }
 
@@ -586,13 +595,13 @@ List<String> String::split(const char *string) {
     for (int i = 0; i < length; i++) {
         if (eq(data + i, string, len1)) {
             String part = String(data + start, i - start, !debug);
-            parts.add(part);// copy by value, hopefully c++ optimizer is smart enough ;)
+            parts.add(part); // copy by value, hopefully c++ optimizer is smart enough ;)
             start = i + len1;
         }
     }
     String rest = String(data + start, -1, true);
     parts.add(rest);
-    return parts;//.clone();  return by copy value ok (list items[] separate)
+    return parts; //.clone();  return by copy value ok (list items[] separate)
 }
 
 String String::trim() {
@@ -600,12 +609,12 @@ String String::trim() {
     while (start < length and (data[start] == ' ' or data[start] == '\t' or data[start] == '\n'))start++;
     int end = length - 1;
     while (0 <= end and (data[end] == ' ' or data[end] == '\n'))end--;
-    return String(data + start, end - start + 1, true);// share ok?
+    return String(data + start, end - start + 1, true); // share ok?
 }
 
 int64 String::hash() const {
     return wordHash(data, min(length, 20));
-//	return (int64)data;// only conflict: shared substring(0,i);
+    //	return (int64)data;// only conflict: shared substring(0,i);
 }
 
 
@@ -616,18 +625,18 @@ String &String::lower() {
 }
 
 void String::shift(int i) {
-	while (length > 0 and i-- > 0) {
-		data++;
-		length--;
-	}
+    while (length > 0 and i-- > 0) {
+        data++;
+        length--;
+    }
 }
 
 String String::from(const char *string) {
-	return substring(this->indexOf(string) + strlen(string));
+    return substring(this->indexOf(string) + strlen(string));
 }
 
 String &String::neu(const char *string) {
-	return *new String(string);
+    return *new String(string);
 }
 
 [[nodiscard]]
@@ -639,14 +648,14 @@ String &String::replaceAt(size_t at, int len, String with) {
 
 void String::save(const char *file) {
 #if not WASM or WASI
-	FILE *stream = fopen(file, "wb");
-	fwrite(data, sizeof(byte), length, stream);
-	fclose(stream);
+    FILE *stream = fopen(file, "wb");
+    fwrite(data, sizeof(byte), length, stream);
+    fclose(stream);
 #endif
 }
 
 void error1(String message, chars file, int line) {
-	error1(message.data, file, line);
+    error1(message.data, file, line);
 }
 
 
@@ -668,7 +677,7 @@ bool empty(String *s) { return not s or s->empty(); }
 bool empty(chars s) { return not s or strlen(s) == 0; }
 
 bool empty(codepoint s) {
-    return 0 <= s and s <= ' ';// not s or s == ' ' or s == '\n' or s == '\t' or s==0x0F or s==0x0E;
+    return 0 <= s and s <= ' '; // not s or s == ' ' or s == '\n' or s == '\t' or s==0x0F or s==0x0E;
 }
 
 
@@ -701,14 +710,14 @@ void print(const Node node) {
 
 //bool skip_newline = false;
 void print(int l) {
-	put_chars(formatLong(l));
+    put_chars(formatLong(l));
 }
 
 //void print(long l) {
 //    put_chars(formatLong(l));
 //}
 void print(int64 l) {
-	put_chars(formatLong(l));
+    put_chars(formatLong(l));
 }
 
 void print(Primitive l) {
@@ -716,24 +725,24 @@ void print(Primitive l) {
 }
 
 void print(double l) {
-	put_chars(formatReal(l));
+    put_chars(formatReal(l));
 }
 
 void print(size_t l) {
-	put_chars(formatLong(l));
+    put_chars(formatLong(l));
 }
 
 void print(char c) {
-	put_char(c);
-	newline();
+    put_char(c);
+    newline();
 }
 
 void print(char const *s) {
-	put_chars(s, strlen(s));
+    put_chars(s, strlen(s));
 }
 
 void print(String *s) {
-    if (s->shared_reference)print(s->clone());// add \0 !!
+    if (s->shared_reference)print(s->clone()); // add \0 !!
     else if (s)put(s->data);
 }
 
@@ -751,7 +760,7 @@ void print(Arg &arg) {
     print(arg.type);
 }
 
-void print(Signature& signature) {
+void print(Signature &signature) {
     for (auto &type: signature.parameters) {
         print(type);
 #if not WASM
@@ -765,70 +774,72 @@ void print(Signature& signature) {
         printf(" ");
 #endif
     }
-//        print(signature.debug_name);
+    //        print(signature.debug_name);
 }
-    void print(String s) {
-        put_chars(s.data, s.length);
-//#if not WASM
-//        newline();
-//#endif
-    }
 
-    void println(String s) {
-        put_chars(s.data, s.length);
-        newline();
-    }
+void print(String s) {
+    put_chars(s.data, s.length);
+    //#if not WASM
+    //        newline();
+    //#endif
+}
 
-
-    void println(int64 s) {
-        put_chars(formatLong(s));
-        newline();
-    }
+void println(String s) {
+    put_chars(s.data, s.length);
+    newline();
+}
 
 
-    void println(Node &s) {
-        println(s.serialize());
-    }
+void println(int64 s) {
+    put_chars(formatLong(s));
+    newline();
+}
+
+
+void println(Node &s) {
+    println(s.serialize());
+}
 
 // don't extern "C", else demangle can't reflect … see put_string
-    void put(String s) {
-        put_chars(s.data, s.length);
-        newline();
-    }
+void put(String s) {
+    put_chars(s.data, s.length);
+    newline();
+}
 
-    void print(char *str) {
+void print(char *str) {
 #if MY_WASI
         puts(str);
 #else
-        printf("%s", str);
+    printf("%s", str);
 #endif
-    }
+}
 
-    String *EMPTY_STRING;
+String *EMPTY_STRING;
 
-    String *empty_string() {
-        if (!EMPTY_STRING)EMPTY_STRING = new String();
-        return EMPTY_STRING;
-    }
+String *empty_string() {
+    if (!EMPTY_STRING)EMPTY_STRING = new String();
+    return EMPTY_STRING;
+}
 
 
 // starting with 1!
 //inline haha you can't inline wasm
-    [[maybe_unused]]
-    codepoint getChar(chars string, int nr) {
-        if (nr < 1)error("#index starts with 1, use [] if you want 0 indexing");
-        return String(string).codepointAt(nr - 1);
-        // todo codepoint
-//    int len = strlen(string);
-//    if (nr < 1)error("#index starts with 1, use [] if you want 0 indexing");
-//    if (nr > len)error("index out of bounds %i>%i "s % nr % len);
-//    return string[nr - 1 % len];
-    }
+[[maybe_unused]]
+codepoint getChar(chars string, int nr) {
+    if (nr < 1)
+        error("#index starts with 1, use [] if you want 0 indexing");
+    return String(string).codepointAt(nr - 1);
+    // todo codepoint
+    //    int len = strlen(string);
+    //    if (nr < 1)error("#index starts with 1, use [] if you want 0 indexing");
+    //    if (nr > len)error("index out of bounds %i>%i "s % nr % len);
+    //    return string[nr - 1 % len];
+}
 
 //extern "C"  // only pointers!
-    String &string(chars chars) { return *new String(chars); }
+String &string(chars chars) { return *new String(chars); }
 
-    extern "C"  // only pointers!
-    String *str(chars chars) {
-        return new String(chars);
-    }
+extern "C" // only pointers!
+String *str(chars chars) {
+    return new String(chars);
+}

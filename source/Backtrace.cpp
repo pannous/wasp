@@ -17,23 +17,23 @@ int addr2line(const char *fname, void *pVoid);
 // ... somewhere inside the bar(int) function that is called recursively:
 
 String Backtrace(int skip = 0, int skipEnd = 1) {
-//	return boost::stacktrace::stacktrace();
+    //	return boost::stacktrace::stacktrace();
 
-// This function produces a stack backtrace with demangled function & method names.
-	void *callstack[128];
-	const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
-	char buf[1024];
-	int nFrames = backtrace(callstack, nMaxFrames);
-	char **symbols = backtrace_symbols(callstack, nFrames);
+    // This function produces a stack backtrace with demangled function & method names.
+    void *callstack[128];
+    const int nMaxFrames = sizeof(callstack) / sizeof(callstack[0]);
+    char buf[1024];
+    int nFrames = backtrace(callstack, nMaxFrames);
+    char **symbols = backtrace_symbols(callstack, nFrames);
 
-	std::ostringstream trace_buf;
-//	trace_buf << "Backtrace:\n";
-	for (int i = skip; i < nFrames - skipEnd; i++) {
-		// skip __libc_start_main _start
-//		printf("%s\n", symbols[i]);
-		Dl_info info;
-		chars name;
-		if (dladdr(callstack[i], &info) && info.dli_sname) {
+    std::ostringstream trace_buf;
+    //	trace_buf << "Backtrace:\n";
+    for (int i = skip; i < nFrames - skipEnd; i++) {
+        // skip __libc_start_main _start
+        //		printf("%s\n", symbols[i]);
+        Dl_info info;
+        chars name;
+        if (dladdr(callstack[i], &info) && info.dli_sname) {
             char *demangled = NULL;
             int status = -1;
             if (i == skip)
@@ -45,10 +45,10 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
             if (contains(demangled, "decltype"))break;
             name = (status == 0) ? demangled : info.dli_sname == 0 ? symbols[i] : info.dli_sname;
             uint64 offset = (char *) callstack[i] - (char *) info.dli_saddr;
-//			int line_nr = addr2line(info.dli_fname, info.dli_saddr);
+            //			int line_nr = addr2line(info.dli_fname, info.dli_saddr);
             snprintf(buf, sizeof(buf), "%-3d %s + %llu @ %p \n", i, name, offset,
-                     info.dli_saddr);// or dli_fbase for function!
-//			snprintf(buf, sizeof(buf), "%s:%d \n", info.dli_fname, line_nr); wasp:42  eXECutable makes no SenSe!
+                     info.dli_saddr); // or dli_fbase for function!
+            //			snprintf(buf, sizeof(buf), "%s:%d \n", info.dli_fname, line_nr); wasp:42  eXECutable makes no SenSe!
         } else {
             snprintf(buf, sizeof(buf), "%-3d %*p %s\n", i, int(2 + sizeof(void *) * 2), callstack[i], symbols[i]);
         }
@@ -61,10 +61,9 @@ String Backtrace(int skip = 0, int skipEnd = 1) {
     auto string = trace_buf.str();
     const char *cStr = string.c_str();
     printf("%s\n", cStr);
-//	printf("/me/dev/script/wasm/wasp/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
+    //	printf("/me/dev/script/wasm/wasp/tests.cpp:196:10 << TODO: correct line use assert_is()\n");
     return String(trace_buf.str().data());
 }
-
 
 
 // with line numbers only on linux /
