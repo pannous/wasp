@@ -768,6 +768,11 @@ void testWasmMemoryIntegrity() {
 }
 
 
+void testSquarePrecedence() {
+    assert_emit("π/2^2", pi / 4);
+    assert_emit("(π/2)^2", pi * pi / 4);
+}
+
 void testSquares() {
     // occasionally breaks in browser!
     assert_emit("square 3", 9);
@@ -777,6 +782,7 @@ void testSquares() {
     assert_emit("3 + square 3", (int64) 12);
     assert_emit("1 - 3 - square 3+4", (int64) -51); // OK!
     assert_emit("square(3*42) > square 2*3", 1)
+    testSquarePrecedence();
 }
 
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
@@ -1659,6 +1665,9 @@ void test_wasm_todos() {
     // is there a situation where a COMPARISON is ambivalent?
     // sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
 }
+
+
+
 
 // SIMILAR AS:
 void testTodoBrowser() {

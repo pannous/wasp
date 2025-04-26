@@ -3609,11 +3609,6 @@ void tests() {
 }
 
 
-void pleaseFix() {
-    assert_emit("π/2^2", pi / 4);
-    assert_emit("(π/2)^2", pi * pi / 4);
-}
-
 void test_new() {
     //    testInclude();
     //    testMatrixOrder();
@@ -3632,7 +3627,7 @@ void test_new() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
-// 2025-03-23 : 5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1
+// 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
     // testKebabCase(); // needed here:
