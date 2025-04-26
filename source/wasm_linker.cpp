@@ -1047,8 +1047,8 @@ void Linker::ResolveSymbols() {
         for (Export &_export: binary->exports) {
             // todo: why not store index directly?
             if (tracing)
-                printf("%s export kind %d '%s' index %d\n", binary->name, (int) _export.kind, _export.name.data,
-                       _export.index);
+                print(""s + binary->name + " export kind " + (int)_export.kind + " '" + _export.name.data + "' index " + _export.index );
+                // printf("%s export kind %d '%s' index %d\n", binary->name, (int) _export.kind, _export.name.data, _export.index);
             if (_export.kind == wabt::ExternalKind::Global) {
                 globals_export_list.add(ExportInfo(&_export, binary));
                 export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
