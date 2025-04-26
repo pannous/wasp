@@ -18,8 +18,8 @@ bool build_module = true; // for funclets … and wasm runtime merge?
 bool build_module = true;
 #endif
 
-// bool debug_reader = tracing;
-bool debug_reader = true;
+bool debug_reader = tracing;
+// bool debug_reader = true;
 
 typedef unsigned char *bytes;
 int pos = 0;
@@ -194,10 +194,14 @@ void parseFuncTypeSection(Code &payload) {
 void parseImportNames(Code &payload) {
     // and TYPES!
     trace("Imports:");
-    for (int i = 0; i < module->import_count and payload.start < payload.length; ++i) {
+    puti(module->import_count);
+    puti(payload.length);
+    int length = payload.length; // shouldn't get modified, but gets CORRUPTED!
+    for (int i = 0; (i < module->import_count) and (payload.start < length); ++i) {
         String &mod = name(payload); // module
         String &name1 = name(payload); // shared is NOT 0 terminated, needs to be 0-terminated now?
-        trace("import %s"s % mod + "." + name1);
+        print("import %s"s % mod + "." + name1);
+        // trace("import %s"s % mod + "." + name1);
         int kind = unsignedLEB128(payload); // func, global, …
         int type = unsignedLEB128(payload); // i32 … for globals
         if (kind == 3 /*global import*/) {
@@ -207,10 +211,11 @@ void parseImportNames(Code &payload) {
             continue;
         }
         Signature &signature = module->funcTypes[type];
-        module->functions[name1].signature.merge(signature);
+        int coi = module->import_count + i;
+        module->functions.add(name1, {.code_index = coi, .call_index = i, .name = name1, .signature = signature});
         module->import_names.add(name1);
     }
-    //	module->signatures = functionSignatures; // todo merge into global functionSignatures, not the other way round!!
+    info("imports DONE");
 }
 
 // Signatures to be consumed in export section
@@ -722,5 +727,6 @@ Module &read_wasm(bytes buffer, int size0) {
     consume(4, (byte *) (moduleVersion));
     consumeSections();
     parseFuncTypeSection(module->functype_data);
+    module->total_func_count = module->code_count + module->import_count;
     return *module;
 }

@@ -189,21 +189,23 @@ public:
         return data + length;
     }
 
-    Code &operator++() {
-        if (length == 0)return *this;
-//		start++;
-        data++;
-        length--;
-        return *this;
-    }
-
-    Code &operator++(int postfix) {
-        if (postfix == 0)postfix = 1;
-        if (length < postfix)return *this;
-        data += postfix;
-        length -= postfix;
-        return *this;
-    }
+//     Code &operator++() {
+    //         if (length == 0)return *this;
+    // //		start++;
+    //         data++;
+    //         length--; // TODO:
+    //         // remaining--;
+    //         return *this;
+    //     }
+    //
+    //     Code &operator++(int postfix) {
+    //         if (postfix == 0)postfix = 1;
+    //         if (length < postfix)return *this;
+    //         data += postfix;
+    //         length -= postfix;
+    //         // remaining-=postfix;
+    //         return *this;
+    //     }
 
     Code &operator+(Code more) { // todo use non-modifying version if …
         return this->push(more);

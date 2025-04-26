@@ -1081,6 +1081,7 @@ function load_runtime_bytes() {
 
 // let compiler link/merge emitted wasm with small runtime
 function copy_runtime_bytes_to_compiler() {
+  syncHeap()
   let length = runtime_bytes.byteLength
   let pointer = HEAP_END
   let src = new Uint8Array(runtime_bytes, 0, length);
@@ -1088,11 +1089,12 @@ function copy_runtime_bytes_to_compiler() {
   dest.set(src) // memcpy ⚠️ todo MAY FUCK UP compiler bytes!!!
   print("HEAP", compiler_exports.getHeapEnd(), HEAP_END);
   HEAP_END += length
+  syncHeap()
   // return // ⚠️
-  compiler_exports.setHeapEnd(HEAP_END) // resync!
-  HEAP_END += 20000000 // extra space for demangle
-  print("HEAP parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
+  HEAP_END += 5000000 // extra space for demangle Todo ⚠️ re-check if parsed Module ≈5MB !
+  print("HEAP BEFORE parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
   compiler_exports.parseRuntime(pointer, length) // sets HEAP_END too!
+  print("HEAP AFTER parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
   syncHeap()
 }
 
