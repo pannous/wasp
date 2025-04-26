@@ -481,7 +481,8 @@ union Type {// 64 bit due to pointer! todo: Type32 i32 union, 4 bytes with speci
         if (this->value < 0x1000)
             error("TODO mapTypeToNode");
 #if WASM
-            return *(Node *) (void *) (int64) this->address;
+        error("Unsafe wasm mapping Type to Node");
+        return *(Node *) (void *) (int64) this->address;
 #else
         error("Unknown mapping Type to Node");
 #endif

@@ -455,9 +455,7 @@ bool isSmartPointer(int64 d) {
 Node smartValue(int64 smartPointer);
 
 #if not WASM
-
 #include <cxxabi.h>
-
 #endif
 
 String demangle(const String &fun) {
