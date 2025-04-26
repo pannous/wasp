@@ -77,7 +77,8 @@ void initSymbols() {
     print("initSymbols");
     ((Node) NIL).name = nil_name;
 #ifdef WASI
-    return;
+    print("no initSymbols in WASI??");
+    return; // ??
 #elif  WASM
 	//	__wasm_call_ctors();??
 		if (True.kind == bools)
@@ -1491,6 +1492,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
     if ((int64) pointer > MAX_MEM)
         error("wasm_node_index outside wasm bounds %x>%x"s % (int) pointer % (int64) MAX_MEM);
 #if WASM
+    warn("WASM direct Node* from pointer");
 	return (Node *) (int64) pointer; // INSIDE wasm code INSIDE wasm linear wasm_memory
 #endif
     if (not wasm_memory)
