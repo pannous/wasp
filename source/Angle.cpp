@@ -1351,6 +1351,8 @@ Module &loadRuntime() {
       error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
     Module &wasp=*module_cache["wasp"s.hash()];
 //    wasp.functions["powi"].signature.returns(int32);
+    if(!libraries.has(&wasp))
+        libraries.add(&wasp);
     return wasp;
 #else
     Module &wasp = read_wasm("wasp-runtime.wasm");

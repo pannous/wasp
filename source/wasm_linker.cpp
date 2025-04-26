@@ -37,6 +37,7 @@ using namespace wabt::link;
 //using wabt::RelocType;
 //using wabt::WriteU32Leb128Raw;
 
+// todo: replace ALL std::pair
 template<class S, class T>
 struct Pair {
     S first;
@@ -470,13 +471,12 @@ Index LinkerInputBinary::RelocateFuncIndex(Index function_index) {
                 //                check_silent(import->foreign_binary);
             }
             offset = import->foreign_binary->function_index_offset; // todo function_index ADDED LATER to offset!
-            LOG_DEBUG("reloc for resolved import %s : new index = %d + %d\n", import->name.data, function_index,
-                      offset);
+            info("reloc for resolved import %s : new index = %d + %d\n"s % import->name.data % function_index % offset);
         } else {
             Index new_index = import->relocated_function_index;
             if (function_index != new_index)
-                LOG_DEBUG("reloc for active import %s: old index = %d, new index = %d\n", import->name.data,
-                      function_index, new_index);
+                info("reloc for active import %s : new index = %d + %d\n"s % import->name.data % function_index %
+                     new_index);
             return new_index;
         }
     }
@@ -1155,9 +1155,9 @@ void Linker::ResolveSymbols() {
                 char *import_name = import.name;
                 char *export_name = exported.name;
 #if not RELEASE
-                printf("LINKED %s:%s import #%d %s to export #%d %s relocated_function_index %d \n", binary->name,
-                       name.data, old_index,
-                       import_name, export_index, export_name, export_number);
+                print("LINKED %s:%s import #%d %s to export #%d %s relocated_function_index %d \n"s % binary->name %
+                      name.data % old_index %
+                      import_name % export_index % export_name % export_number);
 #endif
             } else {
                 // todo all this is done in RelocateFuncIndex !
@@ -1312,7 +1312,7 @@ void Linker::DumpRelocOffsets() {
             LOG_DEBUG(" - imported function offset: %d\n", binary->imported_function_index_offset);
             LOG_DEBUG(" - imported global offset  : %d\n", binary->imported_global_index_offset);
             if (not binary->needs_relocate)
-            error("Binary %s marked as needs_relocate=false, but context forces relocations (imports…)."s %
+                error("Binary %s marked as needs_relocate=false, but context forces relocations (imports…)."s %
                 String(binary->name));
         } else {
             LOG_DEBUG("Relocation info for: %s … NONE! Keeping binary as is.\n", binary->name);
@@ -1410,7 +1410,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
                 //    i32.lt_s
                 //    select)
                 //                ƒ467 _start empty because deleted?
-                warn("current_name.empty ƒ"s + call_index + "!");
+                trace("current_name.empty ƒ"s + call_index + "!");
                 current_name = "ERR";
             }
             //            fun_start = current;// use to create fun_length patches iff block needs leb insert
