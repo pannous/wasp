@@ -1090,7 +1090,7 @@ function copy_runtime_bytes_to_compiler() {
   HEAP_END += length
   // return // ⚠️
   compiler_exports.setHeapEnd(HEAP_END) // resync!
-  HEAP_END += 10000000 // extra space for demangle
+  HEAP_END += 20000000 // extra space for demangle
   print("HEAP parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
   compiler_exports.parseRuntime(pointer, length) // sets HEAP_END too!
   syncHeap()

@@ -645,8 +645,8 @@ void testFunctionDeclaration() {
     check(functions["test"].body);
     check(not(*functions["test"].body != analyze(parse("return a*2"))));
     skip(
-    check(*functions["test"].body == analyze(parse("return a*2"))); // why != ok but == not?
-    check_is(*functions["test"].body, analyze(parse("return a*2")));
+        check(*functions["test"].body == analyze(parse("return a*2"))); // why != ok but == not?
+        check_is(*functions["test"].body, analyze(parse("return a*2")));
     )
 }
 
@@ -3693,7 +3693,11 @@ void testWaspRuntimeModule() {
     print(wasp);
     // check_is(wasp.name, "wasp");
     check(wasp.name.contains("wasp")); // wasp-runtime.wasm in system 'wasp' in js!
-    // check(libraries.size()>0);
+    // addLibrary(wasp);
+#if WASM
+    check(libraries.size()>0);
+    // if it breaks then in WASM too!?
+#endif
     check(wasp.code_count>400);
     check(wasp.data_segments_count>5);
     check(wasp.export_count>wasp.code_count-10);
@@ -3705,7 +3709,7 @@ void testWaspRuntimeModule() {
     // wasp.signatures
     check(wasp.functions.size() > 100);
     check(wasp.functions.has("_Z4powiij"));
-    check(wasp.functions.has("powi"));
+    check(wasp.functions.has("powi"));// ok if not WASM
     check(wasp.functions.has("test42"));
 }
 
@@ -3721,10 +3725,12 @@ void testCurrent() {
     // testKebabCase(); // needed here:
     // assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
     testWaspRuntimeModule();
-    // assert_run("test42+1", 43); // OK in WASM too?
+    assert_run("test42+1", 43); // OK in WASM too?
     // assert_emit("test42+1", 43); // OK in WASM too?
-    // print("testCurrent DEACTIVATED!");
-    // return;
+#if WASM
+    print("testCurrent DEACTIVATED!");
+    return;
+#endif
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     test_new();
     skip(
