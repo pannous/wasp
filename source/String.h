@@ -1064,6 +1064,7 @@ public:
         return -1; //
     }
 
+    // starting with 0 of course
     int lastIndexOf(const char *string) {
         return indexOf(string, 0, true);
     }
