@@ -91,6 +91,7 @@ void error1(chars message, chars file, int line) {
 #endif
 #if not WEBAPP
     //	if (throwing)
+    // throw Error(message); // [[noreturn]] should not return
     throw message; // [[noreturn]] should not return
 #else
     proc_exit(-1);
@@ -136,6 +137,7 @@ int raise(chars error) {
 #if not WEBAPP // ⚠️ not caught in std::thread teste(testCurrent); => crashes WebApp
     if (throwing)
         throw error;
+        // throw Error(error);
 #endif
     return -1;
 }

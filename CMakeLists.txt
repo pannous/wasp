@@ -30,7 +30,7 @@ include(FetchContent) # external projects like webview
 set(STRICT 1) # ALL WARNINGS, AS ERRORS
 #set(SDL 1) # Graphics
 #set(WASM 1) # SET VIA TOOLCHAIN!
-#set(INCLUDE_MERGER 0) # include wasm_linker.cpp
+set(INCLUDE_MERGER 1) # include wasm_linker.cpp
 #set(WABT_MERGE 1) # not the whole WABT though, heavy
 #ADD_DEFINITIONS(-DMULTI_VALUE) # change ABI to always return (value, type) tuple
 #ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
@@ -49,6 +49,11 @@ endif ()
 
 if (SANITIZE)
     message("SANITIZE")
+    add_compile_options(-fsanitize=null)
+    add_compile_options(-fsanitize=bounds) # several allowed
+    add_compile_options(-fsanitize=undefined)
+    add_link_options(-fsanitize=undefined)
+    target_link_libraries(wasp ubsan)
     message("just use lldb -- /Users/me/dev/apps/wasp/cmake-build-debug-sanitize/wasp test; run")
 endif ()
 
@@ -403,7 +408,9 @@ endif ()
 add_compile_options(-Wno-vla-cxx-extension) # allow array[len]
 add_compile_options(-Werror)
 add_compile_options(-Wno-return-type-c-linkage) # allow C functions to return multi-value struct / C++ types
-
+#add_compile_options(-fno-exceptions) # disables exceptions => cannot use 'throw'
+#add_compile_options(-fno-rtti) # disables Run-Time Type Information, ensuring no dynamic type dependencies
+#add_compile_options(-fno-unwind-tables -fno-asynchronous-unwind-tables) # !?!? ----
 
 if (TRACE)
     message("TRACE => tracing=true")

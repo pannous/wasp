@@ -23,6 +23,11 @@ extern "C" void setHeapEnd(byte *neu) {
     heap_end = neu;
 }
 
+// void operator delete(void*, std::align_val_t){
+_LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void* __p, std::align_val_t) _NOEXCEPT{
+    /*lol*/
+}
+
 void free(void *) {
     /*lol*/
 }

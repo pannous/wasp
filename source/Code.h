@@ -1262,6 +1262,13 @@ struct Global {
     bool is_import = false;
     bool is_export = true;
 };
+static void print(Global g) {
+    print("Global");
+    print(g.name);
+    print(g.type);
+    print(g.value);
+    print("\n");
+}
 
 struct Local { // todo: use
 //    bool is_global;
@@ -1275,6 +1282,17 @@ struct Local { // todo: use
     Node *ref;// why still needed?
     int data_pointer = 0;// compile time handling of reference data, e.g. after emitData()
 };
+// void print(Local l) ;
+static void print(Local l) {
+    print("Local");
+    print(l.name);
+    print(l.type);
+    print(l.position);
+    print(l.ref);
+    print(l.data_pointer);
+    print(l.is_param);
+}
+
 
 class Function {
 
@@ -1366,6 +1384,12 @@ public:
         return index;
     }
 };
+
+static void print(Function f) {
+    print("Function");
+    print(f.name);
+    // print(f.signature);
+}
 
 
 #ifndef RUNTIME_ONLY

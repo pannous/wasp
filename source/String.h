@@ -160,9 +160,15 @@ chars ftoa2(double num, int significant_digits = 4);
 
 chars ftoa(double num);
 
-class Error {
+// #include <exception>
+
+class Error { // : public std::exception {
 public:
     char *message;
+
+    // const char *what() const noexcept override { // conforms to std::exception
+    //     return message;
+    // }
 
     Error() {
         message = "error";
@@ -172,10 +178,14 @@ public:
         message = string;
     }
 
-    //		Error(String *string) {
-    //		member access into incomplete type 'String'
-    //		message = string->data;
-    //	}
+    Error(const char *string) {
+        message = (char *) string;
+    }
+
+    // Error(String *string) {
+    //     //		member access into incomplete type 'String'
+    //     message = string->data;
+    // }
 };
 
 class IndexOutOfBounds : ::Error {

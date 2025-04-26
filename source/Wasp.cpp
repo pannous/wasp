@@ -1968,12 +1968,16 @@ int main(int argc, char **argv) {
         //			return 42; // funny, but breaks IDE chaining
         //    } catch (Exception e) { // struct Exception {};
         //        print("Exception (…?)");
-    } catch (chars err) {
+        // } catch (chars err) {
+    } catch (char const *err) {
         print("ERROR");
         print(err);
     } catch (String err) {
         print("ERROR");
         print(err);
+    } catch (const Error& err) {
+        print("ERROR");
+        print(err.message);
     } catch (SyntaxError *err) {
         print("ERROR");
         print(err->data);

@@ -767,7 +767,6 @@ void testWasmMemoryIntegrity() {
     }
 }
 
-
 void testSquarePrecedence() {
     assert_emit("π/2^2", pi / 4);
     assert_emit("(π/2)^2", pi * pi / 4);
@@ -793,10 +792,7 @@ void testOldRandomBugs() {
         assert_emit("x=41;if x>1 then 2 else 3", 2)
         assert_emit("x:41;if x>1 then 2 else 3", 2)
         assert_emit("x:41;if x<1 then 2 else 3", 3)
-
-
         assert_emit("x:41;x+1", 42)
-
         assert_emit("grows := it * 2 ; grows(4)", 8)
         assert_emit("grows:=it*2;grows(4)", 8)
     )
@@ -826,8 +822,6 @@ void testOldRandomBugs() {
     //	check(node[0]["x"]==40)
     //	exit(1);
     assert_emit("3 + √9", (int64) 6);
-
-
     assert_emit("-42", -42)
 }
 
@@ -852,17 +846,18 @@ void testMergeWabt() {
 
 
 void testMergeWabtByHand() {
-    //	merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
-    //wasm
-    //	wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
-    //	wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
-    //	refactor_wasm(module, "b", "neu");
-    //	remove_function(module, "f");
-    //	Module *merged = merge_wasm2(main, module);
-    //	save_wasm(merged);
-    //	int ok=run_wasm(merged);
-    //	int ok=run_wasm("a.wasm");
-    //	check(ok==42);
+#if WABT_MERGE // ?? ;)
+  merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
+  wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
+  wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
+  refactor_wasm(module, "b", "neu");
+  remove_function(module, "f");
+  Module *merged = merge_wasm2(main, module);
+  save_wasm(merged);
+  int ok=run_wasm(merged);
+  int ok=run_wasm("a.wasm");
+  check(ok==42);
+#endif
 }
 
 
@@ -1633,7 +1628,7 @@ return; // todo!
     check(y == "abc");
     check(y.length == 3);
     assert_emit("“hello1”", Node(String("hello1"))); // Invalid typed array length: 12655
-    assert_emit("“hello2”", Node("hello2").setKind(strings));  // Invalid typed array length: 12655
+    assert_emit("“hello2”", Node("hello2").setKind(strings)); // Invalid typed array length: 12655
     assert_emit("“hello3”", Node("hello3"));
     assert_emit("“hello4”", "hello4");
 #endif
@@ -1665,8 +1660,6 @@ void test_wasm_todos() {
     // is there a situation where a COMPARISON is ambivalent?
     // sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
 }
-
-
 
 
 // SIMILAR AS:
@@ -1808,8 +1801,8 @@ void testAllWasm() {
     skip(
         testMergeRelocate();
     )
-    testMergeWabt();
     testMergeWabtByHand();
+    testMergeWabt();
     testMathLibrary();
     testWasmLogicCombined();
     testMergeWabt();
