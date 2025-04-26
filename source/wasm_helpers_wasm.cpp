@@ -236,8 +236,8 @@ void *operator new[](size_t size) {
     return use;
 }
 
-void* operator new(unsigned long size, std::align_val_t align){
-    while (((long) heap_end) % (long)align)heap_end++;
+void *operator new(unsigned long size, std::align_val_t align) {
+    while (((long) heap_end) % (long) align)heap_end++;
     byte *use = heap_end;
     heap_end += size;
     return use;
