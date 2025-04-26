@@ -18,8 +18,8 @@ let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
-// const run_tests = true; // todo NOT IN PRODUCTION!
-const run_tests = false;
+const run_tests = true; // todo NOT IN PRODUCTION!
+// const run_tests = false;
 let app_module;
 let kinds = {}
 
@@ -117,7 +117,8 @@ function parse(data) {
 
 function terminate() {
   debug("wasm terminate()")
-  // if(sure)throw
+  // if(sure)
+  throw new Error("wasm terminate() via proc_exit")
 }
 
 function createHtml(parent, data) { // via emitHtml
@@ -389,8 +390,10 @@ let imports = {
       debug("fopen", x);
       return 0
     }, // todo WASI / NOT
-    fprintf: (x, y) => {
-      debug("fprintf", x, y);
+    fprintf: (pipe, format, ...args) => {
+      debug("fprintf", pipe, format, args);
+      console.log(string(format), string(args))
+      // printf(format, args)
       return 0
     }, // todo WASI / NOT
     fgetc: x => {
@@ -1197,6 +1200,7 @@ async function run_wasm(buf_pointer, buf_size) {
     return result; // useless, returns Promise!
   } catch (ex) {
     //throw new Error(`Error in run_wasm: ${error.message}\nStack: ${error.stack}`);
+    print(app.exports)
     console.error(ex)
     error(ex)
   }

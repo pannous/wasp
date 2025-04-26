@@ -80,11 +80,11 @@ static bool I_know_what_I_am_doing = false;
 static bool tracing = false;  // todo
 #else
 #if MY_WASM and DEBUG
-// static bool tracing = false;
-static bool tracing = true;
-#elif DEBUG
-//static bool tracing = true;
 static bool tracing = false;
+// static bool tracing = true;
+#elif DEBUG
+static bool tracing = true;
+// static bool tracing = false;
 #else
 //static bool tracing = true;
 static bool tracing = false;
@@ -108,8 +108,9 @@ typedef byte *bytes;
 #define check_silent(test, ...) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
 //#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_line()}
 
-#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_exit();}
-#define check_eq(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);backtrace_exit();}
+// #define check_is(α, β) if((α)==(β));else{printf("FAIL %s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_exit();}
+#define check_is(α, β) if((α)!=(β)){printf("FAIL %s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_exit();}
+#define check_eq(α, β) if((α)!=(β)){printf("FAIL %s != %s :\n",#α,#β);backtrace_exit();}
 #define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("%s",ɣ);backtrace_exit();}
 
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}

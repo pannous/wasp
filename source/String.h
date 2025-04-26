@@ -675,6 +675,8 @@ public:
             return this->replace("%x", hex(d));
         if (contains("%i"))
             return this->replace("%i", formatLong(d));
+        if (contains("%lu"))
+            return this->replace("%lu", formatLong(d));
         if (contains("%li"))
             return this->replace("%li", formatLong(d));
         if (contains("%ld"))
@@ -716,6 +718,8 @@ public:
             return this->replace("%llx", hex(d));
         else if (contains("%lx"))
             return this->replace("%lx", hex(d));
+        else if (contains("%lu")) // todo: unsigned
+            return this->replace("%lu", formatLong(d));
         else if (contains("%l"))
             return this->replace("%l", formatLong(d));
         else if (contains("%d"))
@@ -929,6 +933,8 @@ public:
 
     bool operator==(String *c) const {
         if (!c)return this->empty();
+        // if((String &)*this == *c)
+        //     return true;
         if (this->empty())return not c or c->empty();
         return eq(data, c->data, length);
     }
