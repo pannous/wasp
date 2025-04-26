@@ -271,7 +271,7 @@ namespace wabt {
                 Export *export_ = new Export();
                 // if(item_index > 524)
                 //     print("⚠️⚠️GOT NAME "s + name); // OK!!  _start …
-                export_->name = name;//.clone();
+                export_->name = name; //.clone();
                 export_->kind = kind;
                 export_->index = item_index;
                 binary_->exports.add(*export_);
