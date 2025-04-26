@@ -20,10 +20,6 @@
 //#include <cstdarg> // va_list ok in wasm even without wasi!
 #include <initializer_list> // works in wasi!!  allow List x={1,2,3};
 
-#ifndef WASM
-
-#endif
-
 #include <memory> // memcpy
 
 // #include "own_merge/binding-hash.h"

@@ -463,7 +463,11 @@ Node smartValue(int64 smartPointer);
 String demangle(const String &fun) {
     char *result = 0;
     int status = -1;
-#if not WASM
+#if MY_WASM
+    result = js_demangle(fun);
+    status = 1;
+    // print("demangled "s+fun+" to "s+result);
+#elif not WASM
     result = abi::__cxa_demangle(fun.data, 0, 0, &status);
 #endif
     if (status < 0 or result == 0)
@@ -474,13 +478,14 @@ String demangle(const String &fun) {
 String extractFuncName(const String &fun) {
     if (fun.length == 0)return "";
     int status;
-    char *string = demangle(fun);
-    auto real_name = String(string); // temp
+    auto real_name = demangle(fun);
+    // print("demangled "s + fun + " to "s + real_name);
     String ok = real_name.substring(0, real_name.lastIndexOf("("));
     if (ok.contains(':'))
         ok = ok.substring(ok.lastIndexOf("::") + 2);
     if (ok.contains(' '))
         ok = ok.substring(ok.lastIndexOf(" ") + 1);
+    // print("demangled "s + fun + " to "s + ok);
     return ok; // .clone(); unnecessary: return by value copy
 }
 
@@ -534,7 +539,7 @@ int stackItemSize(Valtype type, bool throws) {
 }
 
 
-int64 powi(int a, unsigned int b) {
+extern "C" int64 powi(int a, unsigned int b) {
     int64 res = 1;
     while (b-- > 0)res = res * a;
     return res;

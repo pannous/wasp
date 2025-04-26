@@ -128,7 +128,7 @@ void parseFunctionNames(Code &payload) {
     //	put(module->functionIndices);// what we got so far?
     int function_count = unsignedLEB128(payload);
     int call_index = -1;
-    printf("function count: %d\n", function_count);
+    if(debug_reader)printf("function count: %d\n", function_count);
     Map<String, Function> &functions = module->functions;
     for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
         call_index = unsignedLEB128(payload);
@@ -169,23 +169,34 @@ void parseFuncTypeSection(Code &payload) {
     for (int code_index = 0; code_index < module->code_count and payload.start < payload.length; ++code_index) {
         uint call_index = (int) (code_index + module->import_count); // implicit !?
         int typ = unsignedLEB128(payload);
-        //        if (call_index == 389)
-        //            breakpoint_helper
         Function *function = 0;
-        int offset = 0; // O(n/2)
-        auto max = module->functions.size();
-        while (call_index + offset < max) {
-            function = &module->functions.values[call_index + offset]; // module->functions contains imports
-            if (function->code_index == code_index or function->call_index == call_index)
+        for (int i = 0; i < module->functions.size(); ++i) {
+            Function &f = module->functions.values[i];
+            if (f.code_index == code_index or f.call_index == call_index) {
+                function = &f;
                 break;
-            offset++;
+            }
         }
-        if (!function)return;
+        if (!function) {
+            // error("named function not found for call_index "s + call_index);
+            print("named function not found for call_index "s + call_index);
+            // e.g. function operator+ already has signature ( String self, real )  todo OVERLOAD BUG!
+            String unnamed = "func_"s + call_index; // dummy name
+            function = new Function{
+                .code_index = ((int) call_index - module->import_count),
+                .call_index = (int) call_index,
+                .name = unnamed,
+                .module = module
+            };
+            module->functions.add(unnamed, *function);
+            // error("function not found for call_index "s + call_index);
+            // continue;
+        }
         Signature &s = module->funcTypes[typ];
         function->signature.merge(s);
         if (debug_reader) {
             char *sig = function->signature.serialize().data;
-            print("#%d ƒ%d %s%s\n"s % code_index % call_index % function->name.data % sig);
+            print("update #%d ƒ%d %s%s\n"s % code_index % call_index % function->name.data % sig);
         }
     }
 }
@@ -194,14 +205,10 @@ void parseFuncTypeSection(Code &payload) {
 void parseImportNames(Code &payload) {
     // and TYPES!
     trace("Imports:");
-    puti(module->import_count);
-    puti(payload.length);
-    int length = payload.length; // shouldn't get modified, but gets CORRUPTED!
-    for (int i = 0; (i < module->import_count) and (payload.start < length); ++i) {
+    for (int i = 0; (i < module->import_count) and (payload.start < payload.length); ++i) {
         String &mod = name(payload); // module
         String &name1 = name(payload); // shared is NOT 0 terminated, needs to be 0-terminated now?
-        print("import %s"s % mod + "." + name1);
-        // trace("import %s"s % mod + "." + name1);
+        trace("import %s"s % mod + "." + name1);
         int kind = unsignedLEB128(payload); // func, global, …
         int type = unsignedLEB128(payload); // i32 … for globals
         if (kind == 3 /*global import*/) {
@@ -430,11 +437,10 @@ void fixupGenerics(char *s, int len) {
     }
 }
 
+// todo dedup demangle in Util
 char *demangle(String &fun) {
     char *string = 0;
-#if WASM // and MY_WASM
-    // todo("__cxa_demangle in wasm");
-    // return fun.data;
+#if MY_WASM
     string = js_demangle(fun); // https://github.com/kripken/cxx_demangle/blob/master/demangle.js
     return string;
 #else
@@ -484,6 +490,8 @@ void consumeExportSection() {
             error("UNKNOWN export_type "s + export_type + " for " + export_name + " at " + index);
             continue;
         }
+        // we have export_name, export_name_demangled and internal_name, demangled and with(out) signature!
+        // all united by call_index
         String &func0 = export_name;
         String func = extractFuncName(func0); // demangled name
         String demangled = demangle(func0); // demangled signature
@@ -499,16 +507,22 @@ void consumeExportSection() {
         int status = 0; // for debugging:
 
         // print("demangled: %s\n"s % demangled);
-        Function &fun = module->functions[func]; // demangled
         Function &fun0 = module->functions[func0]; // mangled
-        fun.module = module;
         fun0.module = module;
-        // ⚠️ CAN BE THE SAME REFERENCE IF func==func0 !!! ⚠️
-        fun.name = func;
         fun0.name = func0;
+
+        if (func != func0 and not module->functions.contains(func)) {
+            //  always insert the demangled synonym
+            module->functions.add(func, *new Function{}); // sure start blank??
+        }
+        // ⚠️ CAN BE THE SAME REFERENCE IF func==func0 !!! ⚠️
+        Function &fun = module->functions[func]; // demangled
+        fun.module = module;
+        fun.name = func;
 
         if (debug_reader) {
             print("#%d ƒ%d %s ≈\n"s % code_index % index % func0.data);
+            print("#%d ƒ%d %s ≈\n"s % code_index % index % func.data);
             print("#%d ƒ%d %s ≈\n"s % code_index % index % demangled.data);
         }
         //        if(fun.name=="puts")
