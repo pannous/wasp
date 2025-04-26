@@ -86,8 +86,8 @@ static bool tracing = false; // will further explode HEAP usage!!
 // static bool tracing = true;
 static bool tracing = false;
 #else
-//static bool tracing = true;
-static bool tracing = false;
+static bool tracing = true;
+// static bool tracing = false;
 #endif
 #endif
 
@@ -251,10 +251,13 @@ class List;
 [[maybe_unused]] List<String> arguments();
 
 //int64 powi(int64 a, unsigned int b);
-int64 powi(int a, unsigned int b);
+extern "C" int64 powi(int a, unsigned int b);
 
 //extern long double powi(long double, long double);
 
 char *base64_encode(const char *data);
 
 bool contains(bytes list, bytes match, int len, int match_len);
+
+// duplicate!
+// char *demangle(String &fun); // implemented in wasm_reader.cpp
