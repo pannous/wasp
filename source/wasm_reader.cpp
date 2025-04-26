@@ -128,7 +128,7 @@ void parseFunctionNames(Code &payload) {
     //	put(module->functionIndices);// what we got so far?
     int function_count = unsignedLEB128(payload);
     int call_index = -1;
-    if(debug_reader)printf("function count: %d\n", function_count);
+    if (debug_reader)printf("function count: %d\n", function_count);
     Map<String, Function> &functions = module->functions;
     for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
         call_index = unsignedLEB128(payload);
