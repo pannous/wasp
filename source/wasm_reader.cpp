@@ -468,6 +468,7 @@ void consumeExportSection() {
         // print("FUNCTION EXPORT %d\n"s % i);
         // if (i == 6)return; // DANGER hack js bug!
         String &export_name = name(payload);
+        // module->export_names.add(export_name);
         int export_type = unsignedLEB128(payload); // don't confuse with function_type if export_type==0
         int index = unsignedLEB128(payload); // for all types!
         if (export_type == 3 /*global*/) continue; // todo !?
@@ -478,7 +479,8 @@ void consumeExportSection() {
             continue;
         }
         String &func0 = export_name;
-        String func = extractFuncName(func0);
+        String func = extractFuncName(func0); // demangled name
+        String demangled = demangle(func0); // demangled signature
         // index here means call_index > code_index
         if (index < module->import_count or index > 100000)
             error("corrupt index "s + index);
@@ -489,7 +491,7 @@ void consumeExportSection() {
         //        if (func == "parseLong")
         //            breakpoint_helper;// don't make libraries 'main' visible, use own
         int status = 0; // for debugging:
-        String demangled = demangle(func0);
+
         // print("demangled: %s\n"s % demangled);
         Function &fun = module->functions[func]; // demangled
         Function &fun0 = module->functions[func0]; // mangled

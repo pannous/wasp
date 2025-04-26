@@ -183,3 +183,10 @@ short lebByteSize(int64 aleb) {
     //    Code &leb128 = signedLEB128((int64) leb);// todo later … optimize inline if…
     //    return leb128.length;
 }
+
+void print(Code& code) {
+    print("Code: "s+String(code.length) + " bytes\n");
+    // for (int i = 0; i < code.length; i++) {
+    //     printf("%02x ", code.data[i]);
+    // }
+}

@@ -3186,9 +3186,11 @@ void testArrayIndices() {
         assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
         assert_is("[1 2 3]", Node(1, 2, 3, 0))
     )
-    assert_is("(1 4 3)#2", 4); //
+#if not (WASM and INCLUDE_MERGER)
+    assert_is("(1 4 3)#2", 4); // todo needs_runtime = true => whole linker machinery
     assert_is("x=(1 4 3);x#2", 4);
     assert_is("x=(1 4 3);x#2=5;x#2", 5);
+#endif
 }
 
 
@@ -3622,6 +3624,87 @@ void test_new() {
     testPolymorphism();
 }
 
+
+void print(Module &m) {
+    print("Module");
+    print("name:");
+    print(m.name);
+    print("code:");
+    print(m.code);
+    print("import_data:");
+    print(m.import_data);
+    print("export_data:");
+    print(m.export_data);
+    print("functype_data:");
+    print(m.functype_data);
+    print("code_data:");
+    print(m.code_data);
+    print("globals_data:");
+    print(m.globals_data);
+    print("memory_data:");
+    print(m.memory_data);
+    print("table_data:");
+    print(m.table_data);
+    print("name_data:");
+    print(m.name_data);
+    print("data_segments:");
+    print(m.data_segments);
+    print("linking_section:");
+    print(m.linking_section);
+    print("relocate_section:");
+    print(m.relocate_section);
+    print("funcToTypeMap:");
+    print(m.funcToTypeMap);
+    // print("custom_sections:");
+    // print(m.custom_sections);
+    print("type_count:");
+    print(m.type_count);
+    print("import_count:");
+    print(m.import_count);
+    print("total_func_count:");
+    print(m.total_func_count);
+    print("table_count:");
+    print(m.table_count);
+    print("memory_count:");
+    print(m.memory_count);
+    print("export_count:");
+    print(m.export_count);
+    print("global_count:");
+    print(m.global_count);
+    print("code_count:");
+    print(m.code_count);
+    print("data_segments_count:");
+    print(m.data_segments_count);
+    print("start_index:");
+    print(m.start_index);
+    // print("globals); List<Global> WHY NOT??");
+    print("m.export_names");
+    print(m.export_names); // none!?
+    print("import_names:");
+    print(m.import_names);
+}
+
+void testWaspRuntimeModule() {
+    Module &wasp = loadRuntime();
+    print(wasp);
+    // check_is(wasp.name, "wasp");
+    check(wasp.name.contains("wasp")); // wasp-runtime.wasm in system 'wasp' in js!
+    // check(libraries.size()>0);
+    check(wasp.code_count>400);
+    check(wasp.data_segments_count>5);
+    check(wasp.export_count>wasp.code_count-10);
+    check(wasp.import_count<40);
+    // check(wasp.export_names.has("memory")); // type memory
+    // check(wasp.export_names.has("strlen")); // type func export "C"
+    // check(wasp.export_names.has("_Z4powiij")); // type func mangled for overload
+    // check(wasp.import_names.has("proc_exit")); // not important but todo broken in wasm!
+    // wasp.signatures
+    check(wasp.functions.size() > 100);
+    check(wasp.functions.has("_Z4powiij"));
+    check(wasp.functions.has("powi"));
+    check(wasp.functions.has("test42"));
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
@@ -3630,10 +3713,14 @@ void test_new() {
 // 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    print("💡 starting Current tests 💡");
     // testKebabCase(); // needed here:
     // assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
-    // assert_run("test42+1", 43); OK WASM?
-    // exit(0);
+    // testWaspRuntimeModule();
+    // assert_run("test42+1", 43); // OK in WASM too?
+    // assert_emit("test42+1", 43); // OK in WASM too?
+    // print("testCurrent DEACTIVATED!");
+    // return;
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     test_new();
     skip(

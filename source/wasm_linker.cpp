@@ -1002,7 +1002,8 @@ void Linker::ResolveSymbols() {
     int memories = 0;
     for (auto binary: inputs_) {
 #if not RELEASE
-        printf("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n", binary->name, binary->debug_names.size());
+        size_t num_symbols = binary->exports.size();// binary->debug_names.size();
+        print("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n"s % binary->name % num_symbols);
 #endif
         uint64 nr_imports = binary->function_imports.size();
 
@@ -1055,9 +1056,9 @@ void Linker::ResolveSymbols() {
                 globals_export_list.add(ExportInfo(&_export, binary));
                 export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
             } else if (_export.kind == ExternalKind::Func) {
-                auto fun_offset  = _export.index - nr_imports;
+                auto fun_offset = _export.index - nr_imports;
                 if (fun_offset < 0 or fun_offset >= binary->functions.size()) {
-                    warn("invalid function index "s + _export.index + " - nr_imports:"+ nr_imports);
+                    warn("invalid function index "s + _export.index + " - nr_imports:" + nr_imports);
                     // error("invalid function index "s + _export.index + " - nr_imports:"+ nr_imports);
                     continue;
                 }
@@ -1293,6 +1294,7 @@ void Linker::WriteBinary() {
 
 void Linker::DumpRelocOffsets() {
     for (auto binary: inputs_) {
+        if(not binary->needs_relocate) continue;// no matter what was calculated!!
         bool needs_relocate = false;
         needs_relocate = needs_relocate or binary->type_index_offset != 0;
         needs_relocate = needs_relocate or binary->memory_page_offset != 0;
@@ -1309,7 +1311,7 @@ void Linker::DumpRelocOffsets() {
             LOG_DEBUG(" - imported function offset: %d\n", binary->imported_function_index_offset);
             LOG_DEBUG(" - imported global offset  : %d\n", binary->imported_global_index_offset);
             if (not binary->needs_relocate)
-                error("Binary %s markes as needs_relocate=false, but context forces relocations (imports…)."s %
+                error("Binary %s marked as needs_relocate=false, but context forces relocations (imports…)."s %
                 String(binary->name));
         } else {
             LOG_DEBUG("Relocation info for: %s … NONE! Keeping binary as is.\n", binary->name);
@@ -1323,6 +1325,7 @@ void Linker::CreateRelocs() {
             trace("Skipping CreateRelocs for library "s + binary->name);
             continue;
         }
+        trace("⚠️ CreateRelocs for library "s + binary->name);
 
         Section *section = getSection(binary, SectionType::Code);
         if (!section)return;
@@ -1466,8 +1469,9 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
                 function_name = callee.name;
             }
             if (tracing)
-                print("Reloc for CALL "s + binary->name + " ƒ" + call_index + " " + current_name.data + " calls " + function_name.data + " $" + index + " -> " + neu + "\n" );
-                // printf("CALL %s ƒ%d %s calls %s $%llu -> %d\n", binary->name, call_index, current_name.data, function_name.data, index, neu);
+                print("Reloc for CALL "s + binary->name + " ƒ" + call_index + " " + current_name.data + " calls " +
+                      function_name.data + " $" + index + " -> " + neu + "\n");
+            // printf("CALL %s ƒ%d %s calls %s $%llu -> %d\n", binary->name, call_index, current_name.data, function_name.data, index, neu);
 #endif
         } else if (op == global_get || op == global_set) {
             short index = unsignedLEB128(binary_data, length, current_offset, false);
@@ -1510,8 +1514,9 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             }
         }
         if (tracing)
-            print("Reloc ƒ"s + call_index + " OPCODE 0x" + hex(op) + " " + op + " \"" + opcode.GetName() + "\"" + " last_const=" + last_const + " length: " + arg_bytes + "?\n" );
-            // print("ƒ%d OPCODE 0x%x %d “%s” last_const=%lld  length: %d? \n",call_index, op, op, opcode.GetName(), last_const, arg_bytes);
+            print("Reloc ƒ"s + call_index + " OPCODE 0x" + hex(op) + " " + op + " \"" + opcode.GetName() + "\"" +
+                  " last_const=" + last_const + " length: " + arg_bytes + "?\n");
+        // print("ƒ%d OPCODE 0x%x %d “%s” last_const=%lld  length: %d? \n",call_index, op, op, opcode.GetName(), last_const, arg_bytes);
         last_opcode = op;
     }
     return relocs;

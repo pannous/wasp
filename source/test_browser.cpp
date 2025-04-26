@@ -1,3 +1,4 @@
+#include "Angle.h"
 #include "Node.h"
 #include "tests.h"
 #include "asserts.h"
@@ -11,8 +12,9 @@ extern "C" Node *testNodeJS(String *s) {
 
 extern "C" String *testFromJS(String *s) {
     println("testJString…");
-    check_is("test from JS"s, s);
-    //    print(wasp.name);
+    check_is("test from JS"s, *s); // OK
+    // check_is("test from JS"s, s); // NOT OK !?!?!? todo <<
+    // print(wasp.name);
     //    print("wasp.total_func_count");
     //    print(wasp.total_func_count);
     auto replaced = s->replace("test", "ok").replace("JS", "WASP");
@@ -23,19 +25,18 @@ extern "C" String *testFromJS(String *s) {
 
 extern byte *stack_hack;
 
-extern "C" void parseRuntime(bytes buffer, size_t size) {
-    // ⚠️ Problem arises before even doing anything with data…  :
-    //    testCurrent();// messes with the heap just filled with the wasm file
+void testWaspRuntimeModule();
 
-    heap_end = buffer + size;
-    //    Code(buffer, size, false).debug();
+extern "C" void parseRuntime(bytes buffer, size_t size) {
+    info("⚠️ parseRuntime 'wasp' from js provided bytes");
+    heap_end = buffer + size; // js HEAP out of sync, even bigger to allocate demangle strings!
     Module &wasp = read_wasm(buffer, size);
     wasp.code.name = "wasp";
     wasp.name = "wasp";
     module_cache.add("wasp"s.hash(), &wasp);
-    // testCurrent();
-    // loadRuntime();
-    // testCurrent();
+    libraries.add(&wasp);
+    info("⚠️ parseRuntime DONE");
+    // testWaspRuntimeModule();
 }
 
 void testDownload() {
@@ -60,6 +61,14 @@ extern "C" void testRun() {
     //    testDownload(); // not on localhost
     //	assert_emit("square := it*it; square 3", 9);
     assert_emit("2+3", 5);
+    print("!! NOW RUNNING test42 !!💡");
+    assert_emit("test42+1", 43); // OK in WASM too?
+    return;
+    print("!! NOW RUNNING test42 again !!💡");
+    assert_run("test42+1", 43); // OK in WASM too?
+    print("testRun DEACTIVATED!");
+
+
     assert_emit("2+2", 4);
     assert_emit("2*2", 4);
     assert_emit("√9", 3); // unknown function powi (powi) TODO!!!

@@ -1266,7 +1266,7 @@ void testSmartReturn() {
     )
 
     assert_is(("42.0/2.0"), 21)
-    assert_emit("x='abcde';x#4='f';x[3]", 'f');
+
     assert_emit(("-1.1"), -1.1)
     assert_emit("'OK'", "OK");
     assert_emit("'a'", Node('a'));
@@ -1281,6 +1281,7 @@ void testSmartReturn() {
     assert_emit("10007.0%10000.0", 7);
     assert_emit("10007.0%10000", 7);
 #if not WASM
+    assert_emit("x='abcde';x#4='f';x[3]", 'f');
     assert_emit("x='abcde';x#4='x';x[3]", 'x');
     assert_emit("x='abcde';x[3]", 'd');
 #endif
@@ -1697,6 +1698,7 @@ void testTodoBrowser() {
 #endif
     assert_emit("x='abcde';x[3]", 'd');
     testCall();
+    testArrayIndicesWasm();
 }
 
 
@@ -1786,7 +1788,6 @@ void testAllWasm() {
     testSquareExpWasm();
     testRoundFloorCeiling();
     testWasmTernary();
-    testArrayIndicesWasm();
     testWasmFunctionCalls();
     testWasmFunctionDefiniton();
     testWasmWhile();

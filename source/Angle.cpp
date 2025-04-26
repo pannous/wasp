@@ -1347,13 +1347,15 @@ Node &groupKebabMinus(Node &node, Function &context) {
 
 Module &loadRuntime() {
 #if WASM // and not MY_WASM
-    static Module wasp;
-//    Module &wasp=*module_cache["wasp"s.hash()];
+    if(not module_cache.has("wasp"s.hash()))
+      error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
+    Module &wasp=*module_cache["wasp"s.hash()];
 //    wasp.functions["powi"].signature.returns(int32);
     return wasp;
 #else
     Module &wasp = read_wasm("wasp-runtime.wasm");
     wasp.functions["getChar"].signature.returns(codepoint1);
+    // if(!libraries.has(&wasp))libraries.add(&wasp); // BREAKS system WHY?
     return wasp;
 #endif
 }
@@ -2213,7 +2215,7 @@ Function getWaspFunction(String name) {
 
     auto runtime = loadRuntime();
     if (runtime.functions.has(name)) {
-        //        print("already got function "s+name);
+        print("runtime has function "s + name);
         return runtime.functions[name];
     }
     Function f{.name = name, .is_import = true, .is_runtime = true};
@@ -2236,8 +2238,8 @@ Function getWaspFunction(String name) {
         else if (name == "__cxa_find_matching_catch");
         else if (name == "__cxa_begin_catch");
         else if (name == "__cxa_atexit");
-        else if (name == "__main_argc_argv")
-            f.signature.add(int32t, name = "argc").add(i32, name = "argv").returns(int32t);
+        else if (name == "__main_argc_argv") f.signature.add(int32t, name = "argc").add(i32, name = "argv").
+                returns(int32t);
         else if (name == "getField")f.signature.add(node_pointer).add(smarti64).returns(node); // wth
         else if (name == "smartNode")f.signature.add(int64s).returns(node);
         else if (name == "pow")f.signature.add(float64t).add(float64t).returns(float64t);
@@ -2311,6 +2313,7 @@ Function getWaspFunction(String name) {
         else todo("getWaspFunction "s + name);
     }
     if (!runtime.functions.has(f.name)) {
+        print("manually adding runtime function "s + f.name);
         runtime.functions.add(f.name, f);
     }
     //    else todo("getWaspFunction "s + name);
