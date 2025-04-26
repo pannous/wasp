@@ -184,8 +184,8 @@ short lebByteSize(int64 aleb) {
     //    return leb128.length;
 }
 
-void print(Code& code) {
-    print("Code: "s+String(code.length) + " bytes\n");
+void print(Code &code) {
+    print("Code: "s + String(code.length) + " bytes\n");
     // for (int i = 0; i < code.length; i++) {
     //     printf("%02x ", code.data[i]);
     // }

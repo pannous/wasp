@@ -1002,7 +1002,7 @@ void Linker::ResolveSymbols() {
     int memories = 0;
     for (auto binary: inputs_) {
 #if not RELEASE
-        size_t num_symbols = binary->exports.size();// binary->debug_names.size();
+        size_t num_symbols = binary->exports.size(); // binary->debug_names.size();
         print("!!!!!!!!!!!   %s #%lu !!!!!!!!!!!\n"s % binary->name % num_symbols);
 #endif
         uint64 nr_imports = binary->function_imports.size();
@@ -1294,7 +1294,7 @@ void Linker::WriteBinary() {
 
 void Linker::DumpRelocOffsets() {
     for (auto binary: inputs_) {
-        if(not binary->needs_relocate) continue;// no matter what was calculated!!
+        //if (not binary->needs_relocate) continue; // no matter what was calculated!!
         bool needs_relocate = false;
         needs_relocate = needs_relocate or binary->type_index_offset != 0;
         needs_relocate = needs_relocate or binary->memory_page_offset != 0;
@@ -1311,7 +1311,7 @@ void Linker::DumpRelocOffsets() {
             LOG_DEBUG(" - imported function offset: %d\n", binary->imported_function_index_offset);
             LOG_DEBUG(" - imported global offset  : %d\n", binary->imported_global_index_offset);
             if (not binary->needs_relocate)
-                error("Binary %s marked as needs_relocate=false, but context forces relocations (imports…)."s %
+            error("Binary %s marked as needs_relocate=false, but context forces relocations (imports…)."s %
                 String(binary->name));
         } else {
             LOG_DEBUG("Relocation info for: %s … NONE! Keeping binary as is.\n", binary->name);

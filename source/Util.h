@@ -108,8 +108,8 @@ typedef byte *bytes;
 #define check_silent(test, ...) if(!(test)){printf("\nNOT PASSING %s\n",#test);backtrace_line()}
 //#define check_is(α, β) if((α)!=(β)){printf("%s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_line()}
 
-// #define check_is(α, β) if((α)==(β));else{printf("FAIL %s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_exit();}
-#define check_is(α, β) if((α)!=(β)){printf("FAIL %s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_exit();}
+#define check_is(α, β) if((α)==(β));else{printf("FAIL %s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_exit();}
+// #define check_is(α, β) if((α)!=(β)){printf("FAIL %s != %s :\n",#α,#β);print(α);print(" != ");print(β);backtrace_exit();}
 #define check_eq(α, β) if((α)!=(β)){printf("FAIL %s != %s :\n",#α,#β);backtrace_exit();}
 #define check_eq_or(α, β, ɣ) if((α)!=(β)){printf("%s != %s : ",#α,#β);printf("%s",ɣ);backtrace_exit();}
 
