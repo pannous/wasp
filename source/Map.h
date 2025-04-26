@@ -161,12 +161,11 @@ public: // todo careful Map<char*,…> eq
     int add(const S &key, const T &value) {
         int found = position(key);
         if (found >= 0) {
-
-            #if not WASM
+#if not WASM
             if (memcmp(&values[found], &value, sizeof(T)) == 0) {
             // if (&(const T &) values[found] == &value) { // Local not
-                warn("redundant VALUE for: "s + key);
-                return _size;
+            warn("redundant VALUE for: "s + key);
+            return _size;
             }
             #endif
             print(values[found]);
