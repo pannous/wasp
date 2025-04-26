@@ -163,7 +163,6 @@ public: // todo careful Map<char*,…> eq
         if (found >= 0) {
 #if not WASM
             if (memcmp(&values[found], &value, sizeof(T)) == 0) {
-                // if (&(const T &) values[found] == &value) { // Local not
                 warn("redundant VALUE for: "s + key);
                 return _size;
             }

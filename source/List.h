@@ -26,6 +26,8 @@
 
 #include <memory> // memcpy
 
+// #include "own_merge/binding-hash.h"
+
 //The template definition (the cpp file in your code) has to be included prior to instantiating a given template class
 template<class S>
 void heapSort(S arr[], int n, bool (comparator)(S &, S &));
@@ -50,55 +52,55 @@ public:
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
     // todo item references are UNSAFE after grow()
-//    S items[LIST_DEFAULT_CAPACITY];// array type is not assignable
+    //    S items[LIST_DEFAULT_CAPACITY];// array type is not assignable
 
 
-//    List(int size = LIST_DEFAULT_CAPACITY) {
-//        capacity = size;
-//        items = (S *) calloc(size, sizeof(S));
-//    }
-//
+    //    List(int size = LIST_DEFAULT_CAPACITY) {
+    //        capacity = size;
+    //        items = (S *) calloc(size, sizeof(S));
+    //    }
+    //
     List(size_t size = LIST_DEFAULT_CAPACITY) {
         capacity = size;
         items = (S *) calloc(size, sizeof(S));
     }
-//
-//
-//    // Move constructor
-//    List(List&& old) noexcept : size_(old.size_), capacity(old.capacity), items(old.items) {
-//        old.items = nullptr;
-//        old.size_ = 0;
-//        old.capacity = 0;
-//    }
-//
-//    // Copy constructor
-//    List(const List &old) : size_(old.size_), capacity(old.capacity) {
-//        if (old.items) {
-//            items = new S[old.capacity]; // Assuming ItemType is the type of items
-//            std::copy(old.items, old.items + old.size_, items);
-//        }
-//    }
-//
-//
-//    // Move assignment operator
-//    List& operator=(List&& old) noexcept {
-//        if (this != &old) {
-//            delete[] items;
-//            size_ = old.size_;
-//            capacity = old.capacity;
-//            items = old.items;
-//
-//            old.items = nullptr;
-//            old.size_ = 0;
-//            old.capacity = 0;
-//        }
-//        return *this;
-//    }
+    //
+    //
+    //    // Move constructor
+    //    List(List&& old) noexcept : size_(old.size_), capacity(old.capacity), items(old.items) {
+    //        old.items = nullptr;
+    //        old.size_ = 0;
+    //        old.capacity = 0;
+    //    }
+    //
+    //    // Copy constructor
+    //    List(const List &old) : size_(old.size_), capacity(old.capacity) {
+    //        if (old.items) {
+    //            items = new S[old.capacity]; // Assuming ItemType is the type of items
+    //            std::copy(old.items, old.items + old.size_, items);
+    //        }
+    //    }
+    //
+    //
+    //    // Move assignment operator
+    //    List& operator=(List&& old) noexcept {
+    //        if (this != &old) {
+    //            delete[] items;
+    //            size_ = old.size_;
+    //            capacity = old.capacity;
+    //            items = old.items;
+    //
+    //            old.items = nullptr;
+    //            old.size_ = 0;
+    //            old.capacity = 0;
+    //        }
+    //        return *this;
+    //    }
 
-//    List(const List &old) : items(old.items) { // todo: memcopy?
-//        size_ = old.size_;
-//        capacity = old.capacity;
-//    }
+    //    List(const List &old) : items(old.items) { // todo: memcopy?
+    //        size_ = old.size_;
+    //        capacity = old.capacity;
+    //    }
 
     List(Array_Header a) {
         if (a.length == 0xA0000000)
@@ -106,25 +108,25 @@ public:
         size_ = a.length;
         capacity = a.length; //!
         items = (S *) &a.data;// ok? copy data?
-//		todo("a.typ");
+        //		todo("a.typ");
     }
 
 
-//    List(S first, ...) : List() {
-////		items[0] = first;
-//        va_list args;// WORKS WITHOUT WASI! with stdargs
-//        va_start(args, first);
-//        S *item = &first;
-//        while (item) {
-//            items[_size++] = *item;
-//            item = (S *) va_arg(args, S*);
-//        }
-//        va_end(args);
-//    }
+    //    List(S first, ...) : List() {
+    ////		items[0] = first;
+    //        va_list args;// WORKS WITHOUT WASI! with stdargs
+    //        va_start(args, first);
+    //        S *item = &first;
+    //        while (item) {
+    //            items[_size++] = *item;
+    //            item = (S *) va_arg(args, S*);
+    //        }
+    //        va_end(args);
+    //    }
 
 
 
-//#ifndef PURE_WASM
+    //#ifndef PURE_WASM
     List(const std::initializer_list<S> &inis) : List() {
         auto item_count = inis.end() - inis.begin();
         while (item_count >= capacity)grow();
@@ -136,11 +138,11 @@ public:
             items[size_++] = s;
         }
     }
-//#endif
+    //#endif
 
     List(S *args, int count, bool share = true) {
         if (args == 0)return;
-//        check_silent(count < LIST_MAX_CAPACITY)
+        //        check_silent(count < LIST_MAX_CAPACITY)
         size_ = count;
         if (share) {
             items = args;
@@ -157,7 +159,11 @@ public:
 
     List(S *data, S *end, bool share = true) : List(data, (end - data) / sizeof(S), share) {}
 
-    size_t size() const { return size_; };
+    size_t size() const { return size_; }
+
+    void push_back(const S& s) {
+        add(s);
+    }
 
     void setType(Type type) {
         _type = type;

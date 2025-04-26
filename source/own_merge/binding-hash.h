@@ -19,69 +19,83 @@
 
 #include <functional>
 //#include <string>
-#include <vector>
+// #include <vector>
+#include "../List.h"
 #include "../String.h"
-#include <unordered_map>
+// #include <unordered_map>
 
 #include "common.h"
+#include "wasm-link.h"
 
 
 namespace std {
-	template<>
-	class hash<::String> {
-	public:
-		size_t operator()(const ::String &s) const {
-			return s.hash();
-		}
-	};
+    // Removed specialization of std::hash<::String>
 }
 
 namespace wabt {
+    struct Var;
 
-	struct Var;
+    struct Binding {
+        explicit Binding(Index index) : index(index) {
+        }
 
-	struct Binding {
-		explicit Binding(Index index) : index(index) {}
+        Binding(const Location &loc, Index index) : loc(loc), index(index) {
+        }
 
-		Binding(const Location &loc, Index index) : loc(loc), index(index) {}
+        Location loc;
+        Index index;
+    };
 
-		Location loc;
-		Index index;
-	};
+    // This class derives from a C++ container, which is usually not advisable
+    // because they don't have virtual destructors. So don't delete a BindingHash
+    // object through a pointer to std::unordered_multimap.
+    class BindingHash : public List<std::pair<String, Binding> > {
+    public:
+        using value_type = std::pair<String, Binding>;
 
-// This class derives from a C++ container, which is usually not advisable
-// because they don't have virtual destructors. So don't delete a BindingHash
-// object through a pointer to std::unordered_multimap.
-	class BindingHash : public std::unordered_multimap<String, Binding> {
-	public:
-		typedef std::function<void(const value_type &, const value_type &)>
-				DuplicateCallback;
+        typedef std::function<void(const value_type &, const value_type &)>
+        DuplicateCallback;
 
-		void FindDuplicates(DuplicateCallback callback) const;
+        void FindDuplicates(DuplicateCallback callback) const;
 
-		Index FindIndex(const Var &) const;
-//
-//		Index FindIndex(const String &name) const {
-//			auto iter = find(name);
-//			return iter != end() ? iter->second.index : kInvalidIndex;
-//		}
+        Index FindIndex(const Var &) const;
 
-		Index FindIndex(String name) const {
-			auto iter = find(name);
-			return iter != end() ? iter->second.index : kInvalidIndex;
-		}
+        Index FindIndex(String name) const {
+            for (const auto &v: *this) {
+                if ((String) v.first == name)
+                    return v.second.index;
+            }
+            return kInvalidIndex;
+        }
 
-	private:
-		typedef List<const value_type *> ValueTypeVector;
+        bool contains(const String &name) const {
+            return FindIndex(name) != kInvalidIndex;
+        }
 
-		void CreateDuplicatesVector(ValueTypeVector *out_duplicates) const;
+        void insert(const value_type &v) {
+            this->push_back(v);
+        }
 
-		void SortDuplicatesVectorByLocation(ValueTypeVector *duplicates) const;
+        void emplace(const String &name, const Binding &binding) {
+            this->push_back(std::make_pair(name, binding));
+        }
 
-		void CallCallbacks(const ValueTypeVector &duplicates,
-		                   DuplicateCallback callback) const;
-	};
+        void emplace(const String &name, const Index &index) {
+            this->push_back(std::make_pair(name, Binding(index)));
+        }
 
-}  // namespace wabt
+    private:
+        typedef List<const value_type *> ValueTypeVector;
+
+        void CreateDuplicatesVector(ValueTypeVector *out_duplicates) const;
+
+        void SortDuplicatesVectorByLocation(ValueTypeVector *duplicates) const;
+
+        void CallCallbacks(const ValueTypeVector &duplicates,
+                           DuplicateCallback callback) const;
+
+        // this;
+    };
+} // namespace wabt
 
 #endif /* WABT_BINDING_HASH_H_ */
