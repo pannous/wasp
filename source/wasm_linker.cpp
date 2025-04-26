@@ -1047,13 +1047,21 @@ void Linker::ResolveSymbols() {
         for (Export &_export: binary->exports) {
             // todo: why not store index directly?
             if (tracing)
-                print(""s + binary->name + " export kind " + (int)_export.kind + " '" + _export.name.data + "' index " + _export.index );
-                // printf("%s export kind %d '%s' index %d\n", binary->name, (int) _export.kind, _export.name.data, _export.index);
+                print(""s + binary->name + " export kind " + (int) _export.kind + " '" + _export.name.data + "' index "
+                      + _export.index);
+            // if(_export.name.length() == 0)continue;// bug!?
+            // printf("%s export kind %d '%s' index %d\n", binary->name, (int) _export.kind, _export.name.data, _export.index);
             if (_export.kind == wabt::ExternalKind::Global) {
                 globals_export_list.add(ExportInfo(&_export, binary));
                 export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
             } else if (_export.kind == ExternalKind::Func) {
-                Func &func = binary->functions[_export.index - nr_imports];
+                auto fun_offset  = _export.index - nr_imports;
+                if (fun_offset < 0 or fun_offset >= binary->functions.size()) {
+                    warn("invalid function index "s + _export.index + " - nr_imports:"+ nr_imports);
+                    // error("invalid function index "s + _export.index + " - nr_imports:"+ nr_imports);
+                    continue;
+                }
+                Func &func = binary->functions[fun_offset];
                 uint64 position = export_list.size();
                 export_list.add(ExportInfo(&_export, binary));
                 if (not func.name.data)
@@ -1070,6 +1078,7 @@ void Linker::ResolveSymbols() {
                 warn("ignore export of kind %d %s"s % (short) _export.kind % GetKindName(_export.kind));
             }
         }
+        info("load binary functions to private_map");
         for (const Func &func: binary->functions) {
             // only those with code, not imports
             if (not empty(func.name)) {
@@ -1100,7 +1109,7 @@ void Linker::ResolveSymbols() {
     }
     //	check(export_list[export_map.FindIndex("_Z5atoi0PKc")].export_->index == 18);// todo !!!
 
-    // Iterate through all imported globals and functions resolving them against exported ones.
+    info("Iterate through all imported globals and functions resolving them against exported ones.");
     for (LinkerInputBinary *&binary: inputs_) {
         if (not binary->needs_relocate)continue;
         for (GlobalImport &global_import: binary->global_imports) {
@@ -1110,6 +1119,7 @@ void Linker::ResolveSymbols() {
                 printf("Ignoring unresolved global import %s\n", name.data);
                 continue;
             }
+            print("export_number "s + export_number);
             ExportInfo &export_info = globals_export_list[export_number];
             String export_name = export_info.export_->name;
             Index export_index = export_info.export_->index;
@@ -1456,9 +1466,8 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
                 function_name = callee.name;
             }
             if (tracing)
-                printf("CALL %s ƒ%d %s calls %s $%llu -> %d\n", binary->name, call_index, current_name.data,
-                       function_name.data, index,
-                       neu);
+                print("Reloc for CALL "s + binary->name + " ƒ" + call_index + " " + current_name.data + " calls " + function_name.data + " $" + index + " -> " + neu + "\n" );
+                // printf("CALL %s ƒ%d %s calls %s $%llu -> %d\n", binary->name, call_index, current_name.data, function_name.data, index, neu);
 #endif
         } else if (op == global_get || op == global_set) {
             short index = unsignedLEB128(binary_data, length, current_offset, false);
@@ -1501,9 +1510,8 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             }
         }
         if (tracing)
-            printf("ƒ%d OPCODE 0x%x %d “%s” last_const=%lld  length: %d? \n", call_index, op, op, opcode.GetName(),
-                   last_const,
-                   arg_bytes);
+            print("Reloc ƒ"s + call_index + " OPCODE 0x" + hex(op) + " " + op + " \"" + opcode.GetName() + "\"" + " last_const=" + last_const + " length: " + arg_bytes + "?\n" );
+            // print("ƒ%d OPCODE 0x%x %d “%s” last_const=%lld  length: %d? \n",call_index, op, op, opcode.GetName(), last_const, arg_bytes);
         last_opcode = op;
     }
     return relocs;
