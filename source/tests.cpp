@@ -3637,7 +3637,7 @@ void test_new() {
 void testCurrent() {
     // testKebabCase(); // needed here:
     // assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
-    check(String("a1b1c1d").lastIndexOf("1") == 3);
+    check_is(String("a1b1c1d").lastIndexOf("1"),5);
     test_new();
     skip(
         // assert_is("2+1/2", 2.5);
