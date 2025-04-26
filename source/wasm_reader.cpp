@@ -633,7 +633,7 @@ void consumeSections() {
 
 
 //static
-Map<int64, Module *> module_cache{.capacity = 100};
+Map<int64, Module *> module_cache{100};
 
 Code &read_code(chars file) {
     int code_size;

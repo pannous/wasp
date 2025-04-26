@@ -31,7 +31,7 @@ WitReader witReader;
 
 List<String> aliases(String name);
 
-Map<String, Node *> types = {.capacity = 100}; // builtin and defined Types
+Map<String, Node *> types = { 100}; // builtin and defined Types
 //const Node LongType("LongType", clazz);
 //const Node DoubleType("DoubleType", clazz);//.setType(type);
 // todo : when do we really need THESE Nodes instead of Type / Primitives?
@@ -121,13 +121,13 @@ List<String> extra_reserved_keywords = {"func"}; // EXTRA!  // use bool isKeywor
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
 //Map<String, Function> functions; // todo Maps don't free memory and cause SIGKILL after some time <<<
-Map<String, Function> functions = {.capacity = 1000};
+Map<String, Function> functions = { 1000};
 // todo ONLY emit of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
 //Map<String, Function> library_functions; see:
 List<Module *> libraries; // used modules from (automatic) import statements e.g. import math; use log; …  ≠
 // functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
 
-Map<int64, bool> analyzed = {.capacity = 1000};
+Map<int64, bool> analyzed = { 1000};
 // avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
 

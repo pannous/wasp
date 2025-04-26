@@ -72,14 +72,15 @@ int u32_type = 4;
 int i32_type = 4;
 
 // https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
-std::map<short, int> opcode_args = {
+// std::map<short, int> opcode_args = {
+Map<short, int> opcode_args = {
     // BYTES used by wasm op AFTER the op code (not the stack values! e.g. 4 bytes for f32.const )
     {nop_, 0}, // useful for relocation padding call 1 -> call 10000000
     {block, leb},
     {loop, 0},
     {if_i, 0}, // precede by i32 result}, follow by i32_type {7f}
     {else_, 0},
-    {return_block, 0},
+    // {return_block, 0},
 
     // EXTENSIONS:
     {try_, block_index},
@@ -256,7 +257,7 @@ std::map<short, int> opcode_args = {
 
     {f32_from_int32, 0},
     {f64_promote_f32, 0},
-    {f64_from_f32, f64_promote_f32},
+    {f64_from_f32, 0},
     {i32_reinterpret_f32, 0}, // f32->i32 bit wise reinterpret != cast/trunc/convert
     {f32_reinterpret_i32, 0}, // i32->f32
 
@@ -285,7 +286,7 @@ std::map<short, int> opcode_args = {
     {i64_reinterpret_f64, 0},
     {f32_reinterpret_i32, 0},
     {f64_reinterpret_i64, 0},
-    {f32_from_f64, f32_demote_f64},
+    {f32_from_f64, 0},
 
     //{signExtensions
     {i32_extend8_s, 0},
@@ -987,16 +988,16 @@ void Linker::ResolveSymbols() {
 
     // ⚠️ all indices in func_map go into the function CODE section (LATER offset by the import count!)
     BindingHash func_map;
-    Map<String, int> name_map = {.capacity = 10000}; // from debug section to
+    Map<String, int> name_map = { 10000}; // from debug section to
     // ⚠️ all indices here map into into following LIST, not into wasm!! so TWO indirections!
     BindingHash export_map; // of all kinds
     //	BindingHash private_map;
-    Map<String, FuncInfo *> private_map = {.capacity = 10000};
+    Map<String, FuncInfo *> private_map = { 10000};
     List<ExportInfo> export_list;
     List<ExportInfo> globals_export_list;
     List<FuncInfo> func_list; // internal index identical to func_map index!!
     //    List<FuncInfo> import_list;//
-    Map<String, FunctionImport *> import_map = {.capacity = 10000}; // currently only used to find duplicates FuncInfo
+    Map<String, FunctionImport *> import_map = { 10000}; // currently only used to find duplicates FuncInfo
 
 
     // binary->functions not filled yet!
@@ -1440,7 +1441,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             //			trace("begin_function %d\n", current_fun);
             continue;
         }
-        int arg_bytes = opcode_args[op];
+        int arg_bytes = opcode_args[(short)op];
         if (op == call_) {
             uint64 index = unsignedLEB128(binary_data, length, current_offset, true);
             Index neu = binary->RelocateFuncIndex(index);

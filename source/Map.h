@@ -31,6 +31,20 @@ public: // todo careful Map<char*,…> eq
     T *values = (T *) calloc(sizeof(T), capacity);
     int map_header = map_header_32;
 
+
+    Map(int initial_capacity=MAP_INITIAL_CAPACITY) {
+        capacity = initial_capacity;
+        _size = 0;
+        keys = (S *) calloc(sizeof(S), capacity);
+        values = (T *) calloc(sizeof(T), capacity);
+    }
+
+    Map(std::initializer_list<std::pair<S, T>> init_list) {
+        for (const auto& pair : init_list) {
+            add(pair.first, pair.second);
+        }
+    }
+
     [[maybe_unused]] T defaulty;
     bool dont_use_constructor = false;// blank/copy makes sense for List of references but NOT for list of Objects
     bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point? remove
@@ -145,8 +159,18 @@ public: // todo careful Map<char*,…> eq
     // const & works just as well as int add(S key, T value) !!
     int add(const S &key, const T &value) {
         int found = position(key);
-        if (found >= 0)
+        if (found >= 0) {
+            print("PREVIOUS VALUE:");
+            print(values[found]);
+            print("NEW VALUE: ");
+            print(value);
+            if (memcmp(&values[found], &value, sizeof(T)) == 0){
+            // if((const T)values[found]==value) {
+                warn("redundant VALUE for: "s + key);
+                return _size;
+            }
             error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+        }
         if (keys == 0 or _size >= capacity) grow();
         keys[_size] = key;
         values[_size] = value;
