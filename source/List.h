@@ -64,6 +64,7 @@ public:
         capacity = size;
         items = (S *) calloc(size, sizeof(S));
     }
+
     //
     //
     //    // Move constructor
@@ -125,7 +126,6 @@ public:
     //    }
 
 
-
     //#ifndef PURE_WASM
     List(const std::initializer_list<S> &inis) : List() {
         auto item_count = inis.end() - inis.begin();
@@ -138,6 +138,7 @@ public:
             items[size_++] = s;
         }
     }
+
     //#endif
 
     List(S *args, int count, bool share = true) {
@@ -161,7 +162,7 @@ public:
 
     size_t size() const { return size_; }
 
-    void push_back(const S& s) {
+    void push_back(const S &s) {
         add(s);
     }
 
