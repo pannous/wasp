@@ -160,7 +160,7 @@ namespace wabt {
 //            uint8_t *data;
 //            size_t size;
             List<Section *> sections;
-            List<Export> exports = 10000;// {.capacity=10000};
+            List<Export> exports{1000};
             List<Func> functions;// only those with code, not imports:
             List<FunctionImport> function_imports;
             Index active_function_imports;

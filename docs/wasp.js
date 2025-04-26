@@ -1203,7 +1203,9 @@ async function run_wasm(buf_pointer, buf_size) {
     return result; // useless, returns Promise!
   } catch (ex) {
     //throw new Error(`Error in run_wasm: ${error.message}\nStack: ${error.stack}`);
-    print(app.exports)
+    if (typeof (app) != 'undefined') {
+      print(app.exports)
+    }
     console.error(ex)
     error(ex)
   }

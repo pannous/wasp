@@ -619,9 +619,11 @@ void Linker::WriteTableSection(const SectionPtrVector &sections) {
 void Linker::WriteExportSection() {
     Index total_exports = 0;
     for (auto binary: inputs_) {
+        print("WriteExportSection binary "s + binary->name + " exports "s + binary->exports.size());
         total_exports += binary->exports.size();
     }
 
+    print("WriteExportSection total_exports "s + total_exports);
     Fixup fixup = WriteUnknownSize();
     WriteU32Leb128(&stream_, total_exports, "export count");
 
@@ -950,33 +952,47 @@ void remove_from_efin_vec(Collection &c, const Element &e) {
 
 
 void Linker::RemoveRuntimeMainExport() {
+#if WASM
+    return;// BUG! Currently Works despite duplicates!! todo nothing? ;)
+#endif
     for (auto &bin: inputs_) {
+        print("RemoveRuntimeMainExport!!!");
+        print("bin "s + bin->name + " exports "s + bin->exports.size());
         short pos = -1;
         auto is_runtime = contains(bin->name, "wasp");
-        for (Export &ex: bin->exports) {
-            pos++;
-            if (is_runtime and ex.name == "wasp_main")
-                bin->exports.remove(pos); // ex
-            if (is_runtime and ex.name == "_start") // not
-                bin->exports.remove(pos); // USE wasp _start to print the result to wasi
+        for (short i = 0; i < bin->exports.size();) {
+            Export &ex = bin->exports[i];
+            if (is_runtime and (ex.name == "wasp_main" or ex.name == "_start")) {
+                bin->exports.remove(i);
+            } else {
+                i++;
+            }
         }
     }
 }
 
 void Linker::RemoveAllExports() {
-    // except _start for stupid wasmtime:
+    // except globals, wasp_main and _start for stupid wasmtime:
     //  (export "nil_name" (global 1))
     // 1: command export 'nil_name' is not a function
     for (auto &bin: inputs_) {
+        print("RemoveAllExports!!!");
+        print("bin "s + bin->name + " exports "s + bin->exports.size());
+        // if ("main.wasm"s == bin->name)continue; // keep main exports for now!!
+        // bin->exports.clear(); // hack for now!
+        // continue;
         short pos = -1;
-        for (Export &ex: bin->exports) {
-            pos++;
-            if (ex.kind != ExternalKind::Func)continue;
-            while (bin->exports.size_ > 0 and not(ex.name == "wasp_main" or ex.name == "_start" or ex.name == "main")) {
-                if (ex.kind != ExternalKind::Func)break;
-                if (!bin->exports.remove(pos))break;
+        for (short i = 0; i < bin->exports.size();) {
+            Export &ex = bin->exports[i];
+            if (ex.kind == ExternalKind::Func and ( ex.name.empty()
+                or not ( ex.name == "wasp_main" or ex.name == "_start" or ex.name == "main"))) {
+                bin->exports.remove(i);
+                // do NOT increment i because items shift left
+            } else {
+                i++;
             }
         }
+        print("bin "s + bin->name + " NOW exports "s + bin->exports.size());
     }
 }
 
@@ -1035,7 +1051,11 @@ void Linker::ResolveSymbols() {
         short pos = -1;
         for (Export &_export: binary->exports) {
             pos++;
-            if (export_map.FindIndex(_export.name) != kInvalidIndex) {
+            // if ("main.wasm"s == binary->name)
+            print("⚠️"s + binary->name + " index " + _export.index + " export kind " + (int) _export.kind + " '" +
+                  _export.name + "'");
+
+            if (export_map.FindIndex(_export.name.clone()) != kInvalidIndex) {
                 warn("duplicate export name "s + _export.name); // Ignoring
                 binary->exports.remove(pos); // todo: careful, does iterator skip an element now??
             }
@@ -1048,14 +1068,15 @@ void Linker::ResolveSymbols() {
 
         for (Export &_export: binary->exports) {
             // todo: why not store index directly?
-            if (tracing)
-                print(""s + binary->name + " export kind " + (int) _export.kind + " '" + _export.name.data + "' index "
+            // if (tracing)
+            if ("main.wasm"s == binary->name)
+                print("⚠️"s + binary->name + " export kind " + (int) _export.kind + " '" + _export.name + "'"
                       + _export.index);
             // if(_export.name.length() == 0)continue;// bug!?
             // printf("%s export kind %d '%s' index %d\n", binary->name, (int) _export.kind, _export.name.data, _export.index);
             if (_export.kind == wabt::ExternalKind::Global) {
                 globals_export_list.add(ExportInfo(&_export, binary));
-                export_map.emplace(_export.name, Binding(globals_export_list.size() - 1));
+                export_map.emplace(_export.name.clone(), Binding(globals_export_list.size() - 1));
             } else if (_export.kind == ExternalKind::Func) {
                 auto fun_offset = _export.index - nr_imports;
                 if (fun_offset < 0 or fun_offset >= binary->functions.size()) {
@@ -1067,7 +1088,7 @@ void Linker::ResolveSymbols() {
                 uint64 position = export_list.size();
                 export_list.add(ExportInfo(&_export, binary));
                 if (not func.name.data)
-                    func.name = _export.name;
+                    func.name = _export.name.clone();
                 if (func.name.length > 0) {
                     export_map.emplace(func.name, Binding(position));
                     String demangled = extractFuncName(func.name);
@@ -1114,6 +1135,7 @@ void Linker::ResolveSymbols() {
     info("Iterate through all imported globals and functions resolving them against exported ones.");
     for (LinkerInputBinary *&binary: inputs_) {
         if (not binary->needs_relocate)continue;
+        // globals
         for (GlobalImport &global_import: binary->global_imports) {
             String &name = global_import.name;
             Index export_number = export_map.FindIndex(name);
@@ -1133,7 +1155,7 @@ void Linker::ResolveSymbols() {
             binary->active_global_imports--;
         }
 
-
+        // imports
         for (FunctionImport &import: binary->function_imports) {
             String &name = import.name;
             Index export_number = export_map.FindIndex(name);
@@ -1348,7 +1370,7 @@ OutputBuffer Linker::PerformLink() {
     CreateRelocs();
     DumpRelocOffsets();
     //    if(final_product)
-    RemoveAllExports();
+    RemoveAllExports(); // except wasp_main
     WriteBinary();
     //	check(inputs_[1]->sections[4]->data.data_segments->at(0).data[0]=='*');
     return stream_.output_buffer();
@@ -1402,6 +1424,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             current_name = func1.name;
             if (!current_name.data or current_name.empty()) {
                 //  ƒ146 empty because NO EXPORT in wasp-runtime.wasm why? some inline shit?
+                // maybe just internal helpers created by clang?
                 //          (func (;146;) (type 1) (param i32) (result i32)
                 //    local.get 0
                 //    i32.const 10
@@ -1410,7 +1433,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
                 //    i32.lt_s
                 //    select)
                 //                ƒ467 _start empty because deleted?
-                trace("current_name.empty ƒ"s + call_index + "!");
+                print("current_name.empty ƒ"s + call_index + "!");
                 current_name = "ERR";
             }
             //            fun_start = current;// use to create fun_length patches iff block needs leb insert
