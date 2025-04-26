@@ -25,7 +25,7 @@
 template<class S, class T>
 class Map {
 public: // todo careful Map<char*,…> eq
-    int capacity = MAP_INITIAL_CAPACITY;// initial
+    int capacity = MAP_INITIAL_CAPACITY; // initial
     int _size = 0;
     S *keys = (S *) calloc(sizeof(S), capacity);
     T *values = (T *) calloc(sizeof(T), capacity);
@@ -46,9 +46,10 @@ public: // todo careful Map<char*,…> eq
     }
 
     [[maybe_unused]] T defaulty;
-    bool dont_use_constructor = false;// blank/copy makes sense for List of references but NOT for list of Objects
-    bool use_default = false;// no, this would copy fields (e.g. pointers to same list)  todo what is the point? remove
-    bool leave_blank = false;// true generally VERY BAD IDEA! map["x"] would return uninitialized &T, e.g. deep fields 0
+    bool dont_use_constructor = false; // blank/copy makes sense for List of references but NOT for list of Objects
+    bool use_default = false; // no, this would copy fields (e.g. pointers to same list)  todo what is the point? remove
+    bool leave_blank = false;
+    // true generally VERY BAD IDEA! map["x"] would return uninitialized &T, e.g. deep fields 0
     //	bool leave_blank == use_malloc_constructor = true;// return reference to freshly nulled malloc data, same ^^
 
     List<S> key_list() {
@@ -60,24 +61,24 @@ public: // todo careful Map<char*,…> eq
     }
 
     // unnecessary :
-//    Map() {
-//        keys = (S *) calloc(sizeof(S), capacity);
-//        values = (T *) calloc(sizeof(T), capacity);
-//    }
+    //    Map() {
+    //        keys = (S *) calloc(sizeof(S), capacity);
+    //        values = (T *) calloc(sizeof(T), capacity);
+    //    }
 
-//    Map(T default0) : defaulty(default0) {}
+    //    Map(T default0) : defaulty(default0) {}
 
-//
-//    Map(const Map &old) : keys(old.keys), values(old.values) {
-//        _size = old._size;
-//    }
-//
-//	Map &operator=(const Map &old){
-//		_size = old._size;
-//		keys = old.keys;
-//		values = old.values;
-//		return *this;
-//	}
+    //
+    //    Map(const Map &old) : keys(old.keys), values(old.values) {
+    //        _size = old._size;
+    //    }
+    //
+    //	Map &operator=(const Map &old){
+    //		_size = old._size;
+    //		keys = old.keys;
+    //		values = old.values;
+    //		return *this;
+    //	}
 
     S *lookup(T &t) {
         for (int i = 0; i < _size; i++)
@@ -109,9 +110,9 @@ public: // todo careful Map<char*,…> eq
 
     int position(S *s) {
         if (s >= begin() and s <= end())
-            return s - begin();// pointer matches directly
+            return s - begin(); // pointer matches directly
         for (int i = 0; i < _size; i++)
-            if (*s == keys[i])// compare VALUES!
+            if (*s == keys[i]) // compare VALUES!
                 return i;
         return -1;
     }
@@ -160,15 +161,16 @@ public: // todo careful Map<char*,…> eq
     int add(const S &key, const T &value) {
         int found = position(key);
         if (found >= 0) {
-            print("PREVIOUS VALUE:");
-            print(values[found]);
-            print("NEW VALUE: ");
-            print(value);
+
+            #if not WASM
             if (memcmp(&values[found], &value, sizeof(T)) == 0) {
-                // if((const T)values[found]==value) {
+            // if (&(const T &) values[found] == &value) { // Local not
                 warn("redundant VALUE for: "s + key);
                 return _size;
             }
+            #endif
+            print(values[found]);
+            print(value);
             error("DUPLICATE KEY: "s + key); // or use insert_or_assign
         }
         if (keys == 0 or _size >= capacity) grow();
@@ -177,28 +179,29 @@ public: // todo careful Map<char*,…> eq
         _size++;
         return _size;
     }
-// hopefully c++ is smart enough to not copy S / T twice? fucks up in WASM so …
-//    int add(S key, T value) {
-//        int found = position(key);
-//        if (found >= 0)
-//            error("DUPLICATE KEY: "s + key); // or use insert_or_assign
-//        if (keys == 0 or _size >= capacity) grow();
-//        keys[_size] = key;
-//        values[_size] = value;
-//        _size++;
-//        return _size;
-//    }
 
-//    int add(const S& key, T&& value) {
-//        int found = position(key);
-//        if (found >= 0)
-//            error("DUPLICATE KEY: "s + key); // or use insert_or_assign
-//        if (keys == 0 or _size >= capacity) grow();
-//        keys[_size] = key;
-//        values[_size] = std::move(value); // Move assignment
-//        _size++;
-//        return _size;
-//    }
+    // hopefully c++ is smart enough to not copy S / T twice? fucks up in WASM so …
+    //    int add(S key, T value) {
+    //        int found = position(key);
+    //        if (found >= 0)
+    //            error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+    //        if (keys == 0 or _size >= capacity) grow();
+    //        keys[_size] = key;
+    //        values[_size] = value;
+    //        _size++;
+    //        return _size;
+    //    }
+
+    //    int add(const S& key, T&& value) {
+    //        int found = position(key);
+    //        if (found >= 0)
+    //            error("DUPLICATE KEY: "s + key); // or use insert_or_assign
+    //        if (keys == 0 or _size >= capacity) grow();
+    //        keys[_size] = key;
+    //        values[_size] = std::move(value); // Move assignment
+    //        _size++;
+    //        return _size;
+    //    }
 
 
     // similar to map[key]=value
@@ -243,35 +246,39 @@ public: // todo careful Map<char*,…> eq
 
     // MUST USE map.has(x) instead of map[x] otherwise it is created!!
     // prepare assignment a[b]=c  BAD because unknown symbols will be added!!
-    T &operator[](S key) {// CREATING on access! use map.has(x) if not desired
-//        trace("map[key]");
+    T &operator[](S key) {
+        // CREATING on access! use map.has(x) if not desired
+        //        trace("map[key]");
         if (_size >= capacity)grow();
         int position1 = position(key);
         if (position1 >= 0) {
-//            trace("Key known");
+            //            trace("Key known");
             return values[position1];
         }
-        if (leave_blank /*false*/) { // leaves deep fields uninitialized.
+        if (leave_blank /*false*/) {
+            // leaves deep fields uninitialized.
             // Problematic for functions["exit"].signature.return_types …
             trace("leave_blank");
             keys[_size] = key;
-            return values[_size++];// values already contain blank T's so ok? no can FAIL with "T not initialized"
+            return values[_size++]; // values already contain blank T's so ok? no can FAIL with "T not initialized"
         } else if (use_default and false) {
             // todo remove after you understand that this is a bad idea … and don't come up with that idea again
-//				memcpy(t, defaulty, sizeof(T));// BAD because this would copy fields (e.g. pointers to same list)
-//				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
+            //				memcpy(t, defaulty, sizeof(T));// BAD because this would copy fields (e.g. pointers to same list)
+            //				return defaulty;// BAD because symbols["missing"]=9 => defaulty=9 wtf
         } else if (dont_use_constructor) {
             error("MISSING KEY: "s + key);
-        } else { // use default constructor
+        } else {
+            // use default constructor
             keys[_size] = key;
             values[_size] = T();
-//            insert_or_assign(key, T()); // creates intermediate stack value, or is c++ smart?
+            //            insert_or_assign(key, T()); // creates intermediate stack value, or is c++ smart?
             return values[_size++];
         }
         return last();
     }
 
-    T &operator[](S *key) {// CREATING on access! use map.has(x) if not desired
+    T &operator[](S *key) {
+        // CREATING on access! use map.has(x) if not desired
         if (_size >= capacity)grow();
         int position1 = position(key);
         if (position1 >= 0)
@@ -284,29 +291,32 @@ public: // todo careful Map<char*,…> eq
         _size++;
         return last();
     }
+
     // todo dangling intermediate which adds element only on assignment
-//    T& operator[]=(S s){}
-//   Return a proxy object which will have:
-//    operator=(T const &) overloaded for writes
-//    operator T() for reads
+    //    T& operator[]=(S s){}
+    //   Return a proxy object which will have:
+    //    operator=(T const &) overloaded for writes
+    //    operator T() for reads
 
 
-    S &operator[](T &value) {// inverse lookup
+    S &operator[](T &value) {
+        // inverse lookup
         return keys[position(value)];
     }
 
-    /*T*/ S &operator[](size_t position) {
+    /*T*/
+    S &operator[](size_t position) {
         return keys[position];
-//        return values[position];
+        //        return values[position];
     }
 
-//    T &operator[](int position) {
-//        return values[position];
-//    }
+    //    T &operator[](int position) {
+    //        return values[position];
+    //    }
 
-//    T &operator[](size_t position) {
-//        return values[position]; // functions that differ only in their return type cannot be overloaded
-//    }
+    //    T &operator[](size_t position) {
+    //        return values[position]; // functions that differ only in their return type cannot be overloaded
+    //    }
 
     T &value(int position) {
         check_silent(position >= 0);
@@ -320,18 +330,19 @@ public: // todo careful Map<char*,…> eq
         return values[position];
     }
 
-    void grow() { // todo don't grow when holding references!
+    void grow() {
+        // todo don't grow when holding references!
         capacity = capacity * 2;
         check_silent(capacity < MAP_MAX_CAPACITY);
-//        warn("GROWING");
+        //        warn("GROWING");
         S *new_keys = (S *) alloc(sizeof(S), capacity);
         T *new_values = (T *) alloc(sizeof(T), capacity);
         if (keys and values) {
             memcpy((void *) new_keys, (void *) keys, sizeof(S) * capacity / 2);
             memcpy((void *) new_values, (void *) values, sizeof(T) * capacity / 2);
-// currently we can't guarantee that external references exist, e.g. fun.signature consumeExportSection() wasm_reader.cpp:433
-// may result in AddressSanitizer: heap-use-after-free if references are held during grow/construction
-// todo use free after … runtime is debugged or save Map invented. currently ok though
+            // currently we can't guarantee that external references exist, e.g. fun.signature consumeExportSection() wasm_reader.cpp:433
+            // may result in AddressSanitizer: heap-use-after-free if references are held during grow/construction
+            // todo use free after … runtime is debugged or save Map invented. currently ok though
             free(keys);
             free(values);
         }
@@ -341,24 +352,25 @@ public: // todo careful Map<char*,…> eq
 
     void clear() {
         if (size() == 0)return;
-        free(keys);// todo  (interrupted by signal 6: SIGABRT) in WebApp why?
+        free(keys); // todo  (interrupted by signal 6: SIGABRT) in WebApp why?
         free(values);
         keys = (S *) calloc(sizeof(S), capacity);
         values = (T *) calloc(sizeof(T), capacity);
         _size = 0;
     }
 
-    void setDefault(T d) { // todo: remove after default constructor is used
+    void setDefault(T d) {
+        // todo: remove after default constructor is used
         if (sizeof(T) > 8)
             todo("careful! only use setDefault for value types without nested data!");
         defaulty = d;
-        use_default = true;// we can't tell if defaulty is 'good' otherwise
+        use_default = true; // we can't tell if defaulty is 'good' otherwise
     }
 
 
-//	void put() {
-//		error("use log(map) instead of map(put");
-//	}
+    //	void put() {
+    //		error("use log(map) instead of map(put");
+    //	}
     bool empty() {
         return _size <= 0;
     }
@@ -370,10 +382,11 @@ public: // todo careful Map<char*,…> eq
 
     S *end() const {
         return &keys[_size];
-    }// one BEHIND last!
+    } // one BEHIND last!
 
     T &last() {
-        if (_size <= 0) error("no last item in empty map");
+        if (_size <= 0)
+            error("no last item in empty map");
         return values[_size - 1];
     }
 
@@ -381,11 +394,11 @@ public: // todo careful Map<char*,…> eq
         return List<T>(values, size());
     }
 
-//    S* find(bool (lambda)(S&)) {
-//        for (S *s: *this)
-//            if (lambda(s))return s;
-//        return 0;
-//    }
+    //    S* find(bool (lambda)(S&)) {
+    //        for (S *s: *this)
+    //            if (lambda(s))return s;
+    //        return 0;
+    //    }
 
 
     T *find(bool (*lambda)(T &)) {
@@ -424,4 +437,3 @@ void print(Map<String, T> map) {
 
 
 #endif //WASP_MAP_H
-
