@@ -425,6 +425,8 @@ let imports = {
     puti: x => debug(x), // allows debugging of ints without format String allocation!
     js_demangle: x => chars(demangle(chars(x))),
     __cxa_demangle: (name, buf, len, status_p) => chars(demangle(chars(name))),
+    _ZNSt20bad_array_new_lengthC1Ev: nop,// todo get rid of implicit new []
+    _ZNSt20bad_array_new_lengthD1Ev: nop,
   },
   wasi_unstable: {
     fd_write, // printf
