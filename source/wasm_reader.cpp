@@ -18,8 +18,8 @@ bool build_module = true; // for funclets … and wasm runtime merge?
 bool build_module = true;
 #endif
 
-bool debug_reader = tracing;
-// bool debug_reader = true;
+// bool debug_reader = tracing;
+bool debug_reader = true;
 
 typedef unsigned char *bytes;
 int pos = 0;
@@ -162,6 +162,7 @@ void parseFunctionNames(Code &payload) {
 // import type indices are part of import struct!
 // FOR ALL FUNCTIONS WITHOUT EXPORT!
 void parseFuncTypeSection(Code &payload) {
+    info("parseFuncTypeSection");
     // imports stupidly have their own type,
     // we don't know here if i32 is pointer … so we may have to refine later
     //        int offset = 0; O(1)

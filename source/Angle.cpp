@@ -1355,6 +1355,7 @@ Module &loadRuntime() {
 #else
     Module &wasp = read_wasm("wasp-runtime.wasm");
     wasp.functions["getChar"].signature.returns(codepoint1);
+    // addLibrary(&wasp); // BREAKS system WHY?
     // if(!libraries.has(&wasp))
     //     libraries.add(&wasp); // BREAKS system WHY?
     return wasp;

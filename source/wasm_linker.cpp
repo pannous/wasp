@@ -982,6 +982,7 @@ void Linker::RemoveAllExports() {
 
 void Linker::ResolveSymbols() {
     // Create hashmap of all exported symbols from all inputs.
+    print("ResolveSymbols!!!");
 
     // ⚠️ all indices in func_map go into the function CODE section (LATER offset by the import count!)
     BindingHash func_map;
