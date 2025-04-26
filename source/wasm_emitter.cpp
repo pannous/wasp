@@ -4195,6 +4195,7 @@ Code &compile(String code, bool clean) {
     //    binary.debug();
     binary.save("main.wasm");
 #ifdef INCLUDE_MERGER
+    print("merging... "s+ libraries.size());
     if (libraries.size() > 0) {
         binary.needs_relocate = true;
         List<Code *> merge_module_binaries;

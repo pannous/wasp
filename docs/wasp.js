@@ -15,7 +15,8 @@ let lib_folder_url = "assets/lib/"
 // let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
-let needs_runtime = false; // set per app!
+let needs_runtime = true; // set per app!
+// let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
 const run_tests = true; // todo NOT IN PRODUCTION!

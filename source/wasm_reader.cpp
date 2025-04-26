@@ -179,7 +179,7 @@ void parseFuncTypeSection(Code &payload) {
         }
         if (!function) {
             // error("named function not found for call_index "s + call_index);
-            print("named function not found for call_index "s + call_index);
+            trace("named function not found for call_index "s + call_index);
             // e.g. function operator+ already has signature ( String self, real )  todo OVERLOAD BUG!
             String unnamed = "func_"s + call_index; // dummy name
             function = new Function{

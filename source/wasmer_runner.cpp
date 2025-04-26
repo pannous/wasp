@@ -402,7 +402,7 @@ void linkImports(wasm_extern_t **externs, Module meta) {
         //		const wasm_func_callback_t callback=link_import(import_name);
         //		wasm_func_t link*=wasm_func_new(store, funcType(signature), link_import(import_name));
         //		wasm_func_t *import = wasm_func_new(store, func_type, wrap);
-		wasm_func_t *import = wasm_func_new(store, func_type, wrap);
+        wasm_func_t *import = wasm_func_new(store, func_type, wrap);
 //		import.k ->kind = WASM_EXTERN_FUNC;
 //		import->of.import = link;
 		wasm_extern_t *ex = wasm_func_as_extern(import);
