@@ -3694,7 +3694,6 @@ void print(Module &m) {
     // print(m.export_names); // none!?
     // print("import_names:");
     // print(m.import_names);
-
 }
 
 void testWaspRuntimeModule() {
@@ -3721,8 +3720,9 @@ void testWaspRuntimeModule() {
     // check(wasp.import_names.has("proc_exit")); // not important but todo broken in wasm!
     // wasp.signatures
     check(wasp.functions.size() > 100);
-    check(wasp.functions.has("_Z4powiij"));
+    // check(wasp.functions.has("_Z4powiij"));// extern "C"'ed
     check(wasp.functions.has("powi")); // ok if not WASM
+    check(wasp.functions.has("powd")); // ok if not WASM
     check(wasp.functions.has("test42"));
 }
 
