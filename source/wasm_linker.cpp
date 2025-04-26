@@ -109,9 +109,9 @@ Map<short, int> opcode_args = {
     {local_get, leb},
     {local_set, leb},
     {local_tee, leb},
-    {get_local, leb}, // get to stack
-    {set_local, leb}, // set and pop
-    {tee_local, leb}, // set and leave on stack
+    // {get_local, leb}, // get to stack
+    // {set_local, leb}, // set and pop
+    // {tee_local, leb}, // set and leave on stack
 
     {global_get, leb},
     {global_set, leb},
@@ -132,14 +132,14 @@ Map<short, int> opcode_args = {
     {i64_store, datax}, // memory.poke memory.set memory.write
     {i32_store_8, datax},
     {i32_store_16, datax},
-    {i8_store, datax},
-    {i16_store, datax},
+    // {i8_store, datax},
+    // {i16_store, datax},
 
     //{i32_store_byte, -1},// store byte at i32 address
     {i32_auto, leb},
-    {i32_const, leb},
+    // {i32_const, leb},
     {i64_auto, leb},
-    {i64_const, leb},
+    // {i64_const, leb},
     {f32_auto, 4},
     {f64_const, 8},
 
@@ -153,10 +153,7 @@ Map<short, int> opcode_args = {
     {i32_le, 0},
     {i32_ge, 0},
 
-    {i64_eqz, 0},
-    {f32_eqz, 0}, // HACK: no such thing!
-
-
+    // {f32_eqz, 0}, // HACK: no such thing!
     {i64_eqz, 0},
     {i64_eq, 0},
     {i64_ne, 0},
@@ -186,7 +183,7 @@ Map<short, int> opcode_args = {
     {i32_sub, 0},
     {i32_mul, 0},
     {i32_div, 0},
-    {i32_rem, 0}, // 5%4=1
+    // {i32_rem, 0}, // 5%4=1 ==
     {i32_modulo, 0},
     {i32_rem_u, 0},
     {i32_and, 0},
@@ -226,7 +223,7 @@ Map<short, int> opcode_args = {
     {f32_floor, 0},
     {f32_trunc, 0},
     {f32_round, 0}, // truncation ≠ proper rounding!
-    {f32_nearest, 0},
+    // {f32_nearest, 0},
 
     {f32_sqrt, 0},
     {f32_add, 0},
@@ -249,17 +246,17 @@ Map<short, int> opcode_args = {
     {f64_max, 0},
     {f64_copysign, 0},
 
-    {f32_cast_to_i32_s, 0}, // truncation ≠ proper rounding {f32_round, -1}!
-    {i32_trunc_f32_s, 0}, // cast/convert != reinterpret
-    {f32_convert_i32_s, 0}, // convert FROM i32
-    //		{i32_cast_to_f32_s,                   -1},
-    //{i32_cast_to_f64_s =
+    // {f32_cast_to_i32_s, 0}, // truncation ≠ proper rounding {f32_round, -1}!
+    // {i32_trunc_f32_s, 0}, // cast/convert != reinterpret
+    // {f32_convert_i32_s, 0}, // convert FROM i32
+    // {i32_cast_to_f32_s,                   -1},
+    // {i32_cast_to_f64_s =
 
-    {f32_from_int32, 0},
-    {f64_promote_f32, 0},
-    {f64_from_f32, 0},
-    {i32_reinterpret_f32, 0}, // f32->i32 bit wise reinterpret != cast/trunc/convert
-    {f32_reinterpret_i32, 0}, // i32->f32
+    // {f32_from_int32, 0},
+    // {f64_promote_f32, 0},
+    // {f64_from_f32, 0},
+    // {i32_reinterpret_f32, 0}, // f32->i32 bit wise reinterpret != cast/trunc/convert
+    // {f32_reinterpret_i32, 0}, // i32->f32
 
     {i32_wrap_i64, 0},
     {i32_trunc_f32_s, 0},
@@ -286,7 +283,7 @@ Map<short, int> opcode_args = {
     {i64_reinterpret_f64, 0},
     {f32_reinterpret_i32, 0},
     {f64_reinterpret_i64, 0},
-    {f32_from_f64, 0},
+    // {f32_from_f64, 0},
 
     //{signExtensions
     {i32_extend8_s, 0},

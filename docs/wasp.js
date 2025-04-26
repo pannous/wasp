@@ -6,17 +6,18 @@
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
 * */
 let Wasp = {}
-let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and shortcuts
+let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and shortcuts, 6.6MB with linker!
+// let WASP_COMPILER = 'assets/wasp-hosted-release.wasm' // hard link 300k without tests
 // let WASP_COMPILER = 'assets/wasp-release-debug.wasm' // hard link 300k without tests
-// let WASP_COMPILER = 'assets/wasp-debug-release.wasm' // hard link 300k without tests
-let WASP_RUNTIME = 'wasp-runtime.wasm' // now in :
+// let WASP_COMPILER = 'assets/wasp-release.wasm' // hard link 300k without tests currently not working!
+let WASP_RUNTIME = 'wasp-runtime.wasm' // 100kb now in :
 let lib_folder_url = "assets/lib/"
 // let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false; // set per app!
-const use_big_runtime = true; // use compiler as runtime for now
-// const use_big_runtime = false; // link / use small runtime IN compiler
+// const use_big_runtime = true; // use compiler as runtime for now
+const use_big_runtime = false; // link / use small runtime IN compiler
 // const run_tests = true; // todo NOT IN PRODUCTION!
 const run_tests = false;
 let app_module;
@@ -309,6 +310,10 @@ let resume; // callback function resuming after run_wasm finished
 class YieldThread {
 } // unwind wasm, re-enter through resume() after run_wasm finished
 
+function getRidOfDependency(x) {
+  throw new Error("getRidOfDependency")
+}
+
 let imports = {
   "wasm:js-string": jsStringPolyfill, // ignored when provided as WebAssembly.compile(bytes, { builtins: ['js-string'] });
   vector: { // todo: use wasm vector proposal when available, using webgpu-blas as a shim
@@ -325,6 +330,29 @@ let imports = {
     async_yield: x => { // called from inside wasm, set callback handler resume before!
       throw new YieldThread() // unwind wasm, re-enter through resume() after run_wasm
     },
+    // the following dependencies only appear when using the linker!!
+    vsnprintf: getRidOfDependency,
+    stat: getRidOfDependency,
+    strerror: getRidOfDependency,
+    fseek: getRidOfDependency,
+    perror: getRidOfDependency,
+    ftell: getRidOfDependency,
+    fread: getRidOfDependency,
+    ferror: getRidOfDependency,
+    abort: getRidOfDependency,
+    isprint: getRidOfDependency,
+    snprintf: getRidOfDependency,
+    // std::__2::basic_string<char, std::__2::char_traits<char>, std::__2::allocator<char> >::~basic_string()
+    __cxa_pure_virtual: getRidOfDependency,
+    _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6__initEPKcm: getRidOfDependency,
+    _ZNSt20bad_array_new_lengthC1Ev: getRidOfDependency,// todo get rid of implicit new []
+    _ZNSt20bad_array_new_lengthD1Ev: getRidOfDependency,
+    __ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED1Ev: getRidOfDependency, // WTH
+    _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED1Ev: getRidOfDependency,
+    _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE9push_backEc: getRidOfDependency,
+    _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6appendEPKc: getRidOfDependency,
+    // the above dependencies only appear when using the linker!!
+
     /* run_wasm: async (x, y) => { */ // Cannot convert [object Promise] to a BigInt
     run_wasm: (x, y) => {
       try {
@@ -425,8 +453,6 @@ let imports = {
     puti: x => debug(x), // allows debugging of ints without format String allocation!
     js_demangle: x => chars(demangle(chars(x))),
     __cxa_demangle: (name, buf, len, status_p) => chars(demangle(chars(name))),
-    _ZNSt20bad_array_new_lengthC1Ev: nop,// todo get rid of implicit new []
-    _ZNSt20bad_array_new_lengthD1Ev: nop,
   },
   wasi_unstable: {
     fd_write, // printf
