@@ -1705,9 +1705,11 @@ void testAllWasm() {
     // called by testRun() OR synchronously!
     assert_emit("42", 42);
     assert_emit("42+1", 43);
+    assert_run("test42+2", 44); // OK in WASM too ?
     testSinus(); // still FRAGILE!
 
 #if not WASM
+    testAssertRun();
     test_wasm_todos();
     testTodoBrowser(); // TODO!
 #endif
