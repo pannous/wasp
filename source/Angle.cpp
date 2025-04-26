@@ -1796,7 +1796,7 @@ Node &groupForIn(Node &n, Function &context) {
     //    todo : for i < 3
     List<String> ops = {"to", "…", "upto", "<", "<=", "..", "..<", "until", ">", ">=", "...", "downto"};
     if (n[2].name != "in" or not ops.has(n[4].name))
-    error("Invalid 'for' loop structure. Expected: for i in begin to end {}");
+        error("Invalid 'for' loop structure. Expected: for i in begin to end {}");
     Node &variable = n[1];
     addLocal(context, variable.name, int32t, false);
     Node &begin = n[3];

@@ -22,7 +22,7 @@ Node interpret(Node &n) {
 Node If(Node condition, Node then) {
     Node ok0 = condition.interpret();
     bool ok = (bool) ok0;
-    if (condition.name == "0")ok = false;// hack
+    if (condition.name == "0")ok = false; // hack
     if (ok)return then.interpret();
     else return False;
 }
@@ -41,7 +41,7 @@ Node While(Node n) {
     return result;
 }
 
-bool recursive = true;// whats that?
+bool recursive = true; // whats that?
 
 Node Node::interpret(bool expectOperator /* = true*/) {
     if (length == 0)return constants(*this);
@@ -69,16 +69,17 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 
     if (length == 2 and children[1].kind == expression) {
         length = 1;
-        return this->merge(children[1]).interpret();// stop hacking
+        return this->merge(children[1]).interpret(); // stop hacking
     }
-//	if (type != expression and type != key)
-//		return *this;
+    //	if (type != expression and type != key)
+    //		return *this;
     float max = 0; // do{
     float min = 999999;
     Node right;
     Node left;
     Node unknown_symbols;
-    for (Node &node: *this) {// foreach
+    for (Node &node: *this) {
+        // foreach
         float p = precedence(node);
         if (p > max) max = p;
         if (p < min and p != 0) min = p;
@@ -101,12 +102,12 @@ Node Node::interpret(bool expectOperator /* = true*/) {
         return *this;
     }
     Node *op = 0;
-    Node *inner = 0;// NIL;
-//	Node *prev = 0;
+    Node *inner = 0; // NIL;
+    //	Node *prev = 0;
     for (Node &n: *this) {
         float p = precedence(n);
         if (p == min and not inner) inner = &n;
-//		else if (not inner) prev = &n;
+        //		else if (not inner) prev = &n;
         if (p == max and not op) {
             op = &n;
         } else if (op)
@@ -114,23 +115,23 @@ Node Node::interpret(bool expectOperator /* = true*/) {
         else
             left.add(n);
     }
-//	const Node &arg = inner.next ? *inner.next : NIL;
-//	replace ... apply_op(prev, inner, arg);
+    //	const Node &arg = inner.next ? *inner.next : NIL;
+    //	replace ... apply_op(prev, inner, arg);
 
     if (op->children and right.isEmpty()) {
         right = op->children[0];
-    }// DONT work around bugs like this!!
-//		remove(&op);// fucks up pointers?
+    } // DONT work around bugs like this!!
+    //		remove(&op);// fucks up pointers?
     if (recursive and op) {
         right = right.flat();
         Node left1 = left.flat();
-        Node result = apply_op(left1, *op, right);// <<<<<<<<<
+        Node result = apply_op(left1, *op, right); // <<<<<<<<<
         if (isFunction(*op) and not left.isEmpty()) {
             result = left.add(result).interpret();
         }
         return result;
     }
-//	};// while (max > 0);
+    //	};// while (max > 0);
     return *this;
 }
 
@@ -162,9 +163,10 @@ Node If(Node n) {
     if (n.has(":") /*before else: */) {
         condition = n.to(":");
         if (condition.has("else"))
-            condition = condition.to("else");// shouldn't happen?
+            condition = condition.to("else"); // shouldn't happen?
         then = n.from(":");
-    } else if (condition.has(":")) {// as child
+    } else if (condition.has(":")) {
+        // as child
         then = condition.from(":");
         condition = condition.interpret();
     }
@@ -172,8 +174,8 @@ Node If(Node n) {
         then = n.from("then");
     if (then.has("else"))
         then = then.to("else");
-//	if(condition.name=="condition")
-//		condition = condition.values();
+    //	if(condition.name=="condition")
+    //		condition = condition.values();
 
     Node condit = condition.interpret();
     bool condition_fulfilled = (bool) condit;
@@ -193,7 +195,7 @@ Node If(Node n) {
         if (n.has("else"))
             return interpret(n.from("else"));
         if (n.length == 3 and not n.has(":"))
-            return interpret(n[2]);// else
+            return interpret(n[2]); // else
         else
             return False;
     }
@@ -201,20 +203,20 @@ Node If(Node n) {
 
 Node do_call(Node left, Node op0, Node right) {
     String op = op0.name;
-    if (op == "id")return right;// identity
-//	if (op == "square")return Node(square(right.numbere()));
-    if (op == "square")return Node(right.numbere() * right.numbere());// don't test
+    if (op == "id")return right; // identity
+    //	if (op == "square")return Node(square(right.numbere()));
+    if (op == "square")return Node(right.numbere() * right.numbere()); // don't test
     if (op == "√")return Node(sqrt1(right.numbere()));
     if (op == "printf") {
         print(right);
         return right;
     }
     error("Unregistered function "s + op);
-	return ERROR;
+    return ERROR;
 }
 
 Node matchPattern(Node object, Node pattern0) {
-//	[1 2 3]#1 == 1 == [1 2 3][0]
+    //	[1 2 3]#1 == 1 == [1 2 3][0]
     Node pattern = pattern0;
     if (pattern0.kind == expression)
         pattern = pattern0.interpret(); // [1 2 3][3-2]==2
@@ -234,7 +236,6 @@ Node matchPattern(Node object, Node pattern0) {
 
 
 Node Node::apply_op(Node left, Node op0, Node right) {
-
     if (debug) {
         trace("apply_op\n");
         left.print();
@@ -251,19 +252,19 @@ Node Node::apply_op(Node left, Node op0, Node right) {
             right = *globals[right.name].value;
     }
 
-//	if(right.length==0 and op0.param){
-//		warn("using param for args");
-//		right = *op0.param;
-//	}
+    //	if(right.length==0 and op0.param){
+    //		warn("using param for args");
+    //		right = *op0.param;
+    //	}
     String &op = op0.name;
     if (!isFunction(op, true)) // 1 + square 2  => "1+" kept dangling
         left = left.interpret(false);
     bool lazy = (op == "or") and (bool) left;
     lazy = lazy || (op == "and" and not(bool) left);
-    lazy = lazy || (op == "#");// length and index
+    lazy = lazy || (op == "#"); // length and index
     lazy = lazy || (op == "if");
     lazy = lazy || (op == "while");
-//	lazy = lazy || arg#n is block
+    //	lazy = lazy || arg#n is block
 
     if (!lazy)
         right = right.interpret(false);
@@ -281,12 +282,15 @@ Node Node::apply_op(Node left, Node op0, Node right) {
 
     if (op == "#") {
         if (left.length == 0) // length operator #{a b c} == 3
-            return Node(right.length);// or right["size"] or right["count"]  or right["length"]
-        else {  // index operator [a b c]#2 == b
+            return Node(right.length); // or right["size"] or right["count"]  or right["length"]
+        else {
+            // index operator [a b c]#2 == b
             int64 index = right.value.longy;
             if (index <= 0)
-                error("index<=0 ! Angle index operator # starts from 1. So [a b c]#2 == b. Use [] operator for zero based indexing");
-            if (index > left.length)error("Index out of range: %d > %d !"s % index % left.length);
+                error(
+                "index<=0 ! Angle index operator # starts from 1. So [a b c]#2 == b. Use [] operator for zero based indexing");
+            if (index > left.length)
+                error("Index out of range: %d > %d !"s % index % left.length);
             return left.children[index - 1];
         }
     }
@@ -299,13 +303,15 @@ Node Node::apply_op(Node left, Node op0, Node right) {
     }
 
     if (op == "as") {
-//		4.4 as int is 4
+        //		4.4 as int is 4
     }
-    if (op == "peek") { // todo module memory.peek = memory.get = memory[index]
-//		poke 65536, 42  set/write memory
-//		peek 65536 #42  get/read  memory
+    if (op == "peek") {
+        // todo module memory.peek = memory.get = memory[index]
+        //		poke 65536, 42  set/write memory
+        //		peek 65536 #42  get/read  memory
     }
-    if (op == "√") { // why String( on mac?
+    if (op == "√") {
+        // why String( on mac?
         if (right.kind == reals)
             left.addSmart(Node(sqrt1(right.value.real)));
         if (right.kind == longs)
@@ -313,7 +319,7 @@ Node Node::apply_op(Node left, Node op0, Node right) {
         return left.interpret();
     }
 
-//	if(!is_KNOWN_operator(op0))return call(left, op0, right);
+    //	if(!is_KNOWN_operator(op0))return call(left, op0, right);
 
     if (op == "‖") {
         if (right.isEmpty() and left.kind == longs) return Node(std::abs(left.value.longy));
@@ -322,14 +328,16 @@ Node Node::apply_op(Node left, Node op0, Node right) {
         if (left.isEmpty() and right.kind == reals) return Node(std::abs(right.value.real));
         error("missing value for ‖");
     }
-    if (op == "|") {// bitwise or OR pipe!
+    if (op == "|") {
+        // bitwise or OR pipe!
         if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
         if (left.kind == longs and right.kind == longs) return Node((int64) (left.value.longy | right.value.longy));
         todo("PIPE a|b");
         // pipe todo
     }
 
-    if (op == "&") {// todo
+    if (op == "&") {
+        // todo
         if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
         if (left.kind == bools or right.kind == bools)
             return left.value.data and right.value.data ? True : False;
@@ -348,23 +356,24 @@ Node Node::apply_op(Node left, Node op0, Node right) {
         if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());
         if (left.kind == bools or right.kind == bools) return left.value.data and right.value.data ? True : False;
         if (left.value.longy)return right;
-        return Node(left.value.longy and right.value.longy);// todo just False?
+        return Node(left.value.longy and right.value.longy); // todo just False?
     }
-/*
- `or`/`else` ARE NOT IDENTICAL:
-`if 1 then 0 else 2 == 0`
-`1 and 0 or 2 == 2`  !!!
-*/
+    /*
+     `or`/`else` ARE NOT IDENTICAL:
+    `if 1 then 0 else 2 == 0`
+    `1 and 0 or 2 == 2`  !!!
+    */
     if (op == "or" or op == "||" or op == "∨" or op == "⋁") {
         ::print("YA OR!!");
         if (left.isEmpty())return right;
         if (left.kind == bools) return left.value.longy == 1 ? True : right;
-//		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());// eek no!!
+        //		if (left.kind == strings or right.kind == strings) return Node(left.string() + right.string());// eek no!!
         if (!left.isEmpty() and left != NIL and left != False) return left;
         return right;
     }
 
-    if (op == "==" or op == "equals" or op == "≡" or op == "﹦" or op == "﹦" or op == "≟") { // ≝
+    if (op == "==" or op == "equals" or op == "≡" or op == "﹦" or op == "﹦" or op == "≟") {
+        // ≝
         return left == right ? True : False;
     }
 
@@ -413,7 +422,6 @@ Node Node::apply_op(Node left, Node op0, Node right) {
     }
 
 
-
     // todo: 2 * -x
     if (op == "-" or op == "minus" or op == "subtract") {
         if (left.kind == reals and right.kind == reals) return Node(left.value.real - right.value.real);
@@ -421,12 +429,13 @@ Node Node::apply_op(Node left, Node op0, Node right) {
         if (left.kind == reals and right.kind == longs) return Node(left.value.real - right.value.longy);
         if (left.kind == longs and right.kind == longs) return Node(left.value.longy - right.value.longy);
         // should be handled by nodeValue:
-        if (left.empty() and right.kind == reals) return Node(-right.value.real);//negation
-        if (left.empty() and right.kind == longs) return Node(-right.value.longy);//negation
+        if (left.empty() and right.kind == reals) return Node(-right.value.real); //negation
+        if (left.empty() and right.kind == longs) return Node(-right.value.longy); //negation
     }
 
 
-    if (op == "*" or op == "⋅" or op == "×" or op == "✕" or op == "⋆" or op == "∗" or op == "times") {// ⊗
+    if (op == "*" or op == "⋅" or op == "×" or op == "✕" or op == "⋆" or op == "∗" or op == "times") {
+        // ⊗
         if (left.kind == strings) return Node(left.string().times(right.value.longy));
         if (right.kind == strings) return Node(right.string().times(left.value.longy));
         if (left.kind == reals and right.kind == reals) return Node(left.value.real * right.value.real);
@@ -439,7 +448,8 @@ Node Node::apply_op(Node left, Node op0, Node right) {
         if (left.kind == longs and right.kind == longs) return Node(left.value.longy % right.value.longy);
     }
 
-    if (op == "/" or op == "÷" or op == "div" or op == "divide") { // "by"
+    if (op == "/" or op == "÷" or op == "div" or op == "divide") {
+        // "by"
         if (left.kind == reals and right.kind == reals) return Node(left.value.real / right.value.real);
         if (left.kind == longs and right.kind == reals) return Node(left.value.longy / right.value.real);
         if (left.kind == reals and right.kind == longs) return Node(left.value.real / right.value.longy);
@@ -449,31 +459,31 @@ Node Node::apply_op(Node left, Node op0, Node right) {
     if (op == "=" or op == ":=" or op == ":" or op == "⇒" or op == "=>") {
         warn("proper '=' operator");
         left.kind = reference;
-        if (right.value.data) {// and ...
+        if (right.value.data) {
+            // and ...
             left.kind = right.kind; // there are certainly things lost here!?!
-            left.value.data = right.value.data;// todo failed copy assignment: length=0!!!
-            if (right.kind == strings)left.value.string->length = right.value.string->length;// DONT WORKAROUND BUGS!!
+            left.value.data = right.value.data; // todo failed copy assignment: length=0!!!
+            if (right.kind == strings)left.value.string->length = right.value.string->length; // DONT WORKAROUND BUGS!!
         } else
             left.value.node = &right;
         return left;
     }
-    if (op == "else" or op == "then")return right;// consume by "if"! todo COULD be used as or if there is no 'if'
+    if (op == "else" or op == "then")return right; // consume by "if"! todo COULD be used as or if there is no 'if'
     if (op == "if") return If(right);
     if (op == "while") return While(right);
     if (isFunction(op, true)) {
-//		kind=Type::function; // functor same concept, different arguments
+        //		kind=Type::function; // functor same concept, different arguments
         // careful, functions take arguments, functors take bodies if(1,2,3)!=if{1}{2}{3}
     }
-    if (op0.kind == patterns and op0.isEmpty())// pattern can come from left or right!
+    if (op0.kind == patterns and op0.isEmpty()) // pattern can come from left or right!
         return left.isEmpty() ? right : left;
-    if (op0.kind == patterns)// pattern can come from left or right!
+    if (op0.kind == patterns) // pattern can come from left or right!
         return matchPattern(left, op0);
     if (right.kind == patterns)
         return matchPattern(op0, right);
 
     todo("operator “%s” NOT defined for types %s and %s "s % op % typeName(left.kind) % typeName(right.kind));
     return NIL;
-//	put("NO builtin operator "+op0+" calling…")
-//	return call(left, op0, right);
+    //	put("NO builtin operator "+op0+" calling…")
+    //	return call(left, op0, right);
 }
-

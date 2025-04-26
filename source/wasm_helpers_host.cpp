@@ -15,7 +15,7 @@
 #include <math.h> // links to math.so todo: can it be inlined in wasm? otherwise needs extern "C" double pow
 
 extern "C" unsigned int *memory = 0;
-void *wasm_memory = 0;// c pointer of VM, NOT memory inside wasm module
+void *wasm_memory = 0; // c pointer of VM, NOT memory inside wasm module
 
 // these wrappers are helpful because different hosts have different signatures, so wasm_helpers.h would need many #if's
 void memcpy1(bytes dest, bytes source, int i) {
@@ -26,7 +26,7 @@ void memcpy1(bytes dest, bytes source, int i) {
 // NOT part of c! nice bifork
 void *alloc(int num, int size) {
     return calloc(num, size);
-//    return malloc(num * size);// good to find bugs
+    //    return malloc(num * size);// good to find bugs
 }
 
 void panic() {
@@ -50,15 +50,15 @@ void panic() {
 //#endif
 
 
-
 // replaces own puts()
 // poor man's WASI, only needed INTERNALLY if compiled without modern wasm runtime, link in diverse wasm runners as
 // {"fd_write", (void *) fd_write_host, "(iiii)i", NULL, false}, …
 void fd_write_host(int FD, char **strp, int *len, int *nwritten) {
-//#if
+    //#if
     printf("%s", *strp);
     error("fd_write_host should ONLY be called via wasm runtime without wasi");
 }
+
 //__wasi_fd_write
 /*
  * fd_write: wrap((fd, iovs, iovsLen, nwritten) => {
@@ -101,7 +101,8 @@ int64 putl(int64 l) {
     return l;
 }
 
-void putp(int64 char_pointer) {// workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
+void putp(int64 char_pointer) {
+    // workaround for m3, which can't link pointers:  od.link_optional<puts>("*", "puts")
     printf("%llx", char_pointer);
 }
 
@@ -119,10 +120,11 @@ extern "C" void put_chars(chars c, size_t len) {
 #if MY_WASM // and …
     printf("%s", c); // console.log adds newline
 #else
-    if (len and c[len] and len > 0 and len < 1000) { // not null terminated! E.g. in shared String
+    if (len and c[len] and len > 0 and len < 1000) {
+        // not null terminated! E.g. in shared String
         char copy[1000];
         strcpy2(copy, c);
-        char x = c[len];// bad access!
+        char x = c[len]; // bad access!
         copy[len] = 0;
         printf("%s\n", copy);
     } else {

@@ -17,46 +17,44 @@
 #include "binary.h"
 
 namespace wabt {
-
-	SectionTypeOrder GetSectionOrder(SectionType sec) {
-		switch (sec) {
+    SectionTypeOrder GetSectionOrder(SectionType sec) {
+        switch (sec) {
 #define V(Name, name, code) \
   case SectionType::Name: \
     return SectionTypeOrder::Name;
-			WABT_FOREACH_BINARY_SECTION(V)
+            WABT_FOREACH_BINARY_SECTION(V)
 #undef V
-			default:
-				WABT_UNREACHABLE;
-		}
-	}
+            default:
+                WABT_UNREACHABLE;
+        }
+    }
 
-	const char *GetSectionName(SectionType sec) {
-		switch (sec) {
+    const char *GetSectionName(SectionType sec) {
+        switch (sec) {
 #define V(Name, name, code) \
   case SectionType::Name: \
     return #Name;
-			WABT_FOREACH_BINARY_SECTION(V)
+            WABT_FOREACH_BINARY_SECTION(V)
 #undef V
-			default:
-				WABT_UNREACHABLE;
-		}
-	}
+            default:
+                WABT_UNREACHABLE;
+        }
+    }
 
-	const char *NameSubsectionName[] = {
-			"module",
-			"function",
-			"local",
-			"label",
-			"type",
-			"table",
-			"memory",
-			"global",
-			"elemseg",
-			"dataseg",
-	};
+    const char *NameSubsectionName[] = {
+        "module",
+        "function",
+        "local",
+        "label",
+        "type",
+        "table",
+        "memory",
+        "global",
+        "elemseg",
+        "dataseg",
+    };
 
-	const char *GetNameSectionSubsectionName(NameSectionSubsection subsec) {
-		return NameSubsectionName[size_t(subsec)];
-	}
-
-}  // namespace wabt
+    const char *GetNameSectionSubsectionName(NameSectionSubsection subsec) {
+        return NameSubsectionName[size_t(subsec)];
+    }
+} // namespace wabt

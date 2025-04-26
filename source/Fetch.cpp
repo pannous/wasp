@@ -8,9 +8,9 @@ typedef const char *chars;
 
 
 size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
-	std::string data((chars) ptr, (size_t) size * nmemb);
-	*((std::stringstream *) stream) << data << std::endl;
-	return size * nmemb;
+    std::string data((chars) ptr, (size_t) size * nmemb);
+    *((std::stringstream *) stream) << data << std::endl;
+    return size * nmemb;
 }
 
 //extern "C"
@@ -26,11 +26,11 @@ chars fetch(chars url) {
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK)
         printf("curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-//		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-	auto MAX_SIZE = sizeof(char) * out.str().length() + 1;
-	char *copy = (char *) malloc(MAX_SIZE);
-	snprintf(copy, MAX_SIZE, "%s", out.str().data());
-//	strcpy(copy, data);
-//	printf("%s", copy);
+    //		fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+    auto MAX_SIZE = sizeof(char) * out.str().length() + 1;
+    char *copy = (char *) malloc(MAX_SIZE);
+    snprintf(copy, MAX_SIZE, "%s", out.str().data());
+    //	strcpy(copy, data);
+    //	printf("%s", copy);
     return copy;
 }

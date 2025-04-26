@@ -1,4 +1,3 @@
-
 #include "String.h"
 #include "NodeTypes.h"
 #include "Util.h"
@@ -11,7 +10,7 @@
 
 
 #endif
-extern Map<String, Node *> types;// by name
+extern Map<String, Node *> types; // by name
 #include "Code.h"
 
 extern Map<String, Global> globals;
@@ -24,11 +23,11 @@ Type mapType(Node &arg) {
         case referencex:
             return Primitive::wasm_externref;
         case reference:
-//            if(arg.size()==1)
-//                return mapType(arg[0]);
-//            if(context and context->locals.has(arg.name))
-//                return context->locals[arg.name].type;
-//            if(context.locals)
+            //            if(arg.size()==1)
+            //                return mapType(arg[0]);
+            //            if(context and context->locals.has(arg.name))
+            //                return context->locals[arg.name].type;
+            //            if(context.locals)
             return node;
         case undefined:
         case unknown:
@@ -49,7 +48,7 @@ Type mapType(Node &arg) {
         case groups:
         case patterns:
             if (use_wasm_arrays)
-                return Primitive::wasmtype_array;// array
+                return Primitive::wasmtype_array; // array
             else
                 return Primitive::node_pointer;
         case urls:
@@ -63,24 +62,24 @@ Type mapType(Node &arg) {
         case buffers:
             return Primitive::array;
         case bools:
-            return Primitive::byte_i8;// too early?
+            return Primitive::byte_i8; // too early?
         case errors: todow("external or internal error?")
             return Primitive::result_error;
         case clazz:
             return Primitive::type32;
         case arrays:
             return Primitive::array;
-//        case wasmtype_array:
-//            return Primitive::wasmtype_array;
-//        case wasmtype_struct:
-//            return Primitive::wasm_type;
+        //        case wasmtype_array:
+        //            return Primitive::wasmtype_array;
+        //        case wasmtype_struct:
+        //            return Primitive::wasm_type;
         case enums:
             return Primitive::wasm_int32;
         case flags:
             return Primitive::wasm_int64;
         case call: {
             auto fun = arg.name;
-//            findLibraryFunction(fun, true); too much here
+            //            findLibraryFunction(fun, true); too much here
 #if not RUNTIME_ONLY
             if (functions.has(fun)) {
                 auto function = functions[fun];
@@ -94,10 +93,10 @@ Type mapType(Node &arg) {
                 return globals[arg.name].type;
             else
                 return Primitive::unknown_type;
-//                error("global not found "s + arg.name);
+        //                error("global not found "s + arg.name);
 
         case expression:
-//            return preEvaluateType(arg, nullptr); // too late
+        //            return preEvaluateType(arg, nullptr); // too late
         case variants:
         case records:
         case constructor:
@@ -120,26 +119,26 @@ Type mapType(Node &arg) {
 }
 
 Type mapType(Node *arg) {
-    if (not arg)return ignore;// todo?
+    if (not arg)return ignore; // todo?
     return mapTypeToPrimitive(*arg);
-//    todo("mapType Node")
+    //    todo("mapType Node")
 }
 
 Type mapType(String arg, bool throws) {
-    if (arg.startsWith("const "))// todo modifiers!
+    if (arg.startsWith("const ")) // todo modifiers!
         arg = arg.substring(6);
-//	if(arg=="const char*")return charp;
+    //	if(arg=="const char*")return charp;
     if (arg.empty() or arg == "" or arg == " ") return voids;
     else if (arg == "void")return voids;
-    else if (arg == "unsigned char*")return charp;// pointer with special semantics
-    else if (arg == "char const*")return charp;// pointer with special semantics
-    else if (arg == "char const*&")return charp;// todo ?
+    else if (arg == "unsigned char*")return charp; // pointer with special semantics
+    else if (arg == "char const*")return charp; // pointer with special semantics
+    else if (arg == "char const*&")return charp; // todo ?
     else if (arg == "chars")return charp;
     else if (arg == "char*")return charp;
     else if (arg == "char32_t*")return codepoint1; // ≠ codepoint todo, not exactly: WITHOUT HEADER!
     else if (arg == "char const**")return pointer;
     else if (arg == "short")
-        return int32t;// vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
+        return int32t; // vec_i16! careful c++ ABI overflow? should be fine since wasm doesnt have short
     else if (arg == "int")return int32t;
     else if (arg == "IntegerType")return i32;
     else if (arg == "signed int")return i32s;
@@ -149,7 +148,7 @@ Type mapType(String arg, bool throws) {
     else if (arg == "void*")return pointer;
     else if (arg == "long")return i64;
     else if (arg == "long long")return i64;
-    else if (arg == "unsigned long")return i64;// we don't care about unsigned
+    else if (arg == "unsigned long")return i64; // we don't care about unsigned
     else if (arg == "unsigned long long")return i64;
     else if (arg == "long&")return pointer;
     else if (arg == "unsigned short")return shorty;
@@ -161,46 +160,47 @@ Type mapType(String arg, bool throws) {
     else if (arg == "float")return float32t;
     else if (arg == "bool")return int32t;
     else if (arg == "const char")return byte_char;
-    else if (arg == "char")return byte_char;// c++ char < angle codepoint ok
+    else if (arg == "char")return byte_char; // c++ char < angle codepoint ok
     else if (arg == "signed char")return byte_i8;
-    else if (arg == "wchar_t")return (Valtype) codepoint32;// angle codepoint ok
-    else if (arg == "char32_t")return codepoint32;// angle codepoint ok
-    else if (arg == "char16_t")return codepoint32;// !? ⚠️ careful
-    else if (arg == "char**")return pointer;// to chars
+    else if (arg == "wchar_t")return (Valtype) codepoint32; // angle codepoint ok
+    else if (arg == "char32_t")return codepoint32; // angle codepoint ok
+    else if (arg == "char16_t")return codepoint32; // !? ⚠️ careful
+    else if (arg == "char**")return pointer; // to chars
     else if (arg == "short*")return pointer;
 
 
         // Some INTERNAL TYPES are reflected upon / exposed as abi :
-    else if (arg == "Type")return int32t;// enum
-    else if (arg == "Kind")return int32t;// enum (short, ok)
-    else if (arg == "Type")return type32;// enum
-    else if (arg == "CodepointType")return charp;// enum
+    else if (arg == "Type")return int32t; // enum
+    else if (arg == "Kind")return int32t; // enum (short, ok)
+    else if (arg == "Type")return type32; // enum
+    else if (arg == "CodepointType")return charp; // enum
 
     else if (arg == "string")return stringp;
     else if (arg == "String*")return stringp;
-    else if (arg == "String&")return stringp;// todo: how does c++ handle refs?
+    else if (arg == "String&")return stringp; // todo: how does c++ handle refs?
     else if (arg == "String")return string_struct;
     else if (arg == "const String")return string_struct;
 
-    else if (arg == "Node")return node;// struct!
+    else if (arg == "Node")return node; // struct!
 
-    else if (arg == "Node&")return node_pointer;// pointer? todo: how does c++ handle refs?
+    else if (arg == "Node&")return node_pointer; // pointer? todo: how does c++ handle refs?
     else if (arg == "Node const&")return node_pointer;
     else if (arg == "Node const*")return node_pointer;
     else if (arg == "Node*")return node_pointer;
 
-    else if (arg == "NumberType")return ignore;// todo
+    else if (arg == "NumberType")return ignore; // todo
     else if (arg == "Number")return number;
-    else if (arg == "BigInt")return number;// todo
+    else if (arg == "BigInt")return number; // todo
     else if (arg == "Generics")return generics;
     else if (arg == "Type32")return type32;
     else if (arg == "Type")return type32;
     else if (arg == "Kind")return type32;
-    else if (arg == "Primitive")return type32;// good thing wasm has no polymorphism
-    else if (arg == "Valtype")return type32;// good enough!
+    else if (arg == "Primitive")return type32; // good thing wasm has no polymorphism
+    else if (arg == "Valtype")return type32; // good enough!
     else if (arg == "Type64")return ignore; // for now   return smarti64;
     else if (arg == "Type64::Type64")return ignore; // for now   return smarti64;
-    else if (arg == "Type&")error("Type should only be used as value");
+    else if (arg == "Type&")
+        error("Type should only be used as value");
     else if (arg == "List<String>")return list;
     else if (arg == "List<Type>")return list;
     else if (arg == "List<int>")return list;
@@ -209,17 +209,17 @@ Type mapType(String arg, bool throws) {
     else if (arg == "Module const&")return modul;
 
     else if (arg == "SyntaxError")return errors;
-//    else if (arg == "SyntaxError")return result_error;
+        //    else if (arg == "SyntaxError")return result_error;
 
-    else if (arg == "std::is_arithmetic<int>::value")return todoe;// WAT?? PURE_WASM should work without std!!
+    else if (arg == "std::is_arithmetic<int>::value")return todoe; // WAT?? PURE_WASM should work without std!!
 
-    // wasm gc types
+        // wasm gc types
     else if (arg == "array")return wasm_array;
 
         // IGNORE other INTERNAL TYPES:
     else if (arg == "Code")return ignore;
-//    else if (arg == "Map<String")return ignore;
-//    else if (arg == "int>")return ignore;// parse bug ^^
+        //    else if (arg == "Map<String")return ignore;
+        //    else if (arg == "int>")return ignore;// parse bug ^^
     else if (arg == "Function")return ignore;
     else if (arg == "Sections")return ignore;
     else if (arg == "Local")return ignore;
@@ -236,16 +236,16 @@ Type mapType(String arg, bool throws) {
     else if (arg == "if")
         return ignore; // bug!
     else if (arg == "__cxxabiv1")return ignore;
-    else if (arg == "...")return ignore;// varargs, todo interesting!
+    else if (arg == "...")return ignore; // varargs, todo interesting!
     else if (arg.startsWith("Map")) return maps;
     else if (arg.startsWith("List")) return list;
-    else if (arg.startsWith("std")) return todoe;// #234 ƒ244 std::initializer_list<String>::end() const ≈
+    else if (arg.startsWith("std")) return todoe; // #234 ƒ244 std::initializer_list<String>::end() const ≈
     else if (arg.endsWith("&")) return pointer;
     else if (arg.endsWith("*")) return pointer;
 
     else {
-//        breakpoint_helper
-//        printf("unmapped c++ argument type %s\n", arg.data);
+        //        breakpoint_helper
+        //        printf("unmapped c++ argument type %s\n", arg.data);
         if (not throws)
             return unknown_type;
         if (!arg.endsWith("*"))
@@ -288,7 +288,7 @@ chars typeName(Kind t, bool throws) {
             return "pattern";
         case key:
             return "key";
-//            return "node";
+        //            return "node";
         case fields:
             return "field";
         case reference:
@@ -304,7 +304,7 @@ chars typeName(Kind t, bool throws) {
         case strings:
             return "string";
         case linked_list:
-            return "list";//"linked_list";
+            return "list"; //"linked_list";
         case arrays:
             return "array";
         case buffers:
@@ -319,14 +319,14 @@ chars typeName(Kind t, bool throws) {
             return "long";
         case long32:
             return "int";
-            //		case ints:
-            //			return "int";
+        //		case ints:
+        //			return "int";
         case bools:
             return "bool";
         case nils:
             return "nil";
         case call:
-            return "call";// function
+            return "call"; // function
         case declaration:
             return "declaration";
         case assignment:
@@ -347,7 +347,7 @@ chars typeName(Kind t, bool throws) {
             return "generics";
         case clazz:
             return "class";
-//        case wasmtype_struct:
+        //        case wasmtype_struct:
         case structs:
             return "struct";
         case flags:
@@ -363,7 +363,7 @@ chars typeName(Kind t, bool throws) {
         case last_kind:
         default:
             if ((short) t == stringref)
-                return "stringref";// todo how here?
+                return "stringref"; // todo how here?
             if ((short) t == wasmtype_array)
                 return "array";
             if ((short) t == wasm_struct)
@@ -387,7 +387,7 @@ chars typeName(Type t) {
     // todo : make sure to emit Nodes at > 0x10000 …
     warn("typeName %x %d "s % t.value % t.value);
 #if !WASM
-//    warn("Node pointers don't fit in 32 bit Type!")
+    //    warn("Node pointers don't fit in 32 bit Type!")
     todo("Node pointers don't fit in 32 bit Type!");
 #else
     if (t.value > 0x10000)return ((Node*)t.address)->name;
@@ -412,11 +412,11 @@ Valtype mapTypeToWasm(Type t) {
     if (isGeneric(t) and use_wasm_arrays) {
         warn("isGeneric Type");
         debug_line();
-//	    warn(typeName(t));
+        //	    warn(typeName(t));
         puti(t.value);
         // todo!
-//	    print(typeName(kind));
-//	    print(typeName(valType));
+        //	    print(typeName(kind));
+        //	    print(typeName(valType));
         if (t.generics.value_type < 0)
             error1("generics with invalid Valtype");
         auto kind = (ushort) mapTypeToWasm((Kind) t.generics.kind);
@@ -438,7 +438,7 @@ Valtype mapTypeToWasm(Type t) {
 #endif
     warn("Insecure mapTypeToWasm %x %d as Node*"s % t.value % t.value);
     if (type_node->node_header == node_header_32)
-        return mapTypeToWasm(*type_node);// might crash
+        return mapTypeToWasm(*type_node); // might crash
     todo("mapTypeToWasm %x %d %s"s % t.value % t.value % typeName(t));
     return Valtype::int32t;
 }
@@ -447,7 +447,7 @@ Primitive mapTypeToPrimitive(Node &n) {
     if (n == IntegerType)
         return Primitive::wasm_int32;
     if (n == ByteType)
-        return Primitive::byte_i8;// careful in structs!
+        return Primitive::byte_i8; // careful in structs!
     if (n == ShortType)
         return Primitive::int16t;
     if (n == LongType)
@@ -461,14 +461,14 @@ Primitive mapTypeToPrimitive(Node &n) {
     if (n == BoolType)
         return Primitive::byte_i8;
     if (n == ByteCharType) // todo !?
-//        return Primitive::byte_char;
-//    if (n == CharsType)
+        //        return Primitive::byte_char;
+        //    if (n == CharsType)
         return Primitive::charp;
     if (n.kind == flags)
-        return Primitive::wasm_int64;// Kind::flags;
+        return Primitive::wasm_int64; // Kind::flags;
     else if (mapType(n.name, false) != unknown_type)
         return mapType(n.name, false).type;
-//    else error1("mapTypeToPrimitive "s + n.serialize());
+    //    else error1("mapTypeToPrimitive "s + n.serialize());
     else
         todo("mapTypeToPrimitive "s + n.serialize());
     return Primitive::unknown_type;
@@ -478,7 +478,7 @@ Valtype mapTypeToWasm(Node &n) {
     if (n == IntegerType)
         return i32;
     if (n == ByteType)
-        return i32;// careful in structs!
+        return i32; // careful in structs!
     if (n == LongType)
         return i64;
     if (n == DoubleType)
@@ -495,12 +495,12 @@ Valtype mapTypeToWasm(Node &n) {
     }
 
 
-//    if (not n.name.empty() and functions.has(n.name)) {
-//        List<Type> &returnTypes = functions[n.name].signature.return_types;
-//        if (returnTypes.empty())return voids;
-//        Valtype valtype = mapTypeToWasm(returnTypes.last());
-//        return valtype;
-//    }
+    //    if (not n.name.empty() and functions.has(n.name)) {
+    //        List<Type> &returnTypes = functions[n.name].signature.return_types;
+    //        if (returnTypes.empty())return voids;
+    //        Valtype valtype = mapTypeToWasm(returnTypes.last());
+    //        return valtype;
+    //    }
 
     //	if(n.type)…
 
@@ -508,35 +508,35 @@ Valtype mapTypeToWasm(Node &n) {
     // todo: but what about interactions with other APIs? add explicit i32 !
     // todo: in fact hide most of this under 'number' magic umbrella
     if (n.kind == bools)return int32t;
-    if (n.kind == nils)return voids;// mapped to int32 later: ø=0
-//	if (n.kind == reals)return float32;// float64; todo why 32???
+    if (n.kind == nils)return voids; // mapped to int32 later: ø=0
+    //	if (n.kind == reals)return float32;// float64; todo why 32???
     if (n.kind == reals)return float64t;
-    if (n.kind == longs)return int32t;// int64; todo!!
-    if (n.kind == reference)return (Valtype) pointer;// todo? //	if and not functionIndices.has(n.name)
+    if (n.kind == longs)return int32t; // int64; todo!!
+    if (n.kind == reference)return (Valtype) pointer; // todo? //	if and not functionIndices.has(n.name)
     if (n.kind == strings)
-        return (Valtype) stringp;// special internal Valtype, represented as i32 index to data / pointer!
-    if (n.kind == objects)return (Valtype) array;// todo
-//	if (n.kind.type == int_array)return array;// todo
+        return (Valtype) stringp; // special internal Valtype, represented as i32 index to data / pointer!
+    if (n.kind == objects)return (Valtype) array; // todo
+    //	if (n.kind.type == int_array)return array;// todo
     if (n.kind == call) {
         todo("type of call")
-//        List<Type> &returnTypes = functions[n.name].signature.return_types;
-//        if (returnTypes.size() > 1) todo("multi-value");
-//        Type &type = returnTypes.last();
-//        return (Valtype) type.value;
+        //        List<Type> &returnTypes = functions[n.name].signature.return_types;
+        //        if (returnTypes.size() > 1) todo("multi-value");
+        //        Type &type = returnTypes.last();
+        //        return (Valtype) type.value;
     }
     if (n.kind == key and n.value.data) return mapTypeToWasm(*n.value.node);
     //	if (n.kind == key and not n.value.data)return array;
-    if (n.kind == groups)return (Valtype) array;// uh todo?
+    if (n.kind == groups)return (Valtype) array; // uh todo?
     if (n.kind == flags)
         return i64;
     if (n.kind == enums) return i64;
-    if (n.kind == unknown) return int32t;// blasphemy!
+    if (n.kind == unknown) return int32t; // blasphemy!
     Node first = n.first();
-    if (first == n)return int32t;// array of sorts
-    if (n.kind == generics)return mapTypeToWasm(first);// todo
-    if (n.kind == assignment)return mapTypeToWasm(first);// todo
-    if (n.kind == operators)return mapTypeToWasm(first);// todo
-    if (n.kind == expression)return mapTypeToWasm(first);// todo analyze expression WHERE? remove HACK!
+    if (first == n)return int32t; // array of sorts
+    if (n.kind == generics)return mapTypeToWasm(first); // todo
+    if (n.kind == assignment)return mapTypeToWasm(first); // todo
+    if (n.kind == operators)return mapTypeToWasm(first); // todo
+    if (n.kind == expression)return mapTypeToWasm(first); // todo analyze expression WHERE? remove HACK!
     n.print();
     error("Missing map for type %s in mapTypeToWasm"s % typeName(n.kind));
     return none;
@@ -549,22 +549,22 @@ chars typeName(Primitive p) {
             return "array";
         case Primitive::charp: // char*
             return "chars";
-//        case c_string: // same as char*
-//            return "c_string";
+        //        case c_string: // same as char*
+        //            return "c_string";
         case Primitive::node:
             return "Node";
         case node_pointer:
-            return "node";// Node*
+            return "node"; // Node*
         case Primitive::ignore:
-            return "«ignore»";// or "" ;)
+            return "«ignore»"; // or "" ;)
         case Primitive::todoe:
             return "«todo»";
         case unknown_type:
-            return "unknown";// internal
+            return "unknown"; // internal
         case codepoint32:
             return "codepoint";
-//        default:
-//            error("missing name for Primitive %x "s % p + p);
+        //        default:
+        //            error("missing name for Primitive %x "s % p + p);
         case wasm_leb:
             return "leb";
         case wasm_float64:
@@ -634,12 +634,11 @@ chars typeName(Primitive p) {
         case wasm_externref:
             return "$ref";
         case smarti64:
-            return "smarty";// wasp smart pointer int64 ABI vs multi value ABI (value, type)
+            return "smarty"; // wasp smart pointer int64 ABI vs multi value ABI (value, type)
         case pad_to32_bit:
             error("don't use");
             break;
             break;
-
     }
     return "?";
 }
@@ -654,8 +653,8 @@ chars typeName(Valtype t, bool fail) {
             return "f32";
         case Valtype::float64t:
             return "f64";
-//		case Primitive::node_pointer:
-//			return "node";
+        //		case Primitive::node_pointer:
+        //			return "node";
         case Valtype::voids:
             return "void";
         case Valtype::none:
@@ -664,11 +663,11 @@ chars typeName(Valtype t, bool fail) {
             return "wasm_string_ref";
         case Valtype::externref:
             return "externref"; // todo :
-//            return "ref"; // todo :
+        //            return "ref"; // todo :
         case Valtype::wasm_struct: // wasm struct / array
             return "wasm_struct";
-//        case unknown_type:
-//            return "unknown";// internal
+        //        case unknown_type:
+        //            return "unknown";// internal
         default: {
             chars s = typeName((Primitive) t);
             if (s)return s;
@@ -676,7 +675,7 @@ chars typeName(Valtype t, bool fail) {
             if (s)return s;
             s = typeName((Valtype) t);
             if (s)return s;
-//			if (t==30)return "BUG!";// hide bug lol
+            //			if (t==30)return "BUG!";// hide bug lol
             if (fail)
                 error("missing name for Valtype %x "s % t + t);
         }
@@ -688,7 +687,7 @@ Valtype mapTypeToWasm(Primitive p) {
     switch (p) {
         case Primitive::wasmtype_struct:
         case Primitive::wasm_type:
-            return wasm_struct;//  ⚠️ todo: plus struct type
+            return wasm_struct; //  ⚠️ todo: plus struct type
         case unknown_type: // undefined
         case missing_type: // well defined, but still:
             error("unknown_type in final stage");
@@ -718,7 +717,7 @@ Valtype mapTypeToWasm(Primitive p) {
         case long_array:
         case float_array:
         case real_array:
-        case array_start:// todo What is the difference?
+        case array_start: // todo What is the difference?
         case wasmtype_array:
             if (use_wasm_arrays)
                 return Valtype::wasm_array; //  ⚠️ todo plus a type!
@@ -726,19 +725,19 @@ Valtype mapTypeToWasm(Primitive p) {
         case charp:
             return Valtype::wasm_pointer;
         case codepoint32:
-            return Valtype::int32t;// easy ;)
+            return Valtype::int32t; // easy ;)
 
         case node:
             if (allow_untyped_nodes)
-                return Valtype::int32t;// todo!
+                return Valtype::int32t; // todo!
         case string_struct:
             //      a String struct is unrolled in the c/wasm-abi
             error("string struct in final stage");
         case list:
         case array_header:
         case maps:
-//            return none;// todo:
-//      a String struct is unrolled in the c/wasm-abi
+            //            return none;// todo:
+            //      a String struct is unrolled in the c/wasm-abi
             error("struct in final stage");
         case todoe:
             return Valtype::none; // none is too weak, it needs to fail on access, when reaching emit / emitCall etc!
@@ -753,7 +752,7 @@ Valtype mapTypeToWasm(Primitive p) {
         case byte_char:
             // ⚠️ careful in arrays we may write byte_char as ByteCharType !
             return Valtype::int32t;
-//        case c_string:// charp
+        //        case c_string:// charp
         case leb_string:
         case utf16_string:
         case utf32_string:
@@ -768,8 +767,8 @@ Valtype mapTypeToWasm(Primitive p) {
             return Valtype::wasm_pointer;
         case result_error:
             error("internal error or planned error as exception in wasm code?");
-//            return Valtype::int64;
-//            smart_pointer_64 ?
+        //            return Valtype::int64;
+        //            smart_pointer_64 ?
         case pad_to32_bit:
             error("don't use");
             return Valtype::none;
@@ -783,11 +782,11 @@ Valtype mapTypeToWasm(Primitive p) {
 
 bool isGroup(Kind type) {
     return type == groups or type == objects or type == patterns or type == expression;
-//    or (Primitive)type == node_pointer or type== lists or type == maps;
+    //    or (Primitive)type == node_pointer or type== lists or type == maps;
 }
 
 // todo: use SINGLE BIT to denote a generic type, and the rest for the value type and other flags
-uint generics_mask = 0xF0FF0000;// ⚠️ preserve 4 bits for not generics flags ( static mutable … )
+uint generics_mask = 0xF0FF0000; // ⚠️ preserve 4 bits for not generics flags ( static mutable … )
 Type valueType(Type type) {
     if (isGeneric(type))
         return type.generics.value_type;
@@ -801,9 +800,9 @@ Type genericType(Type type, Type value_type) {
         error("already a generic type "s + typeName(type) + " for " + typeName(value_type));
     if (isGeneric(value_type))
         error("not a generic type holder "s + typeName(type) + " for " + typeName(value_type));
-//    if (type.value >= 0x10000 or value_type.value >= 0x10000)
-//        error("not a generic type holder "s + typeName(type) + " for " + typeName(value_type));
-//    return Type(Generics{.kind = (ushort) type.value, .value_type = (ushort) value_type.value});
+    //    if (type.value >= 0x10000 or value_type.value >= 0x10000)
+    //        error("not a generic type holder "s + typeName(type) + " for " + typeName(value_type));
+    //    return Type(Generics{.kind = (ushort) type.value, .value_type = (ushort) value_type.value});
     return Type(Generics64{.kind = type.kind, .value_type = value_type.type});
 }
 
@@ -813,7 +812,7 @@ bool isArrayType(Type type) {
 
 bool isGeneric(Type type) {
     return type.generics.value_type > 0; // Generics64
-//    return type.value & generics_mask;// >=0x10000; // Generics32
+    //    return type.value & generics_mask;// >=0x10000; // Generics32
 }
 
 void print(Kind k) {

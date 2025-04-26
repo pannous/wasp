@@ -18,7 +18,7 @@ Code &unsignedLEB128(int64 n) {
         byt byte = n & 0x7f;
         n = n >> 7;
         if (n != 0) {
-            byte |= 0x80;// continuation bit
+            byte |= 0x80; // continuation bit
         }
         buffer->add(byte);
     } while (n > 0);
@@ -26,34 +26,35 @@ Code &unsignedLEB128(int64 n) {
 }
 
 Code &signedLEB128(int64 value) {
-//	Code *buffer =(Code *) malloc(sizeof(Code));// new Code();
+    //	Code *buffer =(Code *) malloc(sizeof(Code));// new Code();
     Code *buffer = new Code();
     int more = 1;
-//	bool negative = (value < 0);
+    //	bool negative = (value < 0);
     int64 val = value;
-/* the size in bits of the variable value, e.g., 64 if value's type is int64 */
-//	size = no. of bits in signed integer;
-//	int size = 64;
+    /* the size in bits of the variable value, e.g., 64 if value's type is int64 */
+    //	size = no. of bits in signed integer;
+    //	int size = 64;
     while (more) {
         byt byte = val & 0x7f;
         val >>= 7;
         /* the following is only necessary if the implementation of >>= uses a
            logical shift rather than an arithmetic shift for a signed left operand */
-//		if (negative)
-//			val |= (~0 << (size - 7)); /* sign extend */
+        //		if (negative)
+        //			val |= (~0 << (size - 7)); /* sign extend */
 
         /* sign bit of byte is second high order bit (0x40) */
-        bool clear = (byte & 0x40) == 0;  /*sign bit of byte is clear*/
+        bool clear = (byte & 0x40) == 0; /*sign bit of byte is clear*/
         bool set = byte & 0x40; /*sign bit of byte is set*/
         if ((val == 0 && clear) || (val == -1 && set))
             more = 0;
         else {
-            byte |= 0x80;// continuation bit:  set high order bit of byte;
+            byte |= 0x80; // continuation bit:  set high order bit of byte;
         }
         buffer->add(byte); //		emit byte;
     }
     return *buffer;
 }
+
 // https://webassembly.github.io/spec/core/binary/conventions.html#binary-vec
 // Vectors are encoded with their length followed by their element sequence
 //Code encodeVector (char data[]) {
@@ -69,11 +70,11 @@ Code &signedLEB128(int64 value) {
 //}
 //Code& encodeVector (Code& data) {
 Code encodeVector(const Code &data) {
-//	return data.vector();
+    //	return data.vector();
     if (data.encoded)return data;
     Code code = unsignedLEB128(data.length);
     code.add(data);
-//	Code code = Code((byte) data.length) + data;
+    //	Code code = Code((byte) data.length) + data;
     code.encoded = true;
     return code;
 }
@@ -169,16 +170,16 @@ short lebByteSize(int64 aleb) {
         uint8_t b = val & 0x7f;
         /* sign bit of byte is second high order bit (0x40) */
         val >>= 7;
-        bool clear = (b & 0x40) == 0;  /*sign bit of byte is clear*/
+        bool clear = (b & 0x40) == 0; /*sign bit of byte is clear*/
         bool set = b & 0x40; /*sign bit of byte is set*/
         if ((val == 0 && clear) || (val == -1 && set))
             more = 0;
         else {
-            b |= 0x80;// todo NEVER USED!! continuation bit:  set high order bit of byte;
+            b |= 0x80; // todo NEVER USED!! continuation bit:  set high order bit of byte;
         }
         size++;
     }
     return size;
-//    Code &leb128 = signedLEB128((int64) leb);// todo later … optimize inline if…
-//    return leb128.length;
+    //    Code &leb128 = signedLEB128((int64) leb);// todo later … optimize inline if…
+    //    return leb128.length;
 }

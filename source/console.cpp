@@ -20,9 +20,9 @@
 #define elif else if
 
 void showHelpMessage() {
-//	print("⚠️  The wasp console currently works by re-executing after each new entry.");
-//	print("⚠️  Be careful with destructive or external effects!");
-//	print("");
+    //	print("⚠️  The wasp console currently works by re-executing after each new entry.");
+    //	print("⚠️  Be careful with destructive or external effects!");
+    //	print("");
     print("Detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
     print("AVAILABLE COMMANDS:");
     print("help :h or ? ; clean :c");
@@ -36,12 +36,12 @@ void getline(char *buf) {
     int MAXLENGTH = 10000;
     const char *PROMPT = "wasp> ";
 
-	if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
+    if (!file_read_done) file_read_done = 1 + read_history(".wasp_history");
     char *tmp = readline(PROMPT);
     if (tmp == 0 or strlen(tmp) == 0) {
         return;
     }
-//	tmp=fixQuotesAndTrim(tmp);// LATER!
+    //	tmp=fixQuotesAndTrim(tmp);// LATER!
     if (strncmp(tmp, buf, MAXLENGTH) and strlen(tmp) > 0)
         add_history(tmp); // only add new content
     strncpy(buf, tmp, MAXLENGTH);
@@ -60,16 +60,16 @@ void getline(char *buf) {
 
 // Todo: web version?
 [[noreturn]] void console() {
-	printf("\nWasp version %s\n", wasp_version);
-	showHelpMessage();
-	char *data = (char *) malloc(10000);
+    printf("\nWasp version %s\n", wasp_version);
+    showHelpMessage();
+    char *data = (char *) malloc(10000);
 #ifdef signal
 	setjmp(try_context); //recovery point
 #endif
-	debug = false;
-	String code;
-	while (true) {
-		getline(data);
+    debug = false;
+    String code;
+    while (true) {
+        getline(data);
         if (eq(data, "help") or eq(data, ":help") or eq(data, ":h") or eq(data, "?")) {
             showHelpMessage();
         } elif (eq(data, "clear") or eq(data, ":clear") or eq(data, ":c") or eq(data, "\\L")) {
@@ -83,9 +83,9 @@ void getline(char *buf) {
         } else {
             code += data;
             code += ";\n";
-//		Node &result = parse(code);// safeMode only for web access
+            //		Node &result = parse(code);// safeMode only for web access
             result = eval(code);
-//#if not DEBUG
+            //#if not DEBUG
 #if RELEASE
 			// the reason this is #if'ed is that DEBUG already prints the result
 						printf("» ");

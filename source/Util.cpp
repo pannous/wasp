@@ -29,8 +29,8 @@ typename FuncLet<S, T>::lambda wasmlet(Path file, String func = "") {
         func = file.substring(file.lastIndexOf("/")).substring(0, file.lastIndexOf(".wasm")); // or just main()!
     // todo: capture [func] ?
     auto lamb = [](S s) -> T {
-//  Module m=parse_wasm_file(file);
-//  return m.run(s)
+        //  Module m=parse_wasm_file(file);
+        //  return m.run(s)
         todo("wasmlet");
         return new T();
     };
@@ -57,7 +57,7 @@ bool fileExists(String filename) {
 #else
     trace("checking fileExists "s + filename);
     if (filename.empty())return false;
-    if (isDir(filename))return false;// only true files here!
+    if (isDir(filename))return false; // only true files here!
 #if WASM && !WASI
     return false; // todo
 #else
@@ -69,14 +69,14 @@ bool fileExists(String filename) {
 int fileSize(char const *file) {
 #ifndef WASM
     FILE *ptr;
-    ptr = fopen(file, "rb");  // r for read, b for binary
+    ptr = fopen(file, "rb"); // r for read, b for binary
     if (!ptr)
         error("File not found "s + file);
     fseek(ptr, 0L, SEEK_END);
     int sz = ftell(ptr);
     return sz;
 #endif
-    return -1;// todo
+    return -1; // todo
 }
 
 #if WASM && !WASI
@@ -100,7 +100,7 @@ float file_last_modified(String &file) {
 #endif
 
 template<class>
-class List;//<String>;
+class List; //<String>;
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -118,7 +118,7 @@ bool isDir(const char *name) {
     }
     if (errno == ENOTDIR)
         return false;
-    return false;// -1;
+    return false; // -1;
 #endif
 }
 
@@ -137,10 +137,10 @@ String findFile(String filename, String current_dir) {
     if (filename.contains("."))extensions = {""}; // don't do double extensions!
     if (isDir(filename)) {
         folders = {filename};
-        filename = "index";// todo main / lib
+        filename = "index"; // todo main / lib
     } else if (isDir(current_dir + "/" + filename)) {
         folders = {filename};
-        filename = "index";// todo or main or lib or $filename
+        filename = "index"; // todo or main or lib or $filename
     }
     if (filename.contains("/"))
         for (auto extension: extensions) {
@@ -169,17 +169,17 @@ bool contains(List<S> list, S match) {
 }
 
 bool contains(bytes list, bytes match, int len, int match_len) {
-	for (int i = 0; i < len; i++)
-		if (list[i] == match[0]) {
-			bool ok = true;
-			for (int j = 1; j < match_len; j++)
-				if (list[i + j] != match[j]) {
-					ok = false;
-					break;
-				}
-			if (ok)return true;
-		}
-	return false;
+    for (int i = 0; i < len; i++)
+        if (list[i] == match[0]) {
+            bool ok = true;
+            for (int j = 1; j < match_len; j++)
+                if (list[i + j] != match[j]) {
+                    ok = false;
+                    break;
+                }
+            if (ok)return true;
+        }
+    return false;
 }
 
 template<class S>
@@ -193,11 +193,12 @@ bool contains(S list[], S match) {
     return false;
 }
 
-short normChar(char c) {// 0..36 damn ;)
+short normChar(char c) {
+    // 0..36 damn ;)
     if (c == '\n')return 0;
     if (c >= '0' and c <= '9') return c - '0' + 26;
-    if (c >= 'a' and c <= 'z') return c - 'a' + 1;// NOT 0!!!
-    if (c >= 'A' and c <= 'Z') return c - 'A' + 1;// NOT 0!!!
+    if (c >= 'a' and c <= 'z') return c - 'a' + 1; // NOT 0!!!
+    if (c >= 'A' and c <= 'Z') return c - 'A' + 1; // NOT 0!!!
     switch (c) {
         case '"':
         case '\'':
@@ -211,20 +212,21 @@ short normChar(char c) {// 0..36 damn ;)
         case '-':
             return 0;
         default:
-            return c;// for asian etc!
+            return c; // for asian etc!
     }
 }
 
-unsigned int wordHash(const char *str, int max_chars) { // unsigned
+unsigned int wordHash(const char *str, int max_chars) {
+    // unsigned
     if (!str) return 0;
     int maxNodes = 100000;
     char c;
     unsigned int hash = 5381, hash2 = 7; // int64
     while (max_chars-- > 0 and (c = *str++)) {
         hash2 = hash2 * 31 + (short) (c);
-        int next = normChar(c);//a_b-c==AbC
+        int next = normChar(c); //a_b-c==AbC
         if (next == 0)continue;
-        hash = hash * 33 + next;// ((hash << 5) + hash
+        hash = hash * 33 + next; // ((hash << 5) + hash
         hash = hash % maxNodes;
     }
     if (hash == 0)return hash2;
@@ -232,15 +234,17 @@ unsigned int wordHash(const char *str, int max_chars) { // unsigned
 }
 
 char *readFile(chars filename, int *size_out) {
-    if (!filename)error("no filename given");
+    if (!filename)
+        error("no filename given");
     if (!filename)return 0;
 #ifndef WASM
     FILE *f = fopen(filename, "rt");
-    if (!f)error("FILE NOT FOUND "_s + filename);
+    if (!f)
+        error("FILE NOT FOUND "_s + filename);
     fseek(f, 0, SEEK_END);
     int64 fsize = ftell(f);
     if (size_out)*size_out = fsize;
-    fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+    fseek(f, 0, SEEK_SET); /* same as rewind(f); */
     char *s = (char *) (alloc(fsize, 2));
     fread(s, 1, fsize, f);
     fclose(f);
@@ -254,7 +258,7 @@ bool similar(double a, double b) {
     if (a == b)return true;
     if (a == 0)return abs(b) < .0001;
     if (b == 0)return abs(a) < .0001;
-    double epsilon = abs(a + b) / 10000.;// percentual ++ todo add 10^order parameter
+    double epsilon = abs(a + b) / 10000.; // percentual ++ todo add 10^order parameter
     bool ok = abs(a - b) <= epsilon;
     return ok;
 }
@@ -269,10 +273,10 @@ void lowerCase(char *string, int length) {
         char &ch = string[length];
         if (ch >= 'A' and ch <= 'Z')
             ch += 32;
-//        if(ch < 0 ){
-//            lowerCaseUTF(string, length+2);// todo: go LTR to avoid corruption while(length >++len)
-//            return;
-//        }
+        //        if(ch < 0 ){
+        //            lowerCaseUTF(string, length+2);// todo: go LTR to avoid corruption while(length >++len)
+        //            return;
+        //        }
     }
 }
 
@@ -295,8 +299,8 @@ int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
                 for (; ztCount--; p1++, p2++) {
                     int iDiff = *p1 - *p2;
                     if (iDiff != 0 || !*p1 || !*p2) {
-//						free(pStr1Low);
-//						free(pStr2Low);
+                        //						free(pStr1Low);
+                        //						free(pStr2Low);
                         return iDiff;
                     }
                 }
@@ -314,7 +318,7 @@ int equals_ignore_case(chars s1, chars s2, size_t ztCount) {
 
 // todo merge with chars?
 bytes concat(bytes a, bytes b, int len_a, int len_b) {
-    bytes c = new unsigned char[len_a + len_b + 4];// why+4 ?? else heap-buffer-overflow
+    bytes c = new unsigned char[len_a + len_b + 4]; // why+4 ?? else heap-buffer-overflow
     memcpy1(c, a, len_a);
     memcpy1(c + len_a, b, len_b);
     //	c[len_a + len_b + 1] = 0;// hwhy?
@@ -374,18 +378,19 @@ bytes concat(char a, bytes b, int len) {
     return c;
 }
 
-float ln(float y) {// crappy!
-//	if(y==1)return 0;
+float ln(float y) {
+    // crappy!
+    //	if(y==1)return 0;
     float divisor, x, result;
     int log2 = 0;
     unsigned int v = y;
     while (v >>= 1) {
         log2++;
     }
-//	log2 = msb((int)y); // See: https://stackoverflow.com/a/4970859/6630230
+    //	log2 = msb((int)y); // See: https://stackoverflow.com/a/4970859/6630230
     divisor = (float) (1 << log2);
-    if (divisor == 0)return -1 / 0.000000000001;// todo;) noexcept
-    x = y / divisor;    // normalized value between [1.0, 2.0]
+    if (divisor == 0)return -1 / 0.000000000001; // todo;) noexcept
+    x = y / divisor; // normalized value between [1.0, 2.0]
     result = -1.7417939 + (2.8212026 + (-1.4699568 + (0.44717955 - 0.056570851 * x) * x) * x) * x;
     result += ((float) log2) * 0.69314718; // ln(2) = 0.69314718
     return result;
@@ -394,6 +399,7 @@ float ln(float y) {// crappy!
 float log(float y, float base) {
     return ln(y) * ln(base);
 }
+
 //float log10(float y) noexcept{
 //	return ln(y)*2.302585092994046; // ln(10)
 //}
@@ -404,7 +410,7 @@ float log(float y, float base) {
 //}
 
 String load(String file) {
-    int size ;
+    int size;
     char *text = readFile(file, &size);
     return String(text, size);
 }
@@ -418,7 +424,7 @@ String &hex(int64 d0, bool include_0x, bool upper_case) {
         return include_0x ? zerox : ZERO;
     int size = 4 + 64 / 4;
     char s[size];
-//#ifdef WASM
+    //#ifdef WASM
     int i = 0;
     while (d and size) {
         if (d % 16 < 10)
@@ -429,7 +435,7 @@ String &hex(int64 d0, bool include_0x, bool upper_case) {
     }
     if (include_0x) {
         if (abs(d0) < 16)
-            s[i++] = '0';// pad 0x01
+            s[i++] = '0'; // pad 0x01
         s[i++] = 'x';
         s[i++] = '0';
     }
@@ -440,7 +446,7 @@ String &hex(int64 d0, bool include_0x, bool upper_case) {
 }
 
 bool isSmartPointer(int64 d) {
-//	if((d&negative_mask_64)==negative_mask_64)return false;
+    //	if((d&negative_mask_64)==negative_mask_64)return false;
     if ((d & negative_mask_64) == negative_mask_64)return false;
     if (d & double_mask_64)return true;
     return d & smart_mask_64 and not(d & negative_mask_64);
@@ -461,7 +467,7 @@ String demangle(const String &fun) {
     result = abi::__cxa_demangle(fun.data, 0, 0, &status);
 #endif
     if (status < 0 or result == 0)
-        return fun;// not demangled (e.g. "memory")
+        return fun; // not demangled (e.g. "memory")
     return result;
 }
 
@@ -475,22 +481,22 @@ String extractFuncName(const String &fun) {
         ok = ok.substring(ok.lastIndexOf("::") + 2);
     if (ok.contains(' '))
         ok = ok.substring(ok.lastIndexOf(" ") + 1);
-    return ok;// .clone(); unnecessary: return by value copy
+    return ok; // .clone(); unnecessary: return by value copy
 }
 
 
 // compressed arrays
 int stackItemSize(Node &clazz, bool throws) {
-    if (clazz == BoolType)return 1;//0;
+    if (clazz == BoolType)return 1; //0;
     if (clazz == ByteType)return 1;
     if (clazz == ShortType)return 2;
     if (clazz == IntegerType)return 4;
     if (clazz == LongType)return 4;
     if (clazz.kind == unknown)return 4; // hack
     if (clazz.kind == structs)
-        return 4;// todo: ignore and just get index from member (OR bad idea: sum up type sizes)
-//     typeName(clazz) +
-//    return 4;
+        return 4; // todo: ignore and just get index from member (OR bad idea: sum up type sizes)
+    //     typeName(clazz) +
+    //    return 4;
     if (throws) todo("stackItemSize for "s + clazz.name + kindName(clazz.kind) + " " + clazz.serialize());
     return stackItemSize(mapTypeToWasm(clazz));
 }
@@ -500,19 +506,20 @@ int stackItemSize(Type type, bool throws) {
     if (isGeneric(type))return stackItemSize(type.generics.value_type, throws);
     if (type == byte_i8)return 1;
     if (type == byte_char)return 1;
-    if (type == charp)return 1;// chars for now vs codepoint!
-    if (type == stringp)return 1;// chars for now vs pointer!
+    if (type == charp)return 1; // chars for now vs codepoint!
+    if (type == stringp)return 1; // chars for now vs pointer!
     if (type == int16t)return 2;
     if (type == codepoint32)return 4;
     if (type == Valtype::int32t)return 4;
-    if (type == array)return 4;// pointer todo!
+    if (type == array)return 4; // pointer todo!
     if (type == Valtype::i64)return 8;
     if (type == Valtype::float32t)return 4;
     if (type == Valtype::float64t)return 8;
-    if (type == void_block)return 4;// int32 pointer hack todo!
+    if (type == void_block)return 4; // int32 pointer hack todo!
     if (type == unknown_type)return 4;
-//    if (type == node_pointer)return 4;
-    if (throws)error("unknown size for stack item "s + typeName(type));
+    //    if (type == node_pointer)return 4;
+    if (throws)
+        error("unknown size for stack item "s + typeName(type));
     return 0;
 }
 
@@ -523,26 +530,25 @@ int stackItemSize(Valtype type, bool throws) {
     if (type == Valtype::float64t)return 8;
     if (throws)
         error("int stackItemSize(Valtype valtype, bool throws = true);");
-	return 0;
+    return 0;
 }
 
 
 int64 powi(int a, unsigned int b) {
-	int64 res = 1;
-	while (b-- > 0)res = res * a;
-	return res;
+    int64 res = 1;
+    while (b-- > 0)res = res * a;
+    return res;
 }
 
 
 char *dropPath(char *file0) {
-	auto file = String(file0);
-	return file.substring(file.lastIndexOf("/") + 1);
-
+    auto file = String(file0);
+    return file.substring(file.lastIndexOf("/") + 1);
 }
 
 String extractPath(String file) {
-	if (!file.contains("/"))return "/";
-	return file.substring(0, file.lastIndexOf("/"));
+    if (!file.contains("/"))return "/";
+    return file.substring(0, file.lastIndexOf("/"));
 }
 
 
@@ -550,29 +556,29 @@ String extractPath(String file) {
 
 // Function to encode a string to Base64
 char *base64_encode(const char *data) {
-	static const char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	size_t data_len = strlen(data);
-	size_t encoded_len = 4 * ((data_len + 2) / 3);
-	char *encoded = (char *) malloc(encoded_len + 1);
+    static const char base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    size_t data_len = strlen(data);
+    size_t encoded_len = 4 * ((data_len + 2) / 3);
+    char *encoded = (char *) malloc(encoded_len + 1);
 
-	if (encoded == NULL) return NULL; // Memory allocation failed
+    if (encoded == NULL) return NULL; // Memory allocation failed
 
-	unsigned char b;
-	for (size_t i = 0, j = 0; i < data_len;) {
-		uint32_t octet_a = i < data_len ? (unsigned char) data[i++] : 0;
-		uint32_t octet_b = i < data_len ? (unsigned char) data[i++] : 0;
-		uint32_t octet_c = i < data_len ? (unsigned char) data[i++] : 0;
+    unsigned char b;
+    for (size_t i = 0, j = 0; i < data_len;) {
+        uint32_t octet_a = i < data_len ? (unsigned char) data[i++] : 0;
+        uint32_t octet_b = i < data_len ? (unsigned char) data[i++] : 0;
+        uint32_t octet_c = i < data_len ? (unsigned char) data[i++] : 0;
 
-		uint32_t triple = (octet_a << 16) + (octet_b << 8) + octet_c;
+        uint32_t triple = (octet_a << 16) + (octet_b << 8) + octet_c;
 
-		encoded[j++] = base64_table[(triple >> 18) & 0x3F];
-		encoded[j++] = base64_table[(triple >> 12) & 0x3F];
-		b = (triple >> 6) & 0x3F;
-		encoded[j++] = (i > data_len + 1) ? '=' : base64_table[b];
-		b = triple & 0x3F;
-		encoded[j++] = (i > data_len) ? '=' : base64_table[b];
-	}
+        encoded[j++] = base64_table[(triple >> 18) & 0x3F];
+        encoded[j++] = base64_table[(triple >> 12) & 0x3F];
+        b = (triple >> 6) & 0x3F;
+        encoded[j++] = (i > data_len + 1) ? '=' : base64_table[b];
+        b = triple & 0x3F;
+        encoded[j++] = (i > data_len) ? '=' : base64_table[b];
+    }
 
-	encoded[encoded_len] = '\0';
-	return encoded;
+    encoded[encoded_len] = '\0';
+    return encoded;
 }
