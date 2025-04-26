@@ -3682,13 +3682,26 @@ void print(Module &m) {
     print("start_index:");
     print(m.start_index);
     // print("globals); List<Global> WHY NOT??");
-    print("m.export_names");
-    print(m.export_names); // none!?
-    print("import_names:");
-    print(m.import_names);
+    print("m.functions.size()");
+    print(m.functions.size());
+    // print("m.funcTypes.size()");
+    // print(m.funcTypes.size());
+    check(m.funcTypes.size()==m.type_count);
+
+    // print("m.signatures.size()");
+    // print(m.signatures.size());
+    // print("m.export_names");
+    // print(m.export_names); // none!?
+    // print("import_names:");
+    // print(m.import_names);
+
 }
 
 void testWaspRuntimeModule() {
+    print("sizeof(Module)");
+    print(sizeof(Module));
+    print("sizeof(Function)");
+    print(sizeof(Function));
     Module &wasp = loadRuntime();
     print(wasp);
     // check_is(wasp.name, "wasp");
@@ -3709,7 +3722,7 @@ void testWaspRuntimeModule() {
     // wasp.signatures
     check(wasp.functions.size() > 100);
     check(wasp.functions.has("_Z4powiij"));
-    check(wasp.functions.has("powi"));// ok if not WASM
+    check(wasp.functions.has("powi")); // ok if not WASM
     check(wasp.functions.has("test42"));
 }
 
