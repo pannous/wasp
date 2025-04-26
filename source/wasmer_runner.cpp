@@ -399,7 +399,7 @@ void linkImports(wasm_extern_t **externs, Module meta) {
         // Signature &signature = meta.signatures[import_name];
         const wasm_functype_t *func_type = funcType(signature);
         wasm_wrap *wrap = link_import(import_name);
-//		const wasm_func_callback_t callback=link_import(import_name);
+        //		const wasm_func_callback_t callback=link_import(import_name);
 //		wasm_func_t link*=wasm_func_new(store, funcType(signature), link_import(import_name));
 //		wasm_func_t *import = wasm_func_new(store, func_type, wrap);
 		wasm_func_t *import = wasm_func_new(store, func_type, wrap);
