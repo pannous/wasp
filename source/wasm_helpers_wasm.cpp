@@ -24,7 +24,7 @@ extern "C" void setHeapEnd(byte *neu) {
 }
 
 // void operator delete(void*, std::align_val_t){
-_LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void* __p, std::align_val_t) _NOEXCEPT{
+_LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void *__p, std::align_val_t) _NOEXCEPT {
     /*lol*/
 }
 
