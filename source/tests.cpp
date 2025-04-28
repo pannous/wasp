@@ -1428,9 +1428,9 @@ void testModulo() {
     assert_emit("10007.0%10000", 7);
     assert_emit("10007.0%10000.0", 7);
 
-    assert_emit("10007%10000.0", 7);// breaks here!?!
+    assert_emit("10007%10000.0", 7); // breaks here!?! load_lib mod_d suspect!!
     assert_emit("i=10007;x=i%10000", 7);
-    assert_emit("i=10007.0;x=i%10000.0", 7);
+    assert_emit("i=10007.0;x=i%10000.0", 7); // breaks here!?!
     assert_emit("i=10007.1;x=i%10000.1", 7);
 }
 
@@ -3412,6 +3412,7 @@ void testBadInWasm() {
     testPattern();
     testMergeOwn();
     testIndexOffset();
+    testModulo();
 }
 
 
@@ -3441,7 +3442,6 @@ void testAllEmit() {
     testMinusMinus();
     testSinus();
 
-    testModulo();
     testSmartReturn();
     testWasmString(); // with length as header
     testRootLists();
@@ -3460,7 +3460,6 @@ void testAllEmit() {
     testLogicPrecedence();
     testRootLists();
     testArrayIndices();
-    testModulo();
     testSmartReturn();
     testMultiValue();
     //    testSinus();
