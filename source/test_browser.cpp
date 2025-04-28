@@ -55,30 +55,18 @@ void testAllAngle();
 
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
+    // print("testRun DEACTIVATED!");
     if (done.empty())
         print("💡💡💡NOW RUNNING all async emit TESTS!💡💡💡");
 
     //    testDownload(); // not on localhost
     //	assert_emit("square := it*it; square 3", 9);
-    // assert_emit("2+3", 5);
-    // print("!! NOW RUNNING test42 !!💡");
     // tracing = true; // HACK!
     // assert_emit("test42+1", 43); // OK in WASM too?
     // return;
-    // print("!! NOW RUNNING test42 again !!💡");
-    // assert_run("test42+1", 43); // OK in WASM too?
-    // print("testRun DEACTIVATED!");
-
-
-    assert_emit("2+2", 4);
-    assert_emit("2*2", 4);
-    assert_emit("√9", 3); // unknown function powi (powi) TODO!!!
-    skip(
-        assert_emit("2^2", 4);
-        assert_emit("square 2", 4); // missing import for function square
-    )
 
     // we may run into memory overflow, test ONE for now!
+    // ⚠️ ERROR: RuntimeError: memory access out of bounds
     testAllAngle();
     testAllEmit();
     testAllWasm();

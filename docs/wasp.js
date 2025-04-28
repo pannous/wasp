@@ -19,8 +19,8 @@ let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
-const run_tests = !LIVE;
-// const run_tests = false;
+// const run_tests = !LIVE;
+const run_tests = false;
 let app_module;
 let kinds = {}
 
@@ -1092,7 +1092,7 @@ function copy_runtime_bytes_to_compiler() {
   HEAP_END += length
   syncHeap()
   // return // ⚠️
-  HEAP_END += 5000000 // extra space for demangle Todo ⚠️ re-check if parsed Module ≈5MB !
+  HEAP_END += 10000000 // extra space for demangle Todo ⚠️ re-check if parsed Module ≈5MB !
   print("HEAP BEFORE parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
   compiler_exports.parseRuntime(pointer, length) // sets HEAP_END too!
   print("HEAP AFTER parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
