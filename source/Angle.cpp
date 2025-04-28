@@ -1351,8 +1351,8 @@ Module &loadRuntime() {
       error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
     Module &wasp=*module_cache["wasp"s.hash()];
 //    wasp.functions["powi"].signature.returns(int32);
-    if(!libraries.has(&wasp))
-        libraries.add(&wasp);
+    // if(!libraries.has(&wasp))// on demand per test/app!
+    //     libraries.add(&wasp);
     return wasp;
 #else
     Module &wasp = read_wasm("wasp-runtime.wasm");
@@ -1419,10 +1419,10 @@ Type preEvaluateType(Node &node, Function *context0) {
 Module &loadModule(String name) {
     if (name == "wasp-runtime.wasm")
         return loadRuntime();
-#if WASM
-    todow("loadModule in WASM");
+#if WASM and not MY_WASM
+    todow("loadModule in WASM: "s+name);
     return *new Module();
-#else
+#else // getWasmFunclet
     return read_wasm(name); // we need to read signatures!
 #endif
 }

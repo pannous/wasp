@@ -99,8 +99,8 @@ namespace wabt {
             if (prefix) {
                 Writef("%s", prefix);
             }
-            Writef("%07zu: ", reinterpret_cast<intptr_t>(p) -
-                              reinterpret_cast<intptr_t>(start) + offset);
+            Writef("%s",""s+(reinterpret_cast<intptr_t>(p) - reinterpret_cast<intptr_t>(start) + offset));
+            /* Writef("%07zu: ", reinterpret_cast<intptr_t>(p) - */// reinterpret_cast<intptr_t>(start) + offset);
             while (p < line_end) {
                 for (int i = 0; i < DUMP_OCTETS_PER_GROUP; ++i, ++p) {
                     if (p < end) {
