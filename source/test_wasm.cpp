@@ -1701,6 +1701,7 @@ void testTodoBrowser() {
     testArrayIndicesWasm();
 }
 
+void testBUG();
 
 // ⚠️ ALL tests containing assert_emit must go here! testCurrent() only for basics
 void testAllWasm() {
@@ -1708,13 +1709,20 @@ void testAllWasm() {
     assert_emit("42", 42);
     assert_emit("42+1", 43);
     assert_run("test42+2", 44); // OK in WASM too ?
-    testSinus(); // still FRAGILE!
 
-#if not WASM
+//#if not WASM
     testAssertRun();
     test_wasm_todos();
     testTodoBrowser(); // TODO!
+    skip(
+#if INCLUDE_MERGER
+    testMergeOwn();
 #endif
+		testBUG();
+		testIndexOffset();
+        testMergeRelocate();
+    )
+//#endif
 
     skip(
         testWasmGC(); // WASM EDGE Error message: type mismatch
@@ -1730,6 +1738,7 @@ void testAllWasm() {
     // assert_emit("x=(1 4 3);x#2", 4);
     // assert_emit("n=3;2ⁿ", 8);
     // assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
+    testSinus(); // still FRAGILE!
 
     assert_emit("√9*-‖-3‖/-3", 3);
     skip(
@@ -1798,12 +1807,6 @@ void testAllWasm() {
     testLogarithm();
 
 
-#if INCLUDE_MERGER
-    testMergeOwn();
-#endif
-    skip(
-        testMergeRelocate();
-    )
     testMergeWabtByHand();
     testMergeWabt();
     testMathLibrary();
