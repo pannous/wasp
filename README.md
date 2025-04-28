@@ -12,7 +12,7 @@ For example, an HTML registration form:
 
 ```html
 <form>
-  <!--comment-->
+  <!-- comment -->
   <div class="form-group">
     <label for="email">Email address:</label>
     <input type="email" id="email">
@@ -25,15 +25,12 @@ Can be represented in Wasp as:
 
 ```text
 form{                                 
-  //comment                          
+  // comment                          
   div{ class:"form-group"             
-    label{ for:email                  
-      "Email address:"                
-    }
+    label{ for:email "Email address:" }
     input{ type:email id:email}     
   }
-  button{ class:['btn' 'btn-info']  
-    'Submit'                        
+  button{ class:['btn' 'btn-info'] 'Submit'
   }
 }
 ```
@@ -51,8 +48,8 @@ The difference from passive data is that Wasp is fully typed and also used for a
 The wasp runtime is available as
 
 * native **binary** for Mac, Linux and Windows
-* small standalone **webassembly** file (~50kb), with or without
-* a wasm **compiler** (~100kb) in wasm:
+* small standalone **webassembly** file (~100kb), with or without
+* a wasm **compiler** (~300kb) in wasm:
 
 # Angle Language
 
@@ -109,21 +106,15 @@ In fact we hope to promote wit to a universal header file format.
 Wasp and Angle are **free of dependencies** (other than gcc, if the runtime is to be compiled from scratch).
 Only some optional features can make use of external dependencies:
 
-The natives runtimes can be configured to ship with a JIT wasm runtime (wasmtime, wasmedge, wasm3, wasmer,
-wasm-micro-runtime and V8!)
+The natives runtimes can be configured to ship with a JIT wasm runtime (wasmtime, wasmedge, wasm3, wasmer, wasm-micro-runtime and V8!)
 
-The **native** Wasp/Angle binary contains a small **WebView** connector making use of the host's browser component (Edge
-or WebKit).
-Since the Angle language can be compiled from wasm to wasm, this gives a whole self sufficient programming environment
-in less than 200kb,  
-with similar power to [electron](https://www.electronjs.org/) and QT.
+The **native** Wasp/Angle binary contains a small **WebView** connector making use of the host's browser component (Edge or WebKit).
+Since the Angle language can be compiled from wasm to wasm, this gives a whole self sufficient programming environment in less than 300kb, with similar power to [electron](https://www.electronjs.org/) and QT.
 
-Note: The full wasp_compiler.wasm is currently 2MB but can be shrunk back close to the 70kb of wasp_runtime.wasm once
-the lazy external references are removed again.
+Note: The full wasp-compiler.wasm with full debug information is currently 3MB but can be shrunk back close to the 300kb in wasp-release.wasm!
 
 Until a smart way is found to write directly to the WebViews canvas, native angle ships with a low
-overhead **[graphics](https://github.com/pannous/wasp/wiki/graphics)** adapter (using SDL) for fast fullscreen painting
-in native wasp bundles.
+overhead **[graphics](https://github.com/pannous/wasp/wiki/graphics)** adapter (using SDL) for fast fullscreen painting in native wasp bundles.
 
 ## [Documentation](https://github.com/pannous/wasp/wiki/)
 
@@ -134,9 +125,7 @@ in native wasp bundles.
 
 ## Wasp Data Model
 
-**Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be
-represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very
-clean syntax and simple data model.
+**Wasp**, is a new unified notation for both object and markup data. The notation is a superset of what can be represented by JSON, HTML and XML, but overcomes many limitations these popular data formats, yet still having a very clean syntax and simple data model.
 
 - It has **clean syntax** with **fully-type** data model *(like JSON or even better)*
 - It is **generic** and **extensible** *(like XML or even better)*
@@ -159,6 +148,4 @@ Wasp has a simple and fully-typed data model.
 - [Data model](https://github.com/pannous/wasp/wiki/data)
 - [FAQ](https://github.com/pannous/wasp/wiki/FAQ)
 - [Examples](https://github.com/pannous/wasp/wiki/Examples)
-
-
 
