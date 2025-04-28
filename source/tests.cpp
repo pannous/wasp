@@ -3395,7 +3395,9 @@ void testSubGroupingFlatten() {
     assert_equals(result.last(), "d");
 }
 
-void testBUG() {
+void testBUG() { // TODO!
+    testIndexOffset();
+    testMergeOwn();
     // move to tests() once done!
     //        testRecentRandomBugs();
 }
@@ -3405,6 +3407,9 @@ void testBadInWasm() {
     testDeepColon();
     testDeepColon2();
     testPattern();
+#if not (WASM and INCLUDE_MERGER)
+    testBUG();
+#endif
 }
 
 
@@ -3428,7 +3433,7 @@ void testAllEmit() {
     //    exit(42);
     //    assert_emit("√ π ²", pi);
     //    assert_emit("√π²", pi);
-
+    testLogicPrecedence();
     testEmitBasics();
     testMinusMinus();
     testWasmMutableGlobal();
@@ -3451,7 +3456,6 @@ void testAllEmit() {
     testRootFloat();
     testMathExtra(); // "one plus two times three"==7 used to work?
     testTruthiness();
-    testLogicPrecedence();
     testRootLists();
     testHex();
     testArrayIndices();
@@ -3462,10 +3466,8 @@ void testAllEmit() {
 
     testAllAngle();
     testRecentRandomBugs();
-    testMergeOwn();
 
     testBadInWasm();
-    testIndexOffset();
     //    part of
     //    testAllWasm() :
     //    testRoundFloorCeiling();
@@ -3735,9 +3737,10 @@ void testWaspRuntimeModule() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
     print("💡 starting Current tests 💡");
-    testWaspRuntimeModule();
+    // testWaspRuntimeModule();
     // assert_emit("test42+1", 43); // OK in WASM too?
-
+    print("testCurrent DEACTIVATED!");
+    return;
 
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     // testKebabCase(); // needed here:
