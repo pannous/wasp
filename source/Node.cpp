@@ -318,10 +318,12 @@ bool Node::operator==(chars other) {
 }
 
 bool Node::operator==(wchar_t other) {
-    if (kind == codepoint1)return other == value.longy;
     if (kind == longs)return other == value.longy;
-    error1("Node::operator==(wchar_t other) must be kind codepoint or longs");
-    return false;
+    if (kind == codepoint1)return other == value.longy;
+    if (kind == strings)return other == value.string->codepointAt(0);
+    error("operator== on wrong kind");
+    // return name == other;
+    // return false;
 }
 
 bool Node::operator==(int other) {
