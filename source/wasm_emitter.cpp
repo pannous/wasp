@@ -1884,7 +1884,8 @@ Code emitOperator(Node &node, Function &context) {
         //#else
         if (last_type == int32t) code.add(emitCall("powi", context));
         else if (last_type == float32t) code.add(emitCall("powf", context));
-        else if (last_type == float64t) code.add(emitCall("pow", context));
+            else if (last_type == float64t) code.add(emitCall("pow", context)); // old rough, should call:
+        // else if (last_type == float64t) code.add(emitCall("powd", context));
         else if (last_type == int64s) code.add(emitCall("pow_long", context));
         else todo("^ power with type "s + typeName(last_type));
         // else code.add(emitCall("pow_long", context));
@@ -1922,7 +1923,8 @@ Code emitOperator(Node &node, Function &context) {
             code.addInt(context.locals["n"].position);
             code.add(cast(context.locals["n"].type, float64t)); // todo all casts should be auto-cast now, right?
         }
-        code.add(emitCall("pow", context));
+        code.add(emitCall("pow", context)); // old rough, but calls:
+        // code.add(emitCall("powd", context));
         //		else
         //			code.add(emitCall("powi", context));
     } else {
@@ -4195,8 +4197,8 @@ Code &compile(String code, bool clean) {
     //    binary.debug();
     binary.save("main.wasm");
 #ifdef INCLUDE_MERGER
-    print("merging... "s + libraries.size());
     if (libraries.size() > 0) {
+        print("merging... "s + libraries.size());
         binary.needs_relocate = true;
         List<Code *> merge_module_binaries;
         for (Module *library: libraries)

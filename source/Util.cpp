@@ -543,6 +543,12 @@ extern "C" int64 powi(int a, unsigned int b) {
     return res;
 }
 
+double powdi(double a, unsigned int b) {
+    double res = 1;
+    while (b-- > 0)res = res * a;
+    return res;
+}
+
 
 char *dropPath(char *file0) {
     auto file = String(file0);

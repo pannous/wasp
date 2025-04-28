@@ -78,9 +78,10 @@ extern "C" void testRun() {
         assert_emit("square 2", 4); // missing import for function square
     )
 
-    testAllWasm();
-    testAllEmit();
+    // we may run into memory overflow, test ONE for now!
     testAllAngle();
+    testAllEmit();
+    testAllWasm();
     //	testWasmGC();
 
     //    skip(
