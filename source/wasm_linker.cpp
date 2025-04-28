@@ -979,8 +979,8 @@ void Linker::RemoveAllExports() {
 // except globals, wasp_main and _start for stupid wasmtime:
 //  (export "nil_name" (global 1))
 // 1: command export 'nil_name' is not a function
-    for (auto &bin: inputs_) {
-        print("RemoveAllExports!!!");
+for (auto &bin: inputs_) {
+    print("RemoveAllExports!!!");
         print("bin "s + bin->name + " exports "s + bin->exports.size());
         // if ("main.wasm"s == bin->name)continue; // keep main exports for now!!
         // bin->exports.clear(); // hack for now!

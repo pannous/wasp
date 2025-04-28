@@ -3395,7 +3395,8 @@ void testSubGroupingFlatten() {
     assert_equals(result.last(), "d");
 }
 
-void testBUG() { // TODO!
+void testBUG() {
+    // TODO!
     testIndexOffset();
     testMergeOwn();
     // move to tests() once done!
