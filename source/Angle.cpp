@@ -1627,6 +1627,8 @@ bool eq(Module *x, Module *y) { return x->name == y->name; } // for List: librar
 // todo: clarify registerAsImport side effect
 // todo: return the import, not the library function
 Function *findLibraryFunction(String name, bool searchAliases) {
+    print("findLibraryFunction");
+    print(name);
     if (name.empty())return 0;
     if (functions.has(name))
         return use_required_import(&functions[name]); // prevents read_wasm("lib")

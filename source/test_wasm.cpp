@@ -1665,10 +1665,9 @@ void test_wasm_todos() {
 
 // SIMILAR AS:
 void testTodoBrowser() {
-#if WASM
-    return;
-#endif
-    assert_emit("'αβγδε'#3", U'γ'); // TODO!
+// #if WASM
+//     return;
+// #endif
     testSquares();
     testMathOperatorsRuntime(); // 3^2
     testIndexWasm();
@@ -1699,9 +1698,12 @@ void testTodoBrowser() {
     assert_emit("x='abcde';x[3]", 'd');
     testCall();
     testArrayIndicesWasm();
+    assert_emit("'αβγδε'#3", U'γ'); // TODO!
 }
 
 void testBUG();
+void testIndexOffset();
+void testWaspRuntimeModule();
 
 // ⚠️ ALL tests containing assert_emit must go here! testCurrent() only for basics
 void testAllWasm() {
@@ -1709,19 +1711,21 @@ void testAllWasm() {
     assert_emit("42", 42);
     assert_emit("42+1", 43);
     assert_run("test42+2", 44); // OK in WASM too ?
+	//testWaspRuntimeModule();
 
 //#if not WASM
-    testAssertRun();
-    test_wasm_todos();
     testTodoBrowser(); // TODO!
-    skip(
+    testAssertRun();
+	testIndexOffset(); //  "env" "getChar" not linked, why?
+    test_wasm_todos();
 #if INCLUDE_MERGER
     testMergeOwn();
 #endif
+    skip(
 		testBUG();
 		testIndexOffset();
-        testMergeRelocate();
     )
+      //  testMergeRelocate();
 //#endif
 
     skip(
