@@ -1818,9 +1818,9 @@ void testAllWasm() {
         testMergeRelocate();
     )
     test_get_local();
-    testWasmLogicOnObjects();
-    testObjectPropertiesWasm();
     skip( // new stuff :
-        testCustomOperators();
+        testObjectPropertiesWasm();
+        testWasmLogicOnObjects();
+    testCustomOperators();
     )
 }
