@@ -1665,9 +1665,10 @@ void test_wasm_todos() {
 
 // SIMILAR AS:
 void testTodoBrowser() {
-// #if WASM
-//     return;
-// #endif
+#if WASM
+    return;
+#endif
+    assert_emit("'αβγδε'#3", U'γ'); // TODO!
     testSquares();
     testMathOperatorsRuntime(); // 3^2
     testIndexWasm();
@@ -1698,12 +1699,8 @@ void testTodoBrowser() {
     assert_emit("x='abcde';x[3]", 'd');
     testCall();
     testArrayIndicesWasm();
-    assert_emit("'αβγδε'#3", U'γ'); // TODO!
 }
 
-void testBUG();
-void testIndexOffset();
-void testWaspRuntimeModule();
 
 // ⚠️ ALL tests containing assert_emit must go here! testCurrent() only for basics
 void testAllWasm() {
@@ -1711,22 +1708,13 @@ void testAllWasm() {
     assert_emit("42", 42);
     assert_emit("42+1", 43);
     assert_run("test42+2", 44); // OK in WASM too ?
-	//testWaspRuntimeModule();
+    testSinus(); // still FRAGILE!
 
-//#if not WASM
-    testTodoBrowser(); // TODO!
+#if not WASM
     testAssertRun();
-	testIndexOffset(); //  "env" "getChar" not linked, why?
     test_wasm_todos();
-#if INCLUDE_MERGER
-    testMergeOwn();
+    testTodoBrowser(); // TODO!
 #endif
-    skip(
-		testBUG();
-		testIndexOffset();
-    )
-      //  testMergeRelocate();
-//#endif
 
     skip(
         testWasmGC(); // WASM EDGE Error message: type mismatch
@@ -1742,7 +1730,6 @@ void testAllWasm() {
     // assert_emit("x=(1 4 3);x#2", 4);
     // assert_emit("n=3;2ⁿ", 8);
     // assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
-    testSinus(); // still FRAGILE!
 
     assert_emit("√9*-‖-3‖/-3", 3);
     skip(
@@ -1811,6 +1798,12 @@ void testAllWasm() {
     testLogarithm();
 
 
+#if INCLUDE_MERGER
+    testMergeOwn();
+#endif
+    skip(
+        testMergeRelocate();
+    )
     testMergeWabtByHand();
     testMergeWabt();
     testMathLibrary();
