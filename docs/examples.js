@@ -1,23 +1,22 @@
 let exampleCode = {
-  // getElementById: '$canvas.style',
   forLoop: `for i in 1 to 3 {print i}`,
   getElementById: '$canvas.tagName', // OK via chars
+  // getElementById: '$canvas.style',
   invokeRef: `$canvas.getContext('2d')`,
   download: `download http://pannous.com/files/test`,
   math: `1+2*√3^2`,
   hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
   math2: `√π²`,
-  function: `square := it*it; square 3`, // error square already defined
-  lists: `a = [1, 2, 3]; a[1] == a#2`,
-  lists2: `a = [1, 2] + [3, 4]; a[2] == a#3 == 3`,
+  function: `squared := it*it; squared 3`, // error square already defined
+  // lists: `a = [1, 2, 3]; a[1] == a#2`, // TODO!!!
+  // lists2: `a = [1, 2] + [3, 4]; a[2] == a#3 == 3`,
   strings: `a = "Hello " +"🌎"; a#7`, // == '🌎'`,
   fibonacci: `fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\n\nfib(10)`,
   // fibonacci2: `fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)\n\nfib(10)`,
   // fibonacci_juliaesque: `fib 0 :=0; fib 1 := 1; fib n := fib(n - 1) + fib(n - 2)\n\nfib(10)`,
   // fibonacci2: `fib n := n < 3 ? 1 : fib(n - 1) + fib(n - 2)\n\n`,
-  // paint2d: `ctx = $canvas.getContext('2d');ctx.fillStyle = 'red'; ctx.fillRect(10, 10, 150, 100)`,
   // paint2d: `$ctx.fillStyle = 'red'; $ctx.fillRect(10, 10, 150, 100)`,
-  paint2d: `$ctx.fillStyle = 'red'`,
+  // paint2d: `$ctx.fillStyle = 'red'`,
   html: `html{bold{"Hello"}}`,
   // html: `html: h1: "Hello, World!"`,
   // html: `html: <h1>Hello, World!</h1>`, // operator missing: <
@@ -48,6 +47,6 @@ let exampleCode = {
 }
 sin(3.1415926)
     `,
-
-  // scene3d: `// draw a red rectangle\nctx.fillStyle = 'red';\nctx.fillRect(10, 10, 150, 100);`
+  paint2d: `// TODO!\nctx = $canvas.getContext('2d')\nctx.fillStyle = 'red'\nctx.fillRect(10, 10, 150, 100)`,
+  scene3d: `// TODO!\nload tree.3ds\nscene.render();`
 }
