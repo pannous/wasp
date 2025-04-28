@@ -122,7 +122,6 @@ double powd(double a, double b) {
 }
 
 
-
 int printf(const char *__restrict format, ...) {
     //    todo better
     //    error("printf not linked");
