@@ -532,7 +532,7 @@ int stackItemSize(Valtype type, bool throws) {
     if (type == Valtype::float32t)return 4;
     if (type == Valtype::float64t)return 8;
     if (throws)
-        error("int stackItemSize(Valtype valtype, bool throws = true);");
+        todo("stackItemSize for"s+typeName(type));
     return 0;
 }
 

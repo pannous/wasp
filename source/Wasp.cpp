@@ -1933,7 +1933,7 @@ int main(int argc, char **argv) {
         }
         if (args == "app" or args == "webview" or args == "browser") {
 #if not WEBAPP
-            print("wasp needs to be compiled with WEBAPP support");
+            print("must compile with WEBAPP support");
             return -1;
 #endif
 #if GRAFIX
