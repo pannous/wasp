@@ -1235,17 +1235,17 @@ Node &groupOperators(Node &expression, Function &context) {
             }
             if (op == "^" or op == "^^" or op == "**" or op == "exp" or op == "ℇ") {
                 // todo NORM operators earlier
-                findLibraryFunction("pow", false);
-                //                findLibraryFunction("powi", false);
-                //                functions["pow"].is_used = true;
-                //                functions["powi"].is_used = true;
+                findLibraryFunction("pow", false);// old rough!
+                findLibraryFunction("powd", false);
+                findLibraryFunction("powi", false);
             }
             if (suffixOperators.has(op)) {
                 // x²
                 // SUFFIX Operators
                 if (op == "ⁿ") {
-                    findLibraryFunction("pow", false);
-                    functions["pow"].is_used = true;
+                    findLibraryFunction("powd", false);
+                    // functions["pow"].is_used = true;
+                    functions["powd"].is_used = true;
                 }
                 if (i < 1)
                     error("suffix operator misses left side");
@@ -1723,6 +1723,7 @@ List<String> aliases(String name) {
     //	switch (name) // statement requires expression of integer type
     if (name == "pow") {
         found.add("pow");
+        found.add("powd");
         found.add("powf");
         found.add("powi");
         found.add("pow_long");

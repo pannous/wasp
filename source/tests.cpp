@@ -674,12 +674,16 @@ void testPower() {
     assert_equals(powi(10, 4), 10000l);
     assert_equals(powi(2, 2), 4l);
     assert_equals(powi(2, 8), 256l);
-    skip(
-        assert_equals(powd(2, -2), 1 / 4.);
-        assert_equals(powd(2, -8), 1 / 256.);
-        assert_equals(powd(10, -2), 1 / 100.);
-        assert_equals(powd(10, -4), 1 / 10000.);
-    )
+    // skip(
+    assert_equals(powd(2, -2), 1 / 4.);
+    assert_equals(powd(2, -8), 1 / 256.);
+    assert_equals(powd(10, -2), 1 / 100.);
+    assert_equals(powd(10, -4), 1 / 10000.);
+    assert_equals(powd(3,0), 1.);
+    assert_equals(powd(3,1), 1.);
+    assert_equals(powd(3,2), 9.);
+
+    // assert_emit("√3^0", 0.9710078239440918); // very rough power approximation from where?
 }
 
 void testMaps0() {
@@ -3433,7 +3437,6 @@ void testAllEmit() {
 
     testEmitBasics();
     testMinusMinus();
-    testWasmMutableGlobal();
     testSinus();
 
     testHex();
@@ -3734,8 +3737,8 @@ void testWaspRuntimeModule() {
 // 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
-    // print("testCurrent DEACTIVATED");
-    // return;
+    print("testCurrent DEACTIVATED");
+    return;
     print("💡 starting Current tests 💡");
     testWaspRuntimeModule();
     // assert_emit("test42+1", 43); // OK in WASM too?

@@ -1678,11 +1678,11 @@ assert_emit("'αβγδε'#3", U'γ'); // TODO!
     testIndexWasm();
     testStringConcatWasm();
     testStringIndicesWasm();
-    assert_emit("(2+1)==(4-1)", true);  // suddenly passes !? not with above line commented out BUG <<<
-    assert_emit("(3+1)==(5-1)", true);
+assert_emit("(2+1)==(4-1)", true); // suddenly passes !? not with above line commented out BUG <<<
+assert_emit("(3+1)==(5-1)", true);
     assert_is("(2+1)==(4-1)", true);
-    assert_emit("3==2+1" , 1);
-    assert_emit("3 + √9", (int64) 6);
+assert_emit("3==2+1", 1);
+assert_emit("3 + √9", (int64) 6);
     assert_emit("puti 3", (int64) 3);
     assert_emit("puti 3", 3); //
     assert_emit("puti 3+3", 6);
@@ -1715,7 +1715,7 @@ void testAllWasm() {
     testTodoBrowser(); // TODO!
     skip(
 		assert_emit("putf 3.1", 3);
-    	assert_emit("putf 3.1", 3.1);
+        assert_emit("putf 3.1", 3.1);
         test_wasm_todos(); // // OPEN BUGS
     )
 
