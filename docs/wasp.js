@@ -1212,6 +1212,7 @@ async function run_wasm(buf_pointer, buf_size) {
     }
     console.error(ex)
     error(ex)
+    terminate()
   }
 }
 
