@@ -379,6 +379,9 @@ let imports = {
     // HTML DOM JS functions
     // download: new WebAssembly.Suspending(download_async),
     download,
+    eq: (a, b) => {
+      a == b
+    }, // todo should be resolved by linker! todo: needs_runtime only for complex types!
     getWasmFunclet,
     init_graphics: nop, // canvas init by default
     requestAnimationFrame: nop, // todo
@@ -1153,14 +1156,15 @@ async function run_wasm(buf_pointer, buf_size) {
     // download_file(wasm_buffer, "compiled.wasm", "wasm")
 
     app_module = await WebAssembly.compile(wasm_buffer, {builtins: ['js-string']})
-    if (WebAssembly.Module.imports(app_module).length > 0) {
+    let moduleImportDescriptors = WebAssembly.Module.imports(app_module);
+    if (moduleImportDescriptors.length > 0) {
+      print("needs_runtime becaus of imports", moduleImportDescriptors)
       needs_runtime = true // todo WASI or Wasp runtime?
       print(app_module) // visible in browser console, not in terminal
       Wasp.download = download
       // print(WebAssembly.Module.customSections(app_module)) // Argument 1 is required ?
     } else
       needs_runtime = false
-
     if (needs_runtime) { // runtime_bytes should be linked by/inside compiler!
       app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
       // app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out

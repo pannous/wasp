@@ -977,7 +977,7 @@ void Linker::RemoveAllExports() {
 // #endif
 
 // except globals, wasp_main and _start for stupid wasmtime:
-    //  (export "nil_name" (global 1))
+//  (export "nil_name" (global 1))
     // 1: command export 'nil_name' is not a function
     for (auto &bin: inputs_) {
         print("RemoveAllExports!!!");
