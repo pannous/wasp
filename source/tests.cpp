@@ -3710,7 +3710,7 @@ void testWaspRuntimeModule() {
     check(wasp.name.contains("wasp")); // wasp-runtime.wasm in system 'wasp' in js!
     // addLibrary(wasp);
 #if WASM
-    check(libraries.size()>0);
+    // check(libraries.size()>0); // loaded later on demand
     // if it breaks then in WASM too!?
 #endif
     check(wasp.code_count>400);
@@ -3727,6 +3727,7 @@ void testWaspRuntimeModule() {
     check(wasp.functions.has("powi")); // ok if not WASM
     check(wasp.functions.has("powd")); // ok if not WASM
     check(wasp.functions.has("test42"));
+    check(wasp.functions.has("getChar"));
 }
 
 // 2021-10 : 40 sec for Wasm3
@@ -3740,8 +3741,10 @@ void testCurrent() {
     print("💡 starting Current tests 💡");
     // testWaspRuntimeModule();
     // assert_emit("test42+1", 43); // OK in WASM too?
+#if WASM
     print("testCurrent DEACTIVATED!");
     return;
+#endif
 
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     // testKebabCase(); // needed here:

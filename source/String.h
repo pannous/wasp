@@ -1347,6 +1347,6 @@ void render(Node &node, std::stringstream *html = 0);
 
 #pragma clang diagnostic pop
 
-codepoint getChar(chars string, int nr);
+extern "C" codepoint getChar(chars string, int nr);
 
 typedef List<String> Strings;

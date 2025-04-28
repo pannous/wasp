@@ -824,8 +824,8 @@ String *empty_string() {
 
 // starting with 1!
 //inline haha you can't inline wasm
-[[maybe_unused]]
-codepoint getChar(chars string, int nr) {
+// [[maybe_unused]]
+extern "C" codepoint getChar(chars string, int nr) {
     if (nr < 1)
         error("#index starts with 1, use [] if you want 0 indexing");
     return String(string).codepointAt(nr - 1);
