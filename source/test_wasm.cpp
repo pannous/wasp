@@ -1586,7 +1586,7 @@ void testEmitBasics() {
         // see testSmartReturn
         assert_emit("'ok'", "ok"); // BREAKS wasm !!
         assert_emit("'a'", "a");
-    assert_emit("'a'", 'a');
+        assert_emit("'a'", 'a');
     )
 }
 
@@ -1672,22 +1672,22 @@ void test_wasm_todos() {
 
 // SIMILAR AS:
 void testTodoBrowser() {
-// #if WASM
-//     return;
-// #endif
-assert_emit("'αβγδε'#3", U'γ'); // TODO!
+    // #if WASM
+    //     return;
+    // #endif
+    assert_emit("'αβγδε'#3", U'γ'); // TODO!
     testSquares();
     testMathOperatorsRuntime(); // 3^2
     testIndexWasm();
     testStringConcatWasm();
     testStringIndicesWasm();
-assert_emit("(2+1)==(4-1)", true); // suddenly passes !? not with above line commented out BUG <<<
-assert_emit("(3+1)==(5-1)", true);
-assert_is("(2+1)==(4-1)", true);
-assert_emit("3==2+1", 1);
-assert_emit("3 + √9", (int64) 6);
-assert_emit("puti 3", (int64) 3);
-assert_emit("puti 3", 3); //
+    assert_emit("(2+1)==(4-1)", true); // suddenly passes !? not with above line commented out BUG <<<
+    assert_emit("(3+1)==(5-1)", true);
+    assert_is("(2+1)==(4-1)", true);
+    assert_emit("3==2+1", 1);
+    assert_emit("3 + √9", (int64) 6);
+    assert_emit("puti 3", (int64) 3);
+    assert_emit("puti 3", 3); //
     assert_emit("puti 3+3", 6);
 
     testOldRandomBugs();
@@ -1697,11 +1697,11 @@ assert_emit("puti 3", 3); //
     testCall();
     testArrayIndicesWasm();
     testSquarePrecedence();
-skip(
-    assert_emit("print 3", 3); // todo dispatch!
-    assert_emit("add1 x:=$0+1;add1 3", (int64) 4); // $0 specially parsed now
-	testNodeDataBinaryReconstruction(); // todo!
-    testWasmMutableGlobal(); // todo!
+    skip(
+        assert_emit("print 3", 3); // todo dispatch!
+        assert_emit("add1 x:=$0+1;add1 3", (int64) 4); // $0 specially parsed now
+        testNodeDataBinaryReconstruction(); // todo!
+        testWasmMutableGlobal(); // todo!
     testSmartReturnHarder();
 )
 }
@@ -1718,7 +1718,7 @@ void testAllWasm() {
     testAssertRun();
     testTodoBrowser(); // TODO!
     skip(
-		assert_emit("putf 3.1", 3);
+        assert_emit("putf 3.1", 3);
         assert_emit("putf 3.1", 3.1);
         test_wasm_todos(); // // OPEN BUGS
     )

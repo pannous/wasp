@@ -1884,8 +1884,8 @@ Code emitOperator(Node &node, Function &context) {
         //#else
         if (last_type == int32t) code.add(emitCall("powi", context));
         else if (last_type == float32t) code.add(emitCall("powf", context));
-            else if (last_type == float64t) code.add(emitCall("pow", context)); // old rough, should call:
-        // else if (last_type == float64t) code.add(emitCall("powd", context));
+        else if (last_type == float64t) code.add(emitCall("pow", context)); // old rough, should call:
+            // else if (last_type == float64t) code.add(emitCall("powd", context));
         else if (last_type == int64s) code.add(emitCall("pow_long", context));
         else todo("^ power with type "s + typeName(last_type));
         // else code.add(emitCall("pow_long", context));
