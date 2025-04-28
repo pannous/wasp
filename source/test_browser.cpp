@@ -58,9 +58,6 @@ extern "C" void testRun() {
     if (done.empty())
         print("💡💡💡NOW RUNNING all async emit TESTS!💡💡💡");
 
-    // testAllWasm();
-    // testAllEmit();
-    // testAllAngle();
     //    testDownload(); // not on localhost
     //	assert_emit("square := it*it; square 3", 9);
     // assert_emit("2+3", 5);

@@ -3396,9 +3396,6 @@ void testSubGroupingFlatten() {
 }
 
 void testBUG() {
-    // TODO!
-    testIndexOffset();
-    testMergeOwn();
     // move to tests() once done!
     //        testRecentRandomBugs();
 }
@@ -3408,9 +3405,6 @@ void testBadInWasm() {
     testDeepColon();
     testDeepColon2();
     testPattern();
-#if not (WASM and INCLUDE_MERGER)
-    testBUG();
-#endif
 }
 
 
@@ -3434,7 +3428,7 @@ void testAllEmit() {
     //    exit(42);
     //    assert_emit("√ π ²", pi);
     //    assert_emit("√π²", pi);
-    testLogicPrecedence();
+
     testEmitBasics();
     testMinusMinus();
     testWasmMutableGlobal();
@@ -3457,6 +3451,7 @@ void testAllEmit() {
     testRootFloat();
     testMathExtra(); // "one plus two times three"==7 used to work?
     testTruthiness();
+    testLogicPrecedence();
     testRootLists();
     testHex();
     testArrayIndices();
@@ -3467,8 +3462,10 @@ void testAllEmit() {
 
     testAllAngle();
     testRecentRandomBugs();
+    testMergeOwn();
 
     testBadInWasm();
+    testIndexOffset();
     //    part of
     //    testAllWasm() :
     //    testRoundFloorCeiling();
@@ -3710,7 +3707,7 @@ void testWaspRuntimeModule() {
     check(wasp.name.contains("wasp")); // wasp-runtime.wasm in system 'wasp' in js!
     // addLibrary(wasp);
 #if WASM
-    // check(libraries.size()>0); // loaded later on demand
+    check(libraries.size()>0);
     // if it breaks then in WASM too!?
 #endif
     check(wasp.code_count>400);
@@ -3727,7 +3724,6 @@ void testWaspRuntimeModule() {
     check(wasp.functions.has("powi")); // ok if not WASM
     check(wasp.functions.has("powd")); // ok if not WASM
     check(wasp.functions.has("test42"));
-    check(wasp.functions.has("getChar"));
 }
 
 // 2021-10 : 40 sec for Wasm3
@@ -3739,12 +3735,9 @@ void testWaspRuntimeModule() {
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
     print("💡 starting Current tests 💡");
-    // testWaspRuntimeModule();
+    testWaspRuntimeModule();
     // assert_emit("test42+1", 43); // OK in WASM too?
-#if WASM
-    print("testCurrent DEACTIVATED!");
-    return;
-#endif
+
 
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     // testKebabCase(); // needed here:
