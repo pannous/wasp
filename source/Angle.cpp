@@ -1235,7 +1235,7 @@ Node &groupOperators(Node &expression, Function &context) {
             }
             if (op == "^" or op == "^^" or op == "**" or op == "exp" or op == "ℇ") {
                 // todo NORM operators earlier
-                findLibraryFunction("pow", false);// old rough!
+                findLibraryFunction("pow", false); // old rough!
                 findLibraryFunction("powd", false);
                 findLibraryFunction("powi", false);
             }

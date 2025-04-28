@@ -54,8 +54,11 @@ inline double longBitsToDouble(int64 a) {
 
 #include <stdint.h> // modf
 
-double modf(double value, double* iptr) {
-    union { double d; uint64_t i; } u = { value };
+double modf(double value, double *iptr) {
+    union {
+        double d;
+        uint64_t i;
+    } u = {value};
     int exponent = ((u.i >> 52) & 0x7FF) - 1023;
 
     if (exponent < 0) {
@@ -82,15 +85,18 @@ double modf(double value, double* iptr) {
 double powd(double a, double b) {
     if (b == 0.0) return 1.0;
     if (b == 1) return a;
-    if (b == -1) return 1/a;
+    if (b == -1) return 1 / a;
     if (a == 0.0) return 0;
-    if (a < 0.0) todo("Complex numbers");// return 0.0; // crude safeguard
-    if( floor(b) == b) return powdi(a, b);
+    if (a < 0.0) todo("Complex numbers"); // return 0.0; // crude safeguard
+    if (floor(b) == b) return powdi(a, b);
 
-    union { double d; uint64_t i; } u = { a };
+    union {
+        double d;
+        uint64_t i;
+    } u = {a};
     // log2(a) ≈ exponent - bias + mantissa_fraction
-    double exponent = (double)((u.i >> 52) & 0x7FF) - 1023.0;
-    double mantissa = (double)(u.i & ((1ULL << 52) - 1)) / (1ULL << 52);
+    double exponent = (double) ((u.i >> 52) & 0x7FF) - 1023.0;
+    double mantissa = (double) (u.i & ((1ULL << 52) - 1)) / (1ULL << 52);
 
     double log2a = exponent + mantissa;
 
@@ -107,8 +113,11 @@ double powd(double a, double b) {
     double frac_approx = 1.0 + fracpart * ln2;
 
     // Build result
-    union { double d; uint64_t i; } res;
-    res.i = (uint64_t)((intpart + 1023.0) * (1ULL << 52));
+    union {
+        double d;
+        uint64_t i;
+    } res;
+    res.i = (uint64_t) ((intpart + 1023.0) * (1ULL << 52));
     return res.d * frac_approx;
 }
 

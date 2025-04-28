@@ -1427,7 +1427,8 @@ void testModulo() {
     assert_emit("10007%10000", 7);
     assert_emit("10007.0%10000", 7);
     assert_emit("10007.0%10000.0", 7);
-    assert_emit("10007%10000.0", 7);
+
+    assert_emit("10007%10000.0", 7);// breaks here!?!
     assert_emit("i=10007;x=i%10000", 7);
     assert_emit("i=10007.0;x=i%10000.0", 7);
     assert_emit("i=10007.1;x=i%10000.1", 7);
@@ -3435,11 +3436,11 @@ void testAllEmit() {
     //    assert_emit("√ π ²", pi);
     //    assert_emit("√π²", pi);
 
+    testHex();
     testEmitBasics();
     testMinusMinus();
     testSinus();
 
-    testHex();
     testModulo();
     testSmartReturn();
     testWasmString(); // with length as header
@@ -3458,7 +3459,6 @@ void testAllEmit() {
     testTruthiness();
     testLogicPrecedence();
     testRootLists();
-    testHex();
     testArrayIndices();
     testModulo();
     testSmartReturn();
@@ -3742,6 +3742,15 @@ void testCurrent() {
     print("💡 starting Current tests 💡");
     testWaspRuntimeModule();
     // assert_emit("test42+1", 43); // OK in WASM too?
+
+    const Node &node = parse("x:40;x+1");
+    check(node.length == 2)
+    check(node[0]["x"] == 40) // breaks!?
+    check(operator_list.has("+"));
+    check(not(bool) Node("x"));
+    check_silent(false == (bool) Node("x"));
+    check(Node("x") == false);
+    assert_throws("x"); // UNKNOWN local symbol ‘x’ in context main  OK
 
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     // testKebabCase(); // needed here:
