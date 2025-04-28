@@ -1799,9 +1799,9 @@ void testAllWasm() {
 
 
 #if INCLUDE_MERGER
-    testMergeOwn();
 #endif
     skip(
+    	testMergeOwn();
         testMergeRelocate();
     )
     testMergeWabtByHand();

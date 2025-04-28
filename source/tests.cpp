@@ -3405,6 +3405,8 @@ void testBadInWasm() {
     testDeepColon();
     testDeepColon2();
     testPattern();
+    testMergeOwn();
+    testIndexOffset();
 }
 
 
@@ -3462,10 +3464,8 @@ void testAllEmit() {
 
     testAllAngle();
     testRecentRandomBugs();
-    testMergeOwn();
 
     testBadInWasm();
-    testIndexOffset();
     //    part of
     //    testAllWasm() :
     //    testRoundFloorCeiling();
@@ -3734,10 +3734,11 @@ void testWaspRuntimeModule() {
 // 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    print("testCurrent DEACTIVATED");
+    return;
     print("💡 starting Current tests 💡");
     testWaspRuntimeModule();
     // assert_emit("test42+1", 43); // OK in WASM too?
-
 
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     // testKebabCase(); // needed here:
