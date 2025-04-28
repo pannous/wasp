@@ -1821,6 +1821,6 @@ void testAllWasm() {
     skip( // new stuff :
         testObjectPropertiesWasm();
         testWasmLogicOnObjects();
-    testCustomOperators();
+        testCustomOperators();
     )
 }
