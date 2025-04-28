@@ -1637,10 +1637,6 @@ return; // todo!
 
 //testWasmControlFlow
 void test_wasm_todos() {
-#if WASM
-    return;
-#endif
-    assert_emit("global x=1+π", 1 + pi); // int 4 ƒ
 
     assert_emit("square 3*42 > square 2*3", 1)
     testSquares();
@@ -1658,6 +1654,8 @@ void test_wasm_todos() {
 
     //			Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1`
     assert_emit("id 3*42 > id 2*3", 1)
+    assert_emit("global x=1+π", 1 + pi); // int 4 ƒ
+
     // is there a situation where a COMPARISON is ambivalent?
     // sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
 }
@@ -1710,11 +1708,11 @@ void testAllWasm() {
     assert_run("test42+2", 44); // OK in WASM too ?
     testSinus(); // still FRAGILE!
 
-#if not WASM
+//#if not WASM
     testAssertRun();
     test_wasm_todos();
     testTodoBrowser(); // TODO!
-#endif
+//#endif
 
     skip(
         testWasmGC(); // WASM EDGE Error message: type mismatch
