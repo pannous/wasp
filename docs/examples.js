@@ -10,7 +10,7 @@ let exampleCode = {
   function: `square := it*it; square 3`, // error square already defined
   lists: `a = [1, 2, 3]; a[1] == a#2`,
   lists2: `a = [1, 2] + [3, 4]; a[2] == a#3 == 3`,
-  strings: `a = "Hello " +"🌎"; a#7 == '🌎'`,
+  strings: `a = "Hello " +"🌎"; a#7`, // == '🌎'`,
   fibonacci: `fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\n\nfib(10)`,
   // fibonacci2: `fib(n) = n < 2 ? n : fib(n - 1) + fib(n - 2)\n\nfib(10)`,
   // fibonacci_juliaesque: `fib 0 :=0; fib 1 := 1; fib n := fib(n - 1) + fib(n - 2)\n\nfib(10)`,
