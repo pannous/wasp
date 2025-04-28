@@ -1351,10 +1351,10 @@ Module &loadRuntime() {
       error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
     Module &wasp=*module_cache["wasp"s.hash()];
 //    wasp.functions["powi"].signature.returns(int32);
-    if(!libraries.has(&wasp))
-        libraries.add(&wasp);
+    // if(!libraries.has(&wasp))// on demand per test/app!
     return wasp;
 #else
+    // Module &wasp = read_wasm("wasp-runtime-debug.wasm");// todo unexpected opcode …!!!
     Module &wasp = read_wasm("wasp-runtime.wasm");
     wasp.functions["getChar"].signature.returns(codepoint1);
     // addLibrary(&wasp); // BREAKS system WHY?
@@ -1419,10 +1419,10 @@ Type preEvaluateType(Node &node, Function *context0) {
 Module &loadModule(String name) {
     if (name == "wasp-runtime.wasm")
         return loadRuntime();
-#if WASM
-    todow("loadModule in WASM");
+#if WASM and not MY_WASM
+    todow("loadModule in WASM: "s+name);
     return *new Module();
-#else
+#else // getWasmFunclet
     return read_wasm(name); // we need to read signatures!
 #endif
 }
@@ -1630,9 +1630,12 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))
         return use_required_import(&functions[name]); // prevents read_wasm("lib")
-#if WASM
-    if (loadRuntime().functions.has(name)){
-        return use_required_import(&loadRuntime().functions[name]);
+#if WASM // todo: why only in wasm?
+    Module& wasp = loadRuntime();
+    if (wasp.functions.has(name)){
+        if(!libraries.has(&wasp))// on demand per test/app!
+            libraries.add(&wasp);
+        return use_required_import(&wasp.functions[name]);
     }
 #endif
     if (contains(funclet_list, name)) {

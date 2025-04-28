@@ -1153,7 +1153,9 @@ async function run_wasm(buf_pointer, buf_size) {
     // download_file(wasm_buffer, "compiled.wasm", "wasm")
 
     app_module = await WebAssembly.compile(wasm_buffer, {builtins: ['js-string']})
-    if (WebAssembly.Module.imports(app_module).length > 0) {
+    let moduleImportDescriptors = WebAssembly.Module.imports(app_module);
+    if (moduleImportDescriptors.length > 0) {
+      print("needs_runtime becaus of imports", moduleImportDescriptors)
       needs_runtime = true // todo WASI or Wasp runtime?
       print(app_module) // visible in browser console, not in terminal
       Wasp.download = download
@@ -1208,6 +1210,7 @@ async function run_wasm(buf_pointer, buf_size) {
     }
     console.error(ex)
     error(ex)
+    terminate()
   }
 }
 
