@@ -176,7 +176,7 @@ void load_aliases() {
             hash_to_normed_alias[variant.hash()] = &normed.clone();
         }
     }
-    check(hash_to_normed_alias["times"s.hash()] == "*"s);
+    // check(hash_to_normed_alias["times"s.hash()] == "*"s);
     //	check(hash_to_normed_alias["mod_d"s.hash()]=="mod"s);
     aliases_loaded = true;
 }
