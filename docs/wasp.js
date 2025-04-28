@@ -11,7 +11,7 @@ let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and sh
 // let WASP_COMPILER = 'assets/wasp-hosted-release.wasm' // hard link 300k without tests
 // let WASP_COMPILER = 'assets/wasp-release-debug.wasm' // hard link 300k without tests
 // let WASP_COMPILER = 'assets/wasp-release.wasm' // hard link 300k without tests currently not working!
-let WASP_RUNTIME = 'wasp-runtime.wasm' // 100kb now in :
+let WASP_RUNTIME = 'assets/wasp-runtime.wasm' // 100kb now in :
 let lib_folder_url = "assets/lib/"
 // let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
