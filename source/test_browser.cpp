@@ -61,13 +61,13 @@ extern "C" void testRun() {
     //    testDownload(); // not on localhost
     //	assert_emit("square := it*it; square 3", 9);
     // assert_emit("2+3", 5);
-    print("!! NOW RUNNING test42 !!💡");
-    tracing = true; // HACK!
-    assert_emit("test42+1", 43); // OK in WASM too?
-    return;
-    print("!! NOW RUNNING test42 again !!💡");
-    assert_run("test42+1", 43); // OK in WASM too?
-    print("testRun DEACTIVATED!");
+    // print("!! NOW RUNNING test42 !!💡");
+    // tracing = true; // HACK!
+    // assert_emit("test42+1", 43); // OK in WASM too?
+    // return;
+    // print("!! NOW RUNNING test42 again !!💡");
+    // assert_run("test42+1", 43); // OK in WASM too?
+    // print("testRun DEACTIVATED!");
 
 
     assert_emit("2+2", 4);
