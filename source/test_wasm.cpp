@@ -1666,10 +1666,10 @@ void test_wasm_todos() {
 
 // SIMILAR AS:
 void testTodoBrowser() {
-#if WASM
-    return;
-#endif
-    assert_emit("'αβγδε'#3", U'γ'); // TODO!
+// #if WASM
+//     return;
+// #endif
+assert_emit("'αβγδε'#3", U'γ'); // TODO!
     testSquares();
     testMathOperatorsRuntime(); // 3^2
     testIndexWasm();
