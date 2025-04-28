@@ -5,6 +5,7 @@
 * offering host functions to wasi/wasp modules, like download() and run_wasm()
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
 * */
+let LIVE = !window.location.href.includes("localhost");
 let Wasp = {}
 let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and shortcuts, 6.6MB with linker!
 // let WASP_COMPILER = 'assets/wasp-hosted-release.wasm' // hard link 300k without tests
@@ -15,12 +16,11 @@ let lib_folder_url = "assets/lib/"
 // let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
-let needs_runtime = true; // set per app!
-// let needs_runtime = false; // set per app!
+let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
-const run_tests = true; // todo NOT IN PRODUCTION!
-// const run_tests = false;
+const run_tests = false;
+// const run_tests = !LIVE;
 let app_module;
 let kinds = {}
 
@@ -1153,7 +1153,9 @@ async function run_wasm(buf_pointer, buf_size) {
     // download_file(wasm_buffer, "compiled.wasm", "wasm")
 
     app_module = await WebAssembly.compile(wasm_buffer, {builtins: ['js-string']})
-    if (WebAssembly.Module.imports(app_module).length > 0) {
+    let moduleImportDescriptors = WebAssembly.Module.imports(app_module);
+    if (moduleImportDescriptors.length > 0) {
+      print("needs_runtime becaus of imports", moduleImportDescriptors)
       needs_runtime = true // todo WASI or Wasp runtime?
       print(app_module) // visible in browser console, not in terminal
       Wasp.download = download
@@ -1208,6 +1210,7 @@ async function run_wasm(buf_pointer, buf_size) {
     }
     console.error(ex)
     error(ex)
+    terminate()
   }
 }
 
@@ -1306,6 +1309,7 @@ function wasp_ready() {
   // testRun1()
   if (run_tests)
     setTimeout(test, 1);// make sync
+  else compile_and_run(editor.getValue())
 }
 
 load_compiler()

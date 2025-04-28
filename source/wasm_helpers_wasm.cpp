@@ -44,12 +44,83 @@ inline double longBitsToDouble(int64 a) {
     return *((double *) &a);
 }
 
-double powd(double a, double b) {
-    trace("VERY crude first approximation of power! 1/4 ≈ 0.22 …!");
-    int x = (int) (doubleToLongBits(a) >> 32);
-    int y = (int) (b * (x - 1072632447) + 1072632447);
-    return longBitsToDouble(((int64) y) << 32);
+// double powd(double a, double b) { // todo
+//     if(b==0)return 1;
+//     trace("VERY crude first approximation of power! 1/4 ≈ 0.22 …!");
+//     int x = (int) (doubleToLongBits(a) >> 32);
+//     int y = (int) (b * (x - 1072632447) + 1072632447);
+//     return longBitsToDouble(((int64) y) << 32);
+// }
+
+#include <stdint.h> // modf
+
+double modf(double value, double *iptr) {
+    union {
+        double d;
+        uint64_t i;
+    } u = {value};
+    int exponent = ((u.i >> 52) & 0x7FF) - 1023;
+
+    if (exponent < 0) {
+        *iptr = (value >= 0.0) ? 0.0 : -0.0;
+        return value;
+    }
+
+    if (exponent >= 52) {
+        *iptr = value;
+        return (value >= 0.0) ? 0.0 : -0.0;
+    }
+
+    uint64_t mask = (1ULL << (52 - exponent)) - 1;
+    if ((u.i & mask) == 0) {
+        *iptr = value;
+        return (value >= 0.0) ? 0.0 : -0.0;
+    }
+
+    u.i &= ~mask;
+    *iptr = u.d;
+    return value - u.d;
 }
+
+double powd(double a, double b) {
+    if (b == 0.0) return 1.0;
+    if (b == 1) return a;
+    if (b == -1) return 1 / a;
+    if (a == 0.0) return 0;
+    if (a < 0.0) todo("Complex numbers"); // return 0.0; // crude safeguard
+    if (floor(b) == b) return powdi(a, b);
+
+    union {
+        double d;
+        uint64_t i;
+    } u = {a};
+    // log2(a) ≈ exponent - bias + mantissa_fraction
+    double exponent = (double) ((u.i >> 52) & 0x7FF) - 1023.0;
+    double mantissa = (double) (u.i & ((1ULL << 52) - 1)) / (1ULL << 52);
+
+    double log2a = exponent + mantissa;
+
+    double pow2 = b * log2a;
+
+    // Split integer and fractional part
+    double intpart;
+    double fracpart = modf(pow2, &intpart);
+    // double fracpart = std::modf(pow2, &intpart);
+    // double fracpart = mod_d(pow2, intpart); ƒ
+
+    // 2^fracpart ≈ 1 + fracpart * ln(2)
+    const double ln2 = 0.6931471805599453;
+    double frac_approx = 1.0 + fracpart * ln2;
+
+    // Build result
+    union {
+        double d;
+        uint64_t i;
+    } res;
+    res.i = (uint64_t) ((intpart + 1023.0) * (1ULL << 52));
+    return res.d * frac_approx;
+}
+
 
 
 int printf(const char *__restrict format, ...) {

@@ -1235,17 +1235,17 @@ Node &groupOperators(Node &expression, Function &context) {
             }
             if (op == "^" or op == "^^" or op == "**" or op == "exp" or op == "ℇ") {
                 // todo NORM operators earlier
-                findLibraryFunction("pow", false);
-                //                findLibraryFunction("powi", false);
-                //                functions["pow"].is_used = true;
-                //                functions["powi"].is_used = true;
+                findLibraryFunction("pow", false); // old rough!
+                // findLibraryFunction("powd", false); // via pow
+                findLibraryFunction("powi", false);
             }
             if (suffixOperators.has(op)) {
                 // x²
                 // SUFFIX Operators
                 if (op == "ⁿ") {
                     findLibraryFunction("pow", false);
-                    functions["pow"].is_used = true;
+                    functions["pow"].is_used = true; // redirects to
+                    // functions["powd"].is_used = true;
                 }
                 if (i < 1)
                     error("suffix operator misses left side");
@@ -1351,10 +1351,10 @@ Module &loadRuntime() {
       error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
     Module &wasp=*module_cache["wasp"s.hash()];
 //    wasp.functions["powi"].signature.returns(int32);
-    if(!libraries.has(&wasp))
-        libraries.add(&wasp);
+    // if(!libraries.has(&wasp))// on demand per test/app!
     return wasp;
 #else
+    // Module &wasp = read_wasm("wasp-runtime-debug.wasm");// todo unexpected opcode …!!!
     Module &wasp = read_wasm("wasp-runtime.wasm");
     wasp.functions["getChar"].signature.returns(codepoint1);
     // addLibrary(&wasp); // BREAKS system WHY?
@@ -1419,10 +1419,10 @@ Type preEvaluateType(Node &node, Function *context0) {
 Module &loadModule(String name) {
     if (name == "wasp-runtime.wasm")
         return loadRuntime();
-#if WASM
-    todow("loadModule in WASM");
+#if WASM and not MY_WASM
+    todow("loadModule in WASM: "s+name);
     return *new Module();
-#else
+#else // getWasmFunclet
     return read_wasm(name); // we need to read signatures!
 #endif
 }
@@ -1630,9 +1630,12 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))
         return use_required_import(&functions[name]); // prevents read_wasm("lib")
-#if WASM
-    if (loadRuntime().functions.has(name)){
-        return use_required_import(&loadRuntime().functions[name]);
+#if WASM // todo: why only in wasm?
+    Module& wasp = loadRuntime();
+    if (wasp.functions.has(name)){
+        if(!libraries.has(&wasp))// on demand per test/app!
+            libraries.add(&wasp);
+        return use_required_import(&wasp.functions[name]);
     }
 #endif
     if (contains(funclet_list, name)) {
@@ -1720,6 +1723,7 @@ List<String> aliases(String name) {
     //	switch (name) // statement requires expression of integer type
     if (name == "pow") {
         found.add("pow");
+        // found.add("powd"); via pow
         found.add("powf");
         found.add("powi");
         found.add("pow_long");

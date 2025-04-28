@@ -972,10 +972,6 @@ void Linker::RemoveRuntimeMainExport() {
 }
 
 void Linker::RemoveAllExports() {
-// #if WASM
-//     return;
-// #endif
-
 // except globals, wasp_main and _start for stupid wasmtime:
     //  (export "nil_name" (global 1))
     // 1: command export 'nil_name' is not a function

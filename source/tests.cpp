@@ -674,12 +674,18 @@ void testPower() {
     assert_equals(powi(10, 4), 10000l);
     assert_equals(powi(2, 2), 4l);
     assert_equals(powi(2, 8), 256l);
-    skip(
-        assert_equals(powd(2, -2), 1 / 4.);
-        assert_equals(powd(2, -8), 1 / 256.);
-        assert_equals(powd(10, -2), 1 / 100.);
-        assert_equals(powd(10, -4), 1 / 10000.);
-    )
+    // skip(
+    assert_equals(powd(2, -2), 1 / 4.);
+    assert_equals(powd(2, -8), 1 / 256.);
+    assert_equals(powd(10, -2), 1 / 100.);
+    assert_equals(powd(10, -4), 1 / 10000.);
+    assert_equals(powd(3,0), 1.);
+    assert_equals(powd(3,1), 3.);
+    assert_equals(powd(3,2), 9.);
+    assert_equals(powd(3,2.1), 10.04510856630514);
+    assert_equals(powd(3.1,2.1), 10.761171606099687);
+
+    // assert_emit("√3^0", 0.9710078239440918); // very rough power approximation from where?
 }
 
 void testMaps0() {
@@ -1423,9 +1429,10 @@ void testModulo() {
     assert_emit("10007%10000", 7);
     assert_emit("10007.0%10000", 7);
     assert_emit("10007.0%10000.0", 7);
-    assert_emit("10007%10000.0", 7);
+
+    assert_emit("10007%10000.0", 7); // breaks here!?! load_lib mod_d suspect!!
     assert_emit("i=10007;x=i%10000", 7);
-    assert_emit("i=10007.0;x=i%10000.0", 7);
+    assert_emit("i=10007.0;x=i%10000.0", 7); // breaks here!?!
     assert_emit("i=10007.1;x=i%10000.1", 7);
 }
 
@@ -3405,6 +3412,10 @@ void testBadInWasm() {
     testDeepColon();
     testDeepColon2();
     testPattern();
+    testMergeOwn();
+    testIndexOffset();
+    testModulo();
+    testRootLists();
 }
 
 
@@ -3429,22 +3440,18 @@ void testAllEmit() {
     //    assert_emit("√ π ²", pi);
     //    assert_emit("√π²", pi);
 
+    testHex();
     testEmitBasics();
     testMinusMinus();
-    testWasmMutableGlobal();
     testSinus();
 
-    testHex();
-    testModulo();
     testSmartReturn();
     testWasmString(); // with length as header
-    testRootLists();
     //    return;
     testArrayIndices();
     testMultiValue();
     testLogic();
 
-    testEqualities();
     testLogic01();
     testLogicOperators();
     testRoots();
@@ -3453,19 +3460,16 @@ void testAllEmit() {
     testTruthiness();
     testLogicPrecedence();
     testRootLists();
-    testHex();
     testArrayIndices();
-    testModulo();
     testSmartReturn();
     testMultiValue();
     //    testSinus();
 
     testAllAngle();
     testRecentRandomBugs();
-    testMergeOwn();
+    testEqualities();
 
     testBadInWasm();
-    testIndexOffset();
     //    part of
     //    testAllWasm() :
     //    testRoundFloorCeiling();
@@ -3734,10 +3738,21 @@ void testWaspRuntimeModule() {
 // 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    // print("testCurrent DEACTIVATED");
+    // return;
     print("💡 starting Current tests 💡");
+    testPower();
     testWaspRuntimeModule();
     // assert_emit("test42+1", 43); // OK in WASM too?
 
+    const Node &node = parse("x:40;x+1");
+    check(node.length == 2)
+    check(node[0]["x"] == 40) // breaks!?
+    check(operator_list.has("+"));
+    check(not(bool) Node("x"));
+    check_silent(false == (bool) Node("x"));
+    check(Node("x") == false);
+    assert_throws("x"); // UNKNOWN local symbol ‘x’ in context main  OK
 
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     // testKebabCase(); // needed here:
