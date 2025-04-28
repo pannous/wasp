@@ -972,6 +972,10 @@ void Linker::RemoveRuntimeMainExport() {
 }
 
 void Linker::RemoveAllExports() {
+// #if WASM
+//     return;
+// #endif
+
     // except globals, wasp_main and _start for stupid wasmtime:
     //  (export "nil_name" (global 1))
     // 1: command export 'nil_name' is not a function
@@ -984,10 +988,12 @@ void Linker::RemoveAllExports() {
         short pos = -1;
         for (short i = 0; i < bin->exports.size();) {
             Export &ex = bin->exports[i];
-            if (ex.kind == ExternalKind::Func and (ex.name.empty()
-                                                   or not(ex.name == "wasp_main" or ex.name == "_start" or ex.name ==
-                                                          "main"))) {
+            bool is_main = ex.name == "wasp_main" or ex.name == "_start" or ex.name == "main";
+            if( ex.kind==ExternalKind::Global) {
                 bin->exports.remove(i);
+            }
+            else if (ex.kind == ExternalKind::Func and (ex.name.empty() or not is_main)) {
+                bin->exports.remove(i); // todo BROKEN in WASM!!
                 // do NOT increment i because items shift left
             } else {
                 i++;
@@ -1053,7 +1059,7 @@ void Linker::ResolveSymbols() {
         for (Export &_export: binary->exports) {
             pos++;
             // if ("main.wasm"s == binary->name)
-            print("⚠️"s + binary->name + " index " + _export.index + " export kind " + (int) _export.kind + " '" +
+            trace("⚠️"s + binary->name + " index " + _export.index + " export kind " + (int) _export.kind + " '" +
                   _export.name + "'");
 
             if (export_map.FindIndex(_export.name.clone()) != kInvalidIndex) {
@@ -1071,7 +1077,7 @@ void Linker::ResolveSymbols() {
             // todo: why not store index directly?
             // if (tracing)
             if ("main.wasm"s == binary->name)
-                print("⚠️"s + binary->name + " export kind " + (int) _export.kind + " '" + _export.name + "'"
+                trace("⚠️"s + binary->name + " export kind " + (int) _export.kind + " '" + _export.name + "'"
                       + _export.index);
             // if(_export.name.length() == 0)continue;// bug!?
             // printf("%s export kind %d '%s' index %d\n", binary->name, (int) _export.kind, _export.name.data, _export.index);
