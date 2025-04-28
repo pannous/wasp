@@ -976,7 +976,7 @@ void Linker::RemoveAllExports() {
 //     return;
 // #endif
 
-    // except globals, wasp_main and _start for stupid wasmtime:
+// except globals, wasp_main and _start for stupid wasmtime:
     //  (export "nil_name" (global 1))
     // 1: command export 'nil_name' is not a function
     for (auto &bin: inputs_) {
@@ -989,10 +989,9 @@ void Linker::RemoveAllExports() {
         for (short i = 0; i < bin->exports.size();) {
             Export &ex = bin->exports[i];
             bool is_main = ex.name == "wasp_main" or ex.name == "_start" or ex.name == "main";
-            if( ex.kind==ExternalKind::Global) {
+            if (ex.kind == ExternalKind::Global) {
                 bin->exports.remove(i);
-            }
-            else if (ex.kind == ExternalKind::Func and (ex.name.empty() or not is_main)) {
+            } else if (ex.kind == ExternalKind::Func and (ex.name.empty() or not is_main)) {
                 bin->exports.remove(i); // todo BROKEN in WASM!!
                 // do NOT increment i because items shift left
             } else {
@@ -1060,7 +1059,7 @@ void Linker::ResolveSymbols() {
             pos++;
             // if ("main.wasm"s == binary->name)
             trace("⚠️"s + binary->name + " index " + _export.index + " export kind " + (int) _export.kind + " '" +
-                  _export.name + "'");
+                _export.name + "'");
 
             if (export_map.FindIndex(_export.name.clone()) != kInvalidIndex) {
                 warn("duplicate export name "s + _export.name); // Ignoring
@@ -1078,7 +1077,7 @@ void Linker::ResolveSymbols() {
             // if (tracing)
             if ("main.wasm"s == binary->name)
                 trace("⚠️"s + binary->name + " export kind " + (int) _export.kind + " '" + _export.name + "'"
-                      + _export.index);
+                + _export.index);
             // if(_export.name.length() == 0)continue;// bug!?
             // printf("%s export kind %d '%s' index %d\n", binary->name, (int) _export.kind, _export.name.data, _export.index);
             if (_export.kind == wabt::ExternalKind::Global) {
