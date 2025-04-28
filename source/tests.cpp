@@ -3413,6 +3413,7 @@ void testBadInWasm() {
     testMergeOwn();
     testIndexOffset();
     testModulo();
+    testRootLists();
 }
 
 
@@ -3444,13 +3445,11 @@ void testAllEmit() {
 
     testSmartReturn();
     testWasmString(); // with length as header
-    testRootLists();
     //    return;
     testArrayIndices();
     testMultiValue();
     testLogic();
 
-    testEqualities();
     testLogic01();
     testLogicOperators();
     testRoots();
@@ -3466,6 +3465,7 @@ void testAllEmit() {
 
     testAllAngle();
     testRecentRandomBugs();
+    testEqualities();
 
     testBadInWasm();
     //    part of
