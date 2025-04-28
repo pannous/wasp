@@ -684,7 +684,7 @@ void testPower() {
     assert_equals(powd(3,2), 9.);
     assert_equals(powd(3,2.1), 10.04510856630514);
     assert_equals(powd(3.1,2.1), 10.761171606099687);
-)
+    )
     // assert_emit("√3^0", 0.9710078239440918); // very rough power approximation from where?
 }
 
