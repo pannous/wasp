@@ -3474,8 +3474,8 @@ void testAllEmit() {
     testEqualities();
 
     skip( // todo!
-    testBadInWasm();
-        )
+        testBadInWasm();
+    )
     //    part of
     //    testAllWasm() :
     //    testRoundFloorCeiling();
