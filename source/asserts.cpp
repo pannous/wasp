@@ -271,7 +271,7 @@ bool ok;
 extern List<String> done;
 
 //#define assert_ast(α, β) if (!assert_equals_x(analyze(parse(α)),parse(β))){printf("%s != %s",#α,#β);backtrace_exit();}
-//#define assert_eval(α, β) if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_exit();}
+//#define assert_emit(α, β) if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_exit();}
 
 
 

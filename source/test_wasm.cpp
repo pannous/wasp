@@ -1669,12 +1669,7 @@ void test_wasm_todos() {
     // sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
 }
 
-
-// SIMILAR AS:
-void testTodoBrowser() {
-    // #if WASM
-    //     return;
-    // #endif
+void testFixedInBrowser(){
     assert_emit("'αβγδε'#3", U'γ'); // TODO!
     testSquares();
     testMathOperatorsRuntime(); // 3^2
@@ -1689,9 +1684,15 @@ void testTodoBrowser() {
     assert_emit("puti 3", (int64) 3);
     assert_emit("puti 3", 3); //
     assert_emit("puti 3+3", 6);
+}
 
-    testOldRandomBugs();
-    testEmitter(); // huh!?!
+// SIMILAR AS:
+void testTodoBrowser() {
+	testOldRandomBugs(); // currently ok
+    // #if WASM
+    //     return;
+    // #endif
+
     testWasmString(); // with length as header
     assert_emit("x='abcde';x[3]", 'd');
     testCall();
@@ -1703,6 +1704,7 @@ void testTodoBrowser() {
         testNodeDataBinaryReconstruction(); // todo!
         testWasmMutableGlobal(); // todo!
     testSmartReturnHarder();
+    testEmitter(); // huh!?!
 )
 }
 
