@@ -529,7 +529,7 @@ void consumeExportSection() {
         //            breakpoint_helper
 
         if (fun.signature.size()) {
-            if(func=="square")
+            if (func == "square")
                 print("polymorphic "s + func);
             trace("function %s already has signature "s % func + fun.signature.serialize());
             trace("function %s old code_index %d new code_index %d"s % func % fun.code_index % lower_index);

@@ -2666,14 +2666,14 @@ Code emitCall(String fun, Function &context) {
     return emitCall(*new Node(fun), context);
 }
 
-Function & findMatchingPolymorphicDispatch(Function & function, Type last_type) {
-    print("findMatchingPolymorphicDispatch "s+function.name + " " + typeName(last_type));
-    if(not function.is_polymorphic) {
+Function &findMatchingPolymorphicDispatch(Function &function, Type last_type) {
+    print("findMatchingPolymorphicDispatch "s + function.name + " " + typeName(last_type));
+    if (not function.is_polymorphic) {
         warn("Function "s + function.name + " is not polymorphic");
         return function;
     }
-    for(Function* variant : function.variants) {
-        if(variant->signature.parameters[0].type == last_type) {
+    for (Function *variant: function.variants) {
+        if (variant->signature.parameters[0].type == last_type) {
             return *variant;
         }
     }
@@ -2698,8 +2698,8 @@ Code emitCall(Node &fun, Function &context) {
     Function &function = functions[name]; // NEW context! but don't write context ref!
     Signature &signature = function.signature;
 
-    if(function.is_polymorphic) {
-        function=findMatchingPolymorphicDispatch(function,last_type);
+    if (function.is_polymorphic) {
+        function = findMatchingPolymorphicDispatch(function, last_type);
     }
 
     int index = function.call_index;
