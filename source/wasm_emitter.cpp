@@ -2718,13 +2718,11 @@ Code emitCall(Node &fun, Function &context) {
     if (function->is_polymorphic) {
         Node *params = &fun.values();
         if (params->empty())params = fun.next; // todo unhack!
-        if (params->size() == 0 and not params->empty()) {
-            Node *wrap = new Node();
-            wrap->add(*params);
-            params = wrap;
-        }
+        params = wrap(*params);
         function = &findMatchingPolymorphicDispatch(*function, *params, last_type);
         print("found poly with signature "s + function->signature.serialize());
+        if(not function->fullname.empty())
+            name = function->fullname;
     }
 
     int index = function->call_index;
@@ -4121,6 +4119,7 @@ void add_imports_and_builtins() {
                 error("context already has index %d ≠ %d"s % function.code_index % last_index);
             function.call_index = ++last_index;
             call_indices[sig] = last_index;
+            call_indices[function.fullname] = last_index;
             info("using import "s + sig);
             trace(function.name + function.signature.serialize());
             import_count++;
