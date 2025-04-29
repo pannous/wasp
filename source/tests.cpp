@@ -3274,7 +3274,7 @@ void todos() {
     //    	subtract(other complex) := re -= other.re; im -= other.im
     // := is terminated by \n, not by ;!
     assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
-    assert_eval("if(0):{3}", false); // 0:3 messy node
+    assert_emit("if(0):{3}", false); // 0:3 messy node
     assert_equals(Node("1", 0) + Node("2"_s),
                   Node("1", "2", 0)); // 1+2 => 1:2  stupid border case because 1 not group (1)
     assert_is((char *) "{a b c}#2", "b"); // ok, but not for patterns:

@@ -51,6 +51,7 @@ void testAllWasm();
 void testAllEmit();
 void testAllAngle();
 void testBadInWasm();
+void testTodoBrowser();
 
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
@@ -66,7 +67,7 @@ extern "C" void testRun() {
     // assert_emit("test42+1", 43); // OK in WASM too?
     // return;
     // testBadInWasm();
-
+    testTodoBrowser();
     // we may run into MEMORY OVERFLOW, test ONE for now!
     // ⚠️ ERROR: RuntimeError: memory access out of bounds / Duplicate export name 'main' (misleading!!)
     testAllAngle();
