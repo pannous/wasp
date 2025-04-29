@@ -3473,6 +3473,13 @@ Code emitImportSection() {
             auto type = typeMap[fun];
             import_code =
                     import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);
+            if (function.is_polymorphic) {
+                for (Function *variant: function.variants) {
+                    variant->call_index = import_count++;
+                    auto type = typeMap[variant->fullname];
+                    import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);
+                }
+            }
         }
     }
 
@@ -4119,10 +4126,16 @@ void add_imports_and_builtins() {
                 error("context already has index %d ≠ %d"s % function.code_index % last_index);
             function.call_index = ++last_index;
             call_indices[sig] = last_index;
-            call_indices[function.fullname] = last_index;
             info("using import "s + sig);
             trace(function.name + function.signature.serialize());
             import_count++;
+            if (function.is_polymorphic) {
+                for (Function *variant: function.variants) {
+                    variant->call_index = ++last_index; // index in library will be relinked via import
+                    call_indices[variant->fullname] = last_index;
+                    import_count++;
+                }
+            }
         }
     }
     for (auto sig: functions) {
