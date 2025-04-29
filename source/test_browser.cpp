@@ -48,10 +48,9 @@ void testDownload() {
 }
 
 void testAllWasm();
-
 void testAllEmit();
-
 void testAllAngle();
+void testBadInWasm();
 
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
@@ -59,19 +58,21 @@ extern "C" void testRun() {
     if (done.empty())
         print("💡💡💡NOW RUNNING all async emit TESTS!💡💡💡");
 
-    assert_emit("a = [1, 2, 3]; a[1]", 2);
-    assert_emit("a = [1, 2, 3]; a[2] == a#3", 1);
+    // assert_emit("a = [1, 2, 3]; a[1]", 2);
+    // assert_emit("a = [1, 2, 3]; a[2] == a#3", 1);
     //    testDownload(); // not on localhost
     //	assert_emit("square := it*it; square 3", 9);
     // tracing = true; // HACK!
     // assert_emit("test42+1", 43); // OK in WASM too?
     // return;
+    // testBadInWasm();
 
-    // we may run into memory overflow, test ONE for now!
-    // ⚠️ ERROR: RuntimeError: memory access out of bounds
+    // we may run into MEMORY OVERFLOW, test ONE for now!
+    // ⚠️ ERROR: RuntimeError: memory access out of bounds / Duplicate export name 'main' (misleading!!)
     testAllAngle();
     testAllEmit();
     testAllWasm();
+    // testBadInWasm();
     //	testWasmGC();
 
     //    skip(

@@ -12,7 +12,8 @@ let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and sh
 // let WASP_COMPILER = 'assets/wasp-release-debug.wasm' // hard link 300k without tests
 // let WASP_COMPILER = 'assets/wasp-release.wasm' // hard link 300k without tests currently not working!
 let WASP_RUNTIME = 'assets/wasp-runtime.wasm' // 100kb now in :
-let lib_folder_url = "assets/lib/"
+let lib_folder_url = "assets/"
+// let lib_folder_url = "assets/lib/"
 // let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
@@ -119,6 +120,7 @@ function parse(data) {
 function terminate() {
   debug("wasm terminate()")
   // if(sure)
+  STOP = 1
   throw new Error("wasm terminate() via proc_exit")
 }
 
@@ -1155,8 +1157,14 @@ async function run_wasm(buf_pointer, buf_size) {
 
     app_module = await WebAssembly.compile(wasm_buffer, {builtins: ['js-string']})
     let moduleImportDescriptors = WebAssembly.Module.imports(app_module);
+    // remove all host env functions from moduleImportDescriptors (they need not be linked)
+    for (let i = 0; i < moduleImportDescriptors.length; i++)
+      if (imports.env[moduleImportDescriptors[i].name] !== undefined) {
+        moduleImportDescriptors.splice(i, 1);
+        i--;
+      }
     if (moduleImportDescriptors.length > 0) {
-      print("needs_runtime becaus of imports", moduleImportDescriptors)
+      print("needs_runtime because of imports", moduleImportDescriptors)
       needs_runtime = true // todo WASI or Wasp runtime?
       print(app_module) // visible in browser console, not in terminal
       Wasp.download = download
