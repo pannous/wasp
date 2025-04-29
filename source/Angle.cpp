@@ -1470,7 +1470,7 @@ Node &groupOperatorCall(Node &node, Function &function) {
 }
 
 
-int findBestVariant(const Function &function, const Node &node) {
+int findBestVariant(const Function &function, const Node &node, Function *context) {
     if (function.variants.size() == 1) return 0;
     if (function.variants.size() == 0) return -1;
     int best = -1;
@@ -1482,13 +1482,14 @@ int findBestVariant(const Function &function, const Node &node) {
             for (int i = 0; i < signature.size(); ++i) {
                 auto sig = signature.parameters[i];
                 Type aType = sig.type;
-                Type pType = node[i].kind;
+                Type pType = preEvaluateType(node[i], context);
                 if (not compatibleTypes(aType, pType)) {
                     ok = false;
                     break;
                 }
             }
-            if (ok) return best;
+            if (ok)
+                return best;
         }
     }
     error("no matching function variant for "s + function.name + " with "s + node.serialize());
@@ -1565,7 +1566,9 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         function.name = name; // hack shut've Never Been Lost
         Signature &signature = function.signature;
         if (function.is_polymorphic) {
-            int variantNr = findBestVariant(function, *wrap(expressiona.from(i + 1)));
+            auto params0 = expressiona.from(i + 1);
+            auto params = analyze(params0, context);
+            int variantNr = findBestVariant(function, *wrap(params), &context);
             Function *variant = function.variants[variantNr];
             signature = variant->signature; // todo hack
             variant->is_used = true;
@@ -1574,6 +1577,10 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             addLibraryFunctionAsImport(*variant);
             print("matching function variant "s + variantNr + " of " + function.name + " with "s + signature.
                   serialize());
+            node.add(params); // todo: this is all duplication of code below:
+            expressiona.remove(i+1, -1);// todo
+            // expressiona.replace(i+1, -1, params);// todo
+            // expressiona.replace(i+1, i + params.length, params);// todo
         }
         // return groupFunctionCallPolymorphic(node, function, expressiona, context);
         function.is_used = true;
