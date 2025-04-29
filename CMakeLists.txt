@@ -411,6 +411,7 @@ add_compile_options(-Wno-return-type-c-linkage) # allow C functions to return mu
 #add_compile_options(-fno-exceptions) # disables exceptions => cannot use 'throw'
 #add_compile_options(-fno-rtti) # disables Run-Time Type Information, ensuring no dynamic type dependencies
 #add_compile_options(-fno-unwind-tables -fno-asynchronous-unwind-tables) # !?!? ----
+#add_compile_options(-Wno-dynamic-class-memaccess) # allow memset of classes => trouble
 
 if (TRACE)
     message("TRACE => tracing=true")

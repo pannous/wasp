@@ -12,6 +12,7 @@
 #include <cstdlib> // OK in WASM!
 #include <cstdarg> // va_list OK IN WASM??? even without wasi!
 #include <utility> // std::move
+//#include <algorithm> // std::fill for memset 0
 
 #ifndef WASM
 
@@ -354,6 +355,10 @@ public: // todo careful Map<char*,…> eq
         free(values);
         keys = (S *) calloc(sizeof(S), capacity);
         values = (T *) calloc(sizeof(T), capacity);
+        //memset(keys, 0, sizeof(S) * capacity);
+        //memset(values, 0, sizeof(T) * capacity);
+        //std::fill(keys, keys + capacity, S{});
+        //std::fill(values, values + capacity, T{});
         _size = 0;
     }
 
