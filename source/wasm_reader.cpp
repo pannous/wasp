@@ -529,16 +529,22 @@ void consumeExportSection() {
         //            breakpoint_helper
 
         if (fun.signature.size()) {
+            if(func=="square")
+                print("polymorphic "s + func);
             trace("function %s already has signature "s % func + fun.signature.serialize());
             trace("function %s old code_index %d new code_index %d"s % func % fun.code_index % lower_index);
-            Function &abstract = *new Function{
+            module->functions.remove(func);
+            module->functions[func] = *new Function{
                 .name = func, .module = module, .is_runtime = true, .is_polymorphic = true
             };
+            Function &abstract = module->functions[func];
+            check(abstract.is_polymorphic);
+            check(&abstract != &fun);
             abstract.variants.add(&fun);
-            module->functions[func] = abstract;
             //            fun = *abstract.variants.items[2];
             fun = *new Function{.code_index = lower_index, .name = func, .module = fun.module, .is_runtime = true};
             abstract.variants.items[2] = &fun;
+            check(module->functions[func].is_polymorphic);
         } else {
             fun0.code_index = lower_index;
             fun.code_index = lower_index;

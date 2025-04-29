@@ -218,10 +218,6 @@ double sqrt1(double a) {
 #endif
 }
 
-// todo: remove this useless test function
-int square(int a) {
-    return a * a;
-}
 
 #if NO_TESTS
 extern "C" void testCurrent(){

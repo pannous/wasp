@@ -591,3 +591,16 @@ char *base64_encode(const char *data) {
     encoded[encoded_len] = '\0';
     return encoded;
 }
+
+
+// todo: test polymorphism / multi dispatch
+int square(int a) {
+    return a * a;
+}
+double square(double a) {
+    return a * a;
+}
+// int64 squarel(int64 n); // test wasm, otherwise use x² => x*x in analyze!
+// int64 square(int64 a) { //
+//     return a * a;
+// }
