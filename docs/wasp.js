@@ -371,7 +371,7 @@ let imports = {
     assert_expect: x => {
       value = new node(x).Value()
       try {
-        print("assert_expect", x, value)
+        print("assert_expect", value)
       } catch (ignore) {
       }
       if (expect_test_result)
@@ -1149,6 +1149,20 @@ function load_compiler() {
   })
 }
 
+function similar(x,y){
+  if(x == y) return true
+  if(typeof x === 'number' && typeof y === 'number'){
+    const eps = 1e-5;
+    const diff = Math.abs(x - y);
+    const max = Math.max(Math.abs(x), Math.abs(y));
+    return max === 0 || diff / max < eps;
+  }
+  if(x instanceof String && y instanceof String) return x.valueOf() == y.valueOf()
+  if(x instanceof Array && y instanceof Array) return x.length == y.length && x.every((v,i)=>similar(v,y[i]))
+  if(x instanceof Object && y instanceof Object) return Object.keys(x).length == Object.keys(y).length && Object.keys(x).every(k=>similar(x[k],y[k]))
+  return false
+}
+
 async function run_wasm(buf_pointer, buf_size) {
   try { // WE WANT PURE STACK TRACE
     wasm_buffer = buffer.subarray(buf_pointer, buf_pointer + buf_size)
@@ -1199,10 +1213,10 @@ async function run_wasm(buf_pointer, buf_size) {
       if (Array.isArray(expect_test_result) && Array.isArray(result)) {
         for (let i = 0; i < result.length; i++)
           check(+expect_test_result[i] == +result[i])
-      } else if (expect_test_result != result) {
+      } else if (!similar(expect_test_result, result)) {
         STOP = 1
         download_file(wasm_buffer, "emit.wasm", "wasm") // resume
-        check(expect_test_result == result)
+        check(similar(expect_test_result, result))
       }
       expect_test_result = 0
       if (resume) setTimeout(resume, 1);

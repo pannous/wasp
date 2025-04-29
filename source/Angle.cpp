@@ -1365,6 +1365,7 @@ Module &loadRuntime() {
 }
 
 Type preEvaluateType(Node &node, Function &context) {
+    // e.g √3 => float64t  3/2 => float64t …
     // todo: some kind of Interpret eval?
     // todo: combine with compile time eval! <<<<<
     if (node.kind == expression) {
@@ -1482,7 +1483,7 @@ int findBestVariant(const Function &function, const Node &node, Function *contex
             for (int i = 0; i < signature.size(); ++i) {
                 auto sig = signature.parameters[i];
                 Type aType = sig.type;
-                Type pType = preEvaluateType(node[i], context);
+                Type pType = preEvaluateType(*node[i].clone(), context);
                 if (not compatibleTypes(aType, pType)) {
                     ok = false;
                     break;

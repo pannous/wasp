@@ -59,6 +59,11 @@ extern "C" void testRun() {
     if (done.empty())
         print("💡💡💡NOW RUNNING all async emit TESTS!💡💡💡");
 
+
+    assert_emit("square(√3)", 3);
+    assert_emit("square(3)", 9);
+    assert_emit("square(√3^2)", 9); // illegal opcode WDYM?
+
     // assert_emit("a = [1, 2, 3]; a[1]", 2);
     // assert_emit("a = [1, 2, 3]; a[2] == a#3", 1);
     //    testDownload(); // not on localhost

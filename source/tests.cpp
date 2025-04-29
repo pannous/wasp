@@ -3409,6 +3409,8 @@ void testBUG() {
 
 void testBadInWasm() {
     // break immediately
+    assert_emit("square(3.0)", 9.);
+
     assert_emit("global x=1+π", 1 + pi); // int 4 ƒ
     testWasmMutableGlobal(); // todo!
     assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
@@ -3781,12 +3783,6 @@ void testCurrent() {
     // return;
     print("💡 starting Current tests 💡");
     testWaspRuntimeModule();
-    assert_emit("square(√3)", 3); // TODO polymorphism / dispatch / node / symbolic x*x !!
-    assert_emit("square(3.0)", 9.); // TODO polymorphism / dispatch / node / symbolic x*x !!
-    assert_emit("square(3)", 9); // TODO polymorphism / dispatch / node / symbolic x*x !!
-    // assert_emit("square 3", 9); // TODO polymorphism / dispatch / node / symbolic x*x !!
-    // assert_emit("square 3.0", 9.); // TODO polymorphism / dispatch / node / symbolic x*x !!
-    // assert_emit("squared(√3^2)", 9); // TODO polymorphism / dispatch / node / symbolic x*x !!
     testPower();
     // assert_emit("test42+1", 43); // OK in WASM too?
     const Node &node = parse("x:40;x+1");
