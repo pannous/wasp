@@ -393,9 +393,11 @@ class Wasp {
         }
         if (text[offset] == '\n' or text[offset] == '\r')offset++;
         while (text[offset] == '\t') {
-            if (indentation_level > 0 and not indentation_by_tabs)
-                if (proceed())
+            if (indentation_level > 0 and not indentation_by_tabs) {
+                char proceed1 = proceed();
+                if (proceed1)
                     parserError("mixing tabs and spaces for indentation");
+            }
             indentation_by_tabs = true;
             tabs++;
             offset++;
@@ -497,6 +499,7 @@ public:
         columnStart = 0;
         at = -1;
         lineNumber = 1;
+        indentation_level = 0;
         ch = 0;
         text = source;
         while (empty(ch) and (ch or at < 0))

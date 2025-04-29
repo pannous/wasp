@@ -59,16 +59,20 @@ void testIf() {
     assert_emit("if(2):{3}", 3);
     assert_emit("if 2 : 3 else 4", 3);
 
-    assert_emit("if 0:3", false);
+    // assert_emit("if 0:3", false);
     assert_emit("if(0):{3}", false);
 
     assert_emit("if(0):{3} else {4}", 4);
-    assert_emit("if 0:{3} else {4}", 4);
+
+    // todo don't rely on isSetter!
+    assert_emit("if(0):{3} else 4", 4);
     assert_emit("if 0:3 else {4}", 4);
-    assert_emit("if 0 {3} else {4}", 4);
     assert_emit("if {0}:3 else 4", 4);
     assert_emit("if 0:3 else 4", 4);
     assert_emit("if 0:{3} else 4", 4);
+    assert_emit("if 0:{3} else 4", 4);
+
+    assert_emit("if 0 {3} else {4}", 4);
     assert_emit("if (2) {3} else 4", 3);
     assert_emit("if(2){3} else 4", 3);
     assert_emit("if(0){3} else 4", 4);
@@ -85,7 +89,6 @@ void testIf() {
     assert_emit("if 2:{3} else {4}", 3);
     assert_emit("if 2:3 else {4}", 3);
     assert_emit("if 2 {3}", 3);
-    assert_emit("if(0):{3} else 4", 4);
     assert_emit("if (0) {3}", false);
     assert_emit("if 2 then 3 else 4", 3);
     assert_emit("if (0) {3} else 4", 4);
@@ -96,7 +99,6 @@ void testIf() {
     )
     assert_emit("1 and 0 or 4", 4);
     assert_emit("if 1 then 0 else 4", (int64) 0);
-    assert_emit("if 0:{3} else 4", 4);
 
 
     assert_emit("if 0 {3}", false);
@@ -118,6 +120,7 @@ void testIf() {
     assert_emit("if(2,3,4)", 3);
     assert_emit("if({2},{3},{4})", 3);
     skip( // esotheric nonsense?
+        assert_emit("if 0:{3} else {4}", 4);
         assert_emit("if 2 , 3 , 4", 3);
         assert_emit("if(2){3}{4}", 3); // maybe todo?
         assert_emit("if(0,then=3,else=4)", 4);

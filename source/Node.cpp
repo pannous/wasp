@@ -1150,8 +1150,8 @@ bool Node::isSetter() {
     // todo properly via expression i=1 == (set i 1)
     // todo proper constructor i:1 == (construct i (1))
     // todo i=0 == i.empty ?  that is: should null value construction be identical to NO value?
-    if(isNumber(name.data[0]))
-        return false;
+    // if(isNumber(name.data[0]))
+    //     return false; // todo : enable and fix if 0:{3} else 4
 
     if (kind == bools)return not(name == True.name.data) and not(name == False.name.data);
     if (kind == longs || kind == reals) // || kind==bools)

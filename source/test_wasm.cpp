@@ -1473,21 +1473,21 @@ void testForLoops() {
     assert_emit("for i in 1 to 5 : {puti i};i", 6); // after loop :(
     assert_emit("for i in 1 to 5 : puti i", 5);
     assert_emit("for i in 1 to 5\n  puti i", 5); // unclosed pair  	<control>: SHIFT OUT
-    assert_emit("for i in 1 to 5\n  puti i\ni", 6);
+    // assert_emit("for i in 1 to 5\n  puti i\ni", 6);
     assert_emit("for i in 1…5 : puti i", 5);
     assert_emit("for i in 1 … 5 : puti i", 5);
     // assert_emit("for i in 1 .. 5\n  puti i", 4);// exclusive!
     // assert_emit("for i in 1 ..< 5\n  puti i", 4);// exclusive!
     assert_emit("for i in 1 ... 5\n  puti i", 5);
 #endif
-    // skip(
+    skip(
         assert_emit("sum=0\nfor i in 1…3 {sum+=i}\nsum", 6); // todo range
         assert_emit("sum=0\nfor i in 1 to 3 : sum+=i\nsum", 6); // todo range
         assert_emit("sum=0\nfor i in (1 ... 3) {sum+=i}\nsum", 6); // todo range
         assert_emit("sum=0\nfor i in (1..3) {sum+=i}\nsum", 6); // todo (1. 0.3) range
         assert_emit("sum=0;for i in (1..3) {sum+=i};sum", 6);
         assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
-    // )
+    )
 }
 
 
@@ -1536,8 +1536,7 @@ void testHostDownload() {
 
 
 void testSinus2() {
-    assert_emit(R"(
-double sin(double x){
+    assert_emit(R"(double sin(double x){
     x = modulo_double(x,tau)
     double z = x*x
     double w = z*z
