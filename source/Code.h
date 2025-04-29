@@ -1226,8 +1226,10 @@ public:
         return false;
     }
 
-    Signature clone() {
-        return *this;
+    Signature& clone() {
+        // Signature* neu = new Signature(*this);
+        // neu.parameters = parameters.clone();
+        return *this; // parameters already value fields , no need to deep copy
     }
 
     explicit operator String() {
@@ -1251,6 +1253,9 @@ public:
                 s += " "s + typeName(type);
         }
         return s;
+    }
+    String toString() {
+        return serialize();
     }
 };
 
@@ -1375,7 +1380,14 @@ public:
 	}
 
 	Function *clone() {
-		return new Function(*this);
+		Function *neu = new Function(*this);
+        neu->signature = signature.clone();
+        neu->signature.parameters = signature.parameters;
+        neu->variants = variants;
+        // neu->locals = locals.clone(); // TODO!!?
+        // neu->code = code->clone();
+        neu->body = body->clone();
+        return neu;
 	}
 
     int allocateLocal(String local_name = "") {

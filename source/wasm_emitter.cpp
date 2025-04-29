@@ -2666,16 +2666,33 @@ Code emitCall(String fun, Function &context) {
     return emitCall(*new Node(fun), context);
 }
 
-Function &findMatchingPolymorphicDispatch(Function &function, Type last_type) {
-    print("findMatchingPolymorphicDispatch "s + function.name + " " + typeName(last_type));
+Function &findMatchingPolymorphicDispatch(Function &function, Node &params, Type last_type) {
+    print("findMatchingPolymorphicDispatch "s + function.name + " " + params.serialize());
     if (not function.is_polymorphic) {
         warn("Function "s + function.name + " is not polymorphic");
         return function;
     }
     for (Function *variant: function.variants) {
-        if (variant->signature.parameters[0].type == last_type) {
-            return *variant;
+        print("checking variant "s + variant->name + " " + variant->signature.serialize());
+        auto args = variant->signature.parameters;
+        if (args.size() != params.size()) {
+            print("args.size() != params.size()"s + args.size() + "!=" + params.size());
+            continue; // todo default
         }
+        // if (args[0].type == last_type)
+        //     return *variant;
+        bool bad = false;
+        for (int i = 0; i < args.size(); ++i) {
+            Type typ = mapTypeToWasm(params[i]);
+            if (args[i].type != typ) {
+                print(""s + typeName(args[i].type) + " != " + typeName(typ));
+                bad = true;
+                break; // args check
+            }
+            // if(not castable(params[i], args[i]){bad = true;}
+        }
+        if (not bad)
+            return *variant;
     }
     error("No matching polymorphic variant found for "s + function.name);
     return *function.variants[0];
@@ -2695,14 +2712,22 @@ Code emitCall(Node &fun, Function &context) {
     print("emitCall");
     print(fun);
 
-    Function &function = functions[name]; // NEW context! but don't write context ref!
-    Signature &signature = function.signature;
+    Function *function = &functions[name]; // NEW context! but don't write context ref!
+    Signature &signature = function->signature;
 
-    if (function.is_polymorphic) {
-        function = findMatchingPolymorphicDispatch(function, last_type);
+    if (function->is_polymorphic) {
+        Node* params = &fun.values();
+        if(params->empty())params = fun.next;// todo unhack!
+        if(params->size()==0 and not params->empty()) {
+            Node *wrap=new Node();
+            wrap->add(*params);
+            params = wrap;
+        }
+        function = &findMatchingPolymorphicDispatch(*function, *params, last_type);
+        print("found poly with signature "s + function->signature.serialize());
     }
 
-    int index = function.call_index;
+    int index = function->call_index;
     if (call_indices.has(name)) {
         if (index >= 0 and index != call_indices[name]) todo("index!=functionIndices[name]");
         index = call_indices[name];
@@ -2719,7 +2744,7 @@ Code emitCall(Node &fun, Function &context) {
     int i = 0;
     auto sig_size = signature.parameters.size();
     if (fun.size() > sig_size) {
-        print(function);
+        print(*function);
         print(signature);
         error("too many arguments for function %s %d >= %d "s % name % fun.size() % sig_size);
     }

@@ -99,6 +99,7 @@ f32t = 0x7d,
 //    typedef int64 int64
 
     // int32t = 0X7F,
+ints = 0X7F, // longy, but not long
 int32t = 0X7F,
 i32t = 0x7f,
 i32 = 0x7f,
@@ -185,7 +186,9 @@ enum Kind /* 32 bit*/ {// todo: merge Node.kind with Node.class(?)
 
     structs = 0x77, // TODO BEWARE OF OVERLAP with primitives! :
     reals = 0x7C, /*  ≠ float64 , just hides bugs, these concepts should not be mixed */
+    doubles = 0x7C,
     realsF = 0x7D,/*  ≠ float32 , just hides bugs, these concepts should not be mixed */
+    floats = 0x7D,
     longs = 0x7E, // the signature of parameters/variables is independent!
     long32 = 0x7F, /* int stored in long node field  ≠ int32 , just hides bugs, these concepts should not be mixed */
 
