@@ -794,7 +794,8 @@ void testSquares() {
 }
 
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
-void testOldRandomBugs() { // ≈ testRecentRandomBugs()
+void testOldRandomBugs() {
+    // ≈ testRecentRandomBugs()
     // some might break due some testBadInWasm() BEFORE!
     assert_emit("-42", -42) // OK!?!
     skip(
@@ -1693,7 +1694,7 @@ void testTodoBrowser() {
 
     skip( // still breaking! (some for good reason)
         // OPEN BUGS
-    assert_emit("global x=1+π", 1 + pi); // int 4 ƒ
+        assert_emit("global x=1+π", 1 + pi); // int 4 ƒ
         assert_emit("3 + √9", (int64) 6); // !!!
         assert_emit("id 3*42> id 2*3", 1)
         assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
