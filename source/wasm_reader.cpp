@@ -516,9 +516,9 @@ void consumeExportSection() {
             module->functions.add(func, *new Function{}); // sure start blank??
         }
         // ⚠️ CAN BE THE SAME REFERENCE IF func==func0 !!! ⚠️
-        Function &fun = module->functions[func]; // demangled
-        fun.module = module;
-        fun.name = func;
+        Function *fun = &module->functions[func]; // demangled
+        fun->module = module;
+        fun->name = func;
 
         if (debug_reader) {
             print("#%d ƒ%d %s ≈\n"s % code_index % index % func0.data);
@@ -528,26 +528,36 @@ void consumeExportSection() {
         //        if(fun.name=="puts")
         //            breakpoint_helper
 
-        if (fun.signature.size()) {
-            if (func == "square")
+        if (fun->is_polymorphic) {
+            print("HYPER (>2) polymorphic function %s"s % func);
+            Function *abstract = fun;
+            fun = new Function{.code_index = lower_index, .name = func, .module = abstract->module, .is_runtime = true};
+            abstract->variants.add(fun);
+        }
+        if (fun->signature.size()) {
+            trace("function %s already has signature "s % func + fun->signature.serialize());
+            trace("function %s old code_index %d new code_index %d"s % func % fun->code_index % lower_index);
+            Function *old_fun = fun->clone(); // keep pointer to old
+
+            if (func == "square") {
                 print("polymorphic "s + func);
-            trace("function %s already has signature "s % func + fun.signature.serialize());
-            trace("function %s old code_index %d new code_index %d"s % func % fun.code_index % lower_index);
-            module->functions.remove(func);
-            module->functions[func] = *new Function{
-                .name = func, .module = module, .is_runtime = true, .is_polymorphic = true
-            };
+                check_is(old_fun->signature.parameters.size(), 1);
+            }
+            fun = new Function{.code_index = lower_index, .name = func, .module = old_fun->module, .is_runtime = true};
+
+            module->functions[func] = *new Function;
             Function &abstract = module->functions[func];
-            check(abstract.is_polymorphic);
-            check(&abstract != &fun);
-            abstract.variants.add(&fun);
-            //            fun = *abstract.variants.items[2];
-            fun = *new Function{.code_index = lower_index, .name = func, .module = fun.module, .is_runtime = true};
-            abstract.variants.items[2] = &fun;
-            check(module->functions[func].is_polymorphic);
+            abstract.name = func;
+            abstract.module = module;
+            abstract.is_polymorphic = true;
+            abstract.is_runtime = true; // sure?
+
+            abstract.variants.add(old_fun);
+            abstract.variants.add(fun);
+            fun = abstract.variants.last();
         } else {
             fun0.code_index = lower_index;
-            fun.code_index = lower_index;
+            fun->code_index = lower_index;
         }
 
         //        if (call_index == 389)//
@@ -555,7 +565,7 @@ void consumeExportSection() {
 
         int wasmFuncType = module->funcToTypeMap[code_index]; // mainly used for return type here
         // todo: demangling doesn't yield return type, is wasm_signature ok?
-        fun.signature.type_index = wasmFuncType;
+        fun->signature.type_index = wasmFuncType;
         fun0.signature.type_index = wasmFuncType;
         // todo: remove duplicate, try fun0.signature=fun.signature at end again
         if (not(0 <= wasmFuncType and wasmFuncType <= module->funcTypes.size_))
@@ -563,27 +573,27 @@ void consumeExportSection() {
         Signature &wasm_signature = module->funcTypes[wasmFuncType];
         Valtype returns = mapTypeToWasm(wasm_signature.return_types.last(Kind::undefined));
         if (wasm_signature.wasm_return_type == void_block) returns = void_block;
-        fun.signature.returns(returns);
-        if (&fun != &fun0)
+        fun->signature.returns(returns);
+        if (fun != &fun0)
             fun0.signature.returns(returns);
         // todo: use wasm_signature if demangling fails, see merge(signature) below
         if (demangled.contains("::")) {
             String typ = demangled.to("::");
             auto type = mapType(typ); // Primitive::self
-            fun.signature.add(type, "self");
+            fun->signature.add(type, "self");
         }
         // e.g. List<String>::add (String) has one arg, but wasm signature is (i32,i32):i32  ["_ZN4ListI6StringE3addES0_"]
         // todo: demangle further and put into multi-dispatch
         List<String> args = demangle_args(func0);
         for (String &arg: args) {
             if (arg.empty())continue;
-            fun.signature.add(mapType(arg));
-            if (&fun != &fun0)
+            fun->signature.add(mapType(arg));
+            if (fun != &fun0)
                 fun0.signature.add(mapType(arg));
         }
         if (not(demangled.contains("("))) {
             // extern "C" pure function name
-            fun.signature = wasm_signature;
+            fun->signature = wasm_signature;
             fun0.signature = wasm_signature;
         }
         // can't after free
@@ -593,7 +603,7 @@ void consumeExportSection() {
         if (debug_reader) {
             const String &argos = args.join(",");
             //            printf("ƒ%d %s(%s) ≈\n", index, func0.data, string);
-            char *sig = fun.signature.serialize().data;
+            char *sig = fun->signature.serialize().data;
             print("#%d ƒ%d %s(%s)\n"s % code_index % index % func.data % argos.data);
             print("#%d ƒ%d %s%s\n"s % code_index % index % func.data % sig);
             //            check(module->functions["test42"].signature.size()==0)

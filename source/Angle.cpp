@@ -31,7 +31,7 @@ WitReader witReader;
 
 List<String> aliases(String name);
 
-Map<String, Node *> types = { 100}; // builtin and defined Types
+Map<String, Node *> types = {100}; // builtin and defined Types
 //const Node LongType("LongType", clazz);
 //const Node DoubleType("DoubleType", clazz);//.setType(type);
 // todo : when do we really need THESE Nodes instead of Type / Primitives?
@@ -121,13 +121,13 @@ List<String> extra_reserved_keywords = {"func"}; // EXTRA!  // use bool isKeywor
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
 //Map<String, Function> functions; // todo Maps don't free memory and cause SIGKILL after some time <<<
-Map<String, Function> functions = { 1000};
+Map<String, Function> functions = {1000};
 // todo ONLY emit of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
 //Map<String, Function> library_functions; see:
 List<Module *> libraries; // used modules from (automatic) import statements e.g. import math; use log; …  ≠
 // functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
 
-Map<int64, bool> analyzed = { 1000};
+Map<int64, bool> analyzed = {1000};
 // avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
 
@@ -1608,12 +1608,17 @@ void addLibraryFunctionAsImport(Function &func) {
     Function &import = functions[func.name]; // copy function info from library/runtime to main module
 #endif
     if (import.is_declared)return;
-    import.signature = func.signature;
+    if (func.is_polymorphic) {
+        import.is_polymorphic = func.is_polymorphic; //
+        import.variants = func.variants;
+    } else {
+        import.signature = func.signature;
+        import.signature.parameters = func.signature.parameters; // even if polymorph?
+    }
     import.signature.type_index = -1;
-    import.signature.parameters = func.signature.parameters;
     import.is_runtime = false; // because here it is an import!
-    import.is_import = true;
-    import.is_used = true;
+    import.is_import = true; // todo also for polymorph?
+    import.is_used = true; // todo also for polymorph?
 #if WASM
     if(not function_known)
         functions.add(func.name, import);
@@ -1698,9 +1703,9 @@ Function *use_required_import(Function *function) {
         functions["proc_exit"].is_used = true;
     if (function->name == "puts")
         functions["fd_write"].is_used = true;
-    for (Function *variant: function->variants) {
-        addLibraryFunctionAsImport(*variant);
-    }
+    // for (Function *variant: function->variants) {
+    //     addLibraryFunctionAsImport(*variant);
+    // }
     for (String &alias: aliases(function->name)) {
         if (alias == function->name)continue;
         auto ali = findLibraryFunction(alias, false);
@@ -2246,8 +2251,9 @@ Function getWaspFunction(String name) {
         else if (name == "__cxa_find_matching_catch");
         else if (name == "__cxa_begin_catch");
         else if (name == "__cxa_atexit");
-        else if (name == "__main_argc_argv") f.signature.add(int32t, name = "argc").add(i32, name = "argv").
-                returns(int32t);
+        else if (name == "__main_argc_argv")
+            f.signature.add(int32t, name = "argc").add(i32, name = "argv").
+                    returns(int32t);
         else if (name == "getField")f.signature.add(node_pointer).add(smarti64).returns(node); // wth
         else if (name == "smartNode")f.signature.add(int64s).returns(node);
         else if (name == "pow")f.signature.add(float64t).add(float64t).returns(float64t);
