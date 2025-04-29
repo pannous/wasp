@@ -519,6 +519,7 @@ void consumeExportSection() {
         Function *fun = &module->functions[func]; // demangled
         fun->module = module;
         fun->name = func;
+        fun->fullname = func0;
 
         if (debug_reader) {
             print("#%d ƒ%d %s ≈\n"s % code_index % index % func0.data);
@@ -596,6 +597,8 @@ void consumeExportSection() {
             fun->signature = wasm_signature;
             fun0.signature = wasm_signature;
         }
+        if(not module->functions.has(func0)) // mangled name
+            module->functions.add(func0, *fun);
         // can't after free
         //        if (&fun != &fun0)
         //            fun0.signature = fun.signature;// ⚠️ SHARING deep list fields now. this causes problems later:

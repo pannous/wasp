@@ -1612,3 +1612,13 @@ Node cast(const Node &from, Type to_type) {
     todo("cast "s + from.serialize() + " to " + typeName(to_type));
     return ERROR;
 }
+
+
+// only wrap if not already wrapped
+Node* wrap(Node & node) {
+    if(node.size() > 0) return &node;
+    Node* wrapped = new Node();
+    wrapped->setKind(groups);
+    wrapped->add(node);
+    return wrapped;
+}

@@ -1332,8 +1332,9 @@ public:
 
     //    Code* code; // todo: use
     Map<String, Local> locals;  // todo: use, instead of global locals!
+    String fullname; // original name: mangled or complex wat name
 
-    Function &handled() {
+Function &handled() {
         is_handled = true;
         return *this;
     }
@@ -1389,9 +1390,9 @@ public:
         // neu->code = code->clone();
         neu->body = body->clone();
         return neu;
-    }
+}
 
-    int allocateLocal(String local_name = "") {
+int allocateLocal(String local_name = "") {
         int index = locals.size();
         if (local_name.empty())
             local_name = "local_"s + index;
