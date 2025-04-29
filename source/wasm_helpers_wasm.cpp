@@ -628,3 +628,11 @@ extern "C" char *run(chars code) {
     return eval(code).serialize(); // can't return cause async wasp.js tests
 }
 #endif
+
+double modulo_double(double a, double b) {
+    return a - b * trunc(a / b);
+}
+
+float modulo_float(float a, float b) {
+    return a - b * trunc(a / b);
+}

@@ -3410,10 +3410,7 @@ void testBUG() {
 void testBadInWasm() {
     // bad only after a while!
     // WHY do these tests break in particular, sometimes?
-    testIndexOffset();
-    testMergeOwn();
-    testModulo();
-    testRootLists();
+    // testMergeOwn();
 }
 
 
@@ -3444,6 +3441,9 @@ void testAllEmit() {
     testSinus();
 
     // newly resolved:
+    testModulo(); // fixed by adding modulo_float!
+    testRootLists();
+    testIndexOffset();
     testEnumConversion();
     testDeepColon();
     testDeepColon2();
@@ -3734,6 +3734,9 @@ void testWaspRuntimeModule() {
     check(wasp.functions.has("powi")); // ok if not WASM
     check(wasp.functions.has("powd")); // ok if not WASM
     check(wasp.functions.has("test42"));
+    check(wasp.functions.has("modulo_float"));
+    check(wasp.functions.has("modulo_double"));
+
 }
 
 // 2021-10 : 40 sec for Wasm3
