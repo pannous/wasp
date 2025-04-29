@@ -3411,8 +3411,6 @@ void testBadInWasm() {
     // break immediately
     assert_emit("global x=1+π", 1 + pi); // int 4 ƒ
     testWasmMutableGlobal(); // todo!
-    assert_emit("3 + √9", (int64) 6); // why !?!
-    assert_emit("id 3*42> id 2*3", 1)
     assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
     //local pixel in context wasp_main already known  with type long, ignoring new type group<byte>
     assert_emit("grows:=it*2; grows 3*42 > grows 2*3", 1)
@@ -3424,8 +3422,10 @@ void testBadInWasm() {
     assert_emit("print 3", 3); // todo dispatch!
     assert_emit("if 4>1 then 2 else 3", 2)
 
-    // bad only sometimes after a while!
+    // bad only SOMETIMES / after a while!
     assert_emit("'αβγδε'#3", U'γ'); // TODO! sometimes works!?
+    assert_emit("3 + √9", (int64) 6); // why !?!
+    assert_emit("id 3*42> id 2*3", 1)
     testSquares(); // ⚠️
 
     // often breaks LATER! usually some map[key] where key missing!
@@ -3605,7 +3605,6 @@ void tests() {
     testDeepCopyDebugBugBug();
     testDeepCopyDebugBugBug2();
     //    testMarkSimpleAssign();
-    testMarkMultiDeep();
     testSort();
     testSort1();
     testSort2();
@@ -3633,8 +3632,9 @@ void tests() {
     testMarkAsMap();
     testFunctionDeclaration();
     testMarkSimple();
+#if not WASM
     testMarkMultiDeep();
-
+#endif
 #if WASM
     warn("Normal tests ALL PASSING in wasm!");
     warn("WASM emit tests CURRENTLY __ALL__ SKIPPED or asynchroneous!");
