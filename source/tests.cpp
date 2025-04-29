@@ -3759,13 +3759,13 @@ void testWaspRuntimeModule() {
     check(wasp.functions.has("modulo_double"));
     check(wasp.functions.has("square"));
     check(wasp.functions["square"].is_polymorphic);
-    check_is(wasp.functions["square"].variants.size() , 2);
-    check_is(wasp.functions["square"].variants[0]->name, "square");// or mangled
-    check_is(wasp.functions["square"].variants[0]->signature.parameters.size(),1);
-    check_is(wasp.functions["square"].variants[0]->signature.parameters[0].type,ints);
+    check_is(wasp.functions["square"].variants.size(), 2);
+    check_is(wasp.functions["square"].variants[0]->name, "square"); // or mangled
+    check_is(wasp.functions["square"].variants[0]->signature.parameters.size(), 1);
+    check_is(wasp.functions["square"].variants[0]->signature.parameters[0].type, ints);
     check_is(wasp.functions["square"].variants[1]->name, "square");
-    check_is(wasp.functions["square"].variants[1]->signature.parameters.size(),1);
-    check_is(wasp.functions["square"].variants[1]->signature.parameters[0].type,reals);
+    check_is(wasp.functions["square"].variants[1]->signature.parameters.size(), 1);
+    check_is(wasp.functions["square"].variants[1]->signature.parameters[0].type, reals);
 }
 
 // 2021-10 : 40 sec for Wasm3

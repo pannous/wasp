@@ -2716,10 +2716,10 @@ Code emitCall(Node &fun, Function &context) {
     Signature &signature = function->signature;
 
     if (function->is_polymorphic) {
-        Node* params = &fun.values();
-        if(params->empty())params = fun.next;// todo unhack!
-        if(params->size()==0 and not params->empty()) {
-            Node *wrap=new Node();
+        Node *params = &fun.values();
+        if (params->empty())params = fun.next; // todo unhack!
+        if (params->size() == 0 and not params->empty()) {
+            Node *wrap = new Node();
             wrap->add(*params);
             params = wrap;
         }
