@@ -30,8 +30,7 @@ form{
     label{ for:email "Email address:" }
     input{ type:email id:email}     
   }
-  button{ class:['btn' 'btn-info'] 'Submit'
-  }
+  button{ class:['btn' 'btn-info'] 'Submit'}
 }
 ```
 

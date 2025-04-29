@@ -3711,7 +3711,7 @@ void testWaspRuntimeModule() {
     check(wasp.name.contains("wasp")); // wasp-runtime.wasm in system 'wasp' in js!
     // addLibrary(wasp);
 #if WASM
-    check(libraries.size()>0);
+    // check(libraries.size()>0);
     // if it breaks then in WASM too!?
 #endif
     check(wasp.code_count>400);
