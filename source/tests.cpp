@@ -3412,6 +3412,7 @@ void testBadInWasm() {
     // often breaks LATER! usually some map[key] where key missing!
     // WHY do these tests break in particular, sometimes?
     testMergeOwn();
+    testEmitter(); // huh!?!
 }
 
 
