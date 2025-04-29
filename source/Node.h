@@ -855,4 +855,4 @@ extern List<String> nilKeywords;
 
 extern "C" Node cast(const Node &from, Type to_type);
 
-Node* wrap(Node & node);
+Node *wrap(Node &node);

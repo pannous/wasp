@@ -597,7 +597,7 @@ void consumeExportSection() {
             fun->signature = wasm_signature;
             fun0.signature = wasm_signature;
         }
-        if(not module->functions.has(func0)) // mangled name
+        if (not module->functions.has(func0)) // mangled name
             module->functions.add(func0, *fun);
         // can't after free
         //        if (&fun != &fun0)

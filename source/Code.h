@@ -1332,10 +1332,10 @@ public:
 
     //    Code* code; // todo: use
     Map<String, Local> locals;  // todo: use, instead of global locals!
-    String fullname; // original name: mangled or complex wat name
+String fullname; // original name: mangled or complex wat name
 
 Function &handled() {
-        is_handled = true;
+    is_handled = true;
         return *this;
     }
 
@@ -1393,7 +1393,7 @@ Function &handled() {
 }
 
 int allocateLocal(String local_name = "") {
-        int index = locals.size();
+    int index = locals.size();
         if (local_name.empty())
             local_name = "local_"s + index;
         locals.add(local_name, Local{.position = index, .name = local_name});

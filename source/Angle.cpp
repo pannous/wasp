@@ -1470,11 +1470,11 @@ Node &groupOperatorCall(Node &node, Function &function) {
 }
 
 
-int findBestVariant(const Function & function, const Node & node) {
+int findBestVariant(const Function &function, const Node &node) {
     if (function.variants.size() == 1) return 0;
     if (function.variants.size() == 0) return -1;
     int best = -1;
-    for(Function* variant: function.variants) {
+    for (Function *variant: function.variants) {
         best++;
         auto signature = variant->signature;
         if (signature.size() == node.length) {
@@ -1483,7 +1483,7 @@ int findBestVariant(const Function & function, const Node & node) {
                 auto sig = signature.parameters[i];
                 Type aType = sig.type;
                 Type pType = node[i].kind;
-                if(not compatibleTypes(aType , pType)){
+                if (not compatibleTypes(aType, pType)) {
                     ok = false;
                     break;
                 }
@@ -1561,17 +1561,17 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         if (not ok and not functions.has(name)) // todo load lib!
             error("missing import for function "s + name);
         Function &function = functions[name];
-        function.name=name;// hack shut've Never Been Lost
+        function.name = name; // hack shut've Never Been Lost
         Signature &signature = function.signature;
-        if(function.is_polymorphic) {
-            int variantNr = findBestVariant(function, *wrap(expressiona.from(i+1)));
-            Function * variant = function.variants[variantNr];
+        if (function.is_polymorphic) {
+            int variantNr = findBestVariant(function, *wrap(expressiona.from(i + 1)));
+            Function *variant = function.variants[variantNr];
             signature = variant->signature; // todo hack
-            variant->is_used=true;
+            variant->is_used = true;
             // functions.add(variant->fullname,*variant); // needs extra call index!
             print("matching function variant "s + variant + " of " + function.name + " with "s + signature.serialize());
         }
-            // return groupFunctionCallPolymorphic(node, function, expressiona, context);
+        // return groupFunctionCallPolymorphic(node, function, expressiona, context);
         function.is_used = true;
 
 

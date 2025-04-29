@@ -1615,9 +1615,9 @@ Node cast(const Node &from, Type to_type) {
 
 
 // only wrap if not already wrapped
-Node* wrap(Node & node) {
-    if(node.size() > 0) return &node;
-    Node* wrapped = new Node();
+Node *wrap(Node &node) {
+    if (node.size() > 0) return &node;
+    Node *wrapped = new Node();
     wrapped->setKind(groups);
     wrapped->add(node);
     return wrapped;
