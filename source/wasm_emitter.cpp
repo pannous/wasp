@@ -2666,7 +2666,15 @@ Code emitCall(String fun, Function &context) {
     return emitCall(*new Node(fun), context);
 }
 
-Function &findMatchingPolymorphicDispatch(Function &function, Node &params, Type last_type) {
+Function &findMatchingPolymorphicDispatch(Function &function, Node &params, Type last_type, Function &context) {
+    int best = findBestVariant(function, params, &context);
+    if (best >= 0) {
+        print("OK findMatchingPolymorphicDispatch "s + function.name + " " + params.serialize());
+        return *function.variants[best];
+    }
+    error("No matching polymorphic variant found for "s + function.name);
+
+
     print("findMatchingPolymorphicDispatch "s + function.name + " " + params.serialize());
     if (not function.is_polymorphic) {
         warn("Function "s + function.name + " is not polymorphic");
@@ -2719,7 +2727,7 @@ Code emitCall(Node &fun, Function &context) {
         Node *params = &fun.values();
         if (params->empty())params = fun.next; // todo unhack!
         params = wrap(*params);
-        function = &findMatchingPolymorphicDispatch(*function, *params, last_type);
+        function = &findMatchingPolymorphicDispatch(*function, *params, last_type, context);
         print("found poly with signature "s + function->signature.serialize());
         // if (not function->fullname.empty())
         //     name = function->fullname;
