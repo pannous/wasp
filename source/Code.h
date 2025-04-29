@@ -1336,7 +1336,7 @@ String fullname; // original name: mangled or complex wat name
 
 Function &handled() {
     is_handled = true;
-        return *this;
+    return *this;
     }
 
     Function &import() {
@@ -1394,7 +1394,7 @@ Function &handled() {
 
 int allocateLocal(String local_name = "") {
     int index = locals.size();
-        if (local_name.empty())
+    if (local_name.empty())
             local_name = "local_"s + index;
         locals.add(local_name, Local{.position = index, .name = local_name});
         return index;
