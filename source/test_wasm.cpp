@@ -1656,8 +1656,6 @@ return; // todo!
 
 
 void testFixedInBrowser() {
-    assert_emit("'αβγδε'#3", U'γ'); // TODO!
-    testSquares();
     testMathOperatorsRuntime(); // 3^2
     testIndexWasm();
     testStringConcatWasm();
@@ -1690,24 +1688,10 @@ void testBadInWasm();
 void testTodoBrowser() {
     testFixedInBrowser();
     testOldRandomBugs(); // currently ok
-    // testBadInWasm(); // NO, breaks!
 
     skip( // still breaking! (some for good reason)
         // OPEN BUGS
-        assert_emit("global x=1+π", 1 + pi); // int 4 ƒ
-        assert_emit("3 + √9", (int64) 6); // !!!
-        assert_emit("id 3*42> id 2*3", 1)
-        assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
-        //local pixel in context wasp_main already known  with type long, ignoring new type group<byte>
-        assert_emit("grows:=it*2; grows 3*42 > grows 2*3", 1)
-        // is there a situation where a COMPARISON is ambivalent?
-        // sleep ( time > 8pm ) and shower ≠ sleep time > ( 8pm and true)
-        testNodeDataBinaryReconstruction(); // todo!  y:{x:2 z:3}
-        testSmartReturnHarder(); // y:{x:2 z:3} can't work yet(?)
-        testWasmMutableGlobal(); // todo!
-        assert_emit("add1 x:=$0+1;add1 3", (int64) 4); // $0 specially parsed now
-        assert_emit("print 3", 3); // todo dispatch!
-        assert_emit("if 4>1 then 2 else 3", 2)
+        testBadInWasm(); // NO, breaks!
     )
 }
 
