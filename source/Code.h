@@ -535,7 +535,7 @@ enum Opcodes {
 
 //	i32_store_byte = 0x3a,// store byte at i32 address
     i32_auto = (byte) 0x41,
-    i32_const = 0x41,
+    i32_const = 0x41, // i32.const
     i64_auto = 0x42,
     i64_const = 0x42,
     f32_auto = 0x43,

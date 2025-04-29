@@ -61,6 +61,10 @@ void testCurrent(){}// why??
 
 // https://stackoverflow.com/questions/49980381/find-the-start-of-heap-using-lld-and-s2wasm
 
+int isNumber(char c) {
+    return (c >= '0' and c <= '9');
+}
+
 int isalnum0(int c) {
     return (c >= '0' and c <= '9') or (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z'); // todo lol
 }

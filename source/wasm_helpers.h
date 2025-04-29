@@ -185,6 +185,7 @@ void print(double l); // _Z5printd
 void print(size_t l);
 
 //extern __inline int isalnum ( int c );
+int isNumber(char c);
 int isalnum0(int c);
 
 extern "C" void printNode(smart_pointer_64 node);
