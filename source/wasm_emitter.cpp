@@ -3475,9 +3475,11 @@ Code emitImportSection() {
                     import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);
             if (function.is_polymorphic) {
                 for (Function *variant: function.variants) {
+                    if(!variant->is_used)continue;
                     variant->call_index = import_count++;
-                    auto type = typeMap[variant->fullname];
-                    import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);
+                    auto fullname = variant->fullname;
+                    auto type = typeMap[fullname];
+                    import_code + encodeString(import_module) + encodeString(fullname).addByte(func_export).addInt(type);
                 }
             }
         }
