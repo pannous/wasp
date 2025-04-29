@@ -1339,7 +1339,7 @@ Function &handled() {
     return *this;
 }
 
-    Function &import() {
+Function &import() {
         is_import = true;
         return *this;
     }
@@ -1396,7 +1396,7 @@ int allocateLocal(String local_name = "") {
     int index = locals.size();
     if (local_name.empty())
         local_name = "local_"s + index;
-        locals.add(local_name, Local{.position = index, .name = local_name});
+    locals.add(local_name, Local{.position = index, .name = local_name});
         return index;
     }
 };
