@@ -3781,11 +3781,11 @@ void testCurrent() {
     // return;
     print("💡 starting Current tests 💡");
     testWaspRuntimeModule();
+    assert_emit("square(√3)", 3); // TODO polymorphism / dispatch / node / symbolic x*x !!
     assert_emit("square(3.0)", 9.); // TODO polymorphism / dispatch / node / symbolic x*x !!
     assert_emit("square(3)", 9); // TODO polymorphism / dispatch / node / symbolic x*x !!
     // assert_emit("square 3", 9); // TODO polymorphism / dispatch / node / symbolic x*x !!
     // assert_emit("square 3.0", 9.); // TODO polymorphism / dispatch / node / symbolic x*x !!
-    assert_emit("square(√3)", 3); // TODO polymorphism / dispatch / node / symbolic x*x !!
     // assert_emit("squared(√3^2)", 9); // TODO polymorphism / dispatch / node / symbolic x*x !!
     testPower();
     // assert_emit("test42+1", 43); // OK in WASM too?

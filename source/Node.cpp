@@ -1194,6 +1194,7 @@ int Node::lastIndex(Node *node, int start) {
 // ⚠️ DANGER! any references pointing to children become INVALID!
 //[[modifying]]
 void Node::replace(int from, int to, Node *node) {
+    if (to < 0)to = length;
     if (to < from)
         error("Node::replace from>to : "s + from + ">" + to);
     if (from < 0 or from >= length)
@@ -1616,7 +1617,8 @@ Node cast(const Node &from, Type to_type) {
 
 // only wrap if not already wrapped
 Node *wrap(Node &node) {
-    if (node.size() > 0) return &node;
+    if (node.size() > 0 and isGroup(node.kind))
+        return &node;
     Node *wrapped = new Node();
     wrapped->setKind(groups);
     wrapped->add(node);

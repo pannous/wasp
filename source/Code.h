@@ -1342,7 +1342,7 @@ Function &handled() {
 Function &import() {
     is_import = true;
     return *this;
-    }
+}
 
     Function &builtin() {
         is_builtin = true;
