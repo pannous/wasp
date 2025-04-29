@@ -3757,6 +3757,9 @@ void testWaspRuntimeModule() {
     check(wasp.functions.has("test42"));
     check(wasp.functions.has("modulo_float"));
     check(wasp.functions.has("modulo_double"));
+    check(wasp.functions.has("square"));
+    check(wasp.functions["square"].is_polymorphic);
+    check(wasp.functions["square"].variants.size() == 2);
 }
 
 // 2021-10 : 40 sec for Wasm3
@@ -3770,10 +3773,12 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
-    testPower();
     testWaspRuntimeModule();
+    assert_emit("square 3.0", 9); // TODO polymorphism / dispatch / node / symbolic x*x !!
+    assert_emit("square(√3)", 3); // TODO polymorphism / dispatch / node / symbolic x*x !!
+    // assert_emit("squared(√3^2)", 9); // TODO polymorphism / dispatch / node / symbolic x*x !!
+    testPower();
     // assert_emit("test42+1", 43); // OK in WASM too?
-
     const Node &node = parse("x:40;x+1");
     check(node.length == 2)
     check(node[0]["x"] == 40) // breaks!?

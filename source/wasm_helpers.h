@@ -114,11 +114,8 @@ extern "C" codepoint put_char(codepoint c);
 //void put_char(char c);
 //extern "C" int putchar(int c);// stdio
 
-int square(int n); // test wasm
-
 double powd(double x, double y);
 
-int64 squarel(int64 n); // test wasm, otherwise use x² => x*x in analyze!
 double square_double(double n); // test wasm
 
 extern double sqrt1(double a); // wasm has own, egal only used in Interpret.cpp
@@ -309,3 +306,10 @@ extern "C" chars download(chars name);// curl wget sync download via js / runtim
 #if WEBAPP
 void console_log(const char *s); // print from wasp to browser console ( in addition to stdout )
 #endif
+
+
+int square(int n); // test wasm, needed for SquareFunc << get rid via linking!!
+// todo: test polymorphism / multi dispatch
+double square(double a);
+// int64 square(int64 n); // test wasm, otherwise use x² => x*x in analyze!
+// int64 squarel(int64 n); // test wasm, otherwise use x² => x*x in analyze!
