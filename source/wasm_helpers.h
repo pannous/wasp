@@ -311,5 +311,6 @@ void console_log(const char *s); // print from wasp to browser console ( in addi
 int square(int n); // test wasm, needed for SquareFunc << get rid via linking!!
 // todo: test polymorphism / multi dispatch
 double square(double a);
+
 // int64 square(int64 n); // test wasm, otherwise use x² => x*x in analyze!
 // int64 squarel(int64 n); // test wasm, otherwise use x² => x*x in analyze!
