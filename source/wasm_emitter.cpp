@@ -2721,7 +2721,7 @@ Code emitCall(Node &fun, Function &context) {
         params = wrap(*params);
         function = &findMatchingPolymorphicDispatch(*function, *params, last_type);
         print("found poly with signature "s + function->signature.serialize());
-        if(not function->fullname.empty())
+        if (not function->fullname.empty())
             name = function->fullname;
     }
 
