@@ -3736,7 +3736,6 @@ void testWaspRuntimeModule() {
     check(wasp.functions.has("test42"));
     check(wasp.functions.has("modulo_float"));
     check(wasp.functions.has("modulo_double"));
-
 }
 
 // 2021-10 : 40 sec for Wasm3
