@@ -1450,7 +1450,13 @@ void testLogarithm2() {
     )
 }
 
+void testForLoopClassic() {
+    assert_emit("for(i=0;i<10;i++){puti i};i", 10);
+    assert_emit("sum = 0; for(i=0;i<10;i++){sum+=i};sum", 45);
+}
+
 void testForLoops() {
+    testForLoopClassic();
     // assert_emit("for i in 1 to 5 : {print i};i", 6);
     // todo: generic dispatch print in WasmEdge
 #if WASM // cheat!
@@ -1474,14 +1480,14 @@ void testForLoops() {
     // assert_emit("for i in 1 ..< 5\n  puti i", 4);// exclusive!
     assert_emit("for i in 1 ... 5\n  puti i", 5);
 #endif
-    skip(
+    // skip(
         assert_emit("sum=0\nfor i in 1…3 {sum+=i}\nsum", 6); // todo range
         assert_emit("sum=0\nfor i in 1 to 3 : sum+=i\nsum", 6); // todo range
         assert_emit("sum=0\nfor i in (1 ... 3) {sum+=i}\nsum", 6); // todo range
         assert_emit("sum=0\nfor i in (1..3) {sum+=i}\nsum", 6); // todo (1. 0.3) range
         assert_emit("sum=0;for i in (1..3) {sum+=i};sum", 6);
         assert_emit("sum=0;for i=1..3;sum+=i;sum", 6);
-    )
+    // )
 }
 
 

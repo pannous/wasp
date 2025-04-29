@@ -90,6 +90,8 @@ Code emitConstruct(Node &node, Function &context);
 
 Code emitGetter(Node &node, Node &field, Function &context);
 
+Code emitForClassic(Node &node, Function &context);
+
 void discard(Code code) {
 }
 
@@ -2044,6 +2046,8 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
         return emitWhile(node, context);
     if (name == "for")
         return emitFor(node, context);
+    if (name == "fori")
+        return emitForClassic(node, context);
     if (name == "it") {
         // todo when is it ok to just reuse the last value on stack!?
         //		if(last_type==none or last_type==voids){
@@ -2248,7 +2252,7 @@ Code emitHtmlWasp(Node &node, Function &function, ExternRef parent = 0) {
         //		if(parent)code.add(emitData(*new Node(parent), function)); todo ?
         code.add(emitString(node, function));
         code.add(emitCall("createElement", function));
-        //	addVariable(node.name, parent); // can't, must be in analyze!
+        //	addVariable(node.name, parent); // can't, must be in analyze! see addLocal
     }
     for (Node &child: node) {
         //		getVariable( parent); // can't, must be in analyze or on top of stack!
@@ -2558,6 +2562,12 @@ Code emitForClassic(Node &node, Function &context) {
     Node condition = node[1]; // i < 1000
     Node increment = node[2]; // i++
     Node body = node[3]; // loop body
+    if(increment.kind == key) {
+        initializer=initializer.first();
+        condition=condition.first();
+        increment=increment.first();
+        body=body.first();
+    }
 
     Valtype loop_type = none; // Assume no return type for now
 
@@ -2581,7 +2591,7 @@ Code emitForClassic(Node &node, Function &context) {
 
     // Branch back to the start of the loop
     code.addByte(br_branch);
-    code.addByte(0); // Loop to the start of the current loop
+    code.addByte(1); // Loop to the start of the current loop
 
     // End the condition block
     code.addByte(end_block);
@@ -3852,7 +3862,7 @@ Code emitDataSections() {
 
     for (int i = 0; i <= named_data_segments; i++) {
         datas.addByte(00); // memory id always 0 until multi-memory
-        datas.addByte(0x41); // opcode for i32.const offset: followed by unsignedLEB128 value:
+        datas.addByte(0x41); // opcode for i32_const i32.const offset: followed by unsignedLEB128 value:
         int offset = runtime_data_offset; // or 0
         int end = data_index_end;
         if (i > 0)offset = data_segment_offsets[i - 1]; // runtime_data_offset builtin ?

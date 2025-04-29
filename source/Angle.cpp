@@ -1820,10 +1820,43 @@ List<String> aliases(String name) {
     return found;
 }
 
+Node &groupForClassic2(Node &node, Function &context) {
+    // for(…){}
+    if (node.length < 2)
+        error("Invalid 'for' loop structure. Expected initializer and body.");
+     // Extract components
+    Node &forex=node[0]; // e.g., 'for'
+    Node &fore=forex.values(); // e.g., 'i = 0'
+    if(fore.size()!=3)
+        error("Invalid 'for' loop structure. Expected three parts like for(i=0;i<10;i++){}");
+
+    Node initializer = fore[0];
+    Node condition = fore[1];
+    Node increment = fore[2];
+    initializer=analyze(initializer, context);
+    condition=analyze(condition, context);
+    increment=analyze(increment, context);
+    // todo for loop creates it's own scope!!
+    Node &body = analyze(node[1], context); // Loop body
+    // Create a node for the 'for' loop
+    Node *forNode = new Node("fori");
+    Node &grouped = *forNode;
+    grouped.kind = expression; // Mark as an expression node
+
+    // Group components into structured nodes
+    grouped["initializer"] = initializer; // Store the initializer
+    grouped["condition"] = condition; // Store the condition
+    grouped["increment"] = increment; // Store the increment
+    grouped["body"] = body; // Store the loop body
+
+    return grouped;
+}
+
 Node &groupForClassic(Node &node, Function &context) {
     // // for i=0;i<10;i++ {}
-    if (node.length < 4)
-        error("Invalid 'for' loop structure. Expected initializer, condition, increment, and body.");
+    if(node.length==2)return groupForClassic2(node, context);
+    // if (node.length < 4)
+    //     error("Invalid 'for' loop structure. Expected initializer, condition, increment, and body.");
 
     // Extract components
     Node &initializer = node[0]; // e.g., 'i = 0'
@@ -1840,7 +1873,7 @@ Node &groupForClassic(Node &node, Function &context) {
         error("Missing increment in 'for' loop.");
 
     // Create a node for the 'for' loop
-    Node *forNode = new Node("for");
+    Node *forNode = new Node("fori");
     Node &grouped = *forNode;
     grouped.kind = expression; // Mark as an expression node
 
@@ -1886,7 +1919,9 @@ Node &groupForIn(Node &n, Function &context) {
 Node &groupFor(Node &n, Function &context) {
     if (n.length < 2)
         error("Incomplete 'for' loop structure");
-    if (n[2].name == "in")
+    if (n.length == 2) // for(…){}
+        return groupForClassic2(n, context);
+    if (n.length>2 and n[2].name == "in")
         return groupForIn(n, context);
     if (n.length > 7 or n[2].name != "in")
         return groupForClassic(n, context);

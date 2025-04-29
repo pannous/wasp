@@ -3409,8 +3409,7 @@ void testBUG() {
 
 void testBadInWasm() {
     // break immediately
-    assert_emit("square(3.0)", 9.);
-
+    assert_emit("square(3.0)", 9.); // todo groupFunctionCallPolymorphic
     assert_emit("global x=1+π", 1 + pi); // int 4 ƒ
     testWasmMutableGlobal(); // todo!
     assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
@@ -3457,6 +3456,7 @@ void testAllEmit() {
     //    exit(42);
     //    assert_emit("√ π ²", pi);
     //    assert_emit("√π²", pi);
+    testForLoops();
 
     testHex();
     testEmitBasics();
@@ -3782,6 +3782,7 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
+
     testWaspRuntimeModule();
     testPower();
     // assert_emit("test42+1", 43); // OK in WASM too?
