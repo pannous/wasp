@@ -118,3 +118,5 @@ main.c
 .env
 
 .cache
+lib/webview/
+lib/webview/
