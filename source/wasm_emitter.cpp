@@ -2721,8 +2721,9 @@ Code emitCall(Node &fun, Function &context) {
         params = wrap(*params);
         function = &findMatchingPolymorphicDispatch(*function, *params, last_type);
         print("found poly with signature "s + function->signature.serialize());
-        if (not function->fullname.empty())
-            name = function->fullname;
+        // if (not function->fullname.empty())
+        //     name = function->fullname;
+        name = function->name; //
     }
 
     int index = function->call_index;
@@ -3473,15 +3474,16 @@ Code emitImportSection() {
             auto type = typeMap[fun];
             import_code =
                     import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);
-            if (function.is_polymorphic) {
-                for (Function *variant: function.variants) {
-                    if(!variant->is_used)continue;
-                    variant->call_index = import_count++;
-                    auto fullname = variant->fullname;
-                    auto type = typeMap[fullname];
-                    import_code + encodeString(import_module) + encodeString(fullname).addByte(func_export).addInt(type);
-                }
-            }
+            // if (function.is_polymorphic) {
+            //     for (Function *variant: function.variants) {
+            //         if (!variant->is_used)continue;
+            //         variant->call_index = import_count++;
+            //         auto fullname = variant->fullname;
+            //         auto type = typeMap[fullname];
+            //         import_code + encodeString(import_module) + encodeString(fullname).addByte(func_export).
+            //                 addInt(type);
+            //     }
+            // }
         }
     }
 
@@ -4131,13 +4133,13 @@ void add_imports_and_builtins() {
             info("using import "s + sig);
             trace(function.name + function.signature.serialize());
             import_count++;
-            if (function.is_polymorphic) {
-                for (Function *variant: function.variants) {
-                    variant->call_index = ++last_index; // index in library will be relinked via import
-                    call_indices[variant->fullname] = last_index;
-                    import_count++;
-                }
-            }
+            // if (function.is_polymorphic) {
+            //     for (Function *variant: function.variants) {
+            //         variant->call_index = ++last_index; // index in library will be relinked via import
+            //         call_indices[variant->fullname] = last_index;
+            //         import_count++;
+            //     }
+            // }
         }
     }
     for (auto sig: functions) {

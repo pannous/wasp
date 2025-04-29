@@ -1493,6 +1493,7 @@ int findBestVariant(const Function &function, const Node &node) {
     }
     error("no matching function variant for "s + function.name + " with "s + node.serialize());
 }
+void addLibraryFunctionAsImport(Function &func);
 
 // todo merge with groupOperatorCall
 Node &groupFunctionCalls(Node &expressiona, Function &context) {
@@ -1568,8 +1569,11 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             Function *variant = function.variants[variantNr];
             signature = variant->signature; // todo hack
             variant->is_used = true;
-            // functions.add(variant->fullname,*variant); // needs extra call index!
-            print("matching function variant "s + variant + " of " + function.name + " with "s + signature.serialize());
+            if (function.is_runtime and not variant->fullname.empty() and variant->fullname != function.name)
+                functions.add(variant->fullname, *variant); // needs extra call index!
+            addLibraryFunctionAsImport(*variant);
+            print("matching function variant "s + variantNr + " of " + function.name + " with "s + signature.
+                  serialize());
         }
         // return groupFunctionCallPolymorphic(node, function, expressiona, context);
         function.is_used = true;

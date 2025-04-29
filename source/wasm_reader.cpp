@@ -519,7 +519,6 @@ void consumeExportSection() {
         Function *fun = &module->functions[func]; // demangled
         fun->module = module;
         fun->name = func;
-        fun->fullname = func0;
 
         if (debug_reader) {
             print("#%d ƒ%d %s ≈\n"s % code_index % index % func0.data);
@@ -532,19 +531,22 @@ void consumeExportSection() {
         if (fun->is_polymorphic) {
             print("HYPER (>2) polymorphic function %s"s % func);
             Function *abstract = fun;
-            fun = new Function{.code_index = lower_index, .name = func, .module = abstract->module, .is_runtime = true};
+            fun = new Function{
+                .code_index = lower_index, .name = func0, .module = abstract->module, .is_runtime = true
+            };
             abstract->variants.add(fun);
-        }
-        if (fun->signature.size()) {
+        } else if (fun->signature.size()) {
+            // already has signature => make polymorphic
             trace("function %s already has signature "s % func + fun->signature.serialize());
             trace("function %s old code_index %d new code_index %d"s % func % fun->code_index % lower_index);
             Function *old_fun = fun->clone(); // keep pointer to old
+            old_fun->name = old_fun->fullname; // restore original mangled name for linking
 
             if (func == "square") {
                 print("polymorphic "s + func);
                 check_is(old_fun->signature.parameters.size(), 1);
             }
-            fun = new Function{.code_index = lower_index, .name = func, .module = old_fun->module, .is_runtime = true};
+            fun = new Function{.code_index = lower_index, .name = func0, .module = old_fun->module, .is_runtime = true};
 
             module->functions[func] = *new Function;
             Function &abstract = module->functions[func];
@@ -559,6 +561,7 @@ void consumeExportSection() {
         } else {
             fun0.code_index = lower_index;
             fun->code_index = lower_index;
+            fun->fullname = func0;
         }
 
         //        if (call_index == 389)//
