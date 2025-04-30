@@ -631,7 +631,26 @@ void testNumbers() {
     check(((n * 2) ^ 10) == 1024);
 }
 
+// we already have a working syntax so this has low priority
 void testFunctionDeclaration() {
+    assert_emit("fun x{42} x+1", 43);
+    assert_emit("fun x{42};x+1", 43);
+    assert_emit("def x{42};x+1", 43);
+    assert_emit("def x(){42};x+1", 43);
+    assert_emit("def x(){42};x()+1", 43);
+    assert_emit("define x={42};x()+1", 43);
+    assert_emit("function x(){42};x()+1", 43);
+
+    // assert_emit("def x(a){42+a};x+1", 43);
+
+    assert_emit("def x(a){42+a};x(1)+1", 44);
+    assert_emit("define x={42+it};x(1)+1", 44);
+    assert_emit("function x(a){42+a};x(1)+1", 44);
+    assert_emit("function x(){42+it};x(1)+1", 44);
+
+    assert_emit("def x(a=3){42+a};x+1", 46);// default value
+}
+void testFunctionDeclarationParse() {
     //    auto node1 = analyze(parse("fn main(){}"));
     //    check(node1.kind==declaration);
     //    check(node1.name=="main");
@@ -3456,8 +3475,11 @@ void testAllEmit() {
     //    exit(42);
     //    assert_emit("√ π ²", pi);
     //    assert_emit("√π²", pi);
+    // testFunctionDeclaration();
+    // testFunctionDeclarationParse(); // no emit
+    assert_emit("a = [1, 2, 3]; a[1]", 2);
+    assert_emit("x='abcde';x#4='f';x[3]", 'f');
     testForLoops();
-
     testHex();
     testEmitBasics();
     testMinusMinus();
@@ -3632,7 +3654,7 @@ void tests() {
     warn("Currently NOT PASSING via wasmtime -D debug-info=y --dir . wasp.wasm test");
 #endif
     testMarkAsMap();
-    testFunctionDeclaration();
+    testFunctionDeclarationParse();
     testMarkSimple();
 #if not WASM
     testMarkMultiDeep();
@@ -3783,6 +3805,11 @@ void testCurrent() {
     // return;
     print("💡 starting Current tests 💡");
 
+    testFunctionDeclarationParse();
+#if not WASM
+    // we already have a working syntax so this has low priority?
+    // testFunctionDeclaration();
+#endif
     testWaspRuntimeModule();
     testPower();
     // assert_emit("test42+1", 43); // OK in WASM too?
