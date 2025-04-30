@@ -378,36 +378,39 @@ bytes concat(char a, bytes b, int len) {
     return c;
 }
 
-float ln(float y) {
-    // crappy!
-    //	if(y==1)return 0;
-    float divisor, x, result;
-    int log2 = 0;
-    unsigned int v = y;
-    while (v >>= 1) {
-        log2++;
-    }
-    //	log2 = msb((int)y); // See: https://stackoverflow.com/a/4970859/6630230
-    divisor = (float) (1 << log2);
-    if (divisor == 0)return -1 / 0.000000000001; // todo;) noexcept
-    x = y / divisor; // normalized value between [1.0, 2.0]
-    result = -1.7417939 + (2.8212026 + (-1.4699568 + (0.44717955 - 0.056570851 * x) * x) * x) * x;
-    result += ((float) log2) * 0.69314718; // ln(2) = 0.69314718
-    return result;
+// Numerically accurate, dependency-free ln using bit tricks and minimax polynomial
+// log10(1000000000000000000.0) ≈ 18, breaks after
+double ln(double y) {
+    if (y <= 0) return -1 / 0.0; // -inf or nan
+
+    union { double d; uint64_t i; } u = { y };
+    long e = ((long)((u.i >> 52) & 0x7FFl)) - 1023;
+    u.i = (u.i & ((1ULL << 52) - 1)) | (1023ULL << 52);
+    double m = u.d;
+    // double m = frexp(y, &e); // y = m * 2^e, m in [0.5,1)  get much better e&m via emscripten / wasi-libc.
+
+    double z = (m - 1.0) / (m + 1.0);
+    double z2 = z * z;
+
+    // Degree-5 odd polynomial for ln(m) = 2z (1 + z^2 * (...))
+    double p = z2 * (1.0/3 + z2 * (1.0/5 + z2 * (1.0/7 + z2 * (1.0/9))));
+    double log_m = 2 * (z + z * p);
+
+    return log_m + e * 0.6931471805599453;
 }
 
-float log(float y, float base) {
-    return ln(y) * ln(base);
+double log(double y, double base) {
+    return ln(y) / ln(base);
 }
 
-//float log10(float y) noexcept{
-//	return ln(y)*2.302585092994046; // ln(10)
-//}
-//
-//
-//float log2(float y) noexcept{
-//	return ln(y)*0.69314718;
-//}
+// up to 10^18 … ok'ish
+double log10(double y) { //noexcept{
+    return ln(y)/2.302585092994046; // ln(10)
+}
+
+double log2(double y) { //noexcept{
+    return ln(y)/0.6931471805599453; // ln(2)
+}
 
 String load(String file) {
     int size;

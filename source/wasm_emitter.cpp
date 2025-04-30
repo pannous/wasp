@@ -979,7 +979,7 @@ int headerOffset(Node &array) {
         case groups:
             return array_header_length;
         default:
-            return 0;
+            return array_header_length;
     }
 }
 
@@ -1495,7 +1495,8 @@ Code emitValue(Node &node, Function &context) {
                 if (node.length > 0) {
                     if (use_wasm_arrays)
                         return emitWasmArrayGetter(node, context, local);
-                    return emitIndexPattern(NUL, node, context, true, local.type); // todo?
+                    bool base_on_stack = last_type == stringp; // todo unhack!
+                    return emitIndexPattern(NUL, node, context, base_on_stack, local.type); // todo?
                 }
             }
         }
