@@ -648,8 +648,9 @@ void testFunctionDeclaration() {
     assert_emit("function x(a){42+a};x(1)+1", 44);
     assert_emit("function x(){42+it};x(1)+1", 44);
 
-    assert_emit("def x(a=3){42+a};x+1", 46);// default value
+    assert_emit("def x(a=3){42+a};x+1", 46); // default value
 }
+
 void testFunctionDeclarationParse() {
     //    auto node1 = analyze(parse("fn main(){}"));
     //    check(node1.kind==declaration);
