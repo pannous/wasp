@@ -179,3 +179,5 @@ Node &groupTypes(Node &expression, Function &context);
 bool knownSymbol(String name, Function &context);
 
 int findBestVariant(const Function &function, const Node &node, Function *context);
+
+bool compatibleTypes(Type type1, Type type2);

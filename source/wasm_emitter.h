@@ -52,6 +52,7 @@ Code emitBlock(Node &node, Function &context);
 //Code emitExpression(Node *node)__attribute__((warn_unused_result));
 //Code emitExpression(Node *node)__attribute__((error_unused_result));
 
+Code castToSmartPointer(Type from, Type return_type, Function &context, bool &needs_cast);
 
 //Map<int, String>
 List<String> collect_locals(Node node, Function &context);
