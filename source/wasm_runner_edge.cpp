@@ -84,8 +84,8 @@ WasmEdge_Result getElementById(void *Data, const FrameContext *CallFrameCxt, con
 WasmEdge_Result toString(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
                          WasmEdge_Value *Out) {
     strcpy2((char *) wasm_memory, "hello"); // todo dummy!
-    Out[0] = WasmEdge_ValueGenI32((int) (long) wasm_memory);
     // Out[0] = WasmEdge_ValueGenI32((long)wasm_memory);
+    Out[0] = WasmEdge_ValueGenI32((int) (long) wasm_memory);
     return WasmEdge_Result_Success; // todo dummy!
 }
 
