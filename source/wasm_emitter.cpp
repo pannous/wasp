@@ -2859,12 +2859,15 @@ Code cast(Valtype from, Valtype to) {
     return nop;
 }
 
-
+Function no_context= Function(); // todo: use context in cast, so we can use it in emit_cast
 [[nodiscard]]
 Code cast(Type from, Type to) {
     Code nop;
     // if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
     if (to == none or to == unknown_type or to == voids)return nop; // no cast needed magic VERSUS wasm drop!!!
+    if(from == referencex and to == stringp)return emitCall(*new Node("toString"), no_context);
+    // if(from == stringp and to == longs)
+        // error("cast string/reference to long not implemented, use toLong() instead");
     if (from == wasmtype_array and isArrayType(to))return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
     if (from == to)return nop; // nop
     last_type = to; // danger: hides last_type in caller!
@@ -2883,6 +2886,7 @@ Code cast(Type from, Type to) {
     if (from == i32t and to == array)return nop; // pray / assume i32 is a pointer here. todo!
     if (from == float32t and to == array)return nop; // pray / assume f32 is a pointer here. LOL NO todo!
     if (from == i64 and to == array)return Code(i32_wrap_i64);; // pray / assume i32 is a pointer here. todo!
+    if (from == referencex and to == string_struct)return emitCall(*new Node("toString"), *new Function()); // todo: use context?
     //    if(Valtype)
     return cast(mapTypeToWasm(from), mapTypeToWasm(to));
 }

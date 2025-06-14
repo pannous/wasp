@@ -41,7 +41,8 @@ Node IntegerType("IntegerType", clazz);
 Node ByteType("Byte", clazz); // Byte conflicts with mac header
 Node ByteCharType("ByteCharType", clazz); // ugly by design: don't use ascii chars like that.
 Node ShortType("Short", clazz); // mainly for c abi interaction, not used internally (except for compact arrays)
-Node StringType("String", clazz);
+Node StringType("string", clazz); // ⚠️:
+// Node StringType("String", clazz);  String maps to string_struct!
 Node BoolType("BoolType", clazz);
 Node CodepointType("CodepointType", clazz);
 
@@ -754,6 +755,7 @@ bool compatibleTypes(Type type32, Type type321);
 
 void updateLocal(Function &context, String name, Type type) {
     //#if DEBUG
+    if(type==undefined)return; // no type given, ok
     Local &local = context.locals[name];
     auto type_name = typeName(type);
     auto oldType = local.type;
@@ -776,6 +778,7 @@ void updateLocal(Function &context, String name, Type type) {
             }
         } else {
             if (!compatibleTypes(oldType, type)) {
+                compatibleTypes(oldType, type);
                 error("local "s + name + " in context %s already known "s % context.name + " with type " +
                     typeName(oldType) + ", ignoring new type " + type_name);
             }
@@ -788,6 +791,10 @@ bool compatibleTypes(Type type1, Type type2) {
     if (type1 == type2)return true;
     if (type1 == string_struct and type2 == strings)return true;
     if (type1 == wasm_int32 and type2 == wasm_int64)return true; // upcast
+    if (type1 == stringp and type2 == externref)return true; // assume everything is castable from toString(externref)
+    // if (type1 == strings and type2 == externref)return true; // assume everything is castable from toString(externref)
+    // if (type1 == string_struct /*strings*/ and type2 == externref)return true; // assume everything is castable from externref
+    // if (type2 == externref)return true; // assume everything is castable from externref
     return false;
 }
 
@@ -2034,8 +2041,7 @@ Node &analyze(Node &node, Function &function) {
     if (not firstName.empty() and class_keywords.contains(firstName))
         return classDeclaration(node, function);
 #endif
-    if (node.kind == referencex) // external reference, e.g. html $id
-        functions["getElementById"].is_used = true;
+
 
     // add: func(a: float32, b: float32) -> float32
     if (node.kind == key and node.values().name == "func") // todo move edge case to witReader
@@ -2084,7 +2090,11 @@ Node &analyze(Node &node, Function &function) {
     Node &grouped = groupOperators(groupedFunctions, function);
     if (analyzed[grouped.hash()])return grouped; // done!
     analyzed.insert_or_assign(grouped.hash(), 1);
-
+    if (grouped.kind == referencex or grouped.name.startsWith("$")) {
+        // external reference, e.g. html $id
+        functions["getElementById"].is_used = true;
+        functions["toString"].is_used = true;
+    }
     //    Node& last;
     if (isGroup(type)) {
         // handle lists, arrays, objects, … (statements)
@@ -2173,6 +2183,9 @@ void preRegisterFunctions() {
 
     functions["getElementById"].import();
     functions["getElementById"].signature.add(charp, "id").returns(externref /*!!*/);
+
+    functions["toString"].import();
+    functions["toString"].signature.add(referencex, "id").returns(charp);
 
     functions["invokeExternRef"].import();
     // how to distinguish between functions and properties? 1. no params use getExternRefPropertyValue
