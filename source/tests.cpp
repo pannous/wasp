@@ -30,14 +30,19 @@
 #include "asserts.h"
 
 void testExternString() {
-    assert_emit("$hello as string", "hello");
-    assert_emit("toString($hello)", "hello");
+    assert_emit("$test as string", "hello");
+    assert_emit("toString($test)", "hello");
+    assert_emit("string x=$test", "hello");
+    assert_emit("puts($test)", 21); // "hello"
+    assert_emit("puts(toString($hello))", 21);
     // exit(1);
-    // assert_emit("puts(toString($hello))", "hello");
-    // assert_emit("print(toString($hello))", "hello");
-    // assert_emit("var x=$hello as string", "hello");
-    // assert_emit("var x=$hello as string;x", "hello");
-    // assert_emit("string x=$hello", "hello");
+    skip(
+        assert_emit("var x=$hello as string", "hello");
+        assert_emit("var x=$hello as string;x", "hello");
+        assert_emit("print($hello)", "hello"); // (i64) -> nil
+        assert_emit("printRef($hello)", "hello"); // (externref) -> nil
+        assert_emit("print(toString($hello))", "hello"); // (i64) -> nil via smarti?
+    )
 }
 
 void testMinusMinus() {

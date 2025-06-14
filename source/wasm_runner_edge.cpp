@@ -389,10 +389,17 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
         warn("⚠️Can't connect wasmedge memory");
 
 
+    // Try to find which function exists: main, _start, or wasp_main
     WasmEdge_String FuncName = WasmEdge_StringCreateByCString("wasp_main");
+    if (not WasmEdge_VMGetFunctionType(VMCxt, FuncName))
+        FuncName = WasmEdge_StringCreateByCString("_start");
+    if (not WasmEdge_VMGetFunctionType(VMCxt, FuncName))
+        FuncName = WasmEdge_StringCreateByCString("main");
+
     WasmEdge_Value Params[0];
     WasmEdge_Value Returns[1];
     Res = WasmEdge_VMExecute(VMCxt, FuncName, Params, 0, Returns, 1);
+    WasmEdge_StringDelete(FuncName);
     if (WasmEdge_ResultOK(Res)) {
         //        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
         int64_t value = WasmEdge_ValueGetI64(Returns[0]);
