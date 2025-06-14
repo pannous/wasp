@@ -1888,7 +1888,7 @@ int main(int argc, char **argv) {
             return 0;
             //			return 42; // funny, but breaks IDE chaining
         } // else
-        if (args.endsWith(".html") or args.endsWith(".htm")) {
+        else if (args.endsWith(".html") or args.endsWith(".htm")) {
 #if WEBAPP
             //				start_server(SERVER_PORT);
             std::thread go(start_server, SERVER_PORT);
@@ -1900,11 +1900,11 @@ int main(int argc, char **argv) {
             print("wasp compiled without webview");
 #endif
         }
-        if (args.endsWith(".wasp") or args.endsWith(".angle")) {
+        else if (args.endsWith(".wasp") or args.endsWith(".angle")) {
             String wasp_code = load(args);
             return eval(wasp_code).value.longy;
         }
-        if (args.endsWith(".wasm")) {
+        else if (args.endsWith(".wasm")) {
             if (argc >= 3) {
 #if WABT_MERGE
                 merge_files(--argc, ++argv);
@@ -1914,27 +1914,27 @@ int main(int argc, char **argv) {
             } else
                 run_wasm_file(args);
         }
-        if (args == "test" or args == "tests")
+        else if (args == "test" or args == "tests")
 #if NO_TESTS
             print("wasp release compiled without tests");
 #else
             testCurrent();
 #endif
-        if (args.startsWith("eval")) {
+        else if (args.startsWith("eval")) {
             Node results = eval(args.from(" "));
             print("» "s + results.serialize());
         }
-        if (args == "repl" or args == "console" or args == "start" or args == "run") {
+        else if (args == "repl" or args == "console" or args == "start" or args == "run") {
             console(); // todo args == "run" ambiguous run <file> or run repl? not if <file> empty OK
         }
-        if (args == "2D" or args == "2d" or args == "SDL" or args == "sdl") {
+        else if (args == "2D" or args == "2d" or args == "SDL" or args == "sdl") {
 #if GRAFIX
             init_graphics();
 #else
             print("wasp compiled without sdl/webview"); // todo grafix host function?
 #endif
         }
-        if (args == "app" or args == "webview" or args == "browser") {
+        else if (args == "app" or args == "webview" or args == "browser") {
 #if not WEBAPP
             print("must compile with WEBAPP support");
             return -1;
@@ -1945,7 +1945,7 @@ int main(int argc, char **argv) {
             print("wasp compiled without sdl/webview");
 #endif
         }
-        if (args.startsWith("serv") or args == "server") {
+        else if (args.startsWith("serv") or args == "server") {
 #if SERVER
             std::thread go(start_server, 9999);
 //				start_server(9999);
@@ -1960,13 +1960,18 @@ int main(int argc, char **argv) {
                 print("Wasp compiled without server OR no program given!");
 #endif
         }
-        if (args.contains("help"))
+        else if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
 #if WASM
         initSymbols();
         String args((char*)alloc(1,1));// hack: written to by wasmx todo ??
         heap_end += strlen(args)+1; // todo WHAT IS THIS??
 #endif
+else{
+        // run(args);
+        Node results = eval(args);
+        // print("» "s + results.serialize());
+    }
         return 0; // EXIT_SUCCESS;
         //			return 42; // funny, but breaks IDE chaining
         //    } catch (Exception e) { // struct Exception {};
