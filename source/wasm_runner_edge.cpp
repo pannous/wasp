@@ -78,7 +78,15 @@ WasmEdge_Result fprintf(void *Data, const FrameContext *CallFrameCxt, const Wasm
 
 WasmEdge_Result getElementById(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
                                WasmEdge_Value *Out) {
-    return WasmEdge_Result_Success;
+    return WasmEdge_Result_Success; // todo dummy!
+}
+
+WasmEdge_Result toString(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                         WasmEdge_Value *Out) {
+    strcpy2((char *) wasm_memory, "hello"); // todo dummy!
+    Out[0] = WasmEdge_ValueGenI32((int) (long) wasm_memory);
+    // Out[0] = WasmEdge_ValueGenI32((long)wasm_memory);
+    return WasmEdge_Result_Success; // todo dummy!
 }
 
 
@@ -275,6 +283,16 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     } {
         WasmEdge_ValType P[1], R[1];
         R[0] = WasmEdge_ValTypeGenI32(); // charp (id:string)
+        P[0] = WasmEdge_ValTypeGenExternRef();
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, toString, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("toString");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    } {
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenI32(); // charp (id:string)
         P[0] = WasmEdge_ValTypeGenI32(); // charp (id:string)
         HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, download, NULL, 0);
@@ -350,29 +368,32 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     WasmEdge_Result ok = WasmEdge_VMRegisterModuleFromImport(VMCxt, HostMod);
     if (not WasmEdge_ResultOK(ok)) {
         auto err = WasmEdge_ResultGetMessage(ok);
-        printf("Error message: %s\n", err);
+        printf("Error: %s\n", err);
     }
-    //    auto WasiMod = CreateWasiModule();
-    //    WasmEdge_VMRegisterModuleFromImport(VMCxt, WasiMod);
+    WasmEdge_Result Res;
+    Res = WasmEdge_VMLoadWasmFromBuffer(VMCxt, buffer, buf_size);
+    if (!WasmEdge_ResultOK(Res)) printf("⚠️Load WASM failed. Error: %s\n", WasmEdge_ResultGetMessage(Res));
+    Res = WasmEdge_VMValidate(VMCxt);
+    if (!WasmEdge_ResultOK(Res)) printf("⚠️Validate WASM failed. Error: %s\n", WasmEdge_ResultGetMessage(Res));
+    Res = WasmEdge_VMInstantiate(VMCxt);
+    if (!WasmEdge_ResultOK(Res)) printf("⚠️Instantiate WASM failed. Error: %s\n", WasmEdge_ResultGetMessage(Res));
 
-    WasmEdge_Value Params[0];
-    WasmEdge_Value Returns[1];
-    WasmEdge_String FuncName = WasmEdge_StringCreateByCString("wasp_main");
-    WasmEdge_Result Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName, Params, 0, Returns, 1);
-    if (not WasmEdge_ResultOK(Res)) {
-        print("Starting main() instead …");
-        WasmEdge_String FuncName2 = WasmEdge_StringCreateByCString("main");
-        Res = WasmEdge_VMRunWasmFromBuffer(VMCxt, buffer, buf_size, FuncName2, Params, 0, Returns, 1);
-    }
     const WasmEdge_ModuleInstanceContext *module_ctx = WasmEdge_VMGetActiveModule(VMCxt);
+    WasmEdge_StoreContext *store = WasmEdge_VMGetStoreContext(VMCxt);
     auto mem = WasmEdge_StringCreateByCString("memory");
     WasmEdge_MemoryInstanceContext *memory_ctx = WasmEdge_ModuleInstanceFindMemory(module_ctx, mem);
     uint8_t *memo = WasmEdge_MemoryInstanceGetPointer(memory_ctx, 0, 0);
+    WasmEdge_StringDelete(mem);
     if (memo)
         wasm_memory = memo;
     else
         warn("⚠️Can't connect wasmedge memory");
 
+
+    WasmEdge_String FuncName = WasmEdge_StringCreateByCString("wasp_main");
+    WasmEdge_Value Params[0];
+    WasmEdge_Value Returns[1];
+    Res = WasmEdge_VMExecute(VMCxt, FuncName, Params, 0, Returns, 1);
     if (WasmEdge_ResultOK(Res)) {
         //        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
         int64_t value = WasmEdge_ValueGetI64(Returns[0]);
@@ -382,7 +403,7 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
         auto smartPointer = node1->toSmartPointer();
         return smartPointer;
     } else
-        error("WASM EDGE Error message: "s+ WasmEdge_ResultGetMessage(Res));
+        error("WASM EDGE Error: "s+ WasmEdge_ResultGetMessage(Res));
     return -1;
 }
 
@@ -420,7 +441,7 @@ int64 run_wasm2(char *wasm_path) {
         printf("Get result: %d\n", i);
         return (int) i;
     } else {
-        printf("Error message: %s\n", WasmEdge_ResultGetMessage(Res));
+        printf("Error: %s\n", WasmEdge_ResultGetMessage(Res));
         return -1;
     }
 

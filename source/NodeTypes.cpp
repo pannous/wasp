@@ -178,7 +178,8 @@ Type mapType(String arg, bool throws) {
     else if (arg == "string")return stringp;
     else if (arg == "String*")return stringp;
     else if (arg == "String&")return stringp; // todo: how does c++ handle refs?
-    else if (arg == "String")return string_struct;
+    else if (arg == "String")
+        return string_struct;
     else if (arg == "const String")return string_struct;
 
     else if (arg == "Node")return node; // struct!

@@ -239,6 +239,7 @@ double parseDouble(chars string) {
 
 class Node; // can't pre-access properties, BUT can use functions:
 String toString(Node &node);
+// String toString(externref &node);
 
 
 // Implementation of itoa0()

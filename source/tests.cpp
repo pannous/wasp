@@ -29,6 +29,12 @@
 
 #include "asserts.h"
 
+void testExternString() {
+    assert_emit("toString($hello)", "hello");
+    // assert_emit("puts(toString($hello))", "hello");
+    // assert_emit("print(toString($hello))", "hello");
+    assert_emit("string x=$hello", "hello");
+}
 
 void testMinusMinus() {
 #if not WASM // todo square
@@ -3805,6 +3811,7 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
+    testExternString();
 
     testFunctionDeclarationParse();
 #if not WASM
