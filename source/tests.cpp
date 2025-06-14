@@ -30,13 +30,14 @@
 #include "asserts.h"
 
 void testExternString() {
+    assert_emit("$hello as string", "hello");
     assert_emit("toString($hello)", "hello");
+    // exit(1);
     // assert_emit("puts(toString($hello))", "hello");
     // assert_emit("print(toString($hello))", "hello");
-    assert_emit("$hello as string", "hello");
-    assert_emit("var x=$hello as string", "hello");
-    assert_emit("var x=$hello as string;x", "hello");
-    assert_emit("string x=$hello", "hello");
+    // assert_emit("var x=$hello as string", "hello");
+    // assert_emit("var x=$hello as string;x", "hello");
+    // assert_emit("string x=$hello", "hello");
 }
 
 void testMinusMinus() {

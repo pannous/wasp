@@ -1253,7 +1253,7 @@ private:
     // special : close=';' : single expression a = 1 + 2
     // significant whitespace a {} == a,{}{}
     // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
-    // reason for strange name is better IDE findability, todo rename to readNode() / parseNode()?
+    // reason for strange name is better IDE findability, todo rename to readNode() or parseNode()?
     Node &valueNode(codepoint close = 0, Node *parent = 0) {
         // A JSON value could be an object, an array, a string, a number, or a word.
         Node &actual = *new Node(); // current already used in super context
@@ -1649,13 +1649,13 @@ private:
                         //  use, include, require …
                         node = direct_include(actual, node);
                     }
-#ifndef RUNTIME_ONLY
+// #ifndef RUNTIME_ONLY // precedence??
                     if (precedence(node) or operator_list.has(node.name)) {
                         node.kind = operators;
                         //						if(not isPrefixOperation(node))
                         //						if(not contains(prefixOperators,node))
                     }
-#endif
+// #endif
                     if (node.kind == operators and ch != ':') {
                         if (isFunctor(node))
                             node.kind = functor; // todo: earlier

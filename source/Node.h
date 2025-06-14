@@ -791,7 +791,7 @@ public:
     Node &setKind(Kind kin, bool check = true);
 
     // ≠ setKind ≠
-    void setType(Type type);
+    // void setType(Type type);
 
     //    Node &setType(const char *string) {// setClass
     //        if(types.has)

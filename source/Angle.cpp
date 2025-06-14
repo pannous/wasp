@@ -699,6 +699,11 @@ Node &groupTypes(Node &expression, Function &context) {
     //	Node typed_list;
     for (int i = 0; i < expression.length; i++) {
         Node &node = expression.children[i];
+        if(node.name=="as") {
+            i++; // skip type declaration
+            expression[i].setKind(clazz,false);
+            continue;
+        }
         if (not isType(node))
             continue;
         //			if (operator_list.has(typed.name))
@@ -751,8 +756,6 @@ Node &constructInstance(Node &node, Function &function) {
 }
 
 
-bool compatibleTypes(Type type32, Type type321);
-
 void updateLocal(Function &context, String name, Type type) {
     //#if DEBUG
     if(type==undefined)return; // no type given, ok
@@ -790,7 +793,9 @@ void updateLocal(Function &context, String name, Type type) {
 bool compatibleTypes(Type type1, Type type2) {
     if (type1 == type2)return true;
     if (type1 == string_struct and type2 == strings)return true;
+    if (type1 == stringp and type2 == strings)return true;
     if (type1 == wasm_int32 and type2 == wasm_int64)return true; // upcast
+    if (type1 == externref and type2 == stringp)return true; // only via toString(externref) !!!
     if (type1 == stringp and type2 == externref)return true; // assume everything is castable from toString(externref)
     // if (type1 == strings and type2 == externref)return true; // assume everything is castable from toString(externref)
     // if (type1 == string_struct /*strings*/ and type2 == externref)return true; // assume everything is castable from externref
@@ -836,6 +841,9 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
     // todo: kotlin style context sensitive symbols!
     if (builtin_constants.has(name))
         return true;
+    if(types.has(name))
+        // error("type as local name: "s + name);
+        return true; // already declared as type, e.g. Point
     if (context.signature.has(name)) {
         return false; // known parameter!
     }
@@ -1183,7 +1191,7 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op == "include")
             return NUL; // todo("include again!?");
         if (op != last) last_position = 0;
-        bool fromRight = rightAssociatives.has(op); // << 2022-12-31 currently fails here after 3 runs
+        bool fromRight = rightAssociatives.has(op);
         fromRight = fromRight || isFunction(op, true);
         fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
         int i = expression.index(op, last_position, fromRight);

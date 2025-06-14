@@ -657,6 +657,7 @@ Code stringRefLength() {
 
 Code castStringToRef() {
     Code code;
+    // todo
     return code;
 }
 
@@ -670,7 +671,7 @@ Code castRefToChars() {
     code.add(0); // memory
     code.addOpcode(drop); // string_encode_utf8 returns the number of bytes written, we don't need it
     code.addConst32(data_index_end); // heap_end
-    data_index_end += 100; // lol
+    data_index_end += 100; // lol todo get length of stringref how here in compiler??
     last_type = charp;
     return code;
 }
@@ -1903,7 +1904,18 @@ Code emitOperator(Node &node, Function &context) {
         code.add(cast(last_type, return_type));
         code.add(return_block);
     } else if (name == "as") {
-        code.add(emitCall("emit_cast", context));
+        auto target = node[1];//
+        Type targetType = target.kind; // .type
+        if (target.kind == clazz)
+            targetType = mapType(target.name); // todo: map to wasm type
+        if(compatibleTypes(last_type, targetType)) {
+            code.add(cast(last_type, targetType));
+            last_type = targetType;
+            // bool needs_cast = false;
+            // code.add(castToSmartPointer(Type(last_type), targetType, context, needs_cast));
+            // last_type = smarti64; // todo: should be targetType, but we don't know it yet!
+        }
+        else code.add(emitCall("emit_cast", context));
     } else if (name == "%") {
         // int cases handled above
         if (last_type == float32t)
@@ -2864,12 +2876,12 @@ Function no_context= Function(); // todo: use context in cast, so we can use it 
 Code cast(Type from, Type to) {
     Code nop;
     // if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
+    if (from == to)return nop; // nop
     if (to == none or to == unknown_type or to == voids)return nop; // no cast needed magic VERSUS wasm drop!!!
     if(from == referencex and to == stringp)return emitCall(*new Node("toString"), no_context);
     // if(from == stringp and to == longs)
         // error("cast string/reference to long not implemented, use toLong() instead");
     if (from == wasmtype_array and isArrayType(to))return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
-    if (from == to)return nop; // nop
     last_type = to; // danger: hides last_type in caller!
     if (from == node and to == i64t)
         return Code(i64_extend_i32_s).addConst64(node_header_64) + Code(i64_or); // turn it into node_pointer_64 !
@@ -3150,15 +3162,17 @@ Code castToSmartPointer(Type from, Type return_type, Function &context, bool &ne
 
     //		if(from==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
     //		if(from==charp)block.addConst(-1073741824).addByte(i32_or);// string
-    else if (from.kind == strings or from.type == c_string or from == charp or
-             from == string_ref) {
+    else if (from == Type(stringp) or from.kind == strings or from.type == c_string or from == charp or from == string_ref) {
         //
         if (from == string_ref)block += castRefToChars();
         block.addByte(i64_extend_i32_u);
         block.addConst64(string_header_64);
         block.addByte(i64_or);
         last_type = i64;
-        needs_cast = return_type == i64;
+        needs_cast = false; // ?
+        // needs_cast = true; // "use it"?
+        // needs_cast = return_type != i64; // HUH?
+        // needs_cast = return_type == i64; // HUH?
     } else if (from.kind == reference) {
         //			if (from==charp)
         //				block.addConst(string_header_64).addByte(i64_or);
@@ -3268,7 +3282,6 @@ Code emitBlock(Node &node, Function &context) {
     if (last_type == void_block) last_type = voids;
     bool needs_cast = return_type != last_type;
     auto abi = wasp_smart_pointers; // context.abi;
-
 
     if (return_type == Valtype::voids and last_type != Valtype::voids)
         block.addByte(drop);
