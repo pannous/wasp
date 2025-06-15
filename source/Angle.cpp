@@ -45,6 +45,7 @@ Node StringType("string", clazz); // ⚠️:
 // Node StringType("String", clazz);  String maps to string_struct!
 Node BoolType("BoolType", clazz);
 Node CodepointType("CodepointType", clazz);
+Node TemplateType("TemplateType", clazz); // `strings with $values`
 
 //const Node DoubleType{.name="DoubleType", .kind=classe};//.setType(type);
 //const Node DoubleType{name:"DoubleType", kind:classe};//.setType(type);
@@ -154,6 +155,14 @@ Node &groupKebabMinus(Node &node, Function &function);
 
 Node extractModifiers(Node &node);
 
+void useFunction(String name) {
+    if (not functions.has(name)) {
+        auto fun = findLibraryFunction(name, true); // search aliases
+        if (not fun)
+            error("function "s + name + " not found"s);
+    }
+    functions[name].is_used = true;
+}
 
 // todo: merge ^^
 bool addGlobal(Function &context, String name, Type type, bool is_param, Node *value) {
@@ -699,9 +708,9 @@ Node &groupTypes(Node &expression, Function &context) {
     //	Node typed_list;
     for (int i = 0; i < expression.length; i++) {
         Node &node = expression.children[i];
-        if(node.name=="as") {
+        if (node.name == "as") {
             i++; // skip type declaration
-            expression[i].setKind(clazz,false);
+            expression[i].setKind(clazz, false);
             continue;
         }
         if (not isType(node))
@@ -758,7 +767,7 @@ Node &constructInstance(Node &node, Function &function) {
 
 void updateLocal(Function &context, String name, Type type) {
     //#if DEBUG
-    if(type==undefined)return; // no type given, ok
+    if (type == undefined)return; // no type given, ok
     Local &local = context.locals[name];
     auto type_name = typeName(type);
     auto oldType = local.type;
@@ -841,7 +850,7 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
     // todo: kotlin style context sensitive symbols!
     if (builtin_constants.has(name))
         return true;
-    if(types.has(name))
+    if (types.has(name))
         // error("type as local name: "s + name);
         return true; // already declared as type, e.g. Point
     if (context.signature.has(name)) {
@@ -1184,9 +1193,9 @@ Node &groupOperators(Node &expression, Function &context) {
 
         //        todo op=use_import();continue ?
         if (op == "%")
-            functions["modulo_float"].is_used = true; // no wasm i32_rem_s i64_rem_s for float/double
+            useFunction("modulo_float"); // no wasm i32_rem_s i64_rem_s for float/double
         if (op == "%")
-            functions["modulo_double"].is_used = true;
+            useFunction("modulo_double");
         if (op == "==" or op == "is" or op == "equals")use_runtime("eq");
         if (op == "include")
             return NUL; // todo("include again!?");
@@ -1219,12 +1228,12 @@ Node &groupOperators(Node &expression, Function &context) {
         //        else error("binop?");
         if (op == ".") {
             if (prev.kind == referencex) {
-                functions["invokeExternRef"].is_used = true; // a.b() => invokeExternRef(a, "b")
-                functions["getExternRefPropertyValue"].is_used = true;
-                functions["setExternRefPropertyValue"].is_used = true;
+                useFunction("invokeExternRef"); // a.b() => invokeExternRef(a, "b")
+                useFunction("getExternRefPropertyValue");
+                useFunction("setExternRefPropertyValue");
             }
             if (prev.kind == (Kind) Primitive::node)
-                functions["get"].is_used = true;
+                useFunction("get");
         }
 
 
@@ -1259,8 +1268,8 @@ Node &groupOperators(Node &expression, Function &context) {
                 // SUFFIX Operators
                 if (op == "ⁿ") {
                     findLibraryFunction("pow", false);
-                    functions["pow"].is_used = true; // redirects to
-                    // functions["powd"].is_used = true;
+                    useFunction("pow"); // redirects to
+                    // useFunction("powd");
                 }
                 if (i < 1)
                     error("suffix operator misses left side");
@@ -1510,6 +1519,7 @@ int findBestVariant(const Function &function, const Node &node, Function *contex
     }
     error("no matching function variant for "s + function.name + " with "s + node.serialize());
 }
+
 void addLibraryFunctionAsImport(Function &func);
 
 // todo merge with groupOperatorCall
@@ -1724,7 +1734,9 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         return use_required_import(&funclet);
     }
     if (name.in(function_list) and libraries.size() == 0)
-        libraries.add(&loadModule("wasp-runtime.wasm")); // on demand
+        libraries.add(&loadRuntime());
+    // libraries.add(&loadModule("wasp-runtime.wasm")); // on demand
+
 
     //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
     // todo in WASM
@@ -1758,14 +1770,15 @@ void addLibrary(Module *modul) {
     libraries.add(modul); // link it later via import or use its code directly?
 }
 
+// todo merge with similar functions and aliases()
 Function *use_required_import(Function *function) {
     if (!function or not function->name or function->name.empty())
         return 0; // todo how?
     addLibraryFunctionAsImport(*function);
     if (function->name == "quit")
-        functions["proc_exit"].is_used = true;
+        useFunction("proc_exit");
     if (function->name == "puts")
-        functions["fd_write"].is_used = true;
+        useFunction("fd_write");
     // for (Function *variant: function->variants) {
     //     addLibraryFunctionAsImport(*variant);
     // }
@@ -1807,6 +1820,8 @@ List<String> aliases(String name) {
         // todo type vs fun!
         found.add("_Z5atoi0PKc");
     }
+    if (name == "concat_chars")
+        found.add("_Z12concat_charsPKcS0_"); // todo by parsing!!
     if (name == "concat") {
         // todo: programmatic!
         if (not use_wasm_strings)
@@ -1839,18 +1854,18 @@ Node &groupForClassic2(Node &node, Function &context) {
     // for(…){}
     if (node.length < 2)
         error("Invalid 'for' loop structure. Expected initializer and body.");
-     // Extract components
-    Node &forex=node[0]; // e.g., 'for'
-    Node &fore=forex.values(); // e.g., 'i = 0'
-    if(fore.size()!=3)
+    // Extract components
+    Node &forex = node[0]; // e.g., 'for'
+    Node &fore = forex.values(); // e.g., 'i = 0'
+    if (fore.size() != 3)
         error("Invalid 'for' loop structure. Expected three parts like for(i=0;i<10;i++){}");
 
     Node initializer = fore[0];
     Node condition = fore[1];
     Node increment = fore[2];
-    initializer=analyze(initializer, context);
-    condition=analyze(condition, context);
-    increment=analyze(increment, context);
+    initializer = analyze(initializer, context);
+    condition = analyze(condition, context);
+    increment = analyze(increment, context);
     // todo for loop creates it's own scope!!
     Node &body = analyze(node[1], context); // Loop body
     // Create a node for the 'for' loop
@@ -1869,7 +1884,7 @@ Node &groupForClassic2(Node &node, Function &context) {
 
 Node &groupForClassic(Node &node, Function &context) {
     // // for i=0;i<10;i++ {}
-    if(node.length==2)return groupForClassic2(node, context);
+    if (node.length == 2)return groupForClassic2(node, context);
     // if (node.length < 4)
     //     error("Invalid 'for' loop structure. Expected initializer, condition, increment, and body.");
 
@@ -1936,7 +1951,7 @@ Node &groupFor(Node &n, Function &context) {
         error("Incomplete 'for' loop structure");
     if (n.length == 2) // for(…){}
         return groupForClassic2(n, context);
-    if (n.length>2 and n[2].name == "in")
+    if (n.length > 2 and n[2].name == "in")
         return groupForIn(n, context);
     if (n.length > 7 or n[2].name != "in")
         return groupForClassic(n, context);
@@ -2001,6 +2016,40 @@ Node &groupWhile(Node &n, Function &context) {
 
 Node &groupOperatorCall(Node &node, Function &function);
 
+Node &groupTemplate(Node &node, Function &function) {
+    auto string = node.string();
+    // match all $var and ${code} and concat them into a single node with substrings `hello ${name} world` => "hello " + Node("name", true) + " world"
+    int start = 0;
+    for (int i = 0; i < string.length; ++i) {
+        if (string[i] == '$') {
+            int j = i + 1;
+            if (j < string.length and string[j] == '{') {
+                j++;
+                while (j < string.length and string[j] != '}')j++;
+                if (j >= string.length)
+                    error("Unclosed template variable in "s + node.name);
+                String var = string.substring(i + 2, j - i - 2);
+                node.add(Node(var, true));
+                i = j; // skip to }
+            } else {
+                String var = string.substring(i + 1, i + 2);
+                node.add(Node(var, true));
+                i++; // skip to next char
+            }
+        } else {
+            node.add(Node(string.substring(start, i), false));
+        }
+    }
+    for (auto child: node)
+        if (child.kind != strings)
+            child = analyze(child, function); // analyze each child node
+    // useFunction("_Z12concat_charsPKcS0_");
+    useFunction("concat");
+    // useFunction("concat_chars");
+    // functions["concat_chars"].is_used = true;
+    return node;
+}
+
 /*
  * ☢️ ⚛ Nuclear Core ⚠️ 🚧
  * turning some knobs might yield some great powers
@@ -2025,14 +2074,14 @@ Node &analyze(Node &node, Function &function) {
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
     if (name == "html") {
-        functions["getDocumentBody"].is_used = true;
-        functions["createHtml"].is_used = true;
-        functions["createHtmlElement"].is_used = true;
+        useFunction("getDocumentBody");
+        useFunction("createHtml");
+        useFunction("createHtmlElement");
         // also getHtmlAttribute / createHtmlAttribute / setHtmlAttribute / property
         return node; // html builder currently not parsed
     }
     if (name == "js" or name == "script" or name == "javascript") {
-        functions["addScript"].is_used = true;
+        useFunction("addScript");
         return node;
     }
     if (name == "if")return groupIf(node, function);
@@ -2077,6 +2126,8 @@ Node &analyze(Node &node, Function &function) {
         }
         addLocal(function, name, node.value.node ? mapType(node.value.node) : none, false);
     }
+    if (type == strings and node.type == &TemplateType)
+        return groupTemplate(node, function); // todo: move to witReader
 
     if (isGlobal(node, function))
         return groupGlobal(node, function);
@@ -2100,8 +2151,8 @@ Node &analyze(Node &node, Function &function) {
     analyzed.insert_or_assign(grouped.hash(), 1);
     if (grouped.kind == referencex or grouped.name.startsWith("$")) {
         // external reference, e.g. html $id
-        functions["getElementById"].is_used = true;
-        functions["toString"].is_used = true;
+        useFunction("getElementById");
+        useFunction("toString");
     }
     //    Node& last;
     if (isGroup(type)) {

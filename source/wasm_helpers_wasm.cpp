@@ -636,3 +636,7 @@ double modulo_double(double a, double b) {
 float modulo_float(float a, float b) {
     return a - b * trunc(a / b);
 }
+
+ #if RUNTIME_ONLY // precedence??
+    float precedence(Node &operater){return 0.0f;}
+#endif

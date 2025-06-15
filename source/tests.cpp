@@ -29,6 +29,17 @@
 
 #include "asserts.h"
 
+void testStringInterpolation() {
+    return;
+    assert_emit("`1+1=${1+1}`", "1+1=2")
+
+    result = parse("`hi`");
+    assert_equals(result.type, &TemplateType);
+    assert_emit("x='hello';'`$x world`", "hello world") // compile time or runtime interpolation?
+    assert_emit("x='hello';'${x} world'", "hello world")
+    assert_emit("`$test world`", "hello world"); // via externref or params!!
+}
+
 void testExternString() {
     assert_emit("$test as string", "hello");
     assert_emit("toString($test)", "hello");
@@ -37,7 +48,9 @@ void testExternString() {
     assert_emit("puts(toString($hello))", 21);
     // exit(1);
     skip(
-        assert_emit("var x=$hello as string", "hello");
+        assert_emit("$hello as string + 'world'", "helloworld");
+        assert_emit("`$test world`", "hello world");
+        assert_emit("var x=$hello as string", "hello"); // todo should work with analyze / guess type
         assert_emit("var x=$hello as string;x", "hello");
         assert_emit("print($hello)", "hello"); // (i64) -> nil
         assert_emit("printRef($hello)", "hello"); // (externref) -> nil
@@ -3820,6 +3833,7 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
+    testStringInterpolation();
     testExternString();
 
     testFunctionDeclarationParse();

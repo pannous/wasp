@@ -371,6 +371,10 @@ bytes concat(bytes a, byte b, int len) {
     return c;
 }
 
+chars concat_chars(chars a, chars b) {
+    return concat(a, b, (uint) strlen(a), (uint) strlen(b));
+}
+
 bytes concat(char a, bytes b, int len) {
     bytes c = new unsigned char[len + 1];
     c[0] = a;

@@ -120,6 +120,7 @@ extern Node ByteType;
 extern Node ByteCharType;// ugly by design // todo char ≠ char* !
 extern Node ShortType;
 extern Node StringType;
+extern Node TemplateType; // `strings with $values`
 
 //#include "Util.h" // for error() :(
 //#include "Code.h"
