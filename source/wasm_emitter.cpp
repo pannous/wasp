@@ -21,7 +21,7 @@
 extern Map<String, Global> globals;
 
 //Map<String, Signature> functions;// todo Signature copy by value is broken
-Code emitString(Node &node, Function &context);
+Code emitStringData(Node &node, Function &context);
 
 Code emitString(const String &text, Function &context);
 
@@ -456,7 +456,7 @@ void emitSmartPointer(smart_pointer_64 p) {
 Code emitWaspString(Node &node, Function &context) {
     // emit node as serialized wasp string
     const String &string = node.serialize();
-    const Code &code = emitString(*new Node(string), context);
+    const Code &code = emitStringData(*new Node(string), context);
     context.track(node, code, 0);
     return code;
 }
@@ -516,7 +516,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
     emitIntData(node.kind);
     check_is((int) sizeof(node.kind), 4) // forced 32 bit for alignment!
     emitIntData(wasm_meta_pointer);
-    emitString(node /*.name*/, context); // directly in place!
+    emitStringData(node /*.name*/, context); // directly in place!
     //    emitIntData(wasm_meta_pointer);
     //    emitIntData(wasm_next_pointer);
     //    emitPadding(3*8);// pointers, hash, capacity, … extra fields
@@ -588,11 +588,11 @@ Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
     else if (parent)code.add(emitData(*new Node(parent), function));
     else code.add(emitCall("getDocumentBody", function));
     //    else code.addConst32(0); // get document body in js
-    code.add(emitString(node, function));
+    code.add(emitStringData(node, function));
     if (node.kind == strings)
         code.add(emitCall("createHtml", function));
     else {
-        code.add(emitString(*new Node("IDK_ID"), function));
+        code.add(emitStringData(*new Node("IDK_ID"), function));
         code.add(emitCall("createHtmlElement", function));
     }
     trace(node.name);
@@ -617,7 +617,7 @@ Code emitScript(Node &node, Function &function) {
         }
     } else {
         printf("emitScript %s", node.name.data);
-        code.add(emitString(node, function));
+        code.add(emitStringData(node, function));
     }
     code.add(emitCall("addScript", function));
     return code;
@@ -1315,7 +1315,7 @@ Code emitData(Node &node, Function &context) {
                 error("can't save unknown reference pointer "s + name);
             break;
         case strings:
-            return emitString(node, context);
+            return emitStringData(node, context);
         case objects:
         case groups:
             // todo hold up: print("ok") should not emit an array of group(string(ok)) !?
@@ -1352,16 +1352,83 @@ Code emitStringRef(Node &node, Function &context) {
 }
 
 Code emitString(const String &text, Function &context) {
-    return emitString((new Node(text))->setKind(strings), context); // todo: ?
+    return emitStringData((new Node(text))->setKind(strings), context); // todo: ?
     //    return emitStringRef(*new Node(text), context);
 }
 
-Code emitString(Node &node, Function &context) {
+
+Code emitTemplate(Node &node, Function &context) {
+    Code code;
+    for (Node &part: node) {
+        code.add(emitExpression(part, context)); // todo: emitValue(node) should not be used here!
+        code.add(cast(last_type, stringp)); // cast all to string
+    }
+    for (int i = 0; i < node.length; ++i)
+        code.add(emitCall("concat", context)); // no matching function variant ?!
+        // code.add(emitCall("concat_chars", context));
+    return code;
+}
+
+
+// todo merge with emitString deduplication
+[[nodiscard]]
+Code emitString2(Node &node, Function &context) {
+    Code code;
+    // append pString (as char*) to data section and access via stringIndex
+    if (!node.value.string)
+        error("missing node.value.string");
+    last_object_pointer = data_index_end;
+    String string = *node.value.string;
+    if (node.type == &TemplateType and string.contains('$'))
+        return emitTemplate(node, context); // data via substrings
+    if (referenceDataIndices.has(string))
+    // todo: reuse same strings even if different pointer, or make same pointer before (?)
+        last_object_pointer = referenceDataIndices[string] - 8;
+    else {
+        if (use_wasm_strings)
+            return emitStringRef(node, context);
+        emitStringData(node, context); // for real
+
+        auto name = node.name;
+        if (referenceIndices.has(name)) {
+            if (not isAssignable(node))
+                error("can't reassign reference "s + name);
+            else
+                trace("reassigning reference "s + name + " to " + node.value.string);
+        }
+        if (node.parent and (node.parent->kind == reference or node.parent->kind == key)) {
+            // todo move up! todo key bad criterion!!
+            // todo: add header or copy WHOLE string object!
+            referenceIndices.insert_or_assign(node.parent->name, last_object_pointer); // safe ref to string
+            referenceDataIndices.insert_or_assign(node.parent->name, last_object_pointer + 8);
+            referenceMap.insert_or_assign(node.parent->name, node); // lookup types, array length …
+        }
+        //			return Code(stringIndex).addInt(pString->length);// pointer + length
+        // we add an extra 0, unlike normal wasm abi, because we have space in data section
+    }
+    last_type = charp;
+    code = Code(i32_const) + Code(last_object_pointer + 8); // just a pointer to DATA
+    if (node.length > 0 and node.type != &TemplateType) {
+        if (node.length > 1)
+            error("only 1 op allowed");
+        Node &pattern = node.first();
+        if (pattern.kind != patterns and pattern.kind != longs)
+            error("only patterns allowed on string");
+        code.add(emitIndexPattern(NUL, pattern, context, false, charp));
+    }
+    return code;
+}
+
+
+
+Code emitStringData(Node &node, Function &context) {
+    Code code;
     if (node.kind != strings)
         return emitString(node.name, context);
     if (not node.value.string)
         error("empty node.value.string");
     //    emitPadding(data_index_end % 4);// pad to int size, too late if in node struct!
+
 
     int last_pointer = data_index_end;
     String &string = *node.value.string;
@@ -1371,7 +1438,7 @@ Code emitString(Node &node, Function &context) {
     if (string and referenceIndices.has(string)) {
         // todo: reuse same strings even if different pointer, aor make same pointer before
         last_object_pointer = referenceIndices[string];
-        return Code().addConst32(last_object_pointer);
+        return code.addConst32(last_object_pointer);
     }
     bool as_c_io_vector = true;
     if ((Primitive) node.kind == leb_string) {
@@ -1406,9 +1473,9 @@ Code emitString(Node &node, Function &context) {
     last_object_pointer = last_pointer;
 
     if (use_wasm_strings) // prepend length via data instead of string_const
-        return Code().addInt(string.length).addInt(chars_start).addOpcode(string_new_wtf8);
+        return code.addInt(string.length).addInt(chars_start).addOpcode(string_new_wtf8);
 
-    return Code().addConst32(chars_start); // direct data!
+    return code.addConst32(chars_start); // direct data!
 }
 
 [[nodiscard]]
@@ -1508,58 +1575,8 @@ Code emitValue(Node &node, Function &context) {
         case operators:
             warn("operators should never be emitted as values");
             return emitExpression(node, context);
-        case strings: {
-            // append pString (as char*) to data section and access via stringIndex
-            if (!node.value.string)
-                error("missing node.value.string");
-            last_object_pointer = data_index_end;
-            String string = *node.value.string;
-            if (referenceDataIndices.has(string))
-            // todo: reuse same strings even if different pointer, aor make same pointer before
-            //                last_object_pointer = referenceIndices[string];
-                last_object_pointer = referenceDataIndices[string] - 8;
-            else {
-                if (use_wasm_strings)
-                    return emitStringRef(node, context);
-                emitString(node, context);
-                //                referenceDataIndices.insert_or_assign(string, data_index_end);
-                //				Code lens(pString->length);// we follow the standard wasm abi to encode pString as LEB-lenght + data:
-                //				strcpy2(data + data_index_end, (char*)lens.data, lens.length);
-                //				data_index_end += lens.length;// unsignedLEB128 encoded length of pString
-                //                strcpy2(data + data_index_end, string.data, string.length);
-                //                data[data_index_end + string.length] = 0;
-                //                data_index_end += string.length + 1;
-
-                if (referenceIndices.has(name)) {
-                    if (not isAssignable(node))
-                        error("can't reassign reference "s + name);
-                    else
-                        trace("reassigning reference "s + name + " to " + node.value.string);
-                }
-                if (node.parent and (node.parent->kind == reference or node.parent->kind == key)) {
-                    // todo move up! todo key bad criterion!!
-                    // todo: add header or copy WHOLE string object!
-                    referenceIndices.insert_or_assign(node.parent->name, last_object_pointer); // safe ref to string
-                    referenceDataIndices.insert_or_assign(node.parent->name,
-                                                          last_object_pointer + 8); // safe ref to string
-                    referenceMap.insert_or_assign(node.parent->name, node); // lookup types, array length …
-                }
-
-                // we add an extra 0, unlike normal wasm abi, because we have space in data section
-            }
-            last_type = charp;
-            code = Code(i32_const) + Code(last_object_pointer + 8); // just a pointer to DATA
-            if (node.length > 0) {
-                if (node.length > 1)
-                    error("only 1 op allowed");
-                Node &pattern = node.first();
-                if (pattern.kind != patterns and pattern.kind != longs)
-                    error("only patterns allowed on string");
-                code.add(emitIndexPattern(NUL, pattern, context, false, charp));
-            }
-            return code;
-            //			return Code(stringIndex).addInt(pString->length);// pointer + length
-        }
+        case strings:
+            return emitString2(node, context); // todo: reuse string if already emitted
         case key:
             if (node.value.node) {
                 Node &value = *node.value.node;
@@ -1647,7 +1664,7 @@ Code emitGetter(Node &node, Node &field, Function &context) {
     //        code.add(emitValue(node, context));
     else todo("get pointer of node on stack");
     if (field.kind == strings)
-        code.add(emitString(field, context));
+        code.add(emitStringData(field, context));
     else
         code.add(emitString(field.name, context));
 
@@ -1827,13 +1844,15 @@ Code emitOperator(Node &node, Function &context) {
     } else if (opcode == f32_eqz) {
         // hack for missing f32_eqz
         if (last_type == float32t)
-            code.addByte(i32_reinterpret_f32); // f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
+            code.addByte(i32_reinterpret_f32);
+        // f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
         code.addByte(i32_eqz);
         last_type = i32t; // bool'ish
     } else if (opcode == f64_eqz) {
         // hack for missing f32_eqz
         if (last_type == float64t)
-            code.addByte(i64_reinterpret_f64); // f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
+            code.addByte(i64_reinterpret_f64);
+        // f32->i32  i32_trunc_f32_s would also work, but reinterpret is cheaper
         code.addByte(i64_eqz);
         last_type = i32t; // bool'ish
     } else if (name == "*" and isArrayType(last_type)) {
@@ -1904,24 +1923,23 @@ Code emitOperator(Node &node, Function &context) {
         code.add(cast(last_type, return_type));
         code.add(return_block);
     } else if (name == "as") {
-        auto target = node[1];//
+        auto target = node[1]; //
         Type targetType = target.kind; // .type
         if (target.kind == clazz)
             targetType = mapType(target.name); // todo: map to wasm type
-        if(compatibleTypes(last_type, targetType)) {
+        if (compatibleTypes(last_type, targetType)) {
             code.add(cast(last_type, targetType));
             last_type = targetType;
             // bool needs_cast = false;
             // code.add(castToSmartPointer(Type(last_type), targetType, context, needs_cast));
             // last_type = smarti64; // todo: should be targetType, but we don't know it yet!
-        }
-        else code.add(emitCall("emit_cast", context));
+        } else code.add(emitCall("emit_cast", context));
     } else if (name == "%") {
         // int cases handled above
         if (last_type == float32t)
-            return code.add(emitCall(Node("modulo_float").setKind(call), context)); // mod_f
+            return code.add(emitCall("modulo_float", context)); // mod_f
         else
-            return code.add(emitCall(Node("modulo_double").setKind(call), context)); // mod_d
+            return code.add(emitCall("modulo_double", context)); // mod_d
     } else if (name == "?") {
         return emitIf(node, context);
     } else if (name == "≈") {
@@ -1984,7 +2002,8 @@ Code emitStringOp(Node &op, Function &context) {
     //	Code stringOp;
     //	op = normOperator(op.name);
     if (op == "+") {
-        op = Node("_Z6concatPKcS0_"); //demangled on readWasm, but careful, other signatures might overwrite desired one
+        op = Node("_Z6concatPKcS0_");
+        //demangled on readWasm, but careful, other signatures might overwrite desired one
         functions["_Z6concatPKcS0_"].signature.return_types[0] = charp;
         // can't infer from demangled export name nor wasm type!
         return emitCall(op, context);
@@ -2002,7 +2021,8 @@ Code emitStringOp(Node &op, Function &context) {
         if (op.length == 1)
             return emitLength(op.first(), context);
         op = Node("getChar"); //  careful : various signatures
-        functions["getChar"].signature.return_types[0] = codepoint1; // can't infer from demangled export name nor wasm
+        functions["getChar"].signature.return_types[0] = codepoint1;
+        // can't infer from demangled export name nor wasm
         return emitCall(op, context);
     } else if (op == "not" or op == "¬") {
         // todo: all different index / op matches
@@ -2187,7 +2207,8 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
                         if (!name.empty() and name.length > 0) // todo simplify
                             error("UNKNOWN local symbol ‘"s + name + "’ in context " + context);
                 } else {
-                    error("local symbol ‘"s + name.trim() + "’ in " + context + " should be registered in analyze()!");
+                    error("local symbol ‘"s + name.trim() + "’ in " + context +
+                        " should be registered in analyze()!");
                 }
             }
             auto local = context.locals.at(local_index);
@@ -2240,7 +2261,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
             return emitArray(node, context);
             break;
         case urls:
-            return emitString(node, context);
+            return emitStringData(node, context);
         case undefined:
         case unknown: // todo: proper NIL!
             warn("UNKNOWN EMIT CASE: "s + node.serialize());
@@ -2263,7 +2284,7 @@ Code emitHtmlWasp(Node &node, Function &function, ExternRef parent = 0) {
         code.add(emitCall("getDocumentBody", function)); // document.body as parent
     } else {
         //		if(parent)code.add(emitData(*new Node(parent), function)); todo ?
-        code.add(emitString(node, function));
+        code.add(emitStringData(node, function));
         code.add(emitCall("createElement", function));
         //	addVariable(node.name, parent); // can't, must be in analyze! see addLocal
     }
@@ -2524,7 +2545,8 @@ Code emitFor(Node &node, Function &context) {
 
     // Set the result variable to the current (=>last) loop variable
     code.addByte(get_local);
-    code.addByte(variables[variable.name].position); // Set the result variable to the current (=>last) loop variable
+    code.addByte(variables[variable.name].position);
+    // Set the result variable to the current (=>last) loop variable
     code.add(cast(i32, i64));
     code.addByte(set_local); // Set the result variable to the current (=>last) loop variable
     code.addByte(variables["result"].position);
@@ -2575,11 +2597,11 @@ Code emitForClassic(Node &node, Function &context) {
     Node condition = node[1]; // i < 1000
     Node increment = node[2]; // i++
     Node body = node[3]; // loop body
-    if(increment.kind == key) {
-        initializer=initializer.first();
-        condition=condition.first();
-        increment=increment.first();
-        body=body.first();
+    if (increment.kind == key) {
+        initializer = initializer.first();
+        condition = condition.first();
+        increment = increment.first();
+        body = body.first();
     }
 
     Valtype loop_type = none; // Assume no return type for now
@@ -2685,10 +2707,6 @@ Code emitExpression(Node *nodes, Function &context) {
     return emitExpression(*nodes, context);
 }
 
-Code emitCall(String fun, Function &context) {
-    return emitCall(*new Node(fun), context);
-}
-
 Function &findMatchingPolymorphicDispatch(Function &function, Node &params, Type last_type, Function &context) {
     int best = findBestVariant(function, params, &context);
     if (best >= 0) {
@@ -2730,6 +2748,7 @@ Function &findMatchingPolymorphicDispatch(Function &function, Node &params, Type
     return function;
 }
 
+
 [[nodiscard]]
 Code emitCall(Node &fun, Function &context) {
     Code code;
@@ -2767,10 +2786,7 @@ Code emitCall(Node &fun, Function &context) {
         //		functionIndices[name] = context.index;
     }
     if (index < 0)
-        error(
-        "Calling %s NO INDEX. TypeSection created before code Section. Indices must be known by now! Mark imports as used!"s
-        %
-        name);
+        error( "Calling %s NO INDEX. TypeSection before code Section. Indices must be known by now! Mark import.used!"s % name);
     int i = 0;
     auto sig_size = signature.parameters.size();
     if (fun.size() > sig_size) {
@@ -2808,6 +2824,11 @@ Code emitCall(Node &fun, Function &context) {
 }
 
 [[nodiscard]]
+Code emitCall(String fun, Function &context) {
+    return emitCall((new Node(fun))->setKind(call), context);
+}
+
+[[nodiscard]]
 Code cast(Valtype from, Valtype to) {
     Code nop;
     // if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
@@ -2815,7 +2836,8 @@ Code cast(Valtype from, Valtype to) {
     if (from == void_block)return nop; // todo: pray
     if ((Type) from == unknown_type)return nop; // todo: don't pray
     if ((Type) to == unknown_type)return nop; // todo: don't pray
-    if (to == none or (Type) to == unknown_type or to == voids)return nop; // no cast needed magic VERSUS wasm drop!!!
+    if (to == none or (Type) to == unknown_type or to == voids)return nop;
+    // no cast needed magic VERSUS wasm drop!!!
     last_type = to; // danger: hides last_type in caller!
     if (from == 0 and to == i32t)return nop; // nil or false ok as int? otherwise add const 0!
     if (from == i32t and (Type) to == reference)return nop; // should be reference pointer, RIHGT??
@@ -2867,20 +2889,21 @@ Code cast(Valtype from, Valtype to) {
     //    if (from == string_ref and to == i64)return castRefToChars();
     //	if (from == void_block and to == i32)
     //		return Code().addConst(-666);// dummy return value todo: only if main(), else WARN/ERROR!
-    error("incompatible valtypes "s + (int) from + "->" + (int) to + " / " + typeName(from) + " => " + typeName(to));
+    error("incompatible valtypes "s + (int) from + "->" + (int) to + " / " + typeName(from) + " => " + typeName(to
+    ));
     return nop;
 }
 
-Function no_context= Function(); // todo: use context in cast, so we can use it in emit_cast
+Function no_context = Function(); // todo: use context in cast, so we can use it in emit_cast
 [[nodiscard]]
 Code cast(Type from, Type to) {
     Code nop;
     // if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
     if (from == to)return nop; // nop
     if (to == none or to == unknown_type or to == voids)return nop; // no cast needed magic VERSUS wasm drop!!!
-    if(from == referencex and to == stringp)return emitCall(*new Node("toString"), no_context);
+    if (from == referencex and to == stringp)return emitCall("toString", no_context);
     // if(from == stringp and to == longs)
-        // error("cast string/reference to long not implemented, use toLong() instead");
+    // error("cast string/reference to long not implemented, use toLong() instead");
     if (from == wasmtype_array and isArrayType(to))return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
     last_type = to; // danger: hides last_type in caller!
     if (from == node and to == i64t)
@@ -2898,7 +2921,8 @@ Code cast(Type from, Type to) {
     if (from == i32t and to == array)return nop; // pray / assume i32 is a pointer here. todo!
     if (from == float32t and to == array)return nop; // pray / assume f32 is a pointer here. LOL NO todo!
     if (from == i64 and to == array)return Code(i32_wrap_i64);; // pray / assume i32 is a pointer here. todo!
-    if (from == referencex and to == string_struct)return emitCall(*new Node("toString"), *new Function()); // todo: use context?
+    if (from == referencex and to == string_struct)return emitCall("toString", no_context);
+    // todo: use context?
     //    if(Valtype)
     return cast(mapTypeToWasm(from), mapTypeToWasm(to));
 }
@@ -3072,53 +3096,53 @@ Code zeroConst(Type returnType) {
 /*
 [[nodiscard]]
 Code emitIf_OLD(Node &node) {
-	Code code;
+    Code code;
 //	case ifStatement:
-	// if block
-	code.addByte(block);
-	code.addByte(void_block);
-	// comprinte the if expression
-	Node *condition = node[0].value.node;
+    // if block
+    code.addByte(block);
+    code.addByte(void_block);
+    // comprinte the if expression
+    Node *condition = node[0].value.node;
 //	Node *condition = node["condition"];//.value.node->clone();
-	emitExpression(condition,context);
-	code.addByte(i32_eqz);
-	// br_if $label0
-	code.addByte(br_if);
-	code.addByte(0);
+    emitExpression(condition,context);
+    code.addByte(i32_eqz);
+    // br_if $label0
+    code.addByte(br_if);
+    code.addByte(0);
 //			code.opcode(signedLEB128(0));
-	// the nested logic
-	Node *then = node[1].value.node;
+    // the nested logic
+    Node *then = node[1].value.node;
 //	Node *then = node["then"].value.node->clone();
-	emitExpression(then);// BODY
-	// end block
-	code.addByte(end_block);
+    emitExpression(then);// BODY
+    // end block
+    code.addByte(end_block);
 
-	if (node.length == 3) {
+    if (node.length == 3) {
 
-		// else block
+        // else block
 //			or if OR-IF YAY semantically beautiful if false {} or if 2>1 {}
 //			// comprinte the if expression (elsif) elif orif
-		code.addByte(block);
-		code.addByte(void_block);
+        code.addByte(block);
+        code.addByte(void_block);
 //
 //			emitExpression(node.param);
-		code.addByte(i32_auto);
+        code.addByte(i32_auto);
 ////				code.opcode(signedLEB128(1));
-		code.addByte(1);
-		code.addByte(i32_eq);
+        code.addByte(1);
+        code.addByte(i32_eq);
 //			// br_if $label0
-		code.addByte(br_if);
-		code.addByte(0);
+        code.addByte(br_if);
+        code.addByte(0);
 ////				code.opcode(signedLEB128(0));
 //			// the nested logic
 //		Node *otherwise = node["else"].value.node->clone();
-		Node *otherwise = node[2].value.node;//->clone();
-		emitExpression(otherwise);
+        Node *otherwise = node[2].value.node;//->clone();
+        emitExpression(otherwise);
 
 //			// end block
-		code.addByte(end_block);
-	}
-	return code;
+        code.addByte(end_block);
+    }
+    return code;
 }
 */
 
@@ -3162,7 +3186,8 @@ Code castToSmartPointer(Type from, Type return_type, Function &context, bool &ne
 
     //		if(from==charp)block.push(0xC0000000, false,true).addByte(i32_or);// string
     //		if(from==charp)block.addConst(-1073741824).addByte(i32_or);// string
-    else if (from == Type(stringp) or from.kind == strings or from.type == c_string or from == charp or from == string_ref) {
+    else if (from == Type(stringp) or from.kind == strings or from.type == c_string or from == charp or from ==
+             string_ref) {
         //
         if (from == string_ref)block += castRefToChars();
         block.addByte(i64_extend_i32_u);
@@ -3180,7 +3205,8 @@ Code castToSmartPointer(Type from, Type return_type, Function &context, bool &ne
     } else if (from == float64t and context.name == start) {
         // hack smart pointers as main return: f64 has range which is never hit by int
         block.addByte(
-            i64_reinterpret_f64); // todo: not for _start in wasmtime... or 'unwrap' / print smart pointers via builtin
+            i64_reinterpret_f64);
+        // todo: not for _start in wasmtime... or 'unwrap' / print smart pointers via builtin
         //            block.add(emitCall("print_smarty", context)); // _Z5printd putf putd
         //            block.add(emitCall("_Z5printd", context));
         last_type = i64;
@@ -3336,15 +3362,15 @@ Code emitBlock(Node &node, Function &context) {
 //Map<int, String>
 // todo: why can't they be all found in parser? 2021/9/4 : they can ;)
 List<String> collect_locals(Node &node, Function& context) {
-	List<String> &current_locals = context.locals; // no, because there might be gaps(unnamed locals!)
-	for (Node &n : node) {
-		Valtype type = mapTypeToWasm(n);
-		if (type != none and not current_locals.has(n.name)) {
-			current_locals.add(n.name);
-			declaredFunctions[context].add(type);
-		}
-	}
-	return current_locals;
+    List<String> &current_locals = context.locals; // no, because there might be gaps(unnamed locals!)
+    for (Node &n : node) {
+        Valtype type = mapTypeToWasm(n);
+        if (type != none and not current_locals.has(n.name)) {
+            current_locals.add(n.name);
+            declaredFunctions[context].add(type);
+        }
+    }
+    return current_locals;
 }
 */
 
@@ -3537,7 +3563,8 @@ Code emitImportSection() {
         extra_mem = 1; // add to import_section but not to functions:import_count
         int init_page_count = 1024; // 64kb each, 65336 pages max
         import_code =
-                import_code + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/ + (byte) 0x00 +
+                import_code + encodeString("env") + encodeString("memory") + (byte) mem_export/*type*/ + (byte) 0x00
+                +
                 Code(init_page_count);
     }
     if (import_code.length == 0)return Code();
@@ -3591,7 +3618,9 @@ Code emitCodeSection(Node &root) {
     //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (context block)' opcode @+39
     //	byte code_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
     byte code_nop[] = {0/*locals_count*/, end_block}; // NOP
-    byte code_start[] = {0/*locals_count*/, call_, (byte) main_offset, nop_, nop_, drop, end_block}; // needs own type
+    byte code_start[] = {
+        0/*locals_count*/, call_, (byte) main_offset, nop_, nop_, drop, end_block
+    }; // needs own type
     //    if(print_node_import)
     // needs runtime or merge with print_node.wasm
     //    byte code_start[] = {0 , call_, (byte) main_offset, nop_, nop_,call_,(byte)print_node_import, end_block};
@@ -3807,7 +3836,8 @@ Code emitGlobalSection() {
         //        Valtype valtype = mapTypeToWasm(*global_node);
         Valtype valtype = mapTypeToWasm(type);
 
-        check_eq_or(global.index, i, ("global index mismatch "s + global_name + " " + global.index + " != " + i).data);
+        check_eq_or(global.index, i,
+                    ("global index mismatch "s + global_name + " " + global.index + " != " + i).data);
         check_eq_or(global.name, global_name, "global name mismatch")
         if (not global_init_node) {
             warn("missing value for global "s + global_name);
@@ -4255,7 +4285,8 @@ Code &emit(Node &root_ast, String program) {
     Code importSection1 = emitImportSection(); // needs type indices
     Code globalSection1 = emitGlobalSection(); //
     Code codeSection1 = emitCodeSection(root_ast); // needs functions and functionIndices prefilled!! :(
-    Code funcTypeSection1 = emitFuncTypeSection(); // signatures depends on codeSection, but must come before it in wasm
+    Code funcTypeSection1 = emitFuncTypeSection();
+    // signatures depends on codeSection, but must come before it in wasm
     Code memorySection1 = emitMemorySection();
     Code exportSection1 = emitExportSection(); // depends on codeSection, but must come before it!!
 

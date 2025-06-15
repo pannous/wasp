@@ -193,6 +193,9 @@ bytes concat(bytes a, byte b, int len);
 
 bytes concat(char section, bytes a, int len_a);
 
+chars concat(chars a, chars b);
+// chars concat_chars(chars a, chars b);
+
 //inline int abs_i(int x) noexcept;
 //inline int64 abs_l(int64 x) noexcept;
 //inline float abs_f(float x) noexcept;

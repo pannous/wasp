@@ -10,7 +10,7 @@
 #include "console.h"
 //#include "tests.h"
 #if WASM or LINUX
- bool isnumber(char c){ return c>='0' and c<='9'; }
+bool isnumber(char c) { return c >= '0' and c <= '9'; }
 // why cctype no work?
 #else
 
@@ -271,6 +271,8 @@ codepoint closingBracket(codepoint bracket) {
             return u'”';
         case u'"':
             return u'"';
+        case u'`':
+            return u'`';
         case u'\'':
             return u'\'';
         default:
@@ -793,7 +795,8 @@ private:
             parserError("Unterminated string");
         String substring = text.substring(start, at);
         proceed();
-        return Node(substring).setKind(strings); // DONT do "3"==3 (here or ever)!
+        auto type = delim == '`' ? &TemplateType : 0;
+        return Node(substring).setKind(strings).setType(type); // DONT do "3"==3 (here or ever)!
     }
 
     //// Parse a string value.
@@ -1490,6 +1493,7 @@ private:
                     }
                     Node id = Node(text.substring(start, at));
                     id.setKind(Kind::strings); // todo "3" could have be resolved as number? DONT do js magifuckery
+                    id.setType(&TemplateType);
                     actual.add(id);
                     break;
                 }
@@ -1649,13 +1653,13 @@ private:
                         //  use, include, require …
                         node = direct_include(actual, node);
                     }
-// #ifndef RUNTIME_ONLY // precedence??
+                    #ifndef RUNTIME_ONLY // precedence??
                     if (precedence(node) or operator_list.has(node.name)) {
                         node.kind = operators;
                         //						if(not isPrefixOperation(node))
                         //						if(not contains(prefixOperators,node))
                     }
-// #endif
+                    #endif
                     if (node.kind == operators and ch != ':') {
                         if (isFunctor(node))
                             node.kind = functor; // todo: earlier
@@ -1877,6 +1881,13 @@ int main(int argc, char **argv) {
     String path = argv[0];
     print("🐝 Wasp "s + wasp_version);
     //   String arg=extractArg(argv,argc);
+
+#if WASM
+    initSymbols(); // todo still necessary ??
+    // String args((char*)alloc(1,1));// hack: written to by wasmx todo ??
+    // heap_end += strlen(args)+1; // todo WHAT IS THIS??
+#endif
+
 #if ErrorHandler
     register_global_signal_exception_handler();
 #endif
@@ -1899,12 +1910,10 @@ int main(int argc, char **argv) {
 #else
             print("wasp compiled without webview");
 #endif
-        }
-        else if (args.endsWith(".wasp") or args.endsWith(".angle")) {
+        } else if (args.endsWith(".wasp") or args.endsWith(".angle")) {
             String wasp_code = load(args);
             return eval(wasp_code).value.longy;
-        }
-        else if (args.endsWith(".wasm")) {
+        } else if (args.endsWith(".wasm")) {
             if (argc >= 3) {
 #if WABT_MERGE
                 merge_files(--argc, ++argv);
@@ -1913,8 +1922,7 @@ int main(int argc, char **argv) {
 #endif
             } else
                 run_wasm_file(args);
-        }
-        else if (args == "test" or args == "tests")
+        } else if (args == "test" or args == "tests")
 #if NO_TESTS
             print("wasp release compiled without tests");
 #else
@@ -1923,18 +1931,15 @@ int main(int argc, char **argv) {
         else if (args.startsWith("eval")) {
             Node results = eval(args.from(" "));
             print("» "s + results.serialize());
-        }
-        else if (args == "repl" or args == "console" or args == "start" or args == "run") {
+        } else if (args == "repl" or args == "console" or args == "start" or args == "run") {
             console(); // todo args == "run" ambiguous run <file> or run repl? not if <file> empty OK
-        }
-        else if (args == "2D" or args == "2d" or args == "SDL" or args == "sdl") {
+        } else if (args == "2D" or args == "2d" or args == "SDL" or args == "sdl") {
 #if GRAFIX
             init_graphics();
 #else
             print("wasp compiled without sdl/webview"); // todo grafix host function?
 #endif
-        }
-        else if (args == "app" or args == "webview" or args == "browser") {
+        } else if (args == "app" or args == "webview" or args == "browser") {
 #if not WEBAPP
             print("must compile with WEBAPP support");
             return -1;
@@ -1944,8 +1949,7 @@ int main(int argc, char **argv) {
 #else
             print("wasp compiled without sdl/webview");
 #endif
-        }
-        else if (args.startsWith("serv") or args == "server") {
+        } else if (args.startsWith("serv") or args == "server") {
 #if SERVER
             std::thread go(start_server, 9999);
 //				start_server(9999);
@@ -1959,19 +1963,14 @@ int main(int argc, char **argv) {
             else
                 print("Wasp compiled without server OR no program given!");
 #endif
-        }
-        else if (args.contains("help"))
+        } else if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
-#if WASM
-        initSymbols();
-        String args((char*)alloc(1,1));// hack: written to by wasmx todo ??
-        heap_end += strlen(args)+1; // todo WHAT IS THIS??
-#endif
-else{
-        // run(args);
-        Node results = eval(args);
-        // print("» "s + results.serialize());
-    }
+
+        else {
+            // run(args);
+            Node results = eval(args);
+            // print("» "s + results.serialize());
+        }
         return 0; // EXIT_SUCCESS;
         //			return 42; // funny, but breaks IDE chaining
         //    } catch (Exception e) { // struct Exception {};
