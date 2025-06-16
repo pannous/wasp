@@ -1363,7 +1363,7 @@ Code emitTemplate(Node &node, Function &context) {
         code.add(emitExpression(part, context)); // todo: emitValue(node) should not be used here!
         code.add(cast(last_type, stringp)); // cast all to string
     }
-    for (int i = 0; i < node.length; ++i)
+    for (int i = 0; i < node.length-1; ++i)
         code.add(emitCall("concat", context)); // no matching function variant ?!
         // code.add(emitCall("concat_chars", context));
     return code;

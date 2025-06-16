@@ -99,6 +99,20 @@ WasmEdge_Result createHtml(void *Data, const FrameContext *CallFrameCxt, const W
     return WasmEdge_Result_Success;
 }
 
+WasmEdge_Result concat_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    auto val1 = WasmEdge_ValueGetI32(In[0]);
+    auto val2 = WasmEdge_ValueGetI32(In[1]);
+    auto left = (chars) wasm_memory + val1;
+    auto right = (chars) wasm_memory + val2;
+    printf("concat_wrap %s + %s\n", left, right);
+    auto result=concat(left, right); // todo: concat and return new string
+    int offset = 0; // todo: find free space in wasm_memory!!!
+    strcpy2((char *) wasm_memory+offset, result);
+    Out[0]=WasmEdge_ValueGenI32((uint64_t)offset); // return pointer to result
+    // Out[0]=WasmEdge_ValueGenI32((uint64_t)result); // return pointer to result
+    return WasmEdge_Result_Success;
+}
+
 
 WasmEdge_Result download(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     if (wasm_memory == 0)
@@ -297,6 +311,17 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, download, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
         HostName = WasmEdge_StringCreateByCString("download");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    } {
+        WasmEdge_ValType P[2], R[1];
+        P[0] = WasmEdge_ValTypeGenI32(); // charp (id:string)
+        P[1] = WasmEdge_ValTypeGenI32(); // charp (id:string)
+        R[0] = WasmEdge_ValTypeGenI32(); // charp (id:string)
+        HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, concat_wrap, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("concat"); // if we don't merge runtime
         WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
         WasmEdge_StringDelete(HostName);
     } {

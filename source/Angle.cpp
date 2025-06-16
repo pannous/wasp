@@ -2024,20 +2024,26 @@ Node &groupTemplate(Node &node, Function &function) {
         if (string[i] == '$') {
             int j = i + 1;
             if (j < string.length and string[j] == '{') {
+                // ${var}
                 j++;
                 while (j < string.length and string[j] != '}')j++;
                 if (j >= string.length)
                     error("Unclosed template variable in "s + node.name);
-                String var = string.substring(i + 2, j - i - 2);
-                node.add(Node(var, true));
+                String var = string.substring(i + 2, j - 2);
+                node.add(Node(var, false).setKind(expression)); // add the variable
                 i = j; // skip to }
             } else {
-                String var = string.substring(i + 1, i + 2);
-                node.add(Node(var, true));
-                i++; // skip to next char
+                // $var
+                while (j < string.length and string[j] != ' ')j++; // todo other chars to end!
+                String var = string.substring(i + 1, j);
+                node.add(Node(var, false).setKind(referencex)); // add the variable
+                i = j-1;// include the space
             }
         } else {
-            node.add(Node(string.substring(start, i), false));
+            start = i;
+            while (i < string.length and string[i] != '$')i++;
+            auto next = string.substring(start, i);
+            node.add(Node(next, false));
         }
     }
     for (auto child: node)
@@ -2245,6 +2251,11 @@ void preRegisterFunctions() {
 
     functions["toString"].import();
     functions["toString"].signature.add(referencex, "id").returns(charp);
+
+
+    functions["concat"].import(); // todo load from runtime AGAIN 2025-06-16
+    functions["concat"].signature.add(charp).add(charp).returns(charp);
+
 
     functions["invokeExternRef"].import();
     // how to distinguish between functions and properties? 1. no params use getExternRefPropertyValue
