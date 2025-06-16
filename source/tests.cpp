@@ -30,14 +30,19 @@
 #include "asserts.h"
 
 void testStringInterpolation() {
+    assert_emit("`unaffected`", "unaffected")
+    skip(
+    assert_emit("`${'hi'}`", "hi")
+    )
+    assert_emit("`$test world`", "hello world"); // via externref or params!!
     return;
+    assert_emit("`${1+1}`", "2")
     assert_emit("`1+1=${1+1}`", "1+1=2")
 
     result = parse("`hi`");
     assert_equals(result.type, &TemplateType);
     assert_emit("x='hello';'`$x world`", "hello world") // compile time or runtime interpolation?
     assert_emit("x='hello';'${x} world'", "hello world")
-    assert_emit("`$test world`", "hello world"); // via externref or params!!
 }
 
 void testExternString() {

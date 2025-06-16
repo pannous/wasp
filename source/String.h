@@ -568,6 +568,8 @@ public:
 
 
     String &append(chars c, int byteCount = -1) {
+        if(!c)
+            return *this;
         if (byteCount < 0) byteCount = strlen(c);
         if (!data) {
             data = (char *) (alloc(sizeof(char), byteCount + 1));
