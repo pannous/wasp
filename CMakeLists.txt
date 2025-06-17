@@ -53,7 +53,7 @@ if (SANITIZE)
     add_compile_options(-fsanitize=bounds) # several allowed
     add_compile_options(-fsanitize=undefined)
     add_link_options(-fsanitize=undefined)
-    target_link_libraries(wasp ubsan)
+#    target_link_libraries(wasp ubsan)
     message("just use lldb -- /Users/me/dev/apps/wasp/cmake-build-debug-sanitize/wasp test; run")
 endif ()
 

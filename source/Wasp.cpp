@@ -786,7 +786,40 @@ private:
         return at >= text.length;
     }
 
+    Node& parseTemplate() {
+        // chunk `xyz…$abc…uvw…${expr}…xyz` into "xyz…", "$abc","…uvw…","${expr}", "…xyz"
+        // List<Node> chunks;
+        Node& chunks=*new Node();
+        chunks.setType(&TemplateType);
+        chunks.setKind(strings);// todo:
+        // chunks.setKind(templatex);  // much cleaner!
+        proceed(); // skip `
+        while (ch and ch != '`' and previous != '\\') {
+            if (ch == '$') {
+                if (next == '{') {
+                    proceed(); // skip $
+                    proceed(); // skip $
+                    chunks.add(valueNode('}'));//.setKind(expression)); // ${1+2}
+                } else {
+                    chunks.add(valueNode(' ').setKind(referencex)); // $test
+                }
+            }else {
+                int start = at;
+                while (ch and ch != '`' and previous != '\\' and ch != '$')
+                    proceed();
+                if (start == at)break;
+                String tee = text.substring(start, at);
+                chunks.add(Node(tee).setKind(strings));
+            }
+        }
+        proceed(); // skip ` done
+        if (end_of_text())
+            parserError("Unterminated string");
+        return chunks;
+    }
+
     Node quote(codepoint delim = '"') {
+        if (ch == '`') return parseTemplate();
         proceed();
         int start = at;
         while (ch and ch != delim and previous != '\\')
@@ -795,8 +828,7 @@ private:
             parserError("Unterminated string");
         String substring = text.substring(start, at);
         proceed();
-        auto type = delim == '`' ? &TemplateType : 0;
-        return Node(substring).setKind(strings).setType(type); // DONT do "3"==3 (here or ever)!
+        return Node(substring).setKind(strings); // DONT do "3"==3 (here or ever)!
     }
 
     //// Parse a string value.
@@ -1653,13 +1685,13 @@ private:
                         //  use, include, require …
                         node = direct_include(actual, node);
                     }
-                    #ifndef RUNTIME_ONLY // precedence??
+#ifndef RUNTIME_ONLY // precedence??
                     if (precedence(node) or operator_list.has(node.name)) {
                         node.kind = operators;
                         //						if(not isPrefixOperation(node))
                         //						if(not contains(prefixOperators,node))
                     }
-                    #endif
+#endif
                     if (node.kind == operators and ch != ':') {
                         if (isFunctor(node))
                             node.kind = functor; // todo: earlier
