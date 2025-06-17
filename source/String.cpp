@@ -289,6 +289,7 @@ char *ltoa(int64 num) {
 }
 
 char *itoa0(int64 num) {
+#pragma warn "itoa0 is deprecated, use ltoa() instead"
     // todo remove once you know the right call
     return formatLongWithBase(num, 10);
 }

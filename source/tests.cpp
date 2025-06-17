@@ -30,11 +30,16 @@
 #include "asserts.h"
 
 void testStringInterpolation() {
+    assert_emit("`hello ${42}`", "hello 42");
+    assert_emit("`hello ${1+1}`", "hello 2");
+    assert_emit("`${42} world`", "42 world");
+    assert_emit("`${1+1} world`", "2 world");
     assert_emit("`unaffected`", "unaffected")
     skip(
     assert_emit("`${'hi'}`", "hi")
     )
     assert_emit("`$test world`", "hello world"); // via externref or params!!
+
     return;
     assert_emit("`${1+1}`", "2")
     assert_emit("`1+1=${1+1}`", "1+1=2")

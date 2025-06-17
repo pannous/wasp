@@ -1363,9 +1363,9 @@ Code emitTemplate(Node &node, Function &context) {
         code.add(emitExpression(part, context)); // todo: emitValue(node) should not be used here!
         code.add(cast(last_type, stringp)); // cast all to string
     }
-    for (int i = 0; i < node.length-1; ++i)
+    for (int i = 0; i < node.length - 1; ++i)
         code.add(emitCall("concat", context)); // no matching function variant ?!
-        // code.add(emitCall("concat_chars", context));
+    // code.add(emitCall("concat_chars", context));
     return code;
 }
 
@@ -1373,14 +1373,14 @@ Code emitTemplate(Node &node, Function &context) {
 // todo merge with emitString deduplication
 [[nodiscard]]
 Code emitString2(Node &node, Function &context) {
+    if (node.type == &TemplateType)
+        return emitTemplate(node, context); // data via substrings
     Code code;
     // append pString (as char*) to data section and access via stringIndex
     if (!node.value.string)
         error("missing node.value.string");
     last_object_pointer = data_index_end;
     String string = *node.value.string;
-    if (node.type == &TemplateType and string.contains('$'))
-        return emitTemplate(node, context); // data via substrings
     if (referenceDataIndices.has(string))
     // todo: reuse same strings even if different pointer, or make same pointer before (?)
         last_object_pointer = referenceDataIndices[string] - 8;
@@ -1418,7 +1418,6 @@ Code emitString2(Node &node, Function &context) {
     }
     return code;
 }
-
 
 
 Code emitStringData(Node &node, Function &context) {
@@ -2786,7 +2785,8 @@ Code emitCall(Node &fun, Function &context) {
         //		functionIndices[name] = context.index;
     }
     if (index < 0)
-        error( "Calling %s NO INDEX. TypeSection before code Section. Indices must be known by now! Mark import.used!"s % name);
+        error("Calling %s NO INDEX. TypeSection before code Section. Indices must be known by now! Mark import.used!"s %
+        name);
     int i = 0;
     auto sig_size = signature.parameters.size();
     if (fun.size() > sig_size) {
@@ -2922,6 +2922,14 @@ Code cast(Type from, Type to) {
     if (from == float32t and to == array)return nop; // pray / assume f32 is a pointer here. LOL NO todo!
     if (from == i64 and to == array)return Code(i32_wrap_i64);; // pray / assume i32 is a pointer here. todo!
     if (from == referencex and to == string_struct)return emitCall("toString", no_context);
+    if (from == charp and to == stringp)return nop; // todo: shift n bytes or unify?
+    if (from == longs and to == stringp)return emitCall("ltoa", no_context);// todo make it work on all signatures!
+    // if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("ltoa", no_context));
+    if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("_Z4ltoax", no_context));
+    // if (from == long32 and to == stringp)return emitCall("itoa0", no_context);// todo make it work on all signatures!
+    // todo make it work on all signatures!
+    if (to == stringp)return emitCall("toString", no_context);// todo make it work on all signatures!
+
     // todo: use context?
     //    if(Valtype)
     return cast(mapTypeToWasm(from), mapTypeToWasm(to));

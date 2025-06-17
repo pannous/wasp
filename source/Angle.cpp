@@ -2016,39 +2016,29 @@ Node &groupWhile(Node &n, Function &context) {
 
 Node &groupOperatorCall(Node &node, Function &function);
 
+Type guessType(Node &node, Function &function) {
+    return preEvaluateType(node, function); // todo: use function context?
+}
+
+
+// todo move to parseTemplate
 Node &groupTemplate(Node &node, Function &function) {
-    auto string = node.string();
-    // match all $var and ${code} and concat them into a single node with substrings `hello ${name} world` => "hello " + Node("name", true) + " world"
-    int start = 0;
-    for (int i = 0; i < string.length; ++i) {
-        if (string[i] == '$') {
-            int j = i + 1;
-            if (j < string.length and string[j] == '{') {
-                // ${var}
-                j++;
-                while (j < string.length and string[j] != '}')j++;
-                if (j >= string.length)
-                    error("Unclosed template variable in "s + node.name);
-                String var = string.substring(i + 2, j - 2);
-                node.add(Node(var, false).setKind(expression)); // add the variable
-                i = j; // skip to }
-            } else {
-                // $var
-                while (j < string.length and string[j] != ' ')j++; // todo other chars to end!
-                String var = string.substring(i + 1, j);
-                node.add(Node(var, false).setKind(referencex)); // add the variable
-                i = j-1;// include the space
-            }
-        } else {
-            start = i;
-            while (i < string.length and string[i] != '$')i++;
-            auto next = string.substring(start, i);
-            node.add(Node(next, false));
+    for (auto child: node) {
+        Type kind = child.kind;
+        if (kind != strings) {
+            child = analyze(child, function); // analyze each child node
+            kind = guessType(child, function);
+            if(kind==expression)
+                kind= child.first().kind; // todo: hacky, but works for now
+            if (kind == referencex or kind == reference) useFunction("toString");
+            else if (kind == long32) useFunction("itoa0");
+            else if (kind == longs) useFunction("ltoa");
+            else if (kind == reals or kind == realsF) useFunction("ftoa");
+            else if (kind == doubles) useFunction("ftoa");
+            else if (kind == floats) useFunction("ftoa");// todo via auto upcast?
+            else error("Unknown template child type: "s + typeName(kind));
         }
     }
-    for (auto child: node)
-        if (child.kind != strings)
-            child = analyze(child, function); // analyze each child node
     // useFunction("_Z12concat_charsPKcS0_");
     useFunction("concat");
     // useFunction("concat_chars");
