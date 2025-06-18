@@ -40,6 +40,7 @@ void testStringInterpolation() {
     assert_emit("`${1+1}`", "2")
     assert_emit("`1+1=${1+1}`", "1+1=2")
     skip(
+        assert_emit("x=123;'${x} world'", "123 world") // todo should work
         assert_emit("x='hello';'${x} world'", "hello world") // todo should work
         assert_emit("x='hello';'`$x world`", "hello world") // todo referencex vs reference
     )
