@@ -1055,6 +1055,7 @@ Code emitIndexWrite(Node &array, int base, Node offset, Node value0, Function &c
         store = store + emitValue(value0, context);
     //	store.add(cast(last_type, valType));
     //	store.add(cast(valType, targetType));
+    if(targetType!=stringp) // todo unhack!
     store.add(cast(last_type, targetType));
     store.addByte(nop_); // reloc padding
     store.addByte(nop_);
@@ -1793,7 +1794,9 @@ Code emitOperator(Node &node, Function &context) {
         if (same_domain)
             code.add(cast(lhs_type, common_type));
         code.push(rhs_code); // might be empty ok
-        if (same_domain)
+        if (name=="#") // todo unhack!!
+            code.add(cast(rhs_type, int32t)); // index operator, cast to int32
+        else if (same_domain)
             code.add(cast(rhs_type, common_type));
         if (common_type != void_block)
             last_type = common_type;
@@ -2001,9 +2004,10 @@ Code emitStringOp(Node &op, Function &context) {
     //	Code stringOp;
     //	op = normOperator(op.name);
     if (op == "+") {
-        op = Node("_Z6concatPKcS0_");
+        // op = Node("_Z6concatPKcS0_");
+        op = Node("concat");
         //demangled on readWasm, but careful, other signatures might overwrite desired one
-        functions["_Z6concatPKcS0_"].signature.return_types[0] = charp;
+        // functions["_Z6concatPKcS0_"].signature.return_types[0] = charp;
         // can't infer from demangled export name nor wasm type!
         return emitCall(op, context);
         //		stringOp.addByte();
@@ -2219,8 +2223,10 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
                     code = code + emitValue(node, context); // done above!
                 if (local.type == unknown_type)
                     local.type = last_type;
-                else if (local.type == array or local.type == wasmtype_array) todow("array types") else
+                else if (local.type == array or local.type == wasmtype_array)
                     code.add(cast(last_type, elementType(local.type)));
+                //     todow("array types")
+                // else
                 //				todo: convert if wrong type
                 code.addByte(tee_local); // set and get/keep
                 code.addByte(local_index);
@@ -2858,7 +2864,8 @@ Code cast(Valtype from, Valtype to) {
     //	if(from==f32u and to==i32)	return Code(i32_trunc_f32_𝗎);
     if (from == float64t and to == i32) return Code(i32_trunc_f64_s);
     //	if(from==f64u and to==i32)	return Code(i32_trunc_𝖿𝟨𝟦_𝗎);
-    if (from == i32 and to == i64) return Code(i64_extend_i32_s);
+    if (from == i32 and to == i64)
+        return Code(i64_extend_i32_s);
     //	if(from==i32u and to==i64)	return Code(i64_extend_i32_𝗎);
     if (from == float32t and to == i64) return Code(i64_trunc_f32_s);
     //	if(from==f32u and to==i64)	return Code(i64_trunc_f32_𝗎);
@@ -2910,7 +2917,8 @@ Code cast(Type from, Type to) {
         return Code(i64_extend_i32_s).addConst64(node_header_64) + Code(i64_or); // turn it into node_pointer_64 !
     if (from == array and to == charp)return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
     if (from == i32t and to == charp)return nop; // assume i32 is a pointer here. todo?
-    if (from == charp and to == i64t) return Code(i64_extend_i32_s);
+    if (from == charp and to == i64t)
+        return Code(i64_extend_i32_s);
     if (from == charp and to == i32t)return nop; // assume i32 is a pointer here. todo?
     if (from == array and to == i32)return nop; // pray / assume i32 is a pointer here. todo!
     if (from == charp and to == strings)return nop;
@@ -2923,8 +2931,10 @@ Code cast(Type from, Type to) {
     if (from == i64 and to == array)return Code(i32_wrap_i64);; // pray / assume i32 is a pointer here. todo!
     if (from == referencex and to == string_struct)return emitCall("toString", no_context);
     if (from == charp and to == stringp)return nop; // todo: shift n bytes or unify?
-    if (from == longs and to == stringp)return emitCall("formatLong", no_context);// todo make it work on all signatures!
-    if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("formatLong", no_context));
+    if (from == longs and to == stringp)
+        return emitCall("formatLong", no_context);// todo make it work on all signatures!
+    if (from == long32 and to == stringp)
+        return Code(i64_extend_i32_s).add(emitCall("formatLong", no_context));
     // if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("_Z4ltoax", no_context));
     // if (from == long32 and to == stringp)return emitCall("itoa0", no_context);// todo make it work on all signatures!
     // todo make it work on all signatures!
