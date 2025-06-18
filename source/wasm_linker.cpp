@@ -1092,6 +1092,7 @@ void Linker::ResolveSymbols() {
                 if (not func.name.data)
                     func.name = _export.name.clone();
                 if (func.name.length > 0) {
+                    // print("export %s index %d name %s"s % _export.name % _export.index % func.name.data);
                     export_map.emplace(func.name, Binding(position));
                     String demangled = extractFuncName(func.name);
                     if (func.name != demangled and not export_map.contains(demangled)) {

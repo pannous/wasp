@@ -140,6 +140,8 @@ void parseFunctionNames(Code &payload) {
         String &name1 = name(payload);
         String func = name1.clone(); // needs to be 0-terminated now
         // if (debug_reader)print("ƒ%d %s\n"s % call_index % func);
+        if (func.contains("ltoa"))
+            print("ƒ%d %s\n"s % call_index % func);
         bool old = functions.contains(func);
         if (old) {
             trace("function already exists: "s + func);

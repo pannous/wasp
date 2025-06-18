@@ -2032,7 +2032,7 @@ Node &groupTemplate(Node &node, Function &function) {
                 kind= child.first().kind; // todo: hacky, but works for now
             if (kind == referencex or kind == reference) useFunction("toString");
             else if (kind == long32) useFunction("itoa0");
-            else if (kind == longs) useFunction("ltoa");
+            else if (kind == longs) useFunction("formatLong");// ltoa
             else if (kind == reals or kind == realsF) useFunction("ftoa");
             else if (kind == doubles) useFunction("ftoa");
             else if (kind == floats) useFunction("ftoa");// todo via auto upcast?

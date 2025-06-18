@@ -98,7 +98,7 @@ char *formatLongWithBase(int64 num, int base);
 
 char *formatLong(int64 num);
 
-char *formatLong(int64 num);
+char *ltoa(int64 num);
 
 int atoi1(codepoint c); // usually byte 0…10, but with special signs for CYRILLIC MILLIONS ҉ we stick with int
 

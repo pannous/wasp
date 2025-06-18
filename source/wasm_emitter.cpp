@@ -2923,9 +2923,9 @@ Code cast(Type from, Type to) {
     if (from == i64 and to == array)return Code(i32_wrap_i64);; // pray / assume i32 is a pointer here. todo!
     if (from == referencex and to == string_struct)return emitCall("toString", no_context);
     if (from == charp and to == stringp)return nop; // todo: shift n bytes or unify?
-    if (from == longs and to == stringp)return emitCall("ltoa", no_context);// todo make it work on all signatures!
-    // if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("ltoa", no_context));
-    if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("_Z4ltoax", no_context));
+    if (from == longs and to == stringp)return emitCall("formatLong", no_context);// todo make it work on all signatures!
+    if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("formatLong", no_context));
+    // if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("_Z4ltoax", no_context));
     // if (from == long32 and to == stringp)return emitCall("itoa0", no_context);// todo make it work on all signatures!
     // todo make it work on all signatures!
     if (to == stringp)return emitCall("toString", no_context);// todo make it work on all signatures!
