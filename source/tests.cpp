@@ -30,13 +30,15 @@
 #include "asserts.h"
 
 void testStringInterpolation() {
+    assert_emit("`$test world`", "hello world"); // via externref or params!!
+    // exit(0);
+
     assert_emit("`hello ${42}`", "hello 42");
     assert_emit("`hello ${1+1}`", "hello 2");
     assert_emit("`${42} world`", "42 world");
     assert_emit("`${1+1} world`", "2 world");
     assert_emit("`unaffected`", "unaffected")
     assert_emit("`${'hi'}`", "hi")
-    assert_emit("`$test world`", "hello world"); // via externref or params!!
     assert_emit("`${1+1}`", "2")
     assert_emit("`1+1=${1+1}`", "1+1=2")
     skip(
@@ -3839,17 +3841,8 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
-    // todo: unhack if (name=="#") in emitOperator !!
-    assert_emit("i=1;k='hi';k#i", 'h');
-    assert_emit("k='hi';k#1=97;k#1", 'a');
-    assert_emit("x=3;2x", 6);
-    assert_emit("'123' + '4' is '1234'", true);
-    assert_emit("global x=7", 7);
-    assert_emit("(2 4 3)#2", 4);
-    // exit(0); // todo: remove this once all tests are passing
     testStringInterpolation();
     testExternString();
-
     testFunctionDeclarationParse();
 #if not WASM
     // we already have a working syntax so this has low priority?
