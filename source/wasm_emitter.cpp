@@ -769,6 +769,15 @@ void addNamedDataSegment(int pointer, Node &node) {
     //        referenceMap[node.name] = node;
 }
 
+Code emitStringListConcat(const Node & node, Function & context) {
+        Code code; // AUTO CONCAT!
+        for (Node &child: node)
+            code.add(emitStringData(child, context));// address
+        for (int i = 0; i < node.length - 1; ++i)
+            code.add(emitCall("concat", context));
+        return code; // todo auto concat or as list?
+}
+
 // todo emitPrimitiveArray vs just emitNode as it is (with child*)
 [[nodiscard]]
 Code emitArray(Node &node, Function &context) {
@@ -783,6 +792,8 @@ Code emitArray(Node &node, Function &context) {
 
     List<wasm_node_index> children;
     Kind value_kind = node.first().kind;
+    if (value_kind == strings and node.separator == ' ')
+        return emitStringListConcat(node, context);
     for (Node &child: node) {
         if (not isPrimitive(child)) {
             warn("non primitive element forces node emission");
@@ -1055,8 +1066,8 @@ Code emitIndexWrite(Node &array, int base, Node offset, Node value0, Function &c
         store = store + emitValue(value0, context);
     //	store.add(cast(last_type, valType));
     //	store.add(cast(valType, targetType));
-    if(targetType!=stringp) // todo unhack!
-    store.add(cast(last_type, targetType));
+    if (targetType != stringp) // todo unhack!
+        store.add(cast(last_type, targetType));
     store.addByte(nop_); // reloc padding
     store.addByte(nop_);
     store.addByte(nop_);
@@ -1794,7 +1805,7 @@ Code emitOperator(Node &node, Function &context) {
         if (same_domain)
             code.add(cast(lhs_type, common_type));
         code.push(rhs_code); // might be empty ok
-        if (name=="#") // todo unhack!!
+        if (name == "#") // todo unhack!!
             code.add(cast(rhs_type, int32t)); // index operator, cast to int32
         else if (same_domain)
             code.add(cast(rhs_type, common_type));
@@ -2917,9 +2928,10 @@ Code cast(Type from, Type to) {
     if (to == none or to == unknown_type or to == voids)return nop; // no cast needed magic VERSUS wasm drop!!!
     if (from == referencex and to == stringp)return emitCall("toString", no_context);
     if (from == referencex and to == reals)return emitCall("toReal", no_context);
-    if (from == referencex and to == longs)return emitCall("toLong", no_context);
+    if (from == referencex and to == longs)
+        return emitCall("toLong", no_context);
     if (from == referencex and to == long32) // generic name good since host can handle it!
-        return emitCall("toLong", no_context).add(cast(longs,long32));
+        return emitCall("toLong", no_context).add(cast(longs, long32));
     if (from == referencex)return emitCall("toNode", no_context);
 
     last_type = to; // ⚠️ danger: hides last_type in caller!
@@ -2943,13 +2955,13 @@ Code cast(Type from, Type to) {
     if (from == referencex and to == string_struct)return emitCall("toString", no_context);
     if (from == charp and to == stringp)return nop; // todo: shift n bytes or unify?
     if (from == longs and to == stringp)
-        return emitCall("formatLong", no_context);// todo make it work on all signatures!
+        return emitCall("formatLong", no_context); // todo make it work on all signatures!
     if (from == long32 and to == stringp)
         return Code(i64_extend_i32_s).add(emitCall("formatLong", no_context));
     // if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("_Z4ltoax", no_context));
     // if (from == long32 and to == stringp)return emitCall("itoa0", no_context);// todo make it work on all signatures!
     // todo make it work on all signatures!
-    if (to == stringp)return emitCall("toString", no_context);// todo make it work on all signatures!
+    if (to == stringp)return emitCall("toString", no_context); // todo make it work on all signatures!
 
     // todo: use context?
     //    if(Valtype)
