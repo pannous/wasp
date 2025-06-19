@@ -161,7 +161,7 @@ void useFunction(String name) {
         if (not fun)
             error("function "s + name + " not found"s);
     }
-    print("useFunction: "s + name);
+    trace("useFunction: "s + name);
     functions[name].is_used = true;
 }
 
