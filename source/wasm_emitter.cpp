@@ -2927,12 +2927,14 @@ Code cast(Type from, Type to) {
     if (from == wasmtype_array and isArrayType(to))return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
     if (to == none or to == unknown_type or to == voids)return nop; // no cast needed magic VERSUS wasm drop!!!
     if (from == referencex and to == stringp)return emitCall("toString", no_context);
+    if (from == referencex and to == charp)return emitCall("toString", no_context);
     if (from == referencex and to == reals)return emitCall("toReal", no_context);
     if (from == referencex and to == longs)
         return emitCall("toLong", no_context);
     if (from == referencex and to == long32) // generic name good since host can handle it!
         return emitCall("toLong", no_context).add(cast(longs, long32));
-    if (from == referencex)return emitCall("toNode", no_context);
+    if (from == referencex)
+        return emitCall("toNode", no_context);
 
     last_type = to; // ⚠️ danger: hides last_type in caller!
 
