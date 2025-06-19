@@ -32,7 +32,6 @@
 void testStringInterpolation() {
     assert_emit("`$test world`", "hello world"); // via externref or params!!
     // exit(0);
-
     assert_emit("`hello ${42}`", "hello 42");
     assert_emit("`hello ${1+1}`", "hello 2");
     assert_emit("`${42} world`", "42 world");
@@ -42,6 +41,8 @@ void testStringInterpolation() {
     assert_emit("`${1+1}`", "2")
     assert_emit("`1+1=${1+1}`", "1+1=2")
     skip(
+    assert_emit("$test", "hello"); // via externref or params! but calling toLong()!
+
         assert_emit("x=123;'${x} world'", "123 world") // todo should work
         assert_emit("x='hello';'${x} world'", "hello world") // todo should work
         assert_emit("x='hello';'`$x world`", "hello world") // todo referencex vs reference
@@ -63,6 +64,17 @@ void testExternString() {
         assert_emit("print($hello)", "hello"); // (i64) -> nil
         assert_emit("printRef($hello)", "hello"); // (externref) -> nil
         assert_emit("print(toString($hello))", "hello"); // (i64) -> nil via smarti?
+    )
+}
+
+void testExternReferenceXvalue() {
+    assert_emit("real x = $bla", 123.);
+    assert_emit("real x = $bla; x*2", 123*2.);
+    assert_emit("int x = $bla", 123);
+    assert_emit("int x = $bla; x*2", 123*2);
+    assert_emit("number x = $bla; x*2", 123*2.);
+    skip(
+        assert_emit("2*$bla", 123*2);
     )
 }
 
@@ -3841,6 +3853,7 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
+    testExternReferenceXvalue();
     testStringInterpolation();
     testExternString();
     testFunctionDeclarationParse();

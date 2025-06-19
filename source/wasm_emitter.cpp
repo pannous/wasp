@@ -1830,7 +1830,10 @@ Code emitOperator(Node &node, Function &context) {
         else
             internal_error("unknown type should be inferred by now:\n"s + node.serialize());
     }
+
+    // >>>>>>>>>>>>>>
     unsigned short opcode = opcodes(name, mapTypeToWasm(last_type), mapTypeToWasm(arg_type));
+    // ^^^^^^^^^^^ GET WASM OPCODE !
 
     if (opcode >= 0x8b and opcode <= 0x98)
         code.add(cast(last_type, float32t)); // float ops
@@ -2907,12 +2910,20 @@ Code cast(Type from, Type to) {
     Code nop;
     // if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
     if (from == to)return nop; // nop
-    if (to == none or to == unknown_type or to == voids)return nop; // no cast needed magic VERSUS wasm drop!!!
-    if (from == referencex and to == stringp)return emitCall("toString", no_context);
+
     // if(from == stringp and to == longs)
     // error("cast string/reference to long not implemented, use toLong() instead");
     if (from == wasmtype_array and isArrayType(to))return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
-    last_type = to; // danger: hides last_type in caller!
+    if (to == none or to == unknown_type or to == voids)return nop; // no cast needed magic VERSUS wasm drop!!!
+    if (from == referencex and to == stringp)return emitCall("toString", no_context);
+    if (from == referencex and to == reals)return emitCall("toReal", no_context);
+    if (from == referencex and to == longs)return emitCall("toLong", no_context);
+    if (from == referencex and to == long32) // generic name good since host can handle it!
+        return emitCall("toLong", no_context).add(cast(longs,long32));
+    if (from == referencex)return emitCall("toNode", no_context);
+
+    last_type = to; // ⚠️ danger: hides last_type in caller!
+
     if (from == node and to == i64t)
         return Code(i64_extend_i32_s).addConst64(node_header_64) + Code(i64_or); // turn it into node_pointer_64 !
     if (from == array and to == charp)return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
@@ -4322,7 +4333,7 @@ Code &emit(Node &root_ast, String program) {
                 //			+ linkingSection()
                 + emitNameSection()
                 //	              + emitDwarfSections()  // https://yurydelendik.github.io/webassembly-dwarf/
-                //	              + emitProducers()
+                + emitProducers() // custom section with compiler version
                 //	              + emitTargetFeatures()
                 + emitSourceMap(program)
 

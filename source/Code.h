@@ -1159,7 +1159,7 @@ public:
     Signature &returns(Type type) {
 //		return_type = type;
         if (type.kind != nils and type.kind != undefined and type.kind != unknown) {
-            if (multi_value or return_types.size() == 0)
+            if (multi_return_values or return_types.size() == 0)
                 return_types.add(type);
             else
                 return_types[0] = type;
