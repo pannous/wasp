@@ -2133,6 +2133,8 @@ Node &analyze(Node &node, Function &function) {
     if (isGlobal(node, function))
         return groupGlobal(node, function);
     if (isPrimitive(node)) {
+        if(node.kind == strings and node.next and node.next->kind == strings)
+            useFunction("concat");
         if (maybeVariable(node))
             addLocal(function, name, mapType(node), false);
         return node; // nothing to be analyzed!

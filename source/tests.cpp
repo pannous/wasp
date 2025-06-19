@@ -30,6 +30,8 @@
 #include "asserts.h"
 
 void testStringInterpolation() {
+    // assert_emit("'say ' $test", "say hello"); // via externref or params!!
+    assert_emit("'say ' 'hello'", "say hello");
     assert_emit("`$test world`", "hello world"); // via externref or params!!
     // exit(0);
     assert_emit("`hello ${42}`", "hello 42");
@@ -3853,8 +3855,8 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
-    testExternReferenceXvalue();
     testStringInterpolation();
+    testExternReferenceXvalue();
     testExternString();
     testFunctionDeclarationParse();
 #if not WASM
