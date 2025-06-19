@@ -89,6 +89,27 @@ WasmEdge_Result toString(void *Data, const FrameContext *CallFrameCxt, const Was
 }
 
 
+WasmEdge_Result toLong(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                         WasmEdge_Value *Out) {
+    Out[0] = WasmEdge_ValueGenI64(123);  // todo dummy!
+    return WasmEdge_Result_Success;
+}
+
+
+WasmEdge_Result toReal(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                         WasmEdge_Value *Out) {
+    Out[0] = WasmEdge_ValueGenF64(123.);  // todo dummy!
+    return WasmEdge_Result_Success;
+}
+
+
+WasmEdge_Result toNode(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                         WasmEdge_Value *Out) {
+    error("toNode not implemented");
+    return WasmEdge_Result_Success;
+}
+
+
 WasmEdge_Result getDocumentBody(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
                                 WasmEdge_Value *Out) {
     return WasmEdge_Result_Success;
@@ -301,6 +322,36 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, toString, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
         HostName = WasmEdge_StringCreateByCString("toString");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    } {
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenI64();
+        P[0] = WasmEdge_ValTypeGenExternRef();
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, toLong, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("toLong");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    } {
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenF64();
+        P[0] = WasmEdge_ValTypeGenExternRef();
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, toReal, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("toReal");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    } {
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenI32(); // node pointer in wasm_memory!
+        P[0] = WasmEdge_ValTypeGenExternRef();
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, toNode, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("toNode");
         WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
         WasmEdge_StringDelete(HostName);
     } {

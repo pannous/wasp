@@ -131,6 +131,8 @@ if (WASM)
     set(MY_WASI 1) # manually write via fd_write, NOT via wasi-sdk printf=>fd_write
     ADD_DEFINITIONS(-DMY_WASI)
     ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
+    ADD_COMPILE_FLAG(-s SIDE_MODULE=1) # add .metadata custom section
+
     if (DEBUG)
         message("WASM DEBUG with DWARF!")
         ADD_COMPILE_FLAG(-g3)

@@ -678,6 +678,8 @@ void initTypes() {
     types.add("long", &LongType);
     types.add("double", &DoubleType);
     types.add("float", &DoubleType);
+    types.add("real", &DoubleType); // number
+    types.add("number", &DoubleType); // todo!
     types.add("string", &StringType);
     for (int i = 0; i < types.size(); ++i) {
         auto typ = types.values[i];
@@ -806,6 +808,8 @@ bool compatibleTypes(Type type1, Type type2) {
     if (type1 == stringp and type2 == strings)return true;
     if (type1 == wasm_int32 and type2 == wasm_int64)return true; // upcast
     if (type1 == externref and type2 == stringp)return true; // only via toString(externref) !!!
+    if (type1 == ints and type2 == externref)return true; // via toLong(externref)
+    if (type1 == reals and type2 == externref)return true; // via toReal(externref)
     if (type1 == stringp and type2 == externref)return true; // assume everything is castable from toString(externref)
     // if (type1 == strings and type2 == externref)return true; // assume everything is castable from toString(externref)
     // if (type1 == string_struct /*strings*/ and type2 == externref)return true; // assume everything is castable from externref
@@ -2149,7 +2153,12 @@ Node &analyze(Node &node, Function &function) {
     if (grouped.kind == referencex or grouped.name.startsWith("$")) {
         // external reference, e.g. html $id
         useFunction("getElementById");
+        useFunction("toNode");// todo get rid of these:
         useFunction("toString");
+        useFunction("toLong");
+        useFunction("toReal");
+        // useFunction("toInt");
+        // useFunction("toReal");
     }
     //    Node& last;
     if (isGroup(type)) {
@@ -2240,8 +2249,16 @@ void preRegisterFunctions() {
     functions["getElementById"].import();
     functions["getElementById"].signature.add(charp, "id").returns(externref /*!!*/);
 
+    functions["toNode"].import();
+    functions["toNode"].signature.add(referencex, "id").returns(node);
+    // todo: do all these via toNode!
     functions["toString"].import();
     functions["toString"].signature.add(referencex, "id").returns(charp);
+    functions["toLong"].import();
+    functions["toLong"].signature.add(referencex, "id").returns(longs);
+    functions["toReal"].import();
+    functions["toReal"].signature.add(referencex, "id").returns(reals);
+
 
 
     functions["concat"].import(); // todo load from runtime AGAIN 2025-06-16

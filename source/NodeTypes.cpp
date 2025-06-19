@@ -156,6 +156,7 @@ Type mapType(String arg, bool throws) {
     else if (arg == "uint64")return i64;
     else if (arg == "DoubleType")return float64t;
     else if (arg == "long double")return float64t;
+    else if (arg == "real")return float64t;
     else if (arg == "double")return float64t;
     else if (arg == "float")return float32t;
     else if (arg == "bool")return int32t;

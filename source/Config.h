@@ -1,8 +1,14 @@
 #include "Util.h"
 
+#if WASM
+__attribute__((section(".metadata")))
+const char metadata_payload[] = "name=Wasp-Runtime;author=Pannous;license=MIT;";
+// wasm-opt input.wasm -o output.wasm --custom-section=metadata='{"author":"Pannous","license":"MIT"}'
+#endif
+
 static chars wasp_version = "0.1.119";
 
-static bool multi_value = false; // todo gather in one place: config.h
+static bool multi_return_values = false;
 
 #ifdef RUNTIME_ONLY
 static bool debug = false;
