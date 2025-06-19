@@ -786,12 +786,12 @@ private:
         return at >= text.length;
     }
 
-    Node& parseTemplate() {
+    Node &parseTemplate() {
         // chunk `xyz…$abc…uvw…${expr}…xyz` into "xyz…", "$abc","…uvw…","${expr}", "…xyz"
         // List<Node> chunks;
-        Node& chunks=*new Node();
+        Node &chunks = *new Node();
         chunks.setType(&TemplateType);
-        chunks.setKind(strings);// todo:
+        chunks.setKind(strings); // todo:
         // chunks.setKind(templatex);  // much cleaner!
         proceed(); // skip `
         while (ch and ch != '`' and previous != '\\') {
@@ -799,11 +799,11 @@ private:
                 if (next == '{') {
                     proceed(); // skip $
                     proceed(); // skip $
-                    chunks.add(valueNode('}'));//.setKind(expression)); // ${1+2}
+                    chunks.add(valueNode('}')); //.setKind(expression)); // ${1+2}
                 } else {
                     chunks.add(valueNode(' ').setKind(referencex)); // $test
                 }
-            }else {
+            } else {
                 int start = at;
                 while (ch and ch != '`' and previous != '\\' and ch != '$')
                     proceed();
@@ -1082,8 +1082,10 @@ private:
             return (*new Node("‖")).add(valueNode(u'‖').clone()).setKind(operators, false);
             //			return (*new Node("abs")).setType(Kind::call, false);
         }
-        if (ch == '$' and parserOptions.dollar_names and is_identifier(next))
+        if (ch == '$' and parserOptions.dollar_names and is_identifier(next)) {
             proceed(); // $name
+            return *resolve(Node(identifier()).setKind(referencex)).clone(); // or op
+        }
         if (is_operator(ch))
             return operatorr();
         if (is_identifier(ch))

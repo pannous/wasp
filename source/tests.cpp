@@ -30,9 +30,14 @@
 #include "asserts.h"
 
 void testStringInterpolation() {
-    // assert_emit("'say ' $test", "say hello"); // via externref or params!!
+    assert_emit("'say ' + $test", "say hello"); // via externref or params!!
+    // assert_emit("'say ' + $bla", "say 123"); // via externref or params!!
+    skip(// BUT:
+    assert_emit("$test + 'world'", "hello world");
+        )
     assert_emit("'say ' 'hello'", "say hello");
-    assert_emit("`$test world`", "hello world"); // via externref or params!!
+    assert_emit("'say ' + 'hello'", "say hello");
+    assert_emit("`$test world`", "hello world");
     // exit(0);
     assert_emit("`hello ${42}`", "hello 42");
     assert_emit("`hello ${1+1}`", "hello 2");
