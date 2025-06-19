@@ -433,8 +433,8 @@ void emitShortData(short i, bool pad = false) {
 // append int to wasm data memory
 void emitIntData(int i, bool pad = true) {
     if (pad)while (((int64) (data + data_index_end) % 4))data_index_end++; // type 'int' requires 4 byte alignment
-    if ((int64) (data + data_index_end) % 4)
-        warn("emitIntData unaligned!");
+    if ((int64) (data + data_index_end) % 4) // no pad => we know what we do?
+        trace("emitIntData unaligned!");
     *(int *) (data + data_index_end) = i;
     data_index_end += 4;
 }
@@ -2778,8 +2778,8 @@ Code emitCall(Node &fun, Function &context) {
             error("unknown function "s + name + " (" + normed + ")");
         else name = normed;
     }
-    print("emitCall");
-    print(fun);
+    trace("emitCall");
+    trace(fun);
 
     Function *function = &functions[name]; // NEW context! but don't write context ref!
     Signature &signature = function->signature;

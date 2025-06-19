@@ -801,7 +801,7 @@ private:
                     proceed(); // skip $
                     chunks.add(valueNode('}')); //.setKind(expression)); // ${1+2}
                 } else {
-                    chunks.add(valueNode(' ').setKind(referencex)); // $test
+                    chunks.add(Node(identifier()).setKind(referencex)); // $test
                 }
             } else {
                 int start = at;
@@ -1907,13 +1907,16 @@ void usage() {
 
 // wasmer etc DO accept float/double return, just not from main!
 //extern "C"
+Code &compile(String code, bool clean = true); // exposed to wasp.js
+
+
 int main(int argc, char **argv) {
     if (getenv("SERVER_SOFTWARE"))
         printf("Content-Type: text/plain\n\n"); // todo html
     String args;
     for (int i = 1; i < argc; ++i) args += i > 1 ? String(" ") + argv[i] : String(argv[i]);
     String path = argv[0];
-    print("🐝 Wasp "s + wasp_version);
+    print("Wasp 🐝 "s + wasp_version);
     //   String arg=extractArg(argv,argc);
 
 #if WASM
@@ -1999,11 +2002,14 @@ int main(int argc, char **argv) {
 #endif
         } else if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
-
+        else if (args.contains("compile") or args.contains("build") or args.contains("link")) {
+            Code &binary = compile(args.from(" "), true);
+            binary.save(); // to debug
+        }
         else {
             // run(args);
             Node results = eval(args);
-            // print("» "s + results.serialize());
+            // print("» "s + results.serialize()); // todo: (?) ( already in eval )
         }
         return 0; // EXIT_SUCCESS;
         //			return 42; // funny, but breaks IDE chaining
