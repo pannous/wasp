@@ -63,6 +63,31 @@
 
     window.wasm_to_wat = wasm_to_wat;
   </script>
+  <script>function deploy(){
+    name = test
+    // upload wasm_buffer to https://lambda.pannous.com/upload?name=test
+    if (wasm_buffer) {
+      const blob = new Blob([wasm_buffer], {type: 'application/wasm'});
+      const formData = new FormData();
+      formData.append('file', blob, 'compiled.wasm');
+      formData.append('name', name);
+      fetch('https://lambda.pannous.com/upload?name=' + name, {
+        method: 'POST',
+        body: formData
+      }).then(response => response.text())
+        .then(data => {
+          console.log('Success:', data);
+          results.value = data;
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+          results.value = error;
+        });
+    } else {
+      alert("No wasm compiled yet!");
+    }
+  
+  }</script>
 </head>
 <body>
 <!--<body style="background: cornsilk">-->
@@ -97,7 +122,7 @@
   <div style="width: 242px;display: inline-block; "></div>
   <!--  <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾⤓ source.wasp</button>-->
   <button onclick="download_file(wasm_buffer, 'compiled.wasm', 'wasm')" title="download compiled.wasm">📥 download wasm</button>
-  <button onclick="deploy_to_fermyon_spin()" title="deploy as serverless handler to fermyon spin">
+  <button onclick="deploy()" title="deploy as serverless handler to fermyon spin">
     <img src="https://www.fermyon.com/static/image/events/spin-icon-dot.png" style="height: 1em;vertical-align: middle;"/> deploy to spin
   </button>
   <br/>
