@@ -64,7 +64,7 @@
     window.wasm_to_wat = wasm_to_wat;
   </script>
   <script>function deploy(){
-    name = test
+    name = "test"
     // upload wasm_buffer to https://lambda.pannous.com/upload?name=test
     if (wasm_buffer) {
       const blob = new Blob([wasm_buffer], {type: 'application/wasm'});

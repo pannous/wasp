@@ -1907,7 +1907,7 @@ void usage() {
 
 // wasmer etc DO accept float/double return, just not from main!
 //extern "C"
-Code &compile(String code, bool clean = true); // exposed to wasp.js
+// Code &compile(String code, bool clean = true); // exposed to wasp.js
 
 
 int main(int argc, char **argv) {
@@ -2003,8 +2003,9 @@ int main(int argc, char **argv) {
         } else if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
         else if (args.contains("compile") or args.contains("build") or args.contains("link")) {
-            Code &binary = compile(args.from(" "), true);
-            binary.save(); // to debug
+            Node results = eval(args); // todo: dont run, just compile!
+            // Code &binary = compile(args.from(" "), true);
+            // binary.save(); // to debug
         }
         else {
             // run(args);
