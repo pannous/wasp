@@ -64,14 +64,17 @@
     window.wasm_to_wat = wasm_to_wat;
   </script>
   <script>function deploy(){
-    name = "test"
-    // upload wasm_buffer to https://lambda.pannous.com/upload?name=test
+    var name = "test"
+    // var server = "https://lambda.pannous.com/";
+    var server = "http://localhost:8000/";
+
+    // upload wasm_buffer to
     if (wasm_buffer) {
       const blob = new Blob([wasm_buffer], {type: 'application/wasm'});
       const formData = new FormData();
       formData.append('file', blob, 'compiled.wasm');
       formData.append('name', name);
-      fetch('https://lambda.pannous.com/upload?name=' + name, {
+      fetch(server+"upload?name=" + name, {
         method: 'POST',
         body: formData
       }).then(response => response.text())
@@ -86,6 +89,8 @@
     } else {
       alert("No wasm compiled yet!");
     }
+    // open new tab with server + name
+    window.open(server + name, '_blank');
   
   }</script>
 </head>

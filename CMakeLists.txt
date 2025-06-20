@@ -898,7 +898,7 @@ endif ()
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
 
 
-set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/increase-wasp-version.py)
+set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/source/increase-wasp-version.py)
 
 # Custom target to always run the python script
 add_custom_target(run_version_script ALL
