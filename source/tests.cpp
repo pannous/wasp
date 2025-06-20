@@ -31,10 +31,9 @@
 
 void testStringInterpolation() {
     assert_emit("`hello $test`", "hello hello"); // via externref or params!
-    assert_emit("'say ' + $test", "say hello"); // via externref or params!!
+    assert_emit("'say ' + $test", "say hello");
     // exit(0);
-
-    // assert_emit("'say ' + $bla", "say 123"); // via externref or params!!
+    assert_emit("'say ' + $bla", "say 123");
     skip(// BUT:
     assert_emit("$test + 'world'", "hello world");
         )
