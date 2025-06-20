@@ -49,6 +49,7 @@
     import * as binaryen from "./assets/script/binaryen-latest.js"
 
     console.log('OK wasm_to_wat via binaryen', binaryen);
+
     export function wasm_to_wat(buffer) {
       try {
         const module = binaryen.default.readBinary(buffer);
@@ -63,10 +64,13 @@
 
     window.wasm_to_wat = wasm_to_wat;
   </script>
-  <script>function deploy(){
-    var name = "test"
-    // var server = "https://lambda.pannous.com/";
-    var server = "http://localhost:8000/";
+  <script>function deploy() {
+    let server;
+    let name = "test";
+    if (LIVE)
+      server = "https://lambda.pannous.com/";
+    else
+      server = "http://localhost:8000/";
 
     // upload wasm_buffer to
     if (wasm_buffer) {
@@ -74,7 +78,7 @@
       const formData = new FormData();
       formData.append('file', blob, 'compiled.wasm');
       formData.append('name', name);
-      fetch(server+"upload?name=" + name, {
+      fetch(server + "upload?name=" + name, {
         method: 'POST',
         body: formData
       }).then(response => response.text())
@@ -91,7 +95,7 @@
     }
     // open new tab with server + name
     window.open(server + name, '_blank');
-  
+
   }</script>
 </head>
 <body>
@@ -126,9 +130,11 @@
   <!--  spacer -->
   <div style="width: 242px;display: inline-block; "></div>
   <!--  <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾⤓ source.wasp</button>-->
-  <button onclick="download_file(wasm_buffer, 'compiled.wasm', 'wasm')" title="download compiled.wasm">📥 download wasm</button>
+  <button onclick="download_file(wasm_buffer, 'compiled.wasm', 'wasm')" title="download compiled.wasm">📥 download wasm
+  </button>
   <button onclick="deploy()" title="deploy as serverless handler to fermyon spin">
-    <img src="https://www.fermyon.com/static/image/events/spin-icon-dot.png" style="height: 1em;vertical-align: middle;"/> deploy to spin
+    <img src="https://www.fermyon.com/static/image/events/spin-icon-dot.png"
+         style="height: 1em;vertical-align: middle;"/> deploy to spin
   </button>
   <br/>
   <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="14"
