@@ -1,3 +1,4 @@
+#!gunicorn waspy_server:application
 from flask import Flask, request, redirect, url_for
 from flask_cors import CORS # pip install flask-cors
 import waspy
@@ -31,9 +32,12 @@ def index(path):
 		if not name or not name in binaries: return form_
 		file_path = binaries[name]
 		with open(file_path, "rb") as f:
+			try:
 				wasm_bytes = f.read()
 				ok = waspy.run_wasm(wasm_bytes)
 				return str(ok)
+			except Exception as e:
+				return f"Error executing {name}: {str(e)}"
 
 @app.route('/upload', methods=['POST'])
 def upload():

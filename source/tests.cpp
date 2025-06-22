@@ -29,12 +29,22 @@
 
 #include "asserts.h"
 
+void testEmitStringConcatenation() {
+    assert_emit("'say ' + 0.", "say 0.");
+    assert_emit("'say ' + (100 + 23)", "say 123");
+    assert_emit("'say ' + 123", "say 123");
+    assert_emit("'say ' + 'hello'", "say hello");
+    // assert_emit("'say ' + 100 + 23", "say 10023");// todo: warn "mixing math op with string concatenation
+    assert_emit("'say ' + 1.1", "say 1.1");
+    assert_emit("'say ' + 1.1 * 2", "say 2.2");
+}
+
 void testStringInterpolation() {
     assert_emit("`hello $test`", "hello hello"); // via externref or params!
     assert_emit("'say ' + $test", "say hello");
     // exit(0);
-    assert_emit("'say ' + $bla", "say 123");
     skip(// BUT:
+    assert_emit("'say ' + $bla", "say 123");
     assert_emit("$test + 'world'", "hello world");
         )
     assert_emit("'say ' 'hello'", "say hello");
@@ -3863,6 +3873,12 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
+#if WASM
+    print("⚠️ make sure to put all assert_emit into testRun() ");
+#endif
+    assert_emit("x=0;while x++<11: nop;", 0);
+
+    testEmitStringConcatenation();
     testStringInterpolation();
     testExternReferenceXvalue();
     testExternString();

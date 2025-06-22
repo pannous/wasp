@@ -804,6 +804,7 @@ void updateLocal(Function &context, String name, Type type) {
 
 bool compatibleTypes(Type type1, Type type2) {
     if (type1 == type2)return true;
+    if (type1 == longs and type2 == strings)return false; // upcast
     if (type1 == string_struct and type2 == strings)return true;
     if (type1 == stringp and type2 == strings)return true;
     if (type1 == wasm_int32 and type2 == wasm_int64)return true; // upcast
@@ -1156,6 +1157,21 @@ Node extractReturnTypes(Node decl, Node body) {
     return DoubleType; // LongType;// todo
 }
 
+void checkRequiredCasts(String &op, const Node &lhs, Node &rhs, Function &context) {
+    // todo maybe add cast node here instead of in emit?
+    Type left_kind = lhs.kind;
+    Type right_kind = rhs.kind;
+    if(right_kind == Kind::operators or right_kind == Kind::expression)
+        right_kind = preEvaluateType(rhs, context); // todo: use preEvaluateType for all rhs?
+
+    if (op == "+" and left_kind == strings)
+        useFunction("toString");// todo ALL polymorphic variants! => get rid of these:
+    if (op == "+" and left_kind == strings and right_kind == longs)
+        useFunction("formatLong");
+    if (op == "+" and left_kind == strings and right_kind == reals)
+        useFunction("formatReal");
+}
+
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
 // maybe todo: normOperators step (in angle, not wasp!)  3**2 => 3^2
 Node &groupOperators(Node &expression, Function &context) {
@@ -1229,6 +1245,8 @@ Node &groupOperators(Node &expression, Function &context) {
             // if(prev.kind == Kind::groups) prev.setType(Kind::expression);
             prev = analyze(prev, context);
         }
+        checkRequiredCasts(op, prev, next, context); // todo: move to analyze?
+
         //            prev = expression.to(op);
         //        else error("binop?");
         if (op == ".") {
@@ -1406,9 +1424,9 @@ Type preEvaluateType(Node &node, Function &context) {
     }
     if (node.kind == operators) {
         if (node.name == "√")return float64t; // todo generalize
-        Node &lhs = node[0];
+        Node &lhs = node.first();
         auto lhs_type = preEvaluateType(lhs, context);
-        if (node.length == 1)
+        if (node.length <= 1)
             return lhs_type;
         Node &rhs = node[1];
         auto rhs_type = preEvaluateType(rhs, context); // todo lol
@@ -2033,15 +2051,16 @@ Node &groupTemplate(Node &node, Function &function) {
         if (kind != strings) {
             child = analyze(child, function); // analyze each child node
             kind = guessType(child, function);
-            if(kind==expression)
-                kind= child.first().kind; // todo: hacky, but works for now
+            if (kind == expression)
+                kind = child.first().kind; // todo: hacky, but works for now
             if (kind == referencex or kind == reference) useFunction("toString");
-            else if (kind == long32) useFunction("formatLong");// itoa0
-            else if (kind == longs) useFunction("formatLong");// ltoa
+            else if (kind == long32) useFunction("formatLong"); // itoa0
+            else if (kind == longs) useFunction("formatLong"); // ltoa
             else if (kind == reals or kind == realsF) useFunction("ftoa");
             else if (kind == doubles) useFunction("ftoa");
-            else if (kind == floats) useFunction("ftoa");// todo via auto upcast?
-            else error("Unknown template child type: "s + typeName(kind));
+            else if (kind == floats) useFunction("ftoa"); // todo via auto upcast?
+            else
+                error("Unknown template child type: "s + typeName(kind));
         }
     }
     // useFunction("_Z12concat_charsPKcS0_");
@@ -2133,7 +2152,7 @@ Node &analyze(Node &node, Function &function) {
     if (isGlobal(node, function))
         return groupGlobal(node, function);
     if (isPrimitive(node)) {
-        if(node.kind == strings and node.next and node.next->kind == strings)
+        if (node.kind == strings and node.next and node.next->kind == strings)
             useFunction("concat");
         if (maybeVariable(node))
             addLocal(function, name, mapType(node), false);
@@ -2155,7 +2174,7 @@ Node &analyze(Node &node, Function &function) {
     if (grouped.kind == referencex or grouped.name.startsWith("$")) {
         // external reference, e.g. html $id
         useFunction("getElementById");
-        useFunction("toNode");// todo get rid of these:
+        useFunction("toNode"); // todo get rid of these:
         useFunction("toString");
         useFunction("toLong");
         useFunction("toReal");
@@ -2260,7 +2279,6 @@ void preRegisterFunctions() {
     functions["toLong"].signature.add(referencex, "id").returns(longs);
     functions["toReal"].import();
     functions["toReal"].signature.add(referencex, "id").returns(reals);
-
 
 
     functions["concat"].import(); // todo load from runtime AGAIN 2025-06-16

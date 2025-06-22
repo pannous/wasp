@@ -580,7 +580,7 @@ function load_chars(pointer, length = -1, module_memory = 0, format = 'utf8') {
     let buffer = new Uint8Array(module_memory.buffer, pointer, module_memory.length);
     while (buffer[++length]) ;// strlen ;)
   }
-  //debug("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
+  debug("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
   if (typeof (TextDecoder) != 'undefined') {// WEB, text-encoding, Node 11
     const utf8_decoder = new TextDecoder('utf8');
     let decoder = format == 'utf8' ? utf8_decoder : utf16denoder

@@ -26,7 +26,7 @@ static chars function_list[] = {
     "quit", "parseLong",
     "parseDouble", "strlen",
     "concat_chars", "concat_strings", "concat_bytes",
-    "formatLong","ftoa","ltoa", "itoa","itoa0", "atol", "atoi", "parseInt",
+    "formatLong","formatReal","ftoa","ltoa", "itoa","itoa0", "atol", "atoi", "parseInt",
     "log", "ln", "log10", "log2", "similar",
     "putx", "putc", "get", "set", "peek", "poke", "read",
     "write",
