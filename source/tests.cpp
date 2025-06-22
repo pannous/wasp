@@ -3876,6 +3876,7 @@ void testCurrent() {
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
+    // assert_emit("html{bold{'Hello'}}", "Hello");
     assert_emit("x=0;while x++<11: nop;", 0);
 
     testEmitStringConcatenation();

@@ -137,15 +137,22 @@ for key, value in env.items():
 	linker.define(store, "env", key, Func(store, FuncType(value[0], value[1]), value[2]))
 
 global memory
-def run_wasm(wasm_bytes):
+def run_wasm(wasm_bytes, new_params):
 	global memory
+	global params
+	if new_params: params = new_params
 	module = Module(store.engine, wasm_bytes)
 	# instance = Instance(store, module, imports)
 	instance = linker.instantiate(store, module)
 
 	main_func = instance.exports(store)["_start"]
 	memory = instance.exports(store)["memory"]
-	ok = main_func(store)
+	# help(main_func)
+	# print(dir(main_func)) # todo get parameter types & count HOW? via reflection!
+	try:
+		ok = main_func(store, params)
+	except Exception as e:
+		ok = main_func(store)
 	# print(ok)
 	print(smart_value(ok))
 	return smart_value(ok)
