@@ -21,7 +21,7 @@ form_ = '''
 @app.route('/<path:path>', methods=['GET', 'POST'])
 def index(path):
 		if "favicon.ico" in path:
-			return None
+			return ""
 		if request.method == 'GET':
 				name = request.args.get('name') or path.strip('/')
 		else:
