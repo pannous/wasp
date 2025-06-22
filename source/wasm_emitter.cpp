@@ -769,13 +769,13 @@ void addNamedDataSegment(int pointer, Node &node) {
     //        referenceMap[node.name] = node;
 }
 
-Code emitStringListConcat(const Node & node, Function & context) {
-        Code code; // AUTO CONCAT!
-        for (Node &child: node)
-            code.add(emitStringData(child, context));// address
-        for (int i = 0; i < node.length - 1; ++i)
-            code.add(emitCall("concat", context));
-        return code; // todo auto concat or as list?
+Code emitStringListConcat(const Node &node, Function &context) {
+    Code code; // AUTO CONCAT!
+    for (Node &child: node)
+        code.add(emitStringData(child, context)); // address
+    for (int i = 0; i < node.length - 1; ++i)
+        code.add(emitCall("concat", context));
+    return code; // todo auto concat or as list?
 }
 
 // todo emitPrimitiveArray vs just emitNode as it is (with child*)
@@ -2000,8 +2000,10 @@ Type commonType(Type lhs, Type rhs) {
     //    if (lhs == reference) return rhs;// bad guess, could be any object * n !
     //    if(rhs == reference) return lhs;// bad guess, could be any object * n !
     //    if(rhs == unknown_type) return lhs;// bad guess, could be any object * n !
-    if (lhs == float64t or rhs == float64t)return float64t;
-    if (lhs == float32t or rhs == float32t)return float32t;
+    if (lhs == longs and rhs == float64t)return float64t;
+    if (lhs == long32 and rhs == float64t)return float64t;
+    if (lhs == longs and rhs == float32t)return float32t;
+    if (lhs == long32 and rhs == float32t)return float32t;
     return lhs; // todo!
     //    return none;
 }
@@ -2921,6 +2923,12 @@ Code cast(Type from, Type to) {
     Code nop;
     // if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
     if (from == to)return nop; // nop
+    if ((from == reals) and to == charp)
+        return emitCall("formatReal", no_context);
+    if ((from == longs) and to == charp)
+        return emitCall("formatLong", no_context);
+    if (from == int32t /*long32*/ and to == charp)
+        return cast(long32, longs).add(emitCall("formatLong", no_context));
 
     // if(from == stringp and to == longs)
     // error("cast string/reference to long not implemented, use toLong() instead");
