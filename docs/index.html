@@ -66,7 +66,7 @@
   </script>
   <script>function deploy() {
     let server;
-    let name = "test";
+    let name = lambda_name.value || "test";
     if (LIVE)
       server = "https://lambda.pannous.com/";
     else
@@ -136,6 +136,8 @@
     <img src="https://www.fermyon.com/static/image/events/spin-icon-dot.png"
          style="height: 1em;vertical-align: middle;"/> deploy to spin
   </button>
+  <input placeholder="lambda name" id="lambda_name" value="test" />
+<!--         style="width: 100px;box-sizing: border-box;vertical-align: middle;"/>-->
   <br/>
   <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="14"
             style="width: 90%;box-sizing: border-box"></textarea>
