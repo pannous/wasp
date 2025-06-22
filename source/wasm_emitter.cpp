@@ -2937,12 +2937,12 @@ Code cast(Type from, Type to) {
     if (from == referencex and to == stringp)return emitCall("toString", no_context);
     if (from == referencex and to == charp)return emitCall("toString", no_context);
     if (from == referencex and to == reals)return emitCall("toReal", no_context);
-    if (from == referencex and to == longs)
-        return emitCall("toLong", no_context);
+    // if (from == referencex and to == longs and functions.has("toLong")) // NOT for smart64!
+    //     return emitCall("toLong", no_context);
     if (from == referencex and to == long32) // generic name good since host can handle it!
         return emitCall("toLong", no_context).add(cast(longs, long32));
-    if (from == referencex)
-        return emitCall("toNode", no_context);
+    // if (from == referencex)
+        // return emitCall("toNode", no_context);
 
     last_type = to; // ⚠️ danger: hides last_type in caller!
 
@@ -3353,12 +3353,14 @@ Code emitBlock(Node &node, Function &context) {
     // 3. force / cast last type to return type
     auto returnTypes = context.signature.return_types;
     //	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
+    auto abi = wasp_smart_pointers; // context.abi;
     Valtype return_type = mapTypeToWasm(returnTypes[0]);
+    // if(abi == wasp_smart_pointers and return_type == i64t)
+    //     return_type = smarti64; // todo
     // switch back to return_types[context] for block?
     if (last_type == none) last_type = voids;
     if (last_type == void_block) last_type = voids;
     bool needs_cast = return_type != last_type;
-    auto abi = wasp_smart_pointers; // context.abi;
 
     if (return_type == Valtype::voids and last_type != Valtype::voids)
         block.addByte(drop);
