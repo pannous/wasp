@@ -1,0 +1,8 @@
+# .github/copilot.yml
+copilot:
+  default_rules:
+    - name: no-comments
+      description: "Avoid generating comments in code completions"
+      trigger: always
+      prompt: |
+        Do not generate any comments. Provide code only.
