@@ -1,0 +1,5 @@
+__builtin_wasm_memory_grow
+size_t __builtin_wasm_memory_size(int);
+
+len("hi")
+lenxx("hi")  unknown function error!!
