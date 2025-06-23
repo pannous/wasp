@@ -144,16 +144,6 @@
 
 
   <script>
-    for (let key in exampleCode) {
-      const optionExists = (val) => Array.from(examples.options).some(option => option.value === val);
-      if (!optionExists(key)) {
-        const newOption = document.createElement('option');
-        newOption.value = key;
-        newOption.text = key; // use exampleCode[key] on select!!
-        examples.appendChild(newOption);
-      }
-    }
-
     var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
       lineNumbers: true,
       mode: "wasp",
@@ -169,7 +159,26 @@
       editor.focus();
     });
   </script>
-
+  <script> // fill from examples.js
+    for (let key in exampleCode) {
+      const optionExists = (val) => Array.from(examples.options).some(option => option.value === val);
+      if (!optionExists(key)) {
+        const newOption = document.createElement('option');
+        newOption.value = key;
+        newOption.text = key; // use exampleCode[key] on select!!
+        examples.appendChild(newOption);
+      }
+    }
+  </script>
+  <!-- https://wasp.pannous.com/?example=lambda -->
+  <script> // select example from URL parameter ^^
+    const urlParams = new URLSearchParams(window.location.search);
+    const exampleParam = urlParams.get('example');
+    if (exampleParam && exampleCode[exampleParam]) {
+      examples.value = exampleParam;
+      editor.setValue(exampleCode[exampleParam]);
+    }
+  </script>
 </div>
 <canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
 <script>const ctx = canvas.getContext('2d')</script>

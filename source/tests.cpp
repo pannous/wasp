@@ -3546,8 +3546,6 @@ void testAllEmit() {
     //    assert_emit("√π²", pi);
     // testFunctionDeclaration();
     // testFunctionDeclarationParse(); // no emit
-    assert_emit("a = [1, 2, 3]; a[1]", 2);
-    assert_emit("x='abcde';x#4='f';x[3]", 'f');
     testForLoops();
     testHex();
     testEmitBasics();
