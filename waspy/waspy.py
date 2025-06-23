@@ -136,8 +136,17 @@ linker.define_wasi()
 for key, value in env.items():
 	linker.define(store, "env", key, Func(store, FuncType(value[0], value[1]), value[2]))
 
+def cast(arguments,types):
+	for i in range(len(arguments)):
+		typ = types[i]
+		argument = arguments[i]
+		if typ == f64:
+				argument = float(argument)
+		arguments[i]=argument
+	return arguments
+
 global memory
-def run_wasm(wasm_bytes, new_params):
+def run_wasm(wasm_bytes, new_params=None, func=None):
 	global memory
 	global params
 	if new_params: params = new_params
@@ -145,20 +154,27 @@ def run_wasm(wasm_bytes, new_params):
 	# instance = Instance(store, module, imports)
 	instance = linker.instantiate(store, module)
 
+	for name, export in instance.exports(store).items():
+		if isinstance(export, Func):
+			print(f"{name}: {export.type(store).params} → {export.type(store).results}")
+
 	main_func = instance.exports(store)["_start"]
+	if func:
+		main_func = instance.exports(store)[func]
 	memory = instance.exports(store)["memory"]
 	# help(main_func)
 	# print(dir(main_func)) # todo get parameter types & count HOW? via reflection!
-	try:
-		ok = main_func(store, params)
-	except Exception as e:
+	if main_func.type(store).params:
+		arguments = cast(list(params.values()),export.type(store).params)
+		ok = main_func(store, *arguments)
+	else:
 		ok = main_func(store)
 	# print(ok)
 	print(smart_value(ok))
 	return smart_value(ok)
 
 if __name__ == "__main__":
-	compile('2. * $blaf')
+	# compile('2. * $blaf')
 	# compile('`hello $name`')
 	# compile('`hello $bla`')
 	# compile('2 * $bla')
@@ -169,12 +185,14 @@ if __name__ == "__main__":
 	# compile('`hello $dada`')
 	# compile('$dada')
 	# compile('"hello" + $name')
-	compile('"hello" + $bla')
+	# compile('"hello" + $bla')
+	compile('fun addier(x, y){ x + y }')
 	# compile('"hello" + "hi"')
 
 	file = "test.wasm" # ^^ compiled
 	# file="module.wasm"
-	# file = "../test.wasm"
+	file = "../test.wasm"
 	with open(file, "rb") as f:
 		wasm_bytes = f.read()
-		run_wasm(wasm_bytes)
+		# run_wasm(wasm_bytes)
+		run_wasm(wasm_bytes,{'x': 1, 'y': 2}, "addier") # todo add params
