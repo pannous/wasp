@@ -361,8 +361,8 @@ void testAllAngle() {
     // testCall(); in testTodoBrowser()
     skip(
         testSwitch();
+        testFunctionParams(); // TODO!
     )
-    //	testFunctionParams();
 }
 
 void testAngle() {

@@ -28,7 +28,8 @@ Type mapType(Node &arg) {
             //            if(context and context->locals.has(arg.name))
             //                return context->locals[arg.name].type;
             //            if(context.locals)
-            return node;
+            return unknown;
+            // return node;
         case undefined:
         case unknown:
             return Primitive::unknown_type;
