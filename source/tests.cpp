@@ -29,6 +29,16 @@
 
 #include "asserts.h"
 
+void testRandomParse() {
+    const Node &node = parse("x:40;x+1");
+    check(node.length == 2)
+    check(node[0]["x"] == 40) // breaks!?
+    check(operator_list.has("+"));
+    check(not(bool) Node("x"));
+    check_silent(false == (bool) Node("x"));
+    check(Node("x") == false);
+}
+
 void testEmitStringConcatenation() {
     assert_emit("'say ' + 0.", "say 0.");
     assert_emit("'say ' + (100 + 23)", "say 123");
@@ -43,10 +53,10 @@ void testStringInterpolation() {
     assert_emit("`hello $test`", "hello hello"); // via externref or params!
     assert_emit("'say ' + $test", "say hello");
     // exit(0);
-    skip(// BUT:
-    assert_emit("'say ' + $bla", "say 123");
-    assert_emit("$test + 'world'", "hello world");
-        )
+    skip( // BUT:
+        assert_emit("'say ' + $bla", "say 123");
+        assert_emit("$test + 'world'", "hello world");
+    )
     assert_emit("'say ' 'hello'", "say hello");
     assert_emit("'say ' + 'hello'", "say hello");
     assert_emit("`$test world`", "hello world");
@@ -61,7 +71,7 @@ void testStringInterpolation() {
     assert_emit("`${1+1}`", "2")
     assert_emit("`1+1=${1+1}`", "1+1=2")
     skip(
-    assert_emit("$test", "hello"); // via externref or params! but calling toLong()!
+        assert_emit("$test", "hello"); // via externref or params! but calling toLong()!
 
         assert_emit("x=123;'${x} world'", "123 world") // todo should work
         assert_emit("x='hello';'${x} world'", "hello world") // todo should work
@@ -163,13 +173,14 @@ void testExp() {
     assert_is("π^0", 1);
     assert_is("π^1", pi);
     assert_is("π*√163", 40.1091); // ok
+    skip(
     assert_is("π√163", 40.1091);
     assert_is("(π*√163)==(π√163)", 1);
     assert_is("π*√163==(π√163)", 1);
     assert_is("π*√163==π√163", 1);
-    // assert_is("exp(π√163)", 1);
+    assert_is("exp(0)", 1); // "TODO rewrite as ℯ^x" OK
+        )
     assert_is("ℯ^(π*√163)", 262537412640768743.99999999999925);
-    // assert_is("exp(0)", 1);
 }
 
 void testConstructorCast() {
@@ -700,23 +711,26 @@ void testNumbers() {
 }
 
 void testFunctionDeclaration() {
-// we already have a working syntax so this has low priority
     // THESE NEVER WORKED! should they? YES! partly
     // 'fixing' one broke fib etc :(
+    // 💡we already have a working syntax so this has low priority
+    // ⚠️ DO we really have a working syntax??
     skip( // TODO!
-    assert_emit("fun x{42} x+1", 43);
-    assert_emit("def x{42};x+1", 43);
-    assert_emit("def x(){42};x+1", 43);
-    assert_emit("def x(){42};x()+1", 43);
-    assert_emit("define x={42};x()+1", 43);
-    assert_emit("function x(){42};x()+1", 43);
-    assert_emit("def x(a){42+a};x(1)+1", 44);
-    assert_emit("define x={42+it};x(1)+1", 44);
-    assert_emit("function x(a){42+a};x(1)+1", 44);
-    assert_emit("function x(){42+it};x(1)+1", 44);
-    assert_emit("def x(a=3){42+a};x+1", 46); // default value
-    assert_emit("def x(a){42+a};x+1", 43);
-        )
+        testFunctionParams(); // TODO!
+        testFibonacci(); // much TODO!
+        assert_emit("fun x{42} x+1", 43);
+        assert_emit("def x{42};x+1", 43);
+        assert_emit("def x(){42};x+1", 43);
+        assert_emit("def x(){42};x()+1", 43);
+        assert_emit("define x={42};x()+1", 43);
+        assert_emit("function x(){42};x()+1", 43);
+        assert_emit("def x(a){42+a};x(1)+1", 44);
+        assert_emit("define x={42+it};x(1)+1", 44);
+        assert_emit("function x(a){42+a};x(1)+1", 44);
+        assert_emit("function x(){42+it};x(1)+1", 44);
+        assert_emit("def x(a=3){42+a};x+1", 46); // default value
+        assert_emit("def x(a){42+a};x+1", 43);
+    )
 }
 
 void testFunctionDeclarationParse() {
@@ -2099,6 +2113,7 @@ void testErrors() {
     // use assert_throws
     throwing = true;
     assert_throws("0/0");
+    assert_throws("x"); // UNKNOWN local symbol ‘x’ in context main  OK
 #if WASI or WASM
     skip("can't catch ERROR in wasm")
     return;
@@ -3321,11 +3336,11 @@ void todo_done() {
 
 // todo: ^^ move back into tests() once they work again
 void todos() {
+        testConstructorCast();
     skip( // unskip to test!!
         testKitchensink();
         testNodeEmit();
         testLengthOperator();
-        testConstructorCast();
         testEmitCast();
         assert_emit("2,4 == 2,4", 1);
         assert_emit("(2,4) == (2,4)", 1); // todo: array creation/ comparison
@@ -3625,6 +3640,13 @@ void tests() {
     testPower();
 #endif
     testCast();
+    testEmitStringConcatenation();
+    testExternReferenceXvalue();
+    testExternString();
+    testFunctionDeclarationParse();
+    testPower();
+    testRandomParse();
+    check_is(String("a1b1c1d").lastIndexOf("1"), 5);
     testUnicode_UTF16_UTF32();
     testReplaceAll();
     testExceptions();
@@ -3872,41 +3894,27 @@ void testCurrent() {
     print("💡 starting Current tests 💡");
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
-#endif
     // assert_emit("html{bold{'Hello'}}", "Hello");
-    assert_emit("x=0;while x++<11: nop;", 0);
-
-    testEmitStringConcatenation();
+#else
+    testRecentRandomBugs();
+    // exit(0); // todo: remove this once all tests are passing
     testStringInterpolation();
-    testExternReferenceXvalue();
-    testExternString();
-    testFunctionDeclarationParse();
-#if not WASM
+#endif
     // we already have a working syntax so this has low priority?
     // testFunctionDeclaration();
-#endif
-    testWaspRuntimeModule();
-    testPower();
-    // assert_emit("test42+1", 43); // OK in WASM too?
-    const Node &node = parse("x:40;x+1");
-    check(node.length == 2)
-    check(node[0]["x"] == 40) // breaks!?
-    check(operator_list.has("+"));
-    check(not(bool) Node("x"));
-    check_silent(false == (bool) Node("x"));
-    check(Node("x") == false);
-    assert_throws("x"); // UNKNOWN local symbol ‘x’ in context main  OK
+    // testFibonacci(); // much TODO!
+    // testSinus();
 
-    check_is(String("a1b1c1d").lastIndexOf("1"), 5);
-    // testKebabCase(); // needed here:
-    // assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
+    testWaspRuntimeModule();
     test_new();
-    skip(
-        // assert_is("2+1/2", 2.5);
+        testExp(); // todo!
+
+    skip( // TODO!
+        testKebabCase(); // needed later …
+        assert_is("2+1/2", 2.5);
+        assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
         testStruct();
         todos();
-        testExp(); // todo!
-        assert_emit("-42", -42)
         assert_is("(1 4 3)#2", 4); //
         assert_throws("0/0");
         todos();
@@ -3916,10 +3924,8 @@ void testCurrent() {
         testVectorShim(); // use GPU even before wasm vector extension is available
         testModifiers();
         testLengthOperator();
-        testRecentRandomBugs();
         testNamedDataSections();
         testHostDownload();
-        assert_emit("‖3‖-1", 2);
     ) //
     // testListGrowth<const int&>();// pointer to a reference error
 

@@ -1052,7 +1052,9 @@ void testRecentRandomBugs() {
     // fixed now thank god
     if (!testRecentRandomBugsAgain)return;
     testRecentRandomBugsAgain = false;
-
+    assert_emit("-42", -42)
+    assert_emit("‖3‖-1", 2);
+    assert_emit("test42+1", 43); // OK in WASM too?
     assert_emit("square 3*42 > square 2*3", 1)
     testSquares();
     //			WebAssembly.Module doesn't validate: control flow returns with unexpected type. F32 is not a I32, in function at index 0
