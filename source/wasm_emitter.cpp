@@ -16,16 +16,13 @@
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
 #include "wasm_merger.h"
-
 //#include "asserts.h"
+
+// these are all reset via clearWasmContext()
+// todo: wrap all these into a class WasmContext
+int last_index = -1;// code index and call index for functions
 extern Map<String, Global> globals;
-
 //Map<String, Signature> functions;// todo Signature copy by value is broken
-Code emitStringData(Node &node, Function &context);
-
-Code emitString(const String &text, Function &context);
-
-Code emitArray(Node &node, Function &context);
 
 Map<int, uint> sourceMap; // line number to wasm offset
 
@@ -74,6 +71,14 @@ Type arg_type = voids; // autocast if not int
 Type last_type = Kind::unknown;
 Type last_value_type = Kind::unknown; // array<type>
 Node *last_object = 0;
+
+
+Code emitStringData(Node &node, Function &context);
+
+Code emitString(const String &text, Function &context);
+
+Code emitArray(Node &node, Function &context);
+
 
 enum MemoryHandling {
     import_memory,
@@ -3476,10 +3481,6 @@ Code emitTypeSectionArrays(int &typeCount) {
         return type_data;
     else return {};
 }
-
-
-int last_index = -1;
-
 
 // typeSection created before code Section. All imports must be known in advance!
 [[nodiscard]]
