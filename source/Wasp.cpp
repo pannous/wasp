@@ -145,7 +145,7 @@ List<chars> operator_list = {
     "pass", "typeof",
     "upto", "…", "...", "..", "..<" /*range*/,
     "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2", "⌞10",
-    "plus", "times", "add", "minus", // todo via aliases.wasp / SPO PSO verb matching
+    // "plus", "times", "add", "minus", // todo via aliases.wasp / SPO PSO verb matching
     "use", "using", "include", "require", "import", "module",
     "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
     "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^",
@@ -2003,7 +2003,7 @@ int main(int argc, char **argv) {
         } else if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
         else if (args.contains("compile") or args.contains("build") or args.contains("link")) {
-            Node results = eval(args); // todo: dont run, just compile!
+            Node results = eval(args.from(" ")); // todo: dont run, just compile!
             // Code &binary = compile(args.from(" "), true);
             // binary.save(); // to debug
         }
