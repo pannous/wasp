@@ -1,7 +1,8 @@
 #!gunicorn waspy_server:application
 from flask import Flask, request, redirect, url_for
-from flask_cors import CORS # pip install flask-cors
+from flask_cors import CORS  # pip install flask-cors
 import waspy
+
 app = Flask(__name__)
 CORS(app)
 binaries = {}
@@ -18,49 +19,52 @@ form_ = '''
 </form>
 '''
 
-@app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
-@app.route('/<path:path>', methods=['GET', 'POST'])
-def index(path):
-		if "favicon.ico" in path or "favicon.png" in path:
-			return ""
-		if "wp-includes" in path or "wp-content" in path or "wp-admin" in path:
-			return ""
-		if "wp-login.php" in path or "wp-config.php" in path or "xmlrpc.php" in path:
-			return ""
-		params = {}
-		if request.method == 'GET':
-				name = request.args.get('name') or path.strip('/')
-				for arg in request.args:
-					key = arg.split('=', 1)[0]
-					value = arg.split('=', 1)[1]
-					params[key] = value
-		else:
-				name = request.form.get('name') or path.strip('/')
-				for key, value in request.form.items():
-					params[key] = value
 
-		print("lambda name:", name)
-		if not name or not name in binaries: return form_
-		file_path = binaries[name]
-		with open(file_path, "rb") as f:
-			try:
-				wasm_bytes = f.read()
-				ok = waspy.run_wasm(wasm_bytes, params)
-				return str(ok)
-			except Exception as e:
-				return f"Error executing {name}: {str(e)}"
+@app.route('/', defaults={'lib': None, 'func': '_start', 'args': ''})
+@app.route('/<lib>/', defaults={'func': '_start', 'args': ''})
+@app.route('/<lib>/<func>/', defaults={'args': ''})
+@app.route('/<lib>/<func>/<args>')
+def index(lib, func, args):
+	path = request.path
+	blocked = ["robots.txt", ".ico", ".png", ".jpg", ".jpeg", ".gif", "wp-", ".php", "setup/"]
+	for b in blocked:
+		if b in path: return ""
+	params = {}
+	args = args or request.query_string.decode()
+	for i, val in enumerate(args.split(',')):
+		if '=' in val:
+			k, v = val.split('=', 1)
+			params[k] = v
+		else:
+			params[f"${i}"] = val
+	for key in request.values:
+		params[key] = request.values[key]
+	print("lambda name:", lib)
+	print("function name:", func)
+	print("params:", params)
+	if not lib or not lib in binaries: return form_
+	file_path = binaries[lib]
+	with open(file_path, "rb") as f:
+		try:
+			wasm_bytes = f.read()
+			ok = waspy.run_wasm(wasm_bytes, params, func=func)
+			return str(ok)
+		except Exception as e:
+			return f"Error executing {lib}: {str(e)}"
+
 
 @app.route('/upload', methods=['POST'])
 def upload():
-		file = request.files['file']
-		name = request.form.get('name') or file.filename.rsplit('.', 1)[0]
-		filename = f"./lambdas/{file.filename}"
-		file.save(filename)
-		binaries[name] = filename
-		return redirect(url_for('index')+name)
+	file = request.files['file']
+	name = request.form.get('name') or file.filename.rsplit('.', 1)[0]
+	filename = f"./lambdas/{file.filename}"
+	file.save(filename)
+	binaries[name] = filename
+	return redirect(url_for('index') + name)
+
 
 application = app
-# gunicorn waspy-server:application
 
 if __name__ == '__main__':
-		app.run(debug=True, port=1234)
+	print("for LIVE environment, use `gunicorn waspy_server:application`")
+	app.run(debug=True, port=8000)
