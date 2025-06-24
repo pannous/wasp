@@ -32,6 +32,7 @@
 void testReturnTypes() {
     assert_emit("fun addier(a,b){b+a};addier(42,1)", 43);
     assert_emit("fun addier(a,b){b+a};addier(42,1)+1", 44);
+    assert_emit("fun addi(x,y){x+y};addi(2.2,2.2)", 4.4)
     assert_emit("float addi(x,y){x+y};addi(2.2,2.2)", 4.4)
     assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
     assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
@@ -722,6 +723,17 @@ void testNumbers() {
     check(n == 1.0);
     check(n / 2 == 0.5);
     check(((n * 2) ^ 10) == 1024);
+}
+
+
+void testFunctionArgumentCast() {
+    assert_emit("fun addier(a,b){b+a};addier(42.0,1.0)", 43);
+    assert_emit("fun addier(int a,int b){b+a};addier(42,1)+1", 44);
+    assert_emit("fun addi(int x,int y){x+y};addi(2.2,2.2)", 4)
+    assert_emit("fun addi(float x,float y){x+y};addi(2.2,2.2)", 4.4)
+    assert_emit("float addi(int x,int y){x+y};addi(2.2,2.2)", 4.4)
+    assert_emit("fun addier(float a,float b){b+a};addier(42,1)+1", 44);
+
 }
 
 void testFunctionDeclaration() {
@@ -3910,6 +3922,8 @@ void testCurrent() {
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
 #else
+    testFunctionArgumentCast();
+    testFunctionDeclaration();
     testReturnTypes();
     testRecentRandomBugs();
     // exit(0); // todo: remove this once all tests are passing

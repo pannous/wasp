@@ -176,7 +176,7 @@ Type commonElementType(Node &array);
 
 bool isKeyword(String &op);
 
-Node &groupTypes(Node &expression, Function &context);
+Node &groupTypes(Node &expression, Function &context, bool as_param=false);
 
 bool knownSymbol(String name, Function &context);
 
