@@ -955,6 +955,11 @@ void use_runtime(const char *function) {
 Node &
 groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body,
                          Function &context) {
+    // Type return_type;
+    // if(return_type0)
+    //     return_type = mapType(return_type0);
+    // else
+    //     return_type = preEvaluateType(body, context);
     //	String &name = fun.name;
     //	silent_assert(not is_operator(name[0]));
     //	trace_assert(not is_operator(name[0]));
@@ -1018,8 +1023,8 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
     auto kw = expression.containsAny(function_keywords, false); // todo fest='def' QUOTED!!
     if (expression.index(kw) != 0)
         error("function keywords must be first");
-    expression.children++;
-    expression.length--;
+    expression.children++;// get rid of first 'function' keyword
+    expression.length--;// get rid of first 'function' keyword
     auto fun = expression.first();
     Node *return_type = 0;
     Node arguments = groupTypes(fun.childs(), context); // children f(x,y)
@@ -1032,6 +1037,8 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
     } else if (expression.length == 3) {
         // f(x,y) int { x+y }
         return_type = &expression[1];
+        body = expression.last();
+    } else if (expression.length == 2) {
         body = expression.last();
     } else body = fun.values();
 
