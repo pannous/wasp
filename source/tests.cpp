@@ -727,6 +727,11 @@ void testNumbers() {
 
 
 void testFunctionArgumentCast() {
+    assert_emit("float addi(int x,int y){x+y};'hello'+5", "hello5")
+    assert_emit("float addi(int x,int y){x+y};'hello'+5.9", "hello5.9")
+    assert_emit("float addi(int x,int y){x+y};'hello'+addi(2.2,2.2)", "hello4.")
+    assert_emit("float addi(int x,int y){x+y};'hello'+addi(2,3)", "hello5.") // OK some float cast going on!
+
     assert_emit("fun addier(a,b){b+a};addier(42.0,1.0)", 43);
     assert_emit("fun addier(int a,int b){b+a};addier(42,1)+1", 44);
     assert_emit("fun addi(int x,int y){x+y};addi(2.2,2.2)", 4)

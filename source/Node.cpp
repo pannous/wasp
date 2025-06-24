@@ -1590,9 +1590,10 @@ Node cast(const Node &from, Type to_type) {
     if (from.kind == longs and to_type.kind == reals)return Node((double) from.value.longy);
     if (from.kind == longs and to_type.kind == bools)return Node((bool) from.value.longy);
     // REAL CASTS "2" to '2' to 2
-    if (from.kind == longs and to_type.kind == strings)return Node(formatLong(from.value.longy), false);
+    if (from.kind == longs and to_type.kind == strings)
+        return Node(String(formatLong(from.value.longy)), false);
     if (from.kind == reals and to_type.kind == strings)
-        return Node(formatRealWithBaseAndPrecision(from.value.real, 10, 2), false);
+        return Node(String(formatRealWithBaseAndPrecision(from.value.real, 10, 2)), false);
     if (from.kind == longs and to_type.kind == codepoint1) {
         // digit to char! 2 => '2'
         // DANGER: user intention unclear!? 2 => '2' or 0x20 => ' '

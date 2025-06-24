@@ -2928,19 +2928,20 @@ Code cast(Type from, Type to) {
     Code nop;
     // if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
     if (from == to)return nop; // nop
-    if ((from == reals) and to == charp)
+    bool to_string = (to == charp or to == strings or to == stringp);
+    if (from == reals and to_string)
         return emitCall("formatReal", no_context);
-    if ((from == longs) and to == charp)
+    if (from == realsF and to_string)
+        return cast(realsF, reals).add(emitCall("formatReal", no_context));
+    if (from == longs and to_string)
         return emitCall("formatLong", no_context);
-    if (from == int32t /*long32*/ and to == charp)
+    if (from == int32t /*long32*/ and to_string)
         return cast(long32, longs).add(emitCall("formatLong", no_context));
-
     // if(from == stringp and to == longs)
     // error("cast string/reference to long not implemented, use toLong() instead");
     if (from == wasmtype_array and isArrayType(to))return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
     if (to == none or to == unknown_type or to == voids)return nop; // no cast needed magic VERSUS wasm drop!!!
-    if (from == referencex and to == stringp)return emitCall("toString", no_context);
-    if (from == referencex and to == charp)return emitCall("toString", no_context);
+    if (from == referencex and to_string)return emitCall("toString", no_context);
     if (from == referencex and to == reals)return emitCall("toReal", no_context);
     // if (from == referencex and to == longs and functions.has("toLong")) // NOT for smart64!
     //     return emitCall("toLong", no_context);
@@ -2953,13 +2954,13 @@ Code cast(Type from, Type to) {
 
     if (from == node and to == i64t)
         return Code(i64_extend_i32_s).addConst64(node_header_64) + Code(i64_or); // turn it into node_pointer_64 !
-    if (from == array and to == charp)return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
-    if (from == i32t and to == charp)return nop; // assume i32 is a pointer here. todo?
+    if (from == array and to_string)return nop; // uh, careful? [1,2,3]#2 ≠ 0x0100000…#2
+    if (from == i32t and to_string)return nop; // assume i32 is a pointer here. todo?
     if (from == charp and to == i64t)
         return Code(i64_extend_i32_s);
     if (from == charp and to == i32t)return nop; // assume i32 is a pointer here. todo?
     if (from == array and to == i32)return nop; // pray / assume i32 is a pointer here. todo!
-    if (from == charp and to == strings)return nop;
+    if (from == charp and to_string)return nop;
     if (isGeneric(from) and isGeneric(to))return nop;
     if (from == codepoint1 and to == i64t)
         return Code(i64_extend_i32_s);
@@ -2968,14 +2969,9 @@ Code cast(Type from, Type to) {
     if (from == float32t and to == array)return nop; // pray / assume f32 is a pointer here. LOL NO todo!
     if (from == i64 and to == array)return Code(i32_wrap_i64);; // pray / assume i32 is a pointer here. todo!
     if (from == referencex and to == string_struct)return emitCall("toString", no_context);
-    if (from == charp and to == stringp)return nop; // todo: shift n bytes or unify?
-    if (from == longs and to == stringp)
-        return emitCall("formatLong", no_context); // todo make it work on all signatures!
-    if (from == long32 and to == stringp)
-        return Code(i64_extend_i32_s).add(emitCall("formatLong", no_context));
+
     // if (from == long32 and to == stringp)return Code(i64_extend_i32_s).add(emitCall("_Z4ltoax", no_context));
     // if (from == long32 and to == stringp)return emitCall("itoa0", no_context);// todo make it work on all signatures!
-    // todo make it work on all signatures!
     if (to == stringp)return emitCall("toString", no_context); // todo make it work on all signatures!
 
     // todo: use context?
