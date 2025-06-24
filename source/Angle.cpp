@@ -420,7 +420,7 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
     }
     for (Node &arg: params) {
         if (arg.kind == groups) {
-            arg = groupTypes(arg, function);
+            arg = groupTypes(arg, function,true);
             args.add({function.name, arg.name, arg.type ? arg.type : mapType(nextType), params});
             continue;
         }
@@ -693,7 +693,7 @@ void initTypes() {
 
 Node &constructInstance(Node &node, Function &function);
 
-Node &groupTypes(Node &expression, Function &context) {
+Node &groupTypes(Node &expression, Function &context , bool as_param) {
     // todo delete type declarations double x, but not double x=7
     // todo if expression.length = 0 and first.length=0 and not next is operator return ø
     // ways to set type:
@@ -735,7 +735,7 @@ Node &groupTypes(Node &expression, Function &context) {
             // BAD criterion for next!
             typed->type = aType; // ref ok because types can't be deleted ... rIgHt?
             if (typed->kind == reference or typed->isSetter())
-                addLocal(context, typed->name, mapType(aType->name), false);
+                addLocal(context, typed->name, mapType(aType->name), as_param);
             // HACK for double x,y,z => z.type=DoubleType !
             if (i + 1 < expression.length)
                 typed = &expression[++i];
