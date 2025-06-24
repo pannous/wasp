@@ -29,6 +29,20 @@
 
 #include "asserts.h"
 
+void testReturnTypes() {
+    assert_emit("fun addier(a,b){b+a};addier(42,1)", 43);
+    assert_emit("fun addier(a,b){b+a};addier(42,1)+1", 44);
+    assert_emit("float addi(x,y){x+y};addi(2.2,2.2)", 4.4)
+    assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
+    assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
+    assert_emit("add1 x:=x+1;add1 3", (int64) 4);
+    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+    assert_emit("for(i=0;i<10;i++){puti i};i", 10);
+    assert_emit("int x = $bla", 123);
+    assert_emit("`${1+1}`", "2")
+    assert_emit("real x = $bla", 123.);
+}
+
 void testRandomParse() {
     const Node &node = parse("x:40;x+1");
     check(node.length == 2)
@@ -174,12 +188,12 @@ void testExp() {
     assert_is("π^1", pi);
     assert_is("π*√163", 40.1091); // ok
     skip(
-    assert_is("π√163", 40.1091);
-    assert_is("(π*√163)==(π√163)", 1);
-    assert_is("π*√163==(π√163)", 1);
-    assert_is("π*√163==π√163", 1);
-    assert_is("exp(0)", 1); // "TODO rewrite as ℯ^x" OK
-        )
+        assert_is("π√163", 40.1091);
+        assert_is("(π*√163)==(π√163)", 1);
+        assert_is("π*√163==(π√163)", 1);
+        assert_is("π*√163==π√163", 1);
+        assert_is("exp(0)", 1); // "TODO rewrite as ℯ^x" OK
+    )
     assert_is("ℯ^(π*√163)", 262537412640768743.99999999999925);
 }
 
@@ -3336,7 +3350,7 @@ void todo_done() {
 
 // todo: ^^ move back into tests() once they work again
 void todos() {
-        testConstructorCast();
+    testConstructorCast();
     skip( // unskip to test!!
         testKitchensink();
         testNodeEmit();
@@ -3896,6 +3910,7 @@ void testCurrent() {
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
 #else
+    testReturnTypes();
     testRecentRandomBugs();
     // exit(0); // todo: remove this once all tests are passing
     testStringInterpolation();
@@ -3907,7 +3922,7 @@ void testCurrent() {
 
     testWaspRuntimeModule();
     test_new();
-        testExp(); // todo!
+    testExp(); // todo!
 
     skip( // TODO!
         testKebabCase(); // needed later …
