@@ -1168,14 +1168,14 @@ void checkRequiredCasts(String &op, const Node &lhs, Node &rhs, Function &contex
     // todo maybe add cast node here instead of in emit?
     Type left_kind = lhs.kind;
     Type right_kind = rhs.kind;
-    if(right_kind == Kind::operators or right_kind == Kind::expression)
+    if(right_kind == operators or right_kind == expression or right_kind == reference or right_kind == call)
         right_kind = preEvaluateType(rhs, context); // todo: use preEvaluateType for all rhs?
 
     if (op == "+" and left_kind == strings)
         useFunction("toString");// todo ALL polymorphic variants! => get rid of these:
     if (op == "+" and left_kind == strings and right_kind == longs)
         useFunction("formatLong");
-    if (op == "+" and left_kind == strings and right_kind == reals)
+    if (op == "+" and left_kind == strings and (right_kind == reals or right_kind == realsF))
         useFunction("formatReal");
 }
 
@@ -1285,7 +1285,7 @@ Node &groupOperators(Node &expression, Function &context) {
             auto lhs_type = preEvaluateType(prev, context);
             if (op == "+" and (lhs_type == Primitive::charp or lhs_type == Primitive::stringp or lhs_type == strings)) {
                 findLibraryFunction("concat", true);
-                findLibraryFunction("_Z6concatPKcS0_", true);
+                // findLibraryFunction("_Z6concatPKcS0_", true);
             }
             if (op == "^" or op == "^^" or op == "**" or op == "exp" or op == "ℇ") {
                 // todo NORM operators earlier
@@ -1855,7 +1855,9 @@ List<String> aliases(String name) {
     if (name == "concat") {
         // todo: programmatic!
         if (not use_wasm_strings)
-            found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
+            found.add("concat"); // OK _Z6concatPKcS0_ via linker:
+        // LINKED main.wasm:concat import #1 concat to export #31 _Z6concatPKcS0_ relocated_function_index 23
+            // found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
     }
     //	if (name == "+") {
     //		found.add("add");
@@ -2063,9 +2065,9 @@ Node &groupTemplate(Node &node, Function &function) {
             if (kind == referencex or kind == reference) useFunction("toString");
             else if (kind == long32) useFunction("formatLong"); // itoa0
             else if (kind == longs) useFunction("formatLong"); // ltoa
-            else if (kind == reals or kind == realsF) useFunction("ftoa");
-            else if (kind == doubles) useFunction("ftoa");
-            else if (kind == floats) useFunction("ftoa"); // todo via auto upcast?
+            else if (kind == reals or kind == realsF) useFunction("formatReal"); // ftoa
+            else if (kind == doubles) useFunction("formatReal");
+            else if (kind == floats) useFunction("formatReal"); // todo via auto upcast?
             else
                 error("Unknown template child type: "s + typeName(kind));
         }
@@ -2287,6 +2289,8 @@ void preRegisterFunctions() {
     functions["toReal"].import();
     functions["toReal"].signature.add(referencex, "id").returns(reals);
 
+    // functions["formatLong"].import();
+    // functions["formatLong"].signature.add(longs).returns(strings);
 
     functions["concat"].import(); // todo load from runtime AGAIN 2025-06-16
     functions["concat"].signature.add(charp).add(charp).returns(charp);

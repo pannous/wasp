@@ -1413,6 +1413,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
     int fun_end = length;
     //    Reloc *patch_code_block_size;
     info("PARSING FUNCTION SECTION");
+    int control_depth = 0;
     while (code_index < function_count && current_offset < length and
            current_offset - section_offset < section_size) {
         // go over ALL functions! ignore 00
@@ -1466,12 +1467,21 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
         //        if (call_index == 332)// op == i32_store and
         //            breakpoint_helper
         Opcode opcode = Opcode::FromCode(b);
+        // Track control depth for block/loop/if/try/end
+        if (op == block || op == loop || op == if_i || op == try_) {
+            control_depth++;
+        } else if (op == end_block) {
+            control_depth--;
+        }
         if (current_offset >= fun_end) {
             begin_function = true;
             code_index++;
             call_index++;
-            if (b != end_block and b != 0) {
-                error("unexpected opcode at function end %x "s % b + opcode.GetName());
+            if (b != end_block) {
+                if(control_depth>0)
+                    error("unexpected opcode at function end %x "s % b + opcode.GetName() + " control_depth: " + control_depth);
+                // else
+                    // error("unexpected opcode at function end %x "s % b + opcode.GetName());
                 breakpoint_helper;
             } else last_opcode = end_block;
             call_index = function_imports_count + code_index;
