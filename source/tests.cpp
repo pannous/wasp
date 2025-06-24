@@ -738,6 +738,8 @@ void testFunctionArgumentCast() {
     assert_emit("fun addi(float x,float y){x+y};addi(2.2,2.2)", 4.4)
     assert_emit("float addi(int x,int y){x+y};addi(2.2,2.2)", 4.4)
     assert_emit("fun addier(float a,float b){b+a};addier(42,1)+1", 44);
+    assert_emit("float addi(float x,float y){x+y};'hello'+addi(2.2,2.2)", "hello4.4")
+    assert_emit("real addi(real x,real y){x+y};'hello'+addi(2.2,2.2)", "hello4.4")
 
 }
 
