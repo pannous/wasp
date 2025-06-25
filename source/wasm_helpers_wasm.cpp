@@ -16,6 +16,8 @@
 
 // extern int MAX_MEM;
 
+extern "C" void __wasm_call_ctors();
+
 extern "C" byte *getHeapEnd() { return &__heap_base + heap_offset; }
 
 extern "C" void setHeapEnd(byte *neu) {
@@ -520,7 +522,6 @@ int64 call_wasp_main(int index) {
     return index;
 }
 
-extern "C" void __wasm_call_ctors();
 
 // un-export at link time to use main:_start
 extern "C" void _start() {

@@ -73,16 +73,20 @@ Node Nan = Node("NaN");
 
 Node *reconstructArray(int *array_struct);
 
+#ifdef WASI
+#ifdef WASM
+extern "C" void __wasm_call_ctors(); // todo merge with wasm_helpers.h
+#endif
+#endif
+
 void initSymbols() {
     print("initSymbols");
     ((Node) NIL).name = nil_name;
-#ifdef WASI
-    // print("no initSymbols in WASI??");
-    // return; // ??
-#elif  WASM
-	//	__wasm_call_ctors();??
+#ifdef WASM
 		if (True.kind == bools)
 			error("Wasm DOES init symbols!?");
+		__wasm_call_ctors(); // still needed in WASM! e.g. for operator_list
+    return; // ??
 #else
 	return; // no need outside WASM
 #endif
