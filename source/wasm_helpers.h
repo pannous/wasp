@@ -163,6 +163,7 @@ extern double sqrt1(double a); // wasm has own, egal only used in Interpret.cpp
 
 extern "C" char *run(chars code);
 
+extern "C" void *realloc(void *__ptr, size_t __size) __attribute__((__warn_unused_result__));
 void *alloc(int num, int size); // => malloc / calloc
 #if WASM
 extern "C" void *malloc(size_t size);

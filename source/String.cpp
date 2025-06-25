@@ -35,6 +35,7 @@ class String;
 bool eq(chars dest, chars src) {
     return eq(dest, src, -1);
 }
+
 bool eq(chars dest, chars src, int length) {
     if (!dest || !src)
         return false;
@@ -241,6 +242,7 @@ double parseDouble(chars string) {
 
 class Node; // can't pre-access properties, BUT can use functions:
 String toString(Node &node);
+
 // String toString(externref &node);
 
 

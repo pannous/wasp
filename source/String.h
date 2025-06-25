@@ -223,6 +223,7 @@ class String {
     //    A UTF-8 environment can use non-synchronized continuation bytes as base64: 0b10   Base58 avoids lookalikes
 
 public:
+    // ⚠️ ANY CHANGE HERE MUST BE REFLECTED IN ABI and wasp.js !!!
     char *data{}; // UTF-8 sequence
     int length = -1;
     int kind = string_header_32; // post header ;) static const

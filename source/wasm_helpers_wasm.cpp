@@ -20,7 +20,7 @@ extern "C" byte *getHeapEnd() { return &__heap_base + heap_offset; }
 
 extern "C" void setHeapEnd(byte *neu) {
     // check_silent(neu >= heap_end); // don't allow overwrite! except in reset_heap()
-    addHeapEnd(neu-getHeapEnd());
+    addHeapEnd(neu - getHeapEnd());
     // heap_end = neu;
 }
 
@@ -234,6 +234,14 @@ void debugCalloc(size_t num, size_t size) {
         puti(size);
         print("---calloc");
     }
+}
+
+
+void *realloc(void *__ptr, size_t __size) {
+    void *neu = malloc(__size);
+    memcpy(neu, __ptr, __size);
+    free(__ptr);
+    return neu;
 }
 
 
@@ -640,6 +648,6 @@ float modulo_float(float a, float b) {
     return a - b * trunc(a / b);
 }
 
- #if RUNTIME_ONLY // precedence??
+#if RUNTIME_ONLY // precedence??
     float precedence(Node &operater){return 0.0f;}
 #endif

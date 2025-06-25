@@ -12,7 +12,12 @@ extern "C" Node *testNodeJS(String *s) {
 
 extern "C" String *testFromJS(String *s) {
     println("testJString…");
-    check_is("test from JS"s, *s); // OK
+    println(s->codepoint_count);
+    println((*s).codepoint_count);
+    if("test from JS"s == s);
+    else check_is("test from JS"s, s); // OK
+    if("test from JS"s == *s);
+    else check_is("test from JS"s, *s); // NOT OK !?! todo <<
     // check_is("test from JS"s, s); // NOT OK !?!?!? todo <<
     // print(wasp.name);
     //    print("wasp.total_func_count");

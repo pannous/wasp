@@ -531,15 +531,15 @@ function string(data, mem = memory) { // wasm<>js interop
     case "string":
       // todo use HEAP_END of APP, not of compiler! lol
       while (HEAP_END % 8) HEAP_END++ // align to 8 bytes
-      let p = HEAP_END
-      new_int(HEAP_END + 12, mem) // pointer to chars = string_start + 20  TODO 12 vs 20 in c++/ABI
-      new_int(data.length, mem)
-      new_int(string_header_32, mem)
-      // new_long(0, mem) // 8 byte *codepoints 64 bit in c++
-      // new_int(0, mem) // 4 byte *codepoints 32 bit in WASM !!!
-      // new_int(-1, mem) // codepoint_count
-      // new_int(0, mem) // shared reference
-      chars(data, mem);
+      let p = HEAP_END;
+      // ⚠️ ANY CHANGE in String.h MUST BE REFLECTED IN ABI and HERE !!!
+      new_int(0, mem);                         // [0] char* data (to be set below)
+      new_int(data.length, mem);              // [4] length
+      new_int(string_header_32, mem);         // [8] kind
+      new_int(0, mem);                        // [12] codepoints = null
+      new_int(-1, mem);                       // [16] codepoint_count = invalid
+      new_int(0, mem);                        // [20] shared_reference = 0
+      set_int(p, chars(data, mem), mem);      // set pointer-to-chars at offset 0
       return p;
     case "bigint":
     case "number":
@@ -1065,7 +1065,7 @@ function load_runtime_bytes() {
   else print("loading runtime_bytes ")
   fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
       runtime_bytes = buffer
-    if (typeof (compiler_exports) == 'undefined')
+      if (typeof (compiler_exports) == 'undefined')
         console.error("compiler needs to be loaded before runtime")
       copy_runtime_bytes_to_compiler()
       WebAssembly.instantiate(runtime_bytes, imports).then(obj => {
@@ -1099,8 +1099,8 @@ function copy_runtime_bytes_to_compiler() {
   print("HEAP BEFORE parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
   compiler_exports.parseRuntime(pointer, length) // sets HEAP_END too!
   print("HEAP AFTER parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
-  if(compiler_exports.getHeapEnd()>HEAP_END)
-  error("HEAP_END overflow, reserve more HEAP_END += before!")
+  if (compiler_exports.getHeapEnd() > HEAP_END)
+    error("HEAP_END overflow, reserve more HEAP_END += before!")
   syncHeap()
 }
 
@@ -1127,7 +1127,7 @@ function load_compiler() {
       compiler_exports = compiler_instance.exports
       // global.
       addSynonyms(compiler_exports)
-    // runtime_exports = compiler_exports
+      // runtime_exports = compiler_exports
       HEAP = compiler_exports.__heap_base; // ~68000
       DATA_END = compiler_exports.__data_end
       HEAP_END = HEAP || DATA_END || runtime_exports.__heap_end;
@@ -1149,17 +1149,17 @@ function load_compiler() {
   })
 }
 
-function similar(x,y){
-  if(x == y) return true
-  if(typeof x === 'number' && typeof y === 'number'){
+function similar(x, y) {
+  if (x == y) return true
+  if (typeof x === 'number' && typeof y === 'number') {
     const eps = 1e-5;
     const diff = Math.abs(x - y);
     const max = Math.max(Math.abs(x), Math.abs(y));
     return max === 0 || diff / max < eps;
   }
-  if(x instanceof String && y instanceof String) return x.valueOf() == y.valueOf()
-  if(x instanceof Array && y instanceof Array) return x.length == y.length && x.every((v,i)=>similar(v,y[i]))
-  if(x instanceof Object && y instanceof Object) return Object.keys(x).length == Object.keys(y).length && Object.keys(x).every(k=>similar(x[k],y[k]))
+  if (x instanceof String && y instanceof String) return x.valueOf() == y.valueOf()
+  if (x instanceof Array && y instanceof Array) return x.length == y.length && x.every((v, i) => similar(v, y[i]))
+  if (x instanceof Object && y instanceof Object) return Object.keys(x).length == Object.keys(y).length && Object.keys(x).every(k => similar(x[k], y[k]))
   return false
 }
 
@@ -1322,6 +1322,7 @@ function compiler_ready() {
 }
 
 var wasp_is_ready = false
+
 function wasp_ready() {
   debug("wasp is ready")
   wasp_is_ready = true
@@ -1335,7 +1336,7 @@ function wasp_ready() {
   // testRun1()
   if (run_tests)
     test();
-    // setTimeout(test, 1);// make sync
+  // setTimeout(test, 1);// make sync
   else compile_and_run(editor.getValue())
 }
 
