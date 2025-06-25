@@ -813,9 +813,9 @@ private:
                 chunks.add(Node(tee).setKind(strings));
             }
         }
-        proceed(); // skip ` done
         if (end_of_text())
             parserError("Unterminated string");
+        proceed(); // skip ` done
         return chunks;
     }
 
