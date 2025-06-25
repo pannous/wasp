@@ -588,8 +588,8 @@ void Node::remove(Node &node) {
 }
 
 Node &Node::add(const Node *node) {
-    if ((int64) node > MAX_MEM)
-        error("node Out of Memory %x > %x"s % (int64) node % MAX_MEM);
+    // if ((int64) node > MAX_MEM)
+    //     error("node Out of Memory %x > %x"s % (int64) node % MAX_MEM);
     if (!node)return *this;
     if (this == &NIL) {
         warn("adding to NIL!");

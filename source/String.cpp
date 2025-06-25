@@ -32,7 +32,9 @@ typedef chars chars;
 class String;
 
 //char *empty_string = "";
-
+bool eq(chars dest, chars src) {
+    return eq(dest, src, -1);
+}
 bool eq(chars dest, chars src, int length) {
     if (!dest || !src)
         return false;

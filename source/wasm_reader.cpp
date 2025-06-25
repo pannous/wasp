@@ -18,8 +18,8 @@ bool build_module = true; // for funclets … and wasm runtime merge?
 bool build_module = true;
 #endif
 
-bool debug_reader = tracing;
-// bool debug_reader = true;
+// bool debug_reader = tracing;
+bool debug_reader = true;
 
 typedef unsigned char *bytes;
 int pos = 0;
@@ -532,11 +532,9 @@ void consumeExportSection() {
 
         if (fun->is_polymorphic) {
             trace("HYPER (>2) polymorphic function %s"s % func);
-            Function *abstract = fun;
-            fun = new Function{
-                .code_index = lower_index, .name = func0, .module = abstract->module, .is_runtime = true
-            };
-            abstract->variants.add(fun);
+            Function *variant = new Function{ .code_index = lower_index, .name = func0, .module = fun->module, .is_runtime = true };
+            fun->variants.add(variant);
+            fun = variant; // use new variant
         } else if (fun->signature.size()) {
             // already has signature => make polymorphic
             trace("function %s already has signature "s % func + fun->signature.serialize());
@@ -554,7 +552,7 @@ void consumeExportSection() {
 
             abstract.variants.add(old_fun);
             abstract.variants.add(fun);
-            fun = abstract.variants.last();
+            // fun = abstract.variants.last(); // same, cause pointer
         } else {
             fun0.code_index = lower_index;
             fun->code_index = lower_index;

@@ -2033,10 +2033,11 @@ Code emitStringOp(Node &op, Function &context) {
         return emitCall(op, context);
         //		stringOp.addByte();
     } else if (op == "==" or op == "is" or op == "equals") {
-        op = Node("_Z2eqPKcS0_i"); //  careful : various signatures
+        op = Node("_Z2eqPKcS0_"); //  careful : various signatures
         //        op = Node("_Z2eqR6StringPKc");//  careful : various signatures
         last_type = charp; //stringp;
-        return Code(i32_const) + Code(-1) + emitCall(op, context); // third param required!
+        return emitCall(op, context); // auto length (-1)
+        // return Code(i32_const) + Code(-1) + emitCall(op, context); // third param required!
     } else if (op == "length" or op == "len" or op == "size" or op == "count" or op == "strlen") {
         print("emitLength to get string length: %s\n"s % op.serialize());
         return emitLength(op.first(), context);

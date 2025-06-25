@@ -28,24 +28,24 @@ class Map {
 public: // todo careful Map<char*,…> eq
     int capacity = MAP_INITIAL_CAPACITY; // initial
     int _size = 0;
-    S *keys = (S *) aligned_alloc(alignof(S), capacity * sizeof(S));
-    T *values = (T *) aligned_alloc(alignof(T), capacity * sizeof(T));
-    // S *keys = (S *) calloc(sizeof(S), capacity);
-    // T *values = (T *) calloc(sizeof(T), capacity);
+    // S *keys = (S *) aligned_alloc(alignof(S), capacity * sizeof(S));
+    // T *values = (T *) aligned_alloc(alignof(T), capacity * sizeof(T));
+    S *keys = (S *) calloc(sizeof(S), capacity);
+    T *values = (T *) calloc(sizeof(T), capacity);
     int map_header = map_header_32;
 
     Map(int initial_capacity = MAP_INITIAL_CAPACITY) {
-        if(initial_capacity==0)initial_capacity = MAP_INITIAL_CAPACITY;
+        if (initial_capacity == 0)initial_capacity = MAP_INITIAL_CAPACITY;
         capacity = initial_capacity;
         _size = 0;
-        keys = (S *) aligned_alloc(alignof(S), capacity * sizeof(S));
-        values = (T *) aligned_alloc(alignof(T), capacity * sizeof(T));
-        memset((void*)keys, 0, capacity * sizeof(S));
-        memset((void*)values, 0, capacity * sizeof(T));
+        // keys = (S *) aligned_alloc(alignof(S), capacity * sizeof(S));
+        // values = (T *) aligned_alloc(alignof(T), capacity * sizeof(T));
+        // memset((void*)keys, 0, capacity * sizeof(S));
+        // memset((void*)values, 0, capacity * sizeof(T));
         // aligned_alloc(sizeof(S), 0); // 8 byte alignment for 64 bit pointers
-        // keys = (S *) calloc(sizeof(S), capacity);
         // aligned_alloc(sizeof(T), 0); // 8 byte alignment for 64 bit pointers
-        // values = (T *) calloc(sizeof(T), capacity);
+        keys = (S *) calloc(sizeof(S), capacity);
+        values = (T *) calloc(sizeof(T), capacity);
     }
 
     Map(std::initializer_list<std::pair<S, T> > init_list) {
@@ -176,7 +176,7 @@ public: // todo careful Map<char*,…> eq
 
     // const & works just as well as int add(S key, T value) !!
     int add(const S &key, const T &value) {
-        if (keys == 0 or _size + 1 >= capacity) grow();
+        if (keys == 0 or _size >= capacity) grow();
         int found = position(key);
         if (found >= 0) {
 #if not WASM
@@ -348,35 +348,38 @@ public: // todo careful Map<char*,…> eq
 
     void grow() {
         // todo don't grow when holding references!
-        if(capacity==0)capacity = MAP_INITIAL_CAPACITY;
+        if (capacity == 0)capacity = MAP_INITIAL_CAPACITY;
         capacity = capacity * 2;
         check_silent(capacity < MAP_MAX_CAPACITY);
         //        warn("GROWING");
-        S *new_keys = (S *) alloc(sizeof(S), capacity);
-        T *new_values = (T *) alloc(sizeof(T), capacity);
-        if (keys and values) {
-            memcpy((void *) new_keys, (void *) keys, sizeof(S) * capacity / 2);
-            memcpy((void *) new_values, (void *) values, sizeof(T) * capacity / 2);
-            // currently we can't guarantee that external references exist, e.g. fun.signature consumeExportSection() wasm_reader.cpp:433
-            // may result in AddressSanitizer: heap-use-after-free if references are held during grow/construction
-            // todo use free after … runtime is debugged or save Map invented. currently ok though
-            free(keys);
-            free(values);
-        }
-        keys = new_keys;
-        values = new_values;
+        keys = (S*)realloc(keys, sizeof(S) * capacity);
+        values = (T*)realloc(values, sizeof(T) * capacity);
+        //
+        // S *new_keys = (S *) alloc(sizeof(S), capacity);
+        // T *new_values = (T *) alloc(sizeof(T), capacity);
+        // if (keys and values) {
+        //     memcpy((void *) new_keys, (void *) keys, sizeof(S) * capacity / 2);
+        //     memcpy((void *) new_values, (void *) values, sizeof(T) * capacity / 2);
+        //     // currently we can't guarantee that external references exist, e.g. fun.signature consumeExportSection() wasm_reader.cpp:433
+        //     // may result in AddressSanitizer: heap-use-after-free if references are held during grow/construction
+        //     // todo use free after … runtime is debugged or save Map invented. currently ok though
+        //     free(keys);
+        //     free(values);
+        // }
+        // keys = new_keys;
+        // values = new_values;
     }
 
     void clear() {
         if (size() == 0)return;
-        if(capacity==0)capacity = MAP_INITIAL_CAPACITY;
+        if (capacity == 0)capacity = MAP_INITIAL_CAPACITY;
 
-        free(keys); // todo  (interrupted by signal 6: SIGABRT) in WebApp why?
-        free(values);
-        keys = (S *) calloc(sizeof(S), capacity);
-        values = (T *) calloc(sizeof(T), capacity);
-        //memset(keys, 0, sizeof(S) * capacity);
-        //memset(values, 0, sizeof(T) * capacity);
+        // free(keys); // todo  (interrupted by signal 6: SIGABRT) in WebApp why?
+        // free(values);
+        // keys = (S *) calloc(sizeof(S), capacity);
+        // values = (T *) calloc(sizeof(T), capacity);
+        memset(keys, 0, sizeof(S) * capacity);
+        memset((void*)values, 0, sizeof(T) * capacity);
         //std::fill(keys, keys + capacity, S{});
         //std::fill(values, values + capacity, T{});
         _size = 0;

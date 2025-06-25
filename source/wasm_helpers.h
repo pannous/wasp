@@ -55,10 +55,15 @@ extern "C" byte *getHeapEnd();
 // inline byte* getHeapEnd() {
 //     return &__heap_base + heap_offset;
 // }
+#if WASM
 inline byte* addHeapEnd(size_t size) {
     heap_offset += size;
     return &__heap_base + heap_offset;
 }
+#else
+inline byte* addHeapEnd(size_t size) {return 0;} // who calles this??
+#endif
+
 
 // extern "C" void setHeapEnd(byte *neu) {
 //     // check_silent(neu >= heap_end); // don't allow overwrite! except in reset_heap()

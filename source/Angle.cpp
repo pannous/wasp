@@ -1891,7 +1891,7 @@ List<String> aliases(String name) {
     //	}
     if (name == "eq") {
         if (not use_wasm_strings)
-            found.add("_Z2eqPKcS0_i"); // eq(char const*, char const*, int)
+            found.add("_Z2eqPKcS0_"); // eq(char const*, char const*)
         //        found.add("_Z2eqR6StringPKc"); // eq(String&, char const*)
     }
     if (name == "=") {
@@ -2243,13 +2243,8 @@ void fixFunctionNames() {
     int good = 0;
     for (String &name: functions) {
         if (name.empty())continue; // todo: how?
-        if (not functions.has(name)) {
-            print("fixFunctionNames: no function ");
-            //     // print(name); // undefined / ERROR
-            print("good "s + good + " functions found, "s + functions.size() + " total");
-            break;
-            // continue; // todo: how?
-        }
+        if (not functions.has(name)) // todo remove old bug check
+            error("fixFunctionNames: no function  good "s + good + " functions found, "s + functions.size() + " total");
         functions[name].name = name;
         good++;
     }

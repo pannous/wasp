@@ -1809,8 +1809,8 @@ void handler(int sig) {
 extern "C" void __wasm_call_ctors();
 void load_parser_initialization() {
     // todo: remove thx to __wasm_call_ctors
-    if (operator_list.size() == 0)
-        __wasm_call_ctors(); // try again
+    // if (operator_list.size() == 0)
+    //     __wasm_call_ctors(); // try again
     if (operator_list.size() == 0)
         error("operator_list should have been constructed in __wasm_call_ctors @ _start");
         //		warn("operator_list should have been constructed in __wasm_call_ctors @ _start");

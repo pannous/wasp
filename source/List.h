@@ -167,6 +167,7 @@ public:
     }
 
     void grow() {
+        if(capacity==0)capacity=LIST_DEFAULT_CAPACITY;
         capacity *= 2;
 //        printf("grow %d\n", capacity);
 #if not WASM
@@ -178,18 +179,18 @@ public:
 #endif
     }
 
-    S &add(S s) {
+    S &add(const S& s) {
 //        if(!items)grow();// how?
+        if (size_ >= capacity)grow();
         items[size_++] = s;
-        if (size_ >= capacity - 1)grow();
         return items[size_ - 1];
     }
 
-    S &add(S *s) {
-        items[size_++] = s;
-        if (size_ >= capacity)grow();
-        return items[size_ - 1];
-    }
+    // S &add(S *s) {
+    //     items[size_++] = s;
+    //     if (size_ >= capacity)grow();
+    //     return items[size_ - 1];
+    // }
 
 //	S &add(S s) {// vector compatible
 //		add(s)
