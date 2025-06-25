@@ -61,7 +61,9 @@ inline byte* addHeapEnd(size_t size) {
     return &__heap_base + heap_offset;
 }
 #else
-inline byte* addHeapEnd(size_t size) {return 0;} // who calles this??
+inline byte* addHeapEnd(size_t size) {
+    return 0;
+} // who calles this??
 #endif
 
 

@@ -3560,6 +3560,8 @@ Valtype fixValtype(Valtype valtype) {
     if ((int) valtype >= node)
         error("exposed internal Valtype");
     //    if (valtype > 0xC0)error("exposed internal Valtype");
+    if(valtype == 0)
+        return voids;// int64t;
     return valtype;
 }
 

@@ -129,7 +129,8 @@ Type mapType(String arg, bool throws) {
     if (arg.startsWith("const ")) // todo modifiers!
         arg = arg.substring(6);
     //	if(arg=="const char*")return charp;
-    if (arg.empty() or arg == "" or arg == " ") return voids;
+    if (arg.empty() or arg == "" or arg == " ")
+        return voids;
     else if (arg == "void")return voids;
     else if (arg == "unsigned char*")return charp; // pointer with special semantics
     else if (arg == "char const*")return charp; // pointer with special semantics
@@ -160,7 +161,7 @@ Type mapType(String arg, bool throws) {
     else if (arg == "real")return float64t;
     else if (arg == "double")return float64t;
     else if (arg == "float")return float32t;
-    else if (arg == "bool")return int32t;
+    else if (arg == "bool") return int32t;
     else if (arg == "const char")return byte_char;
     else if (arg == "char")return byte_char; // c++ char < angle codepoint ok
     else if (arg == "signed char")return byte_i8;

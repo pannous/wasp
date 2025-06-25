@@ -423,7 +423,7 @@ String operator "" _s(chars c, unsigned long t) {
 }
 
 // ""s is reserved for std::string or future standardization
-String operator "" s(chars c, unsigned long t) {
+String operator "" s(chars c, size_t t) {
     // function signature contains illegal type WHYY??
     return String(c, (int) t);
 }
@@ -464,7 +464,7 @@ bool String::empty() const {
     if (this == 0)return true;
     if (codepoints and codepoint_count > 0)return false;
     if ((int64) this < 8)return true; // zero page broken object hack
-    if (length == 0)return true;
+    if (length <= 0)return true;
     if (this->data == 0)return true;
     return false;
 }

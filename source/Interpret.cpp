@@ -69,7 +69,7 @@ Node Node::interpret(bool expectOperator /* = true*/) {
 
     if (length == 2 and children[1].kind == expression) {
         length = 1;
-        return this->merge(children[1]).interpret(); // stop hacking
+        return ((Node&)this->merge(children[1])).interpret(); // stop hacking
     }
     //	if (type != expression and type != key)
     //		return *this;

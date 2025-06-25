@@ -120,6 +120,7 @@ String s(chars &s);
 //int ord(codepoint c);// identity!
 
 bool eq(chars dest, chars src);
+
 bool eq(chars dest, chars src, int length);
 
 void strcpy2(char *dest, chars src);
@@ -235,7 +236,7 @@ public:
     // memory layout different to chars with leb length header!
     // todo add UTF-16 representation as codepoint union?
 private:
-    //    static String* EMPTY_STRING;
+    static String *EMPTY_STRING;
 
 public:
     String() {
@@ -257,6 +258,7 @@ public:
     }
 
     String(String *copy_move_assignment) {
+        if(copy_move_assignment==NULL)return;
         data = copy_move_assignment->data;
         length = copy_move_assignment->length;
         shared_reference = true; // shared;// better safe than sorry
@@ -286,6 +288,7 @@ public:
 
     explicit String(char *datas, int len, bool share) {
         data = datas;
+        if(len<0)len=strlen(datas);
         length = len;
         shared_reference = share;
         if (!share) {
@@ -318,6 +321,7 @@ public:
     String(const char string[], int length0) {
         // todo signature for merger experimental!
         //		shared_reference= true;
+        if(length0<0)length0=strlen(string);
         length = length0;
         //		data =(char*) reinterpret_cast<const char *>(string);
         data = (char *) (alloc(sizeof(char), length + 1));
@@ -331,7 +335,7 @@ public:
         // todo (maybe dont) mark data as to-free on destruction once copy = false AND bool malloced = true
         //		data = const_cast<char *>(string);// todo heap may disappear, use copy!
         length = string == 0 ? 0 : strlen(string);
-        if (length == 0)data = 0; //SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
+        if (length <= 0)data = 0; //SUBTLE BUGS if setting data="" data=empty_string !!!;//0;//{data[0]=0;}
         else {
             if (copy) {
                 data = (char *) (alloc(sizeof(char), length + 1));
@@ -544,15 +548,15 @@ public:
 
     // excluding to
     // todo ref param is confusing as one can expect it to be 'include = true/false'
-    String substring(int from, int to = -1, bool ref = false /* true after all is tested*/) {
+    String &substring(int from, int to = -1, bool ref = false /* true after all is tested*/) {
         // excluding to
         if (from < 0 or (from == 0 and (to == length or to == -1))) return *this;
         if (to < 0) to = length + to + 1; // -2 : skip last character
         if (to > length or to < -length) to = length;
-        if (to <= from) return ""; //EMPTY_STRING;
-        if (from >= length) return ""; //EMPTY_STRING;
+        if (to <= from) return *new String();
+        if (from >= length) return *new String();
         int len = to - from;
-        return String(data + from, len, ref);
+        return *new String(data + from, len, ref);
     }
 
     //
@@ -620,6 +624,7 @@ public:
         String d = b.replace("%s", c);
         return d;
     }
+
     //
     // String operator%(String *c) {
     //     if (!c)return *this;
@@ -1004,14 +1009,16 @@ public:
     //     return eq(data, s->data, length);
     // }
 
-    inline bool operator==(const char *c) const {
+    // inline
+    bool operator==(const char *c) const {
         if (!c) return this->empty();
-        return *this == String(c);
+        return eq(data, c, length);
     }
 
     bool operator==(char *c) const {
         return eq(data, c, length);
     }
+
     //
     // bool operator!=(char *c) {
     //     return !eq(data, c);
@@ -1131,7 +1138,10 @@ public:
         int i = this->indexOf(string, start, false);
         if (i >= 0) {
             unsigned int from = i + strlen(string);
-            return substring(0, i) + with + substring(from, -1);
+            String &done = substring(0, i) + with + substring(from, -1);
+            // printf("done.codepoint_count ");
+            // printf("%d", done.codepoint_count);
+            return done;
         } else {
             return *this;
         }

@@ -194,7 +194,7 @@ Node *Node::end() const {
 }
 
 // non-modifying
-Node &Node::merge(Node &other) {
+const Node &Node::merge(const Node &other) const{
     if (kind == objects or kind == groups)
         if (length == 0)return other; // ()+x == x
     if (other.isNil()) {
@@ -209,9 +209,7 @@ Node &Node::merge(Node &other) {
     }
     return neu;
 } // non-modifying
-Node &Node::merge(Node *other) {
-    return merge(*other);
-}
+
 
 Node &Node::operator[](char c) {
     return (*this)[String(c)];
@@ -344,7 +342,7 @@ bool Node::operator==(int other) {
 }
 
 bool Node::operator==(int64 other) {
-    if ((kind == strings or kind == unknown) and name.length == 0 and length == 0)return other == 0; // ""==0==ø
+    if ((kind == strings or kind == unknown) and name.length <= 0 and length <= 0)return other == 0; // ""==0==ø
     if (kind == key and value.node and value.node->value.longy == other)return true;
     return (kind == longs and value.longy == other) or (kind == reals and value.real == other) or
            (kind == bools and value.longy == other);
@@ -996,8 +994,10 @@ String Node::serialize() const {
                 break; // how on earth is that possible??
             if (i++ > 0) wasp += separator ? separator : ' ';
             //            auto chil = "";// ok FOR NOW?? THIS 'fixes' it
-            const String &chil = new String(
-                child.serialize()); // <<< HERE is the BUG! still makes it fail soon or LATER!
+            auto chil = child.serialize();
+            // ⚠️ <<< HERE is the BUG! still makes it fail soon or LATER!
+            // const String &chil = new String(
+                // child.serialize());
             wasp += chil; // THIS results in test fail later!
             //            println(chil);// THIS results in MISSING Type LATER!! WTF C++
             //            wasp += *new String(chil);// ok FOR NOW??

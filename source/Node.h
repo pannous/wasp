@@ -504,13 +504,13 @@ public:
     //	if you do not declare a copy constructor, the compiler gives you one implicitly.
     //	Node( Node& other ){// copy constructor!!
 
-    Node *clone(bool childs = true) {
+    Node *clone(bool childs = true) const{
         // const cast?
         if (this == 0)
             return &ERROR;
-        if (this == &NIL)return this;
-        if (this == &True)return this;
-        if (this == &False)return this;
+        if (this == &NIL)return (Node *)this;
+        if (this == &True)return (Node *)this;
+        if (this == &False)return (Node *)this;
         // todo ...
         Node *copy = new Node();
         *copy = *this; // ok copies all values
@@ -519,7 +519,7 @@ public:
         // Todo: deep cloning whole tree? definitely clone children
         if (childs) {
             if (kind == key and value.data)
-                copy->value.node = value.node->clone(false);
+                copy->value.node = (Node*) value.node->clone(false);
             copy->children = 0;
             copy->length = 0;
             if (length > 0)
@@ -646,8 +646,10 @@ public:
 
     [[nodiscard]] Node *end() const;
 
-    Node &merge(Node &other); // non-modifying
-    Node &merge(Node *other);
+    const Node &merge(const Node &other) const;// non-modifying
+    //
+    // Node &merge(Node &other); // non-modifying
+    // Node &merge(Node *other);
 
     void print(bool internal_representation = false) {
         printf("%s\n", serialize().data);

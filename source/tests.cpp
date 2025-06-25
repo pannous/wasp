@@ -34,7 +34,6 @@ extern "C" void test_async() {
 }
 
 
-
 void testReturnTypes() {
     assert_emit("fun addier(a,b){b+a};addier(42,1)", 43);
     assert_emit("fun addier(a,b){b+a};addier(42,1)+1", 44);
@@ -47,10 +46,10 @@ void testReturnTypes() {
     assert_emit("`${1+1}`", "2")
     assert_emit("real x = $bla", 123.);
     skip(
-    assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
-    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
+        assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
+        assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
 
-        )
+    )
 }
 
 void testRandomParse() {
@@ -749,7 +748,6 @@ void testFunctionArgumentCast() {
     assert_emit("fun addier(float a,float b){b+a};addier(42,1)+1", 44);
     assert_emit("float addi(float x,float y){x+y};'hello'+addi(2.2,2.2)", "hello4.4")
     assert_emit("real addi(real x,real y){x+y};'hello'+addi(2.2,2.2)", "hello4.4")
-
 }
 
 void testFunctionDeclaration() {
@@ -2858,9 +2856,18 @@ void testStringConcatenation() {
 }
 
 void testString() {
+    auto ja = "%s"s.replace("%s", "ja");
+    print(ja);
+    print("codepoints: "s + ja.codepoint_count);
+    check(ja == "ja");
+    check("%s"s.replace("%s", "ja") == "ja");
+
     String *a = new String("abc");
     String b = String("abc");
     String c = *a;
+    check(a==b);
+    check(a==c);
+    check(b==c);
     print(a);
     print(b);
     print(c);
@@ -2909,7 +2916,7 @@ void testString() {
     assert_equals(String("abcd").substring(1, 3, true), "bc");
     assert_equals(String("abcd").substring(1, 3), "bc");
     assert_equals(String("abcd").substring(1, 2), "b");
-    check("%s"s.replace("%s", "ja") == "ja");
+
     check("hi %s"s.replace("%s", "ja") == "hi ja");
     check("%s ok"s.replace("%s", "ja") == "ja ok");
     check("hi %s ok"s.replace("%s", "ja") == "hi ja ok");
@@ -2988,6 +2995,8 @@ void testConcatenationBorderCases() {
 
 void testConcatenation() {
     Node node1 = Node("1", "2", "3", 0);
+    node1.merge(node1);
+    node1.print();
     check(node1.length == 3);
     check(node1.last() == "3");
     check(node1.kind == objects);
@@ -3004,10 +3013,10 @@ void testConcatenation() {
     //	check(other != &NIL);
 #endif
     check(&other != &NIL);
-
-
     check(not other.isNil());
     Node node1234 = node1.merge(other);
+    node1234.print();
+
     //	Node node1234=node1.merge(Node("4"));
     //	Node node1234=node1.merge(new Node("4"));
     Node *four = new Node("4");
@@ -3018,7 +3027,6 @@ void testConcatenation() {
     //	check(&node1234.last() == four); not true, copied!
     check(node1234.last() == four);
     check(*four == "4");
-    node1234.print();
 
     check_eq(node1234.length, 4);
 
@@ -3882,7 +3890,6 @@ void print(Module &m) {
 }
 
 
-
 void testWaspRuntimeModule() {
     print("sizeof(Module)");
     print(sizeof(Module));
@@ -3946,12 +3953,16 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
+    assert_emit("`${1+1}`", "2")
+    testConcatenation();
+    assert_run("test42+1", 43);
+    testString();
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
 #else
     testWaspRuntimeModule();
-    assert_emit("square 3",9);
+    assert_emit("square 3", 9);
     // testFunctionArgumentCast();
 
 #endif
