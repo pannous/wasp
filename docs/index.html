@@ -136,8 +136,8 @@
     <img src="https://www.fermyon.com/static/image/events/spin-icon-dot.png"
          style="height: 1em;vertical-align: middle;"/> deploy to spin
   </button>
-  <input placeholder="lambda name" id="lambda_name" value="test" />
-<!--         style="width: 100px;box-sizing: border-box;vertical-align: middle;"/>-->
+  <input placeholder="lambda name" id="lambda_name" value="test"/>
+  <!--         style="width: 100px;box-sizing: border-box;vertical-align: middle;"/>-->
   <br/>
   <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="14"
             style="width: 90%;box-sizing: border-box"></textarea>
@@ -154,30 +154,31 @@
       },
     });
     editor.on('change', function () {
-      compile_and_run(editor.getValue())
+      if (wasp_is_ready)
+        compile_and_run(editor.getValue())
       // editor.save();
       editor.focus();
     });
   </script>
   <script> // fill from examples.js
-    for (let key in exampleCode) {
-      const optionExists = (val) => Array.from(examples.options).some(option => option.value === val);
-      if (!optionExists(key)) {
-        const newOption = document.createElement('option');
-        newOption.value = key;
-        newOption.text = key; // use exampleCode[key] on select!!
-        examples.appendChild(newOption);
-      }
+  for (let key in exampleCode) {
+    const optionExists = (val) => Array.from(examples.options).some(option => option.value === val);
+    if (!optionExists(key)) {
+      const newOption = document.createElement('option');
+      newOption.value = key;
+      newOption.text = key; // use exampleCode[key] on select!!
+      examples.appendChild(newOption);
     }
+  }
   </script>
   <!-- https://wasp.pannous.com/?example=lambda -->
   <script> // select example from URL parameter ^^
-    const urlParams = new URLSearchParams(window.location.search);
-    const exampleParam = urlParams.get('example');
-    if (exampleParam && exampleCode[exampleParam]) {
-      examples.value = exampleParam;
-      editor.setValue(exampleCode[exampleParam]);
-    }
+  const urlParams = new URLSearchParams(window.location.search);
+  const exampleParam = urlParams.get('example');
+  if (exampleParam && exampleCode[exampleParam]) {
+    examples.value = exampleParam;
+    editor.setValue(exampleCode[exampleParam]);
+  }
   </script>
 </div>
 <canvas id="canvas" style="margin: 0;padding: 0;"></canvas>

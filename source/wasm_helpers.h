@@ -27,9 +27,16 @@ extern "C" unsigned int *memory; // =0; always, BUT heap_offset/current is highe
 extern void *wasm_memory;
 // this is the C POINTER to wasm_memory in the wasm VM! only available in the C runtime, not in wasm!
 
+
 #ifndef MAX_MEM
 #ifdef WASM
-extern int MAX_MEM;
+// MAX_MEM is NOT affected by -Wl,--initial-memory=117964800 NOR by this: HOW THEN??
+// extern "C" long __builtin_wasm_memory_size(int memidx); // GCC/Clang builtin
+inline size_t current_memory_pages() {
+    return __builtin_wasm_memory_size(0);
+}
+#define MAX_MEM (__builtin_wasm_memory_size(0) * 65536) // 64k pages
+// extern int MAX_MEM;
 #else
 #define MAX_MEM 0x2000000000000000L  // ~ (2**64)/10 // what for?
 #endif
@@ -37,11 +44,26 @@ extern int MAX_MEM;
 
 typedef unsigned char byte; //!
 // __heap_base is provided by host and its ADDRESS &__heap_base is the start of the heap area.
-extern byte __heap_base; // set via -Wl,--export=__heap_base
+extern "C" byte __heap_base; // set via -Wl,--export=__heap_base
+extern "C" size_t heap_offset;
 extern byte __data_end; // ⚠️ set by runtime once, Unused: using __heap_base instead as one should!
 extern byte *__initial_heap_end; // safely(?) reset to after gc?
-extern "C" byte *heap_end; // &__heap_base + heap_offset
+
+extern "C" byte *heap_end; // &__heap_base + heap_offset  set via setHeapEnd!
 extern "C" byte *getHeapEnd();
+
+// inline byte* getHeapEnd() {
+//     return &__heap_base + heap_offset;
+// }
+inline byte* addHeapEnd(size_t size) {
+    heap_offset += size;
+    return &__heap_base + heap_offset;
+}
+
+// extern "C" void setHeapEnd(byte *neu) {
+//     // check_silent(neu >= heap_end); // don't allow overwrite! except in reset_heap()
+//     heap_end = neu;
+// }
 
 extern "C" void setHeapEnd(byte *neu);
 
@@ -315,3 +337,6 @@ double square(double a);
 
 // int64 square(int64 n); // test wasm, otherwise use x² => x*x in analyze!
 // int64 squarel(int64 n); // test wasm, otherwise use x² => x*x in analyze!
+#ifdef WASM
+extern "C" void test_async();
+#endif

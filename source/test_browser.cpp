@@ -29,7 +29,7 @@ void testWaspRuntimeModule();
 
 extern "C" void parseRuntime(bytes buffer, size_t size) {
     info("⚠️ parseRuntime 'wasp' from js provided bytes");
-    heap_end = buffer + size; // js HEAP out of sync, even bigger to allocate demangle strings!
+    addHeapEnd(size);// js HEAP out of sync, even bigger to allocate demangle strings!
     Module &wasp = read_wasm(buffer, size);
     wasp.code.name = "wasp";
     wasp.name = "wasp";

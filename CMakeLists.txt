@@ -131,7 +131,7 @@ if (WASM)
     set(MY_WASI 1) # manually write via fd_write, NOT via wasi-sdk printf=>fd_write
     ADD_DEFINITIONS(-DMY_WASI)
     ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
-    ADD_COMPILE_FLAG(-s SIDE_MODULE=1) # add .metadata custom section
+#    ADD_COMPILE_FLAG(-s SIDE_MODULE=1) # add .metadata custom section
 
     if (DEBUG)
         message("WASM DEBUG with DWARF!")
@@ -645,8 +645,8 @@ if (WASM) # OR WASI)
                 #                COMMAND wasm2wat --generate-names --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map -o ${CMAKE_BINARY_DIR}/wasp-hosted.wat ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
 
                 # 2025-06 broken dwarf_to_json.js
-#                COMMAND python3 /Users/me/dev/script/wasm/wasm-sourcemap.py ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
-#                COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../source/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
+                COMMAND python3 /Users/me/dev/script/wasm/wasm-sourcemap.py ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
+                COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../source/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
 
                 #                COMMAND wasm-opt ${CMAKE_BINARY_DIR}/wasp-hosted -g -o ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
                 #                COMMAND wasm2js --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
@@ -898,7 +898,7 @@ endif ()
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
 
 
-set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/source/increase-wasp-version.py)
+set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/increase-wasp-version.py)
 
 # Custom target to always run the python script
 add_custom_target(run_version_script ALL

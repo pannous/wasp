@@ -77,8 +77,8 @@ void initSymbols() {
     print("initSymbols");
     ((Node) NIL).name = nil_name;
 #ifdef WASI
-    print("no initSymbols in WASI??");
-    return; // ??
+    // print("no initSymbols in WASI??");
+    // return; // ??
 #elif  WASM
 	//	__wasm_call_ctors();??
 		if (True.kind == bools)
@@ -589,7 +589,7 @@ void Node::remove(Node &node) {
 
 Node &Node::add(const Node *node) {
     if ((int64) node > MAX_MEM)
-        error("node Out of Memory");
+        error("node Out of Memory %x > %x"s % (int64) node % MAX_MEM);
     if (!node)return *this;
     if (this == &NIL) {
         warn("adding to NIL!");

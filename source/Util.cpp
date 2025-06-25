@@ -343,10 +343,10 @@ chars concat(chars a, chars b, uint la, uint lb) {
     if (!a or a[0] == 0 or la == 0)return b;
     if (!b or b[0] == 0 or lb == 0)return a;
 #if WASM
-    if ((byte *) a + la == heap_end) {
+    if ((byte *) a + la == getHeapEnd()) {
         memcpy((void *) &a[la], b, lb + 1);
         ((char *) a)[la + lb] = 0;
-        heap_end += lb + 1;
+        addHeapEnd( lb + 1);
         return a;
     }
 #endif
@@ -359,9 +359,9 @@ chars concat(chars a, chars b, uint la, uint lb) {
 
 bytes concat(bytes a, byte b, int len) {
 #if WASM
-    if (a + len == heap_end) {
+    if (a + len == getHeapEnd()) {
         a[len] = b;
-        heap_end++;
+        addHeapEnd(1);// 0
         return a;
     }
 #endif

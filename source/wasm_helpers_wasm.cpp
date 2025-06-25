@@ -14,13 +14,14 @@
 #include <typeinfo>       // operator typeid
 #include <cstdlib> // OK in WASM!
 
-extern int MAX_MEM;
+// extern int MAX_MEM;
 
-extern "C" byte *getHeapEnd() { return heap_end; }
+extern "C" byte *getHeapEnd() { return &__heap_base + heap_offset; }
 
 extern "C" void setHeapEnd(byte *neu) {
     // check_silent(neu >= heap_end); // don't allow overwrite! except in reset_heap()
-    heap_end = neu;
+    addHeapEnd(neu-getHeapEnd());
+    // heap_end = neu;
 }
 
 // void operator delete(void*, std::align_val_t){
@@ -244,7 +245,7 @@ void *calloc(size_t num, size_t size) {
 }
 
 void *aligned_alloc(size_t __alignment, size_t __size) {
-    while (((long) heap_end) % 8)heap_end++;
+    while ((long) getHeapEnd() % 8)addHeapEnd(1); // align to 8 bytes
     return malloc(__size);
 }
 
@@ -255,24 +256,23 @@ extern "C" void *malloc(size_t size) {
         putx(size);
         error("implausible size ;)");
     }
-    if ((long) heap_end < 10000) {
-        //        current = (char*)&__data_end;
-        heap_end = &__heap_base;
-        //        error("current not set");
+    if ((long) getHeapEnd() < 10000) {
+        error("heap_end not set, using __heap_base");
+        // heap_end = &__heap_base;
     }
     //    while(((long)current)%8)current++;
-    void *last = heap_end;
-    heap_end += size;
+    void *last = getHeapEnd();
+    addHeapEnd(size);
     //	if(size>1000)
     bool check_overflow = false; // wasm trap: out of bounds memory access OK
-    if (check_overflow and MAX_MEM and (int64) heap_end >= MAX_MEM) {
+    if (check_overflow and MAX_MEM and (int64) getHeapEnd() >= MAX_MEM) {
         put_chars("OUT OF MEMORY", 13);
         puti(sizeof(Node)); // 64
         puti(sizeof(String)); // 20
         puti(sizeof(Value)); // 8 int64
         puti((int) last);
         puti((int) memory);
-        puti((int) heap_end);
+        puti((int) getHeapEnd());
         puti(MAX_MEM);
         error("OUT OF MEMORY"); // needs malloc :(
         panic();
@@ -301,15 +301,15 @@ extern "C" void *memmove(void *dest, const void *source, size_t num) {
 // new operator for ALL objects
 void *operator new[](size_t size) {
     // stack
-    byte *use = heap_end;
-    heap_end += size;
+    byte *use = getHeapEnd();
+    addHeapEnd(size);
     return use;
 }
 
 void *operator new(unsigned long size, std::align_val_t align) {
-    while (((long) heap_end) % (long) align)heap_end++;
-    byte *use = heap_end;
-    heap_end += size;
+    while (((long) getHeapEnd()) % (long) align)addHeapEnd(1);
+    byte *use = getHeapEnd();
+    addHeapEnd(size);
     return use;
 }
 
@@ -317,8 +317,8 @@ void *operator new(unsigned long size, std::align_val_t align) {
 // new operator for ALL objects
 void *operator new(size_t size) {
     // stack
-    byte *use = heap_end;
-    heap_end += size;
+    byte *use = getHeapEnd();
+    addHeapEnd(size);
     return use;
 }
 
@@ -517,9 +517,11 @@ extern "C" void __wasm_call_ctors();
 extern "C" void _start() {
     // •	&__data_end yields a plain offset because it’s statically laid out.
     // •	&__heap_base may yield a host pointer due to toolchain/runtime behavior.
-    heap_end = &__heap_base;
+    trace("_start calling __wasm_call_ctors");
+
+    // heap_end = &__heap_base;
     __wasm_call_ctors();
-    __initial_heap_end = heap_end; // after internal initialization, safely(?) reset on different runs / as "GC" ?
+    __initial_heap_end = getHeapEnd(); // after internal initialization, safely(?) reset on different runs / as "GC" ?
     trace("__heap_base");
     trace(&__heap_base); // ok 0xf5be20
     // once was VERY HIGH 0x54641ddb0 to mapped wasm memory in runtime?

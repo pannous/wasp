@@ -360,6 +360,7 @@ void debug_wasm_file() {
 
 // todo: merge with emit
 Node eval(String code) {
+    if (code.empty())return NIL;
 #ifdef RUNTIME_ONLY
     return parsed; // no interpret, no emit => pure data  todo: WARN
 #else
@@ -420,7 +421,7 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
     }
     for (Node &arg: params) {
         if (arg.kind == groups) {
-            arg = groupTypes(arg, function,true);
+            arg = groupTypes(arg, function, true);
             args.add({function.name, arg.name, arg.type ? arg.type : mapType(nextType), params});
             continue;
         }
@@ -693,7 +694,7 @@ void initTypes() {
 
 Node &constructInstance(Node &node, Function &function);
 
-Node &groupTypes(Node &expression, Function &context , bool as_param) {
+Node &groupTypes(Node &expression, Function &context, bool as_param) {
     // todo delete type declarations double x, but not double x=7
     // todo if expression.length = 0 and first.length=0 and not next is operator return ø
     // ways to set type:
@@ -1023,8 +1024,8 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
     auto kw = expression.containsAny(function_keywords, false); // todo fest='def' QUOTED!!
     if (expression.index(kw) != 0)
         error("function keywords must be first");
-    expression.children++;// get rid of first 'function' keyword
-    expression.length--;// get rid of first 'function' keyword
+    expression.children++; // get rid of first 'function' keyword
+    expression.length--; // get rid of first 'function' keyword
     auto fun = expression.first();
     Node *return_type = 0;
     Node arguments = groupTypes(fun.childs(), context); // children f(x,y)
@@ -1168,11 +1169,11 @@ void checkRequiredCasts(String &op, const Node &lhs, Node &rhs, Function &contex
     // todo maybe add cast node here instead of in emit?
     Type left_kind = lhs.kind;
     Type right_kind = rhs.kind;
-    if(right_kind == operators or right_kind == expression or right_kind == reference or right_kind == call)
+    if (right_kind == operators or right_kind == expression or right_kind == reference or right_kind == call)
         right_kind = preEvaluateType(rhs, context); // todo: use preEvaluateType for all rhs?
 
     if (op == "+" and left_kind == strings)
-        useFunction("toString");// todo ALL polymorphic variants! => get rid of these:
+        useFunction("toString"); // todo ALL polymorphic variants! => get rid of these:
     if (op == "+" and left_kind == strings and right_kind == longs)
         useFunction("formatLong");
     if (op == "+" and left_kind == strings and (right_kind == reals or right_kind == realsF))
@@ -1857,7 +1858,7 @@ List<String> aliases(String name) {
         if (not use_wasm_strings)
             found.add("concat"); // OK _Z6concatPKcS0_ via linker:
         // LINKED main.wasm:concat import #1 concat to export #31 _Z6concatPKcS0_ relocated_function_index 23
-            // found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
+        // found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
     }
     //	if (name == "+") {
     //		found.add("add");
@@ -2217,8 +2218,18 @@ extern "C" int64 run_wasm_file(chars file) {
 }
 
 void fixFunctionNames() {
-    for (String name: functions) {
+    int good = 0;
+    for (String &name: functions) {
+        if (name.empty())continue; // todo: how?
+        if (not functions.has(name)) {
+            print("fixFunctionNames: no function ");
+            //     // print(name); // undefined / ERROR
+            print("good "s+ good + " functions found, "s + functions.size() + " total");
+            break;
+            // continue; // todo: how?
+        }
         functions[name].name = name;
+        good++;
     }
 }
 

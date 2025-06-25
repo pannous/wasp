@@ -7,21 +7,19 @@
 * */
 let LIVE = !window.location.href.includes("localhost");
 let Wasp = {}
-let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and shortcuts, 6.6MB with linker!
+let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB DEBUG with tests and shortcuts, 6.6MB with linker!
 // let WASP_COMPILER = 'assets/wasp-hosted-release.wasm' // hard link 300k without tests
 // let WASP_COMPILER = 'assets/wasp-release-debug.wasm' // hard link 300k without tests
 // let WASP_COMPILER = 'assets/wasp-release.wasm' // hard link 300k without tests currently not working!
 let WASP_RUNTIME = 'assets/wasp-runtime.wasm' // 100kb now in :
 let lib_folder_url = "assets/"
-// let lib_folder_url = "assets/lib/"
-// let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
-// const run_tests = !LIVE;
-const run_tests = false;
+const run_tests = !LIVE;
+// const run_tests = false;
 let app_module;
 let kinds = {}
 
@@ -580,7 +578,7 @@ function load_chars(pointer, length = -1, module_memory = 0, format = 'utf8') {
     let buffer = new Uint8Array(module_memory.buffer, pointer, module_memory.length);
     while (buffer[++length]) ;// strlen ;)
   }
-  debug("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
+  //debug("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
   if (typeof (TextDecoder) != 'undefined') {// WEB, text-encoding, Node 11
     const utf8_decoder = new TextDecoder('utf8');
     let decoder = format == 'utf8' ? utf8_decoder : utf16denoder
@@ -677,6 +675,7 @@ function reset_heap() {
 }
 
 function compile_and_run(code) {
+  print("compile_and_run", code)
   if (code == "test") return test()//!
   // results.value = '';
   if (typeof compiler_exports === 'undefined')
@@ -1063,6 +1062,7 @@ function addSynonyms(exports) {
 // 2. the host environment uses the full wasp.wasm (with compiler) as runtime
 function load_runtime_bytes() {
   if (runtime_bytes) return warn("runtime_bytes already loaded")
+  else print("loading runtime_bytes ")
   fetch(WASP_RUNTIME).then(resolve => resolve.arrayBuffer()).then(buffer => {
       runtime_bytes = buffer
     if (typeof (compiler_exports) == 'undefined')
@@ -1095,7 +1095,7 @@ function copy_runtime_bytes_to_compiler() {
   HEAP_END += length
   syncHeap()
   // return // ⚠️
-  HEAP_END += 50000000 // extra space for demangle Todo ⚠️ re-check if parsed Module ≈5MB !
+  HEAP_END += 200000000 // extra space for demangle Todo ⚠️ re-check if parsed Module ≈5MB !
   print("HEAP BEFORE parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
   compiler_exports.parseRuntime(pointer, length) // sets HEAP_END too!
   print("HEAP AFTER parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
@@ -1132,17 +1132,15 @@ function load_compiler() {
       HEAP_END += 0x100000
       memory = compiler_exports.memory || compiler_exports._memory || memory
       buffer = new Uint8Array(memory.buffer, 0, memory.length);
-      main = compiler_instance.start || compiler_exports.teste || compiler_exports.main || compiler_exports.wasp_main || compiler_exports._start
-      main = compiler_instance._Z11testCurrentv || main
+      main = compiler_instance.start || compiler_exports.main || compiler_exports.__main_argc_argv || compiler_exports._start
       if (main) {
-        debug("got main")
+        debug("compiler _start to init")
         result = main()
       } else {
         console.error("missing main function in wasp module!")
         result = compiler_instance.exports//show what we've got
       }
-    debug(result);
-    compiler_ready()
+      compiler_ready()
     }
   ).catch(err => {
     console.error(err)
@@ -1295,9 +1293,10 @@ function readFile() {// upload via classic html, not wasp
 
 async function test() {
   try {
+    print("RUNNING test()")
     if (typeof (WebAssembly.promising) != 'undefined') {
       // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
-      var test_async = WebAssembly.promising(exports.test_async)
+      var test_async = WebAssembly.promising(compiler_exports.test_async)
       test_async().then(result => {
         debug("test_async result", result)
       })
@@ -1320,8 +1319,10 @@ function compiler_ready() {
   else wasp_ready()
 }
 
+var wasp_is_ready = false
 function wasp_ready() {
   debug("wasp is ready")
+  wasp_is_ready = true
   // moduleReflection(wasm_data);
   loadKindMap()
   try {

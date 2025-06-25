@@ -29,6 +29,10 @@
 
 #include "asserts.h"
 
+extern "C" void test_async() {
+    print("test_async OK");
+}
+
 void testReturnTypes() {
     assert_emit("fun addier(a,b){b+a};addier(42,1)", 43);
     assert_emit("fun addier(a,b){b+a};addier(42,1)+1", 44);
@@ -3935,13 +3939,14 @@ void testCurrent() {
     testRecentRandomBugs();
     // exit(0); // todo: remove this once all tests are passing
     testStringInterpolation();
+    testWaspRuntimeModule();
+
 #endif
     // we already have a working syntax so this has low priority?
     // testFunctionDeclaration();
     // testFibonacci(); // much TODO!
     // testSinus();
 
-    testWaspRuntimeModule();
     test_new();
     testExp(); // todo!
 

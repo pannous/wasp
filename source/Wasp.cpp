@@ -138,6 +138,7 @@ chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
 //#if WASI
 //List<chars> operator_list;
 //#else
+// ⚠️ changing list BREAKS WASM!! HOW???
 List<chars> operator_list = {
     "return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
     "is", "equal", "equals", "==", "!=", "≠", "#", "=", "." /*attribute operator!*/,
@@ -145,7 +146,7 @@ List<chars> operator_list = {
     "pass", "typeof",
     "upto", "…", "...", "..", "..<" /*range*/,
     "%", "mod", "modulo", "⌟", "2⌟", "10⌟", "⌞", "⌞2", "⌞10",
-    // "plus", "times", "add", "minus", // todo via aliases.wasp / SPO PSO verb matching
+    "plus", "times", "add", "minus", // todo via aliases.wasp / SPO PSO verb matching ⚠️ BREAKS WASM!!
     "use", "using", "include", "require", "import", "module",
     "<=", ">=", "≥", "≤", "<", ">", "less", "bigger", "⁰", "¹", "²", "×", "⋅", "⋆", "÷",
     "^", "∨", "¬", "√", "∈", "∉", "⊂", "⊃", "in", "of", "by", "iff", "on", "as", "^^", "^",
@@ -485,7 +486,7 @@ public:
     // todo: flatten the parse->parse->read branch!!
     Node &parse(chars source0, ParserOptions options) {
         String source = source0;
-        if (!source0) {
+        if (!source0 or source.empty()) {
             warn("parse on empty source");
             return NUL;
         }
@@ -496,7 +497,7 @@ public:
         }
 #ifndef RELEASE
         put_chars("Parsing: ");
-        println(source.data);
+        put_chars(source.data);
 #endif
         columnStart = 0;
         at = -1;
@@ -1805,11 +1806,14 @@ void handler(int sig) {
 // todo WE HAVE A GENERAL PROBLEM:
 // 1. top level objects are not constructed
 // 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
+extern "C" void __wasm_call_ctors();
 void load_parser_initialization() {
     // todo: remove thx to __wasm_call_ctors
     if (operator_list.size() == 0)
-        //		warn("operator_list should have been constructed in __wasm_call_ctors @ _start");
+        __wasm_call_ctors(); // try again
+    if (operator_list.size() == 0)
         error("operator_list should have been constructed in __wasm_call_ctors @ _start");
+        //		warn("operator_list should have been constructed in __wasm_call_ctors @ _start");
     //	operator_list = List<chars>(operator_list0);// wasm hack
     //	load_aliases();
 }
