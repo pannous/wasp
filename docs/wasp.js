@@ -332,6 +332,10 @@ let imports = {
     async_yield: x => { // called from inside wasm, set callback handler resume before!
       throw new YieldThread() // unwind wasm, re-enter through resume() after run_wasm
     },
+    toNode:ref=>node(ref, app.memory),
+    toLong:ref=>BigInt(ref.value),
+    toReal:ref=>Number(ref.value), // todo: get ref value how?
+    toString: ref => string(ref.toString(), app.memory),
     // the following dependencies only appear when using the linker!!
     vsnprintf: getRidOfDependency,
     stat: getRidOfDependency,

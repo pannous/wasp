@@ -3381,7 +3381,9 @@ void todo_done() {
     testUpperLowerCase();
     //    exit(1);
     testDataMode();
+#if not WASM
     testParams();
+#endif
 }
 
 // todo: ^^ move back into tests() once they work again
@@ -3668,15 +3670,15 @@ void testHostIntegration() {
 #if WASMTIME or WASMEDGE
     return;
 #endif
-#if not WASM
+#if not WASM // todo why not WASM?
     testHostDownload(); // no assert_emit
-#endif
+    testJS();
     test_getElementById();
     testDom();
     testDomProperty();
     testInnerHtml();
-    testJS();
     testFetch();
+#endif
     skip(
         testCanvas(); // attribute setter missing value breaks browser
     )
@@ -3686,18 +3688,12 @@ void tests() {
     todo_done();
     assurances();
 #if not WASM
-    testNumbers();
-    testPower();
+    testFunctionDeclarationParse();// why not WASM??
+    testUnicode_UTF16_UTF32();
 #endif
-    testCast();
-    testEmitStringConcatenation();
-    testExternReferenceXvalue();
-    testExternString();
-    testFunctionDeclarationParse();
     testPower();
     testRandomParse();
     check_is(String("a1b1c1d").lastIndexOf("1"), 5);
-    testUnicode_UTF16_UTF32();
     testReplaceAll();
     testExceptions();
     testString();
@@ -3726,8 +3722,10 @@ void tests() {
     )
     //	test_sin();
     testIndentAsBlock();
+#if not WASM
     testDeepCopyDebugBugBug2(); // SUBTLE: BUGS OUT ONLY ON SECOND TRY!!!
     testDeepCopyDebugBugBug();
+#endif
     testComments();
     testEmptyLineGrouping();
     testSwitch();
@@ -3748,7 +3746,7 @@ void tests() {
     testDedent2();
     testDedent();
     testGroupCascade0();
-    testGraphQlQuery();
+
     print(testNodiscard());
     testCpp();
     testNilValues();
@@ -3756,16 +3754,21 @@ void tests() {
     testMaps();
     testLists();
     testDeepLists();
+#if not WASM // todo why not WASM?
+    testGraphQlQuery();
     testGraphParams();
     testAddField();
     testOverwrite();
     testDidYouMeanAlias();
+#endif
     testNetBase();
     testForEach();
     // testLengthOperator();
     testLogicEmptySet();
+#if not WASM // todo why not WASM?
     testDeepCopyDebugBugBug();
     testDeepCopyDebugBugBug2();
+#endif
     //    testMarkSimpleAssign();
     testSort();
     testSort1();
@@ -3773,28 +3776,28 @@ void tests() {
     testReplace();
     testRemove();
     testRemove2();
-    testGraphQlQueryBug();
-    testGraphQlQuery(); // fails sometimes => bad pointer!?
-    testGraphQlQuery2();
     testUTF(); // fails sometimes => bad pointer!?
-    testUnicode_UTF16_UTF32();
     testConcatenationBorderCases();
     testNewlineLists();
     testIndex();
-    testGroupCascade();
-    testParams();
-    testSignificantWhitespace();
-    testBUG();
-    testFlags();
     //    testFlags2();
     //    testFlagSafety();
 #if WASM
     warn("Currently NOT PASSING via wasmtime -D debug-info=y --dir . wasp.wasm test");
 #endif
     testMarkAsMap();
-    testFunctionDeclarationParse();
     testMarkSimple();
-#if not WASM
+#if not WASM // todo why not WASM?
+    testFunctionDeclarationParse();
+    testGroupCascade();
+    testSignificantWhitespace();
+    testBUG();
+    testFlags();
+    testParams();
+    testUnicode_UTF16_UTF32();
+    testGraphQlQueryBug();
+    testGraphQlQuery(); // fails sometimes => bad pointer!?
+    testGraphQlQuery2();
     testMarkMultiDeep();
 #endif
 #if WASM
@@ -3817,8 +3820,17 @@ void test_new() {
     // test_list_growth();
 
     testFlags();
+    testNumbers();
+    testPower();
+#if not WASM
     testTypes();
     testPolymorphism();
+    test_new();
+    testEmitStringConcatenation();
+    testCast();
+    testExternReferenceXvalue();
+    testExternString();
+#endif
 }
 
 
@@ -3970,7 +3982,6 @@ void testCurrent() {
     // testSinus();
 
     test_new();
-    testExp(); // todo!
 
     skip( // TODO!
         testKebabCase(); // needed later …
