@@ -1408,58 +1408,13 @@ extern "C" void parseRuntime(bytes buffer, size_t size) {
     addHeapEnd(size); // js HEAP out of sync, even bigger to allocate demangle strings!
     // wasp_hash = "wasp"s.hash();
     wasp_hash = "wasp"s.hash();
-    print("wasp_hash: "s + wasp_hash);
-    print("wasp_hash: "s + "wasp"s.hash());
-    // check(String(wasp_hash) == formatLong(wasp_hash)); OK
-
     Module &wasp = read_wasm(buffer, size);
-    print(module_cache.size());
-    print(module_cache.capacity);
-    module_cache.add(69184, &wasp);
-    print(module_cache.size());
-    print(module_cache.capacity);
-    print(module_cache.keys[0]); // must be 69184
-    check(module_cache.keys[0]==69184);
-    check(module_cache.position(69184) == 0);
     wasp.code.name = "wasp";
     wasp.name = "wasp";
     // module_cache.add(wasp_hash, &wasp);
-    print(module_cache.size());
-    print(module_cache.keys);
-    print("add with module_cache.size() = "s + module_cache.size());
     module_cache.add((int64)wasp_hash, &wasp);
-    print(module_cache.keys[0]);
-    print(module_cache.key_list()[0]);
-    print("---");
-    print(wasp_hash);
-    check(module_cache.position(wasp_hash)==0);
-    print("add with module_cache.size() = "s + module_cache.size());
-
-    module_cache.add(wasp_hash, &wasp);
-    print("add with module_cache.size() = "s + module_cache.size());
-
-    module_cache.add(wasp_hash, &wasp);
-    print("add with module_cache.size() = "s + module_cache.size());
-
-    module_cache.add(wasp_hash, &wasp);
-    // module_cache.add(wasp_hash, &wasp);
-    // module_cache.insert_or_assign(wasp_hash, &wasp);
-    // module_cache.insert_or_assign(wasp_hash, &wasp);
-    // module_cache.insert_or_assign(wasp_hash, &wasp);
     // libraries.add(&wasp);
     info("⚠️ parseRuntime DONE");
-    print(module_cache.size());
-    print(*module_cache.keys);
-    print(module_cache.keys[0]);
-    print(module_cache.key_list()[0]);
-    print("---");
-    print(wasp_hash);
-    print(module_cache.position(wasp_hash));
-    // print(module_cache.key_list());
-    // check(wasp_hash == wasp_hash); // redundant but ensures runtime literal hashing consistent
-    check(module_cache.contains(wasp_hash));
-    check(module_cache.has(wasp_hash));
-    for (auto &key: module_cache) print("module_cache: "s + key);
     // testWaspRuntimeModule();
 }
 
