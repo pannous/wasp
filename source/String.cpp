@@ -561,7 +561,7 @@ short utf8_byte_count(codepoint ucs_character) {
 //}
 
 
-codepoint *String::extractCodepoints(bool again) {
+codepoint *String::extractCodepoints(bool again) const {
     if (codepoints and not again)
         return codepoints;
     codepoint_count = 0;

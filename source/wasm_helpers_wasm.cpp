@@ -236,11 +236,12 @@ void debugCalloc(size_t num, size_t size) {
     }
 }
 
-//__attribute__((__malloc__, __warn_unused_result__))
+
 void *calloc(size_t num, size_t size) {
-    //    debugCalloc(num, size);
-    char *mem = (char *) malloc(size * num);
-    while (num < MAX_MEM and size / 8 * num > 0) { ((int64 *) mem)[--num * size / 8] = 0; }
+    size_t total = num * size;
+    void *mem = malloc(total);
+    if (!mem) return nullptr;
+    memset(mem, 0, total);
     return mem;
 }
 

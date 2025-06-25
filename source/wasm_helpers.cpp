@@ -110,7 +110,7 @@ void newline() {
 }
 
 void info(chars msg) {
-    if (not tracing)return; // todo finer levels!
+    // if (not tracing)return; // todo finer levels!
 #if not RELEASE
     print(msg);
 #endif

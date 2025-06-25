@@ -218,7 +218,7 @@ short normChar(char c) {
 
 unsigned int wordHash(const char *str, int max_chars) {
     // unsigned
-    if (!str) return 0;
+    if (!str) return -1;
     int maxNodes = 100000;
     char c;
     unsigned int hash = 5381, hash2 = 7; // int64

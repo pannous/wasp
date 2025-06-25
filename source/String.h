@@ -225,9 +225,9 @@ public:
     int length = -1;
     int kind = string_header_32; // post header ;) static const
     //	Primitive kind = (Primitive) string_header_32;  // post header ;) static const
-    codepoint *codepoints = 0;
+    mutable codepoint *codepoints = 0;
     //  todo reuse data field after decode? nah, breaks fd_write  extract on demand from data or via constructor
-    int codepoint_count = -1; // 'type' field in list, node and array_header, semi compatible
+    mutable int codepoint_count = -1; // 'type' field in list, node and array_header, semi compatible
     bool shared_reference = false;
     // length terminated substrings! copy on modify if shared views. // todo: move to header?
     // todo is shared_reference sufficient for (im)mutable final const keywords?
@@ -493,7 +493,7 @@ public:
     //		todo("grapheme");
     //	}
 
-    codepoint *extractCodepoints(bool again = false);
+    codepoint *extractCodepoints(bool again = false) const ;
 
     int size(enum sizeMeasure by = by_codepoints) {
         if (by == by_char8s)return length;
@@ -857,11 +857,11 @@ public:
     }
 
     String operator+(int64 i) {
-        return this->operator+(String((int64) i));
+        return this->operator+(formatLong(i));
     }
 
     String operator+(uint64 i) {
-        return this->operator+(String((int64) i));
+        return this->operator+(formatLong(i));
     }
 
     String operator+(char c) {
@@ -918,14 +918,14 @@ public:
     bool operator==(char c) {
         return length != 0 && data && data[0] == c && data[1] == '\0';
     }
-
-    bool operator==(chars c) {
-        return eq(data, c, length);
-    }
-
-    bool operator==(char *c) {
-        return eq(data, c, length);
-    }
+    //
+    // bool operator==(chars c) {
+    //     return eq(data, c, length);
+    // }
+    //
+    // bool operator==(char *c) {
+    //     return eq(data, c, length);
+    // }
 
     // need name == (char*)"‖" WTH
     //    use of overloaded operator '==' is ambiguous WHY??
@@ -933,13 +933,27 @@ public:
     //        return eq(data, c, length);
     //    }
 
-    bool operator==(String *c) const {
-        if (!c)return this->empty();
-        // if((String &)*this == *c)
-        //     return true;
-        if (this->empty())return not c or c->empty();
-        return eq(data, c->data, length);
-    }
+    // bool operator==(String *c) const {
+    //     if (!c)return this->empty();
+    //     // if((String &)*this == *c)
+    //     //     return true;
+    //     if (this->empty())return not c or c->empty();
+    //     return eq(data, c->data, length);
+    // }
+
+// bool operator==(String *s) {
+//     // const
+//     if (!s or s->empty())return empty();
+//     if (this->empty())return not s or s->empty();
+//     if (codepoint_count > 0 or s->codepoint_count > 0) {
+//         if (codepoint_count < 1)extractCodepoints();
+//         if (s->codepoint_count < 1)s->extractCodepoints();
+//         if (s->codepoint_count != codepoint_count)return false;
+//         return eq((char *) codepoints, (char *) s->codepoints, codepoint_count * sizeof(codepoint));
+//     }
+//     if (s->length != length)return false;
+//     return eq(data, s->data, length);
+// }
 
     //	bool operator!=(const String s) {// const
     //		return this != &s;
@@ -949,52 +963,54 @@ public:
     //		return this != &s;
     //	}
 
-    bool operator!=(String &s) {
-        // const
-        if (this->empty())return !s.empty();
-        if (s.empty())return !this->empty();
-        if (s.length != length)return true;
-        return !eq(data, s.data, length);
-    }
 
     //	bool operator==(const String other ) {
     //		return length == other.length && eq(data, other.data, shared_reference? length:-1);
     //	}  ambiguous with
 
-    bool operator==(String &s) {
-        // const
+    //  bool operator==(String &s){
+    //     if (this->empty())return s.empty();
+    //     if (s.empty())return this->empty();
+    //     if (s.length != length)return false;
+    //     return eq(data, s.data, length);
+    // }
+    bool operator==(const String &s) const{
         if (this->empty())return s.empty();
         if (s.empty())return this->empty();
+        if (codepoint_count > 0 or s.codepoint_count > 0) {
+            if (codepoint_count < 1)extractCodepoints();
+            if (s.codepoint_count < 1)s.extractCodepoints();
+            if (s.codepoint_count != codepoint_count)return false;
+            return eq((char *) codepoints, (char *) s.codepoints, codepoint_count * sizeof(codepoint));
+        }
         if (s.length != length)return false;
         return eq(data, s.data, length);
     }
 
-    bool operator==(String *s) {
-        // const
-        if (!s or s->empty())return empty();
-        if (this->empty())return not s or s->empty();
-        if (codepoint_count > 0 or s->codepoint_count > 0) {
-            if (codepoint_count < 1)extractCodepoints();
-            if (s->codepoint_count < 1)s->extractCodepoints();
-            if (s->codepoint_count != codepoint_count)return false;
-            return eq((char *) codepoints, (char *) s->codepoints, codepoint_count * sizeof(codepoint));
-        }
-        if (s->length != length)return false;
-        return eq(data, s->data, length);
-    }
+    // bool operator==(String *s) {
+    //     // const
+    //     if (!s or s->empty())return empty();
+    //     if (this->empty())return not s or s->empty();
+    //     if (codepoint_count > 0 or s->codepoint_count > 0) {
+    //         if (codepoint_count < 1)extractCodepoints();
+    //         if (s->codepoint_count < 1)s->extractCodepoints();
+    //         if (s->codepoint_count != codepoint_count)return false;
+    //         return eq((char *) codepoints, (char *) s->codepoints, codepoint_count * sizeof(codepoint));
+    //     }
+    //     if (s->length != length)return false;
+    //     return eq(data, s->data, length);
+    // }
+
+inline bool operator==(const char *c) const {
+    if (!c) return this->empty();
+    return *this == String(c);
+}
+
 
     bool operator==(char *c) const {
         return eq(data, c, length);
     }
 
-    bool operator!=(char *c) {
-        return !eq(data, c);
-    }
-
-    bool operator!=(const String &c) {
-        if (c.length != length)return false;
-        return !eq(data, c.data, length);
-    }
 
     //#define min(a, b) (a < b ? a : b)
 

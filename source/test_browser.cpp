@@ -27,17 +27,6 @@ extern byte *stack_hack;
 
 void testWaspRuntimeModule();
 
-extern "C" void parseRuntime(bytes buffer, size_t size) {
-    info("⚠️ parseRuntime 'wasp' from js provided bytes");
-    addHeapEnd(size);// js HEAP out of sync, even bigger to allocate demangle strings!
-    Module &wasp = read_wasm(buffer, size);
-    wasp.code.name = "wasp";
-    wasp.name = "wasp";
-    module_cache.add("wasp"s.hash(), &wasp);
-    libraries.add(&wasp);
-    info("⚠️ parseRuntime DONE");
-    // testWaspRuntimeModule();
-}
 
 void testDownload() {
 #if not WASM or MY_WASM

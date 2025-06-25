@@ -68,7 +68,6 @@ void clearAnalyzerContext();
 
 extern Module *module; // todo: put all these in <<<<
 //extern List<String> declaredFunctions;
-extern Map<String, Function> functions;
 //extern Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
 //extern Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
 

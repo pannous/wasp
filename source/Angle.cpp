@@ -1400,11 +1400,78 @@ Node &groupKebabMinus(Node &node, Function &context) {
     return node;
 }
 
+//  through js load_runtime_bytes
+int64 wasp_hash = 17656048;//17655845;//#"wasp"s.hash();
+
+extern "C" void parseRuntime(bytes buffer, size_t size) {
+    info("⚠️ parseRuntime 'wasp' from js provided bytes");
+    addHeapEnd(size); // js HEAP out of sync, even bigger to allocate demangle strings!
+    // wasp_hash = "wasp"s.hash();
+    wasp_hash = "wasp"s.hash();
+    print("wasp_hash: "s + wasp_hash);
+    print("wasp_hash: "s + "wasp"s.hash());
+    // check(String(wasp_hash) == formatLong(wasp_hash)); OK
+
+    Module &wasp = read_wasm(buffer, size);
+    print(module_cache.size());
+    print(module_cache.capacity);
+    module_cache.add(69184, &wasp);
+    print(module_cache.size());
+    print(module_cache.capacity);
+    print(module_cache.keys[0]); // must be 69184
+    check(module_cache.keys[0]==69184);
+    check(module_cache.position(69184) == 0);
+    wasp.code.name = "wasp";
+    wasp.name = "wasp";
+    // module_cache.add(wasp_hash, &wasp);
+    print(module_cache.size());
+    print(module_cache.keys);
+    print("add with module_cache.size() = "s + module_cache.size());
+    module_cache.add((int64)wasp_hash, &wasp);
+    print(module_cache.keys[0]);
+    print(module_cache.key_list()[0]);
+    print("---");
+    print(wasp_hash);
+    check(module_cache.position(wasp_hash)==0);
+    print("add with module_cache.size() = "s + module_cache.size());
+
+    module_cache.add(wasp_hash, &wasp);
+    print("add with module_cache.size() = "s + module_cache.size());
+
+    module_cache.add(wasp_hash, &wasp);
+    print("add with module_cache.size() = "s + module_cache.size());
+
+    module_cache.add(wasp_hash, &wasp);
+    // module_cache.add(wasp_hash, &wasp);
+    // module_cache.insert_or_assign(wasp_hash, &wasp);
+    // module_cache.insert_or_assign(wasp_hash, &wasp);
+    // module_cache.insert_or_assign(wasp_hash, &wasp);
+    // libraries.add(&wasp);
+    info("⚠️ parseRuntime DONE");
+    print(module_cache.size());
+    print(*module_cache.keys);
+    print(module_cache.keys[0]);
+    print(module_cache.key_list()[0]);
+    print("---");
+    print(wasp_hash);
+    print(module_cache.position(wasp_hash));
+    // print(module_cache.key_list());
+    // check(wasp_hash == wasp_hash); // redundant but ensures runtime literal hashing consistent
+    check(module_cache.contains(wasp_hash));
+    check(module_cache.has(wasp_hash));
+    for (auto &key: module_cache) print("module_cache: "s + key);
+    // testWaspRuntimeModule();
+}
+
 Module &loadRuntime() {
 #if WASM // and not MY_WASM
-    if(not module_cache.has("wasp"s.hash()))
+    print(module_cache.size());
+    for (auto &key: module_cache) print("module_cache: "s + key);
+    check(module_cache.has(wasp_hash));
+
+    if(not module_cache.has(wasp_hash))
       error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
-    Module &wasp=*module_cache["wasp"s.hash()];
+    Module &wasp=*module_cache[wasp_hash];
 //    wasp.functions["powi"].signature.returns(int32);
     // if(!libraries.has(&wasp))// on demand per test/app!
     return wasp;
@@ -2224,7 +2291,7 @@ void fixFunctionNames() {
         if (not functions.has(name)) {
             print("fixFunctionNames: no function ");
             //     // print(name); // undefined / ERROR
-            print("good "s+ good + " functions found, "s + functions.size() + " total");
+            print("good "s + good + " functions found, "s + functions.size() + " total");
             break;
             // continue; // todo: how?
         }
@@ -2234,7 +2301,7 @@ void fixFunctionNames() {
 }
 
 void preRegisterFunctions() {
-    functions.clear();
+    // functions.clear();
     //  postpone for simple programs!
     //    Module &runtime = read_wasm("wasp-runtime.wasm"); // ok, cached!
     //    runtime.code.needs_relocate = false; // may be set to true depending on main code emitted

@@ -1095,10 +1095,12 @@ function copy_runtime_bytes_to_compiler() {
   HEAP_END += length
   syncHeap()
   // return // ⚠️
-  HEAP_END += 200000000 // extra space for demangle Todo ⚠️ re-check if parsed Module ≈5MB !
+  HEAP_END += 400000000 // extra space for demangle Todo ⚠️ re-check if parsed Module ≈5MB !
   print("HEAP BEFORE parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
   compiler_exports.parseRuntime(pointer, length) // sets HEAP_END too!
   print("HEAP AFTER parseRuntime", compiler_exports.getHeapEnd(), HEAP_END);
+  if(compiler_exports.getHeapEnd()>HEAP_END)
+  error("HEAP_END overflow, reserve more HEAP_END += before!")
   syncHeap()
 }
 
@@ -1332,7 +1334,8 @@ function wasp_ready() {
   }
   // testRun1()
   if (run_tests)
-    setTimeout(test, 1);// make sync
+    test();
+    // setTimeout(test, 1);// make sync
   else compile_and_run(editor.getValue())
 }
 
