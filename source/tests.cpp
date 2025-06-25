@@ -3953,18 +3953,16 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
-    assert_emit("`${1+1}`", "2")
-    testConcatenation();
-    assert_run("test42+1", 43);
-    testString();
+
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
 #else
-    testWaspRuntimeModule();
     assert_emit("square 3", 9);
+    testConcatenation();
+    testString();
+    testWaspRuntimeModule();
     // testFunctionArgumentCast();
-
 #endif
     // we already have a working syntax so this has low priority?
     // testFunctionDeclaration();

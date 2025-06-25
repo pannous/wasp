@@ -1400,39 +1400,34 @@ Node &groupKebabMinus(Node &node, Function &context) {
     return node;
 }
 
+static Module* wasp_runtime = nullptr;
 //  through js load_runtime_bytes
-int64 wasp_hash = 17656048;//17655845;//#"wasp"s.hash();
-
 extern "C" void parseRuntime(bytes buffer, size_t size) {
     info("⚠️ parseRuntime 'wasp' from js provided bytes");
     addHeapEnd(size); // js HEAP out of sync, even bigger to allocate demangle strings!
-    // wasp_hash = "wasp"s.hash();
-    wasp_hash = "wasp"s.hash();
     Module &wasp = read_wasm(buffer, size);
     wasp.code.name = "wasp";
     wasp.name = "wasp";
-    // module_cache.add(wasp_hash, &wasp);
-    module_cache.add((int64)wasp_hash, &wasp);
+    wasp_runtime = &wasp;
+    module_cache.add("wasp"s.hash(), &wasp);
+    check(module_cache.has("wasp"s.hash()));
     // libraries.add(&wasp);
     info("⚠️ parseRuntime DONE");
     // testWaspRuntimeModule();
 }
 
 Module &loadRuntime() {
+    if(wasp_runtime)return *wasp_runtime;
 #if WASM // and not MY_WASM
-    print(module_cache.size());
-    for (auto &key: module_cache) print("module_cache: "s + key);
-    check(module_cache.has(wasp_hash));
-
-    if(not module_cache.has(wasp_hash))
+    if(not module_cache.has("wasp"s.hash()))
       error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
-    Module &wasp=*module_cache[wasp_hash];
-//    wasp.functions["powi"].signature.returns(int32);
-    // if(!libraries.has(&wasp))// on demand per test/app!
+    Module &wasp=*module_cache["wasp"s.hash()];
+    wasp_runtime = &wasp;
     return wasp;
 #else
     // Module &wasp = read_wasm("wasp-runtime-debug.wasm");// todo unexpected opcode …!!!
     Module &wasp = read_wasm("wasp-runtime.wasm");
+    wasp_runtime = &wasp;
     wasp.functions["getChar"].signature.returns(codepoint1);
     // addLibrary(&wasp); // BREAKS system WHY?
     // if(!libraries.has(&wasp))

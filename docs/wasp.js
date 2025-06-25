@@ -449,6 +449,7 @@ let imports = {
     },
 
     exit: terminate, // should be wasi.proc_exit!
+    powi: (x, y) => BigInt(x ** y),
     pow: (x, y) => { // via pow.wasm funclet => never called here IF LINKED!
       debug("pow", x, y);
       return x ** y
@@ -1214,6 +1215,7 @@ async function run_wasm(buf_pointer, buf_size) {
         for (let i = 0; i < result.length; i++)
           check(+expect_test_result[i] == +result[i])
       } else if (!similar(expect_test_result, result)) {
+        debug("⚠️ NOT similar", expect_test_result, result)
         STOP = 1
         download_file(wasm_buffer, "emit.wasm", "wasm") // resume
         check(similar(expect_test_result, result))
@@ -1296,13 +1298,13 @@ function readFile() {// upload via classic html, not wasp
 async function test() {
   try {
     print("RUNNING test()")
-    if (typeof (WebAssembly.promising) != 'undefined') {
-      // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
-      var test_async = WebAssembly.promising(compiler_exports.test_async)
-      test_async().then(result => {
-        debug("test_async result", result)
-      })
-    }
+    // if (typeof (WebAssembly.promising) != 'undefined') {
+    //   // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
+    //   var test_async = WebAssembly.promising(compiler_exports.test_async)
+    //   test_async().then(result => {
+    //     debug("test_async result", result)
+    //   })
+    // }
     if (typeof (wasp_tests) !== "undefined")
       await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
   } catch (x) {

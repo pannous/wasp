@@ -12,16 +12,10 @@ extern "C" Node *testNodeJS(String *s) {
 
 extern "C" String *testFromJS(String *s) {
     println("testJString…");
-    println(s->codepoint_count);
-    println((*s).codepoint_count);
     if("test from JS"s == s);
     else check_is("test from JS"s, s); // OK
     if("test from JS"s == *s);
-    else check_is("test from JS"s, *s); // NOT OK !?! todo <<
-    // check_is("test from JS"s, s); // NOT OK !?!?!? todo <<
-    // print(wasp.name);
-    //    print("wasp.total_func_count");
-    //    print(wasp.total_func_count);
+    else check_is("test from JS"s, *s); // OK
     auto replaced = s->replace("test", "ok").replace("JS", "WASP");
     check_is("ok from WASP"s, replaced);
     return &replaced.clone();
