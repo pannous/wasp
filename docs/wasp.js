@@ -330,6 +330,9 @@ let imports = {
     HEAP_END: new WebAssembly.Global({value: "i32", mutable: true}, 0),// todo: use as HEAP_END
     grow_memory: x => memory.grow(1), // à 64k … NO NEED, host grows memory automagically!
     async_yield: x => { // called from inside wasm, set callback handler resume before!
+      try {
+        debug("async_yield", string(x))
+      }catch (ignore_non_strings){}//
       throw new YieldThread() // unwind wasm, re-enter through resume() after run_wasm
     },
     toNode:ref=>node(ref, app.memory),
@@ -454,21 +457,23 @@ let imports = {
 
     exit: terminate, // should be wasi.proc_exit!
      // todo these should be LINKED to runtime ! REMOVE!
-    square: x => x*x, // todo should be LINKED!
-    _Z6squared: x => x*x, // todo should be LINKED!
-    _Z6squarei: x => x*x, // todo should be LINKED!
-    getChar:(s,i)=> string(s,app.memory).charCodeAt(i-1), // todo should be LINKED!
-    concat:(x,y) => string(string(x,app.memory) + string(y,app.memory),app.memory), // todo should be LINKED!
+    eq: (a, b) => a==b || string(a) == string(b),
+    square: x => x*x,
+    _Z6squared: x => x*x,
+    _Z6squarei: x => x*x,
+    getChar:(s,i)=> string(s,app.memory).charCodeAt(i-1),
+    concat:(x,y) => string(string(x,app.memory) + string(y,app.memory),app.memory),
     powi: (x, y) => {
       debug("powi", x, y);
       return BigInt(x ** y)
     },
+    puti: x => {debug(x);return x}, // allows debugging of ints without format String allocation!
     pow: (x, y) => { // via pow.wasm funclet => never called here IF LINKED!
       debug("pow", x, y);
       return x ** y
     },
+    // todo these should be LINKED to runtime ! REMOVE! ^^
     print: x => print(smartValue(x, app.memory)), // todo: right memory!
-    puti: x => debug(x), // allows debugging of ints without format String allocation!
     js_demangle: x => chars(demangle(chars(x))),
     __cxa_demangle: (name, buf, len, status_p) => chars(demangle(chars(name))),
   },

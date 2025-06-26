@@ -2,24 +2,12 @@
 ////
 //// Created by pannous on 30.09.19.
 ////
-
 #include "Node.h"
 #include "List.h"
 #include "Code.h"
-
-
-#include <cstdarg> // va_list OK in WASM!!
-#include <cstdlib> // OK in WASM!
-
 #ifndef PURE_WASM
-
 #include <cstdio>
-
 #endif
-
-
-//#include <cmath>
-//#include <tgmath.h> // sqrt macro
 #include "String.h"
 #include "NodeTypes.h"
 #include "Util.h"
@@ -73,36 +61,25 @@ Node Nan = Node("NaN");
 
 Node *reconstructArray(int *array_struct);
 
-#ifdef WASI
+// #ifdef WASI
 #ifdef WASM
 extern "C" void __wasm_call_ctors(); // todo merge with wasm_helpers.h
 #endif
-#endif
+// #endif
+
+
+extern chars function_list[];
+extern chars functor_list[]; // takes blocks … parse differently?
+float precedence(String name);
 
 void initSymbols() {
     print("initSymbols");
-    ((Node) NIL).name = nil_name;
 #ifdef WASM
 		if (True.kind == bools)
 			error("Wasm DOES init symbols!?");
 		__wasm_call_ctors(); // still needed in WASM! e.g. for operator_list
-    return; // ??
-#else
-	return; // no need outside WASM
 #endif
-    //    nil_name = "nil";
-    EMPTY = "";
-    EMPTY = String('\0');
-    ((Node) NIL) = Node(nil_name).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
-    //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
-    //	Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
-    //	Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
-    ERROR = Node("ERROR").setKind(errors); // internal error ≠ Error class ≠ NIL
-    True = Node("True").setKind(bools).setValue(true);
-    False = Node("False").setKind(bools);
-    Infinity = Node("Infinity");
-    NegInfinity = Node("-Infinity");
-    Nan = Node("NaN");
+    // no need outside WASM
 }
 
 Node &Node::operator=(int i) {
@@ -198,7 +175,7 @@ Node *Node::end() const {
 }
 
 // non-modifying
-const Node &Node::merge(const Node &other) const{
+const Node &Node::merge(const Node &other) const {
     if (kind == objects or kind == groups)
         if (length == 0)return other; // ()+x == x
     if (other.isNil()) {
@@ -1001,7 +978,7 @@ String Node::serialize() const {
             auto chil = child.serialize();
             // ⚠️ <<< HERE is the BUG! still makes it fail soon or LATER!
             // const String &chil = new String(
-                // child.serialize());
+            // child.serialize());
             wasp += chil; // THIS results in test fail later!
             //            println(chil);// THIS results in MISSING Type LATER!! WTF C++
             //            wasp += *new String(chil);// ok FOR NOW??

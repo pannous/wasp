@@ -8,10 +8,10 @@
 
 #elif MY_WASM or WASM and DEBUG
 extern "C" void assert_expect(Node *result);
-extern "C" void async_yield();// throw this run and reenter after run_wasm is done
+extern "C" void async_yield(chars code);// throw this run and reenter after run_wasm is done
 #elif WEBAPP
 extern "C" void assert_expect(Node*){} // dummies
-extern "C" void async_yield() {}
+extern "C" void async_yield(chars code) {}
 #endif
 
 extern Node &result;
@@ -26,7 +26,7 @@ extern Node &result;
 #if EMSCRIPTEN
 #define assert_is(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_isx(α,β)){printf("%s != %s",#α,#β);backtrace_line();}
 #elif MY_WASM and not EMSCRIPTEN
-#define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
+#define assert_is(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield(α);};
 #else
 
 //// MACRO to catch the line number. WHY NOT WITH TRACE? not precise:   testMath() + 376
@@ -61,7 +61,7 @@ static List<String> done;
 #if EMSCRIPTEN
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_exit();}
 #elif (MY_WASM or WASM) and not EMSCRIPTEN
-#define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield();};
+#define assert_emit(α, β) if(!done.has(α)){ done.add(α);assert_expect(new Node(β));eval(α);async_yield(α);};
 #else
 // #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_isx(eval(α),β)){printf("%s != %s",#α,#β);backtrace_exit();}
 #define assert_emit(α, β) printf("%s\n%s:%d\n",α,__FILE__,__LINE__);if (!assert_equals_x(eval(α),β)){printf("%s != %s",#α,#β);backtrace_exit();}
