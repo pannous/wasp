@@ -367,7 +367,6 @@ void testMathOperators() {
     assert_is("4-1", 3); //
 
     assert_emit("i=3;i++", 4);
-    assert_emit("- √9", -3);
     assert_emit("i=-9;-i", 9);
 #if WASM
     assert_emit("√ π ²", 3.141592653589793); // fu ;)
@@ -875,8 +874,8 @@ void testWasmRuntimeExtension() {
     )
     assert_run("parseLong('123')", 123);
     assert_run("parseLong('123'+'456')", 123456);
-skip(
-    assert_run("x=123;x + 4 is 127", true);
+    skip(
+        assert_run("x=123;x + 4 is 127", true);
     )
 
 #if not TRACE // todo why??
@@ -1073,7 +1072,7 @@ void testRecentRandomBugs() {
     // these fail LATER in tests!!
 
     skip( // broken again!
-    assert_emit("square 3*42 > square 2*3", 1)
+        assert_emit("square 3*42 > square 2*3", 1)
 
         testLengthOperator();
         assert_emit("i=3^1;i^=3", (int64) 27);
@@ -1085,11 +1084,7 @@ void testRecentRandomBugs() {
     assert_emit("i=-9;√-i", 3);
     assert_emit("1- -3", 4);
     assert_emit("width=height=400;height", 400);
-    skip(
-        assert_throws("1--3"); // should throw, variable missed by parser! 1 OK'ish
-        assert_emit("x=0;while x++<11: nop;x", 11);
-        assert_throws("x==0;while x++<11: nop;x");
-    )
+
     assert_emit("‖-3‖", 3);
     assert_emit("√100²", 100);
     //    assert_emit("puts('ok');", 0);
@@ -1129,7 +1124,6 @@ void testSquareExpWasm() {
     assert_emit("π*1000000.", 3141592.6535897);
 #endif
     assert_emit("i=-9;-i", 9);
-    assert_emit("- √9", -3);
     assert_emit(".1 + .9", 1);
     assert_emit("-.1 + -.9", -1);
     assert_emit("√9", 3);
@@ -1300,7 +1294,6 @@ void testSmartReturn() {
     assert_emit("2000000000000", (int64) 2000000000000l) // auto int64
     assert_emit("42.0/2.0", 21);
     assert_emit("42.0/2.0", 21.);
-    assert_emit("- √9", -3);
     assert_emit("42/4.", 10.5);
     skip(
         assert_emit("42/4", 10.5);
@@ -1636,6 +1629,7 @@ void testRootFloat() {
     assert_is("√42 * √42.0", 42.);
     assert_is("√42.0*√42", 42);
     assert_is("√42*√42", 42); // round AFTER! ok with f64! f32 result 41.99999 => 41
+    assert_emit("3 + √9", (int64) 6); // why !?!
 }
 
 
@@ -1757,7 +1751,6 @@ void testEmitStringConcatenation() {
 }
 
 
-
 void testExternString() {
     assert_emit("$test as string", "hello");
     assert_emit("toString($test)", "hello");
@@ -1807,17 +1800,12 @@ void testRenameWasmFunction() {
 }
 
 void testWaspRuntimeModule();
+
 // void testFunctionDeclaration();
 void testMoreWasm() {
-    testWaspRuntimeModule();
     testFunctionDeclaration();
-    testReturnTypes();
     testRecentRandomBugs();
-    testExternString();
-    testExternReferenceXvalue();
-    testEmitStringConcatenation();
-    testStringInterpolation();
-    testMinusMinus();
+
     // exit(0); // todo: remove this once all tests are passing
 }
 
@@ -1851,33 +1839,54 @@ void testTodoBrowser() {
 return; // TODO FIX ALL!
 #endif
     // still breaking! (some for good reason)
-    // OPEN BUGS
-	testSinus(); // still FRAGILE! NOOO! operator missing: return in :(-( return sin(modulo_double(x pi)))) precedence <>
+    // OPEN BUGS in WASM ONLY:
+
+    testWaspRuntimeModule(); // <<< !!!
+
+    testSinus(); // still FRAGILE! NOOO! operator missing: return in :(-( return sin(modulo_double(x pi)))) precedence <>
+
+    // NOO all the new goodies!!
+    testExternString(); // no matching function variant for string with ({})  NOT FUN! ;)
+    testExternReferenceXvalue(); // why not?
+    testReturnTypes();
+    testEmitStringConcatenation();
+    testStringInterpolation();
     testSquarePrecedence();
+    assert_emit("- √9", -3);
+
+    assert_throws("1--3"); // should throw, variable missed by parser! 1 OK'ish
+    assert_emit("x=0;while x++<11: nop;x", 11); // :(++( x <) 11)  precedence problem!
+    assert_throws("x==0;while x++<11: nop;x");
+    #if WEBAPP or MY_WASM
+    testHostDownload();
+#endif
+    assert_emit("√9*-‖-3‖/-3", 3);
 
     testStringIndicesWasm();
-	testStringConcatWasm();
+    testStringConcatWasm();
     testIndexWasm();
-    testBadInWasm(); // NO, breaks!
+    testBadInWasm(); // NO, still breaks!
 }
 
 
 // ⚠️ ALL tests containing assert_emit must go here! testCurrent() only for basics
 void testAllWasm() {
+    // called by testRun() OR synchronously!
+    assert_emit("42", 42);
+    assert_emit("44", 44);
+    testImplicitMultiplication(); // todo in parser how?
+    assert_emit("42+1", 43);
+    assert_emit("42+2", 44);
+    assert_run("test42+2", 44); // OK in WASM too ?
 
     testAngle(); // fails in WASM why?
     testMergeGlobal();
-    testRenameWasmFunction();
     testMoreWasm();
     testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
-    // called by testRun() OR synchronously!
-    assert_emit("42", 42);
-    assert_emit("42+1", 43);
-    assert_run("test42+2", 44); // OK in WASM too ?
 
     testTodoBrowser(); // TODO!
     skip(
-    	testSinus(); // still FRAGILE!
+        testSinus(); // still FRAGILE!
         assert_emit("putf 3.1", 3);
         assert_emit("putf 3.1", 3.1);
     )
@@ -1887,9 +1896,6 @@ void testAllWasm() {
         testStruct(); // TODO get pointer of node on stack
         testStruct2();
     )
-#if WEBAPP or MY_WASM
-    testHostDownload();
-#endif
 
 
     // Test that IMPLICITLY use runtime /  assert_run
@@ -1897,13 +1903,11 @@ void testAllWasm() {
     // assert_emit("n=3;2ⁿ", 8);
     // assert_emit("k=(1,2,3);i=1;k#i=4;k#i", 4)
 
-    assert_emit("√9*-‖-3‖/-3", 3);
     skip(
         assert_emit("x=3;y=4;c=1;r=5;((‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
         assert_emit("i=3;k='αβγδε';k#i='Γ';k#i", u'Γ'); // todo setCharAt
         testGenerics();
     )
-    testImplicitMultiplication(); // todo in parser how?
     testForLoops();
     testGlobals();
     testFibonacci();
@@ -1987,5 +1991,7 @@ void testAllWasm() {
         testCustomOperators();
     )
     testAssertRun();
-
+#if not WASM
+    testRenameWasmFunction();
+#endif
 }

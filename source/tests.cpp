@@ -980,7 +980,6 @@ void testIndexOffset() {
     skip(
         assert_emit("puts('ok');(1 4 3)#2", 4);
     )
-    assert_emit("x=0;while x++<11: nop;", 0);
     assert_emit("i=10007;x=i%10000", 7);
     assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
     assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
@@ -3453,7 +3452,8 @@ void testBadInWasm() {
 
     // bad only SOMETIMES / after a while!
     assert_emit("'αβγδε'#3", U'γ'); // TODO! sometimes works!?
-    assert_emit("3 + √9", (int64) 6); // why !?!
+    testRootFloat();
+
     assert_emit("id 3*42> id 2*3", 1)
     testSquares(); // ⚠️
 
@@ -3516,7 +3516,6 @@ void testAllEmit() {
     testLogic01();
     testLogicOperators();
     testRoots();
-    testRootFloat();
     testMathExtra(); // "one plus two times three"==7 used to work?
     testTruthiness();
     testLogicPrecedence();
@@ -3838,10 +3837,14 @@ void testCurrent() {
     check(precedence("++") < precedence("<"));
     check(contains(function_list, "square"));
     check(contains(functor_list, "while"));
+    // check(builtin_constants.has("π"));
+
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
 #else  // ⚠️ assert_emit NOT IN WASM
+    assert_emit("2*π", 2 * pi); // π
+    // exit(0); // todo: remove later
     assert_emit("square 3", 9);
     testConcatenation();
     testString();

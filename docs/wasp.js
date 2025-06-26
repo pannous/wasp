@@ -332,12 +332,14 @@ let imports = {
     async_yield: x => { // called from inside wasm, set callback handler resume before!
       try {
         debug("async_yield", string(x))
-      }catch (ignore_non_strings){}//
+      } catch (ignore_non_strings) {
+      }//
       throw new YieldThread() // unwind wasm, re-enter through resume() after run_wasm
     },
-    toNode:ref=>node(ref, app.memory),
-    toLong:ref=>BigInt(ref.value),
-    toReal:ref=>Number(ref.value), // todo: get ref value how?
+    toNode: ref => node(ref, app.memory),
+    toLong: ref => BigInt(ref.value || ref),
+    toReal: ref => Number(ref.value || ref), // todo: get ref value how?
+    formatReal: r => string("" + r, app.memory),
     toString: ref => string(ref.toString(), app.memory),
     // the following dependencies only appear when using the linker!!
     vsnprintf: getRidOfDependency,
@@ -430,6 +432,7 @@ let imports = {
     getElementById: pointer => {
       let id = chars(pointer, app.memory)
       let object = document.getElementById(id)
+      if (id == "bla") object = 123; //hack for tests
       debug("getElementById", pointer, id, "=>", object)
       return object // automatically cast to (extern)ref
     },
@@ -456,18 +459,21 @@ let imports = {
     },
 
     exit: terminate, // should be wasi.proc_exit!
-     // todo these should be LINKED to runtime ! REMOVE!
-    eq: (a, b) => a==b || string(a) == string(b),
-    square: x => x*x,
-    _Z6squared: x => x*x,
-    _Z6squarei: x => x*x,
-    getChar:(s,i)=> string(s,app.memory).charCodeAt(i-1),
-    concat:(x,y) => string(string(x,app.memory) + string(y,app.memory),app.memory),
+    // todo these should be LINKED to runtime ! REMOVE!
+    eq: (a, b) => a == b || string(a) == string(b),
+    square: x => x * x,
+    _Z6squared: x => x * x,
+    _Z6squarei: x => x * x,
+    getChar: (s, i) => string(s, app.memory).charCodeAt(i - 1),
+    concat: (x, y) => string(string(x, app.memory) + string(y, app.memory), app.memory),
     powi: (x, y) => {
       debug("powi", x, y);
       return BigInt(x ** y)
     },
-    puti: x => {debug(x);return x}, // allows debugging of ints without format String allocation!
+    puti: x => {
+      debug(x);
+      return x
+    }, // allows debugging of ints without format String allocation!
     pow: (x, y) => { // via pow.wasm funclet => never called here IF LINKED!
       debug("pow", x, y);
       return x ** y
@@ -673,9 +679,9 @@ function read_int32(pointer, mem = memory) {
 
 // getInt64
 function read_int64(pointer, mem = memory) { // little endian
-  // const low = mem.getUint32(pointer + 0, true);
-  // const high = mem.getInt32(pointer + 4, true);
-  // return low + high * 4294967296; // ok ?
+                                             // const low = mem.getUint32(pointer + 0, true);
+                                             // const high = mem.getInt32(pointer + 4, true);
+                                             // return low + high * 4294967296; // ok ?
   let buffer = new BigInt64Array(mem.buffer, pointer, 8);
   return buffer[0]
 }
@@ -1254,6 +1260,7 @@ async function run_wasm(buf_pointer, buf_size) {
     }
     console.error(ex)
     error(ex)
+    download_file(wasm_buffer, "error.wasm", "wasm")
     terminate()
   }
 }

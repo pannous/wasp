@@ -78,8 +78,7 @@ void initSymbols() {
 		if (True.kind == bools)
 			error("Wasm DOES init symbols!?");
 		__wasm_call_ctors(); // still needed in WASM! e.g. for operator_list
-#endif
-    // no need outside WASM
+#endif// no need outside WASM
 }
 
 Node &Node::operator=(int i) {
