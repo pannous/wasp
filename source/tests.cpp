@@ -3825,7 +3825,6 @@ void test_new() {
 #if not WASM
     testTypes();
     testPolymorphism();
-    test_new();
     testEmitStringConcatenation();
     testCast();
     testExternReferenceXvalue();

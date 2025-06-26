@@ -453,7 +453,16 @@ let imports = {
     },
 
     exit: terminate, // should be wasi.proc_exit!
-    powi: (x, y) => BigInt(x ** y),
+     // todo these should be LINKED to runtime ! REMOVE!
+    square: x => x*x, // todo should be LINKED!
+    _Z6squared: x => x*x, // todo should be LINKED!
+    _Z6squarei: x => x*x, // todo should be LINKED!
+    getChar:(s,i)=> string(s,app.memory).charCodeAt(i-1), // todo should be LINKED!
+    concat:(x,y) => string(string(x,app.memory) + string(y,app.memory),app.memory), // todo should be LINKED!
+    powi: (x, y) => {
+      debug("powi", x, y);
+      return BigInt(x ** y)
+    },
     pow: (x, y) => { // via pow.wasm funclet => never called here IF LINKED!
       debug("pow", x, y);
       return x ** y
@@ -1191,9 +1200,10 @@ async function run_wasm(buf_pointer, buf_size) {
     } else
       needs_runtime = false
 
-    if (needs_runtime) { // runtime_bytes should be linked by/inside compiler!
+    if (needs_runtime) {
+      print("runtime_bytes should be linked by/inside compiler!")
       app = await WebAssembly.instantiate(wasm_buffer, imports, memory) // todo: tweaked imports if it calls out
-      // app = await WebAssembly.instantiate(wasm_buffer, runtime_imports, runtime_instance.memory) // todo: tweaked imports if it calls out
+      // app = await WebAssembly.instantiate(wasm_buffer, runtime_exports, runtime_instance.memory) DOEN'T WORK!
       print("compiled wasm app/script loaded")
     } else {
       let memory2 = new WebAssembly.Memory({initial: 10, maximum: 65536});// pages à 2^16 = 65536 bytes
