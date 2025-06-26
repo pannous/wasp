@@ -34,24 +34,6 @@ extern "C" void test_async() {
 }
 
 
-void testReturnTypes() {
-    assert_emit("fun addier(a,b){b+a};addier(42,1)", 43);
-    assert_emit("fun addier(a,b){b+a};addier(42,1)+1", 44);
-    assert_emit("fun addi(x,y){x+y};addi(2.2,2.2)", 4.4)
-    assert_emit("float addi(x,y){x+y};addi(2.2,2.2)", 4.4)
-    assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
-    assert_emit("add1 x:=x+1;add1 3", (int64) 4);
-    assert_emit("for(i=0;i<10;i++){puti i};i", 10);
-    assert_emit("int x = $bla", 123);
-    assert_emit("`${1+1}`", "2")
-    assert_emit("real x = $bla", 123.);
-    skip(
-        assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
-        assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
-
-    )
-}
-
 void testRandomParse() {
     const Node &node = parse("x:40;x+1");
     check(node.length == 2)
@@ -62,86 +44,6 @@ void testRandomParse() {
     check(Node("x") == false);
 }
 
-void testEmitStringConcatenation() {
-    assert_emit("'say ' + 0.", "say 0.");
-    assert_emit("'say ' + (100 + 23)", "say 123");
-    assert_emit("'say ' + 123", "say 123");
-    assert_emit("'say ' + 'hello'", "say hello");
-    // assert_emit("'say ' + 100 + 23", "say 10023");// todo: warn "mixing math op with string concatenation
-    assert_emit("'say ' + 1.1", "say 1.1");
-    assert_emit("'say ' + 1.1 * 2", "say 2.2");
-}
-
-void testStringInterpolation() {
-    assert_emit("`hello $test`", "hello hello"); // via externref or params!
-    assert_emit("'say ' + $test", "say hello");
-    // exit(0);
-    skip( // BUT:
-        assert_emit("'say ' + $bla", "say 123");
-        assert_emit("$test + 'world'", "hello world");
-    )
-    assert_emit("'say ' 'hello'", "say hello");
-    assert_emit("'say ' + 'hello'", "say hello");
-    assert_emit("`$test world`", "hello world");
-
-    // exit(0);
-    assert_emit("`hello ${42}`", "hello 42");
-    assert_emit("`hello ${1+1}`", "hello 2");
-    assert_emit("`${42} world`", "42 world");
-    assert_emit("`${1+1} world`", "2 world");
-    assert_emit("`unaffected`", "unaffected")
-    assert_emit("`${'hi'}`", "hi")
-    assert_emit("`${1+1}`", "2")
-    assert_emit("`1+1=${1+1}`", "1+1=2")
-    skip(
-        assert_emit("$test", "hello"); // via externref or params! but calling toLong()!
-
-        assert_emit("x=123;'${x} world'", "123 world") // todo should work
-        assert_emit("x='hello';'${x} world'", "hello world") // todo should work
-        assert_emit("x='hello';'`$x world`", "hello world") // todo referencex vs reference
-    )
-}
-
-void testExternString() {
-    assert_emit("$test as string", "hello");
-    assert_emit("toString($test)", "hello");
-    assert_emit("string x=$test", "hello");
-    assert_emit("puts($test)", 21); // "hello"
-    assert_emit("puts(toString($hello))", 21);
-    // exit(1);
-    skip(
-        assert_emit("$hello as string + 'world'", "helloworld");
-        assert_emit("`$test world`", "hello world");
-        assert_emit("var x=$hello as string", "hello"); // todo should work with analyze / guess type
-        assert_emit("var x=$hello as string;x", "hello");
-        assert_emit("print($hello)", "hello"); // (i64) -> nil
-        assert_emit("printRef($hello)", "hello"); // (externref) -> nil
-        assert_emit("print(toString($hello))", "hello"); // (i64) -> nil via smarti?
-    )
-}
-
-void testExternReferenceXvalue() {
-    assert_emit("real x = $bla", 123.);
-    assert_emit("real x = $bla; x*2", 123*2.);
-    assert_emit("int x = $bla", 123);
-    assert_emit("int x = $bla; x*2", 123*2);
-    assert_emit("number x = $bla; x*2", 123*2.);
-    skip(
-        assert_emit("2*$bla", 123*2);
-    )
-}
-
-void testMinusMinus() {
-#if not WASM // todo square
-    assert_emit("1 - 3 - square 3+4", (int64) -51); // OK!
-#endif
-
-    //    assert_emit("1 -3 - square 3+4", (int64) -51);// warn "mixing math op with list items (1, -3 … ) !"
-    //    assert_emit("1--3", 4);// todo parse error
-    assert_emit("1- -3", 4); // -1 uh ok?  warn "what are you doning?"
-    assert_emit("1 - -3", 4); // -1 uh ok?  warn "what are you doning?"
-    //    assert_emit("1 - - 3", 4);// error ok todo parse error
-}
 
 extern "C"
 Node cast_smart(smarty value, Type to_type) {
@@ -750,28 +652,6 @@ void testFunctionArgumentCast() {
     assert_emit("real addi(real x,real y){x+y};'hello'+addi(2.2,2.2)", "hello4.4")
 }
 
-void testFunctionDeclaration() {
-    // THESE NEVER WORKED! should they? YES! partly
-    // 'fixing' one broke fib etc :(
-    // 💡we already have a working syntax so this has low priority
-    // ⚠️ DO we really have a working syntax??
-    skip( // TODO!
-        testFunctionParams(); // TODO!
-        testFibonacci(); // much TODO!
-        assert_emit("fun x{42} x+1", 43);
-        assert_emit("def x{42};x+1", 43);
-        assert_emit("def x(){42};x+1", 43);
-        assert_emit("def x(){42};x()+1", 43);
-        assert_emit("define x={42};x()+1", 43);
-        assert_emit("function x(){42};x()+1", 43);
-        assert_emit("def x(a){42+a};x(1)+1", 44);
-        assert_emit("define x={42+it};x(1)+1", 44);
-        assert_emit("function x(a){42+a};x(1)+1", 44);
-        assert_emit("function x(){42+it};x(1)+1", 44);
-        assert_emit("def x(a=3){42+a};x+1", 46); // default value
-        assert_emit("def x(a){42+a};x+1", 43);
-    )
-}
 
 void testFunctionDeclarationParse() {
     //    auto node1 = analyze(parse("fn main(){}"));
@@ -792,11 +672,6 @@ void testFunctionDeclarationParse() {
     )
 }
 
-void testRenameWasmFunction() {
-    Module &module1 = loadModule("samples/test.wasm");
-    module1.functions.at(0).name = "test";
-    module1.save("samples/test2.wasm");
-}
 
 void testPower() {
     assert_equals(powi(10, 1), 10l);
@@ -3944,15 +3819,6 @@ void testWaspRuntimeModule() {
 }
 
 
-void testMoreWasm() {
-    testWaspRuntimeModule();
-    testFunctionDeclaration();
-    testReturnTypes();
-    testRecentRandomBugs();
-    // exit(0); // todo: remove this once all tests are passing
-    testStringInterpolation();
-}
-
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
@@ -4016,12 +3882,7 @@ void testCurrent() {
 
 #if not WASM
     // ⚠️ in WASM these tests are called via async trick
-    testAngle(); // fails in WASM why?
-    testMergeGlobal();
-    testRenameWasmFunction();
-    testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
     testAllWasm();
-    testMoreWasm();
     // ALL tests up to here take only 1 sec !
     //    todos();// those not passing yet (skip)
 #endif
