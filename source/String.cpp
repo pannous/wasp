@@ -39,6 +39,8 @@ bool eq(chars dest, chars src) {
 bool eq(chars dest, chars src, int length) {
     if (!dest || !src)
         return false;
+    if(length<-1 || length > 1000000)
+        return false; // prevent infinite loop
     if (length == 0)return !src[0] and !dest[0];
     if (dest[0] == 0)return !src[0];
     if (src[0] == 0)return !dest[0];

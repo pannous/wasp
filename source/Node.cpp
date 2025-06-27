@@ -46,7 +46,8 @@
 //const Node NaN = Node("NaN");
 
 // must never be used in non-const references!
-const Node NIL = Node(String(nil_name, false)).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
+const
+Node NIL = Node(String(nil_name, false)).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
 Node Unknown = Node("unknown").setKind(nils).setValue(0); // maybe-existent
 Node Undefined = Node("undefined").setKind(nils).setValue(0); // maybe-existent, maybe error
 Node Missing = Node("missing").setKind(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
@@ -84,7 +85,6 @@ void initSymbols() {
     // check(contains(function_list, "print"));
     // check(operator_list.has("+")); // ok
     // check(class_kinds
-    // check(builtin_constants.has("π")); // NOT ok!
 }
 
 Node &Node::operator=(int i) {

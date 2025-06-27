@@ -108,15 +108,15 @@ typedef byte *bytes;
 //#define assert(test) if(!(test)){printf("\nNOT PASSING %s\n%s:%d\n",#test,__FILE__,__LINE__);proc_exit(0);}
 
 #define check(test, ...) { \
-  print("CHECKING "); \
-  print(#test); \
+  printf("CHECKING "); \
+  printf("%s\n",#test); \
   debug_line(); \
   if (test) { \
-    print("OK check passes: "); \
-    print(#test); \
+    printf("OK check passes: "); \
+    printf("%s\n",#test); \
   } else { \
     printf("\nNOT PASSING %s\n", #test); \
-    __VA_OPT__(printf("Message: %s\n", __VA_ARGS__);) \
+    if (sizeof(#__VA_ARGS__) > 1) printf("Message: " __VA_ARGS__); \
     backtrace_exit(); \
   } \
 }

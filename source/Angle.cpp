@@ -32,8 +32,8 @@ WitReader witReader;
 List<String> aliases(String name);
 
 Map<String, Node *> types = {100}; // builtin and defined Types
-//const Node LongType("LongType", clazz);
-//const Node DoubleType("DoubleType", clazz);//.setType(type);
+//const Node &LongType("LongType", clazz);
+//const Node &DoubleType("DoubleType", clazz);//.setType(type);
 // todo : when do we really need THESE Nodes instead of Type / Primitives?
 Node LongType("LongType", clazz); // RealType FloatType
 Node DoubleType("DoubleType", clazz); //.setType(type);
@@ -42,13 +42,12 @@ Node ByteType("Byte", clazz); // Byte conflicts with mac header
 Node ByteCharType("ByteCharType", clazz); // ugly by design: don't use ascii chars like that.
 Node ShortType("Short", clazz); // mainly for c abi interaction, not used internally (except for compact arrays)
 Node StringType("string", clazz); // ⚠️:
-// Node StringType("String", clazz);  String maps to string_struct!
+// Node &StringType("String", clazz);  String maps to string_struct!
 Node BoolType("BoolType", clazz);
 Node CodepointType("CodepointType", clazz);
 Node TemplateType("TemplateType", clazz); // `strings with $values`
-
-//const Node DoubleType{.name="DoubleType", .kind=classe};//.setType(type);
-//const Node DoubleType{name:"DoubleType", kind:classe};//.setType(type);
+//const Node &DoubleType{.name="DoubleType", .kind=classe};//.setType(type);
+//const Node &DoubleType{name:"DoubleType", kind:classe};//.setType(type);
 
 
 //https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
@@ -154,7 +153,7 @@ Node &groupOperators(Node &expression, Function &context);
 
 Node &groupKebabMinus(Node &node, Function &function);
 
-Node extractModifiers(Node &node);
+Node &extractModifiers(Node &node);
 
 void useFunction(String name) {
     if (not functions.has(name)) {
@@ -300,11 +299,11 @@ bool isType(Node &expression) {
 }
 
 
-Node constants(Node n) {
+Node &constants(Node &n) {
     if (eq(n.name, "not"))return True; // not () == True; hack for missing param todo: careful!
-    if (eq(n.name, "one"))return Node(1);
-    if (eq(n.name, "two"))return Node(2);
-    if (eq(n.name, "three"))return Node(3);
+    if (eq(n.name, "one"))return *new Node(1);
+    if (eq(n.name, "two"))return *new Node(2);
+    if (eq(n.name, "three"))return *new Node(3);
     return n;
 }
 
@@ -335,7 +334,7 @@ bool isFunction(Node &op) {
 
 
 Node interpret(String code) {
-    Node parsed = parse(code);
+    Node &parsed = parse(code);
     return parsed.interpret();
 }
 
@@ -360,14 +359,14 @@ void debug_wasm_file() {
 }
 
 // todo: merge with emit
-Node eval(String code) {
-    if (code.empty())return NIL;
+Node &eval(String code) {
+    if (code.empty())return (Node&)NIL;
 #ifdef RUNTIME_ONLY
     return parsed; // no interpret, no emit => pure data  todo: WARN
 #else
 #ifndef WASI
     if (use_interpreter) {
-        Node parsed = parse(code);
+        Node &parsed = parse(code);
         return parsed.interpret();
     } else
 #endif
@@ -507,13 +506,13 @@ String extractFunctionName(Node &node) {
 // todo "=" ":" handled differently?
 
 
-Node &groupIf(Node n, Function &context) {
+Node &groupIf(Node& n, Function &context) {
     if (n.length == 0 and !n.value.data)
         error("no if condition given");
     if (n.length == 1 and !n.value.data)
         error("no if block given");
     Node &condition = n.first();
-    Node then;
+    Node &then= *new Node();
     if (n.value.data)
         then = n.values();
     else if (n.kind == key) {
@@ -536,7 +535,7 @@ Node &groupIf(Node n, Function &context) {
         if (then.length == 0)
             then = n.from(":");
     }
-    Node otherwise;
+    Node &otherwise= *new Node();
     if (n.has("else")) {
         otherwise = n["else"].values();
         if (otherwise.empty())
@@ -574,7 +573,7 @@ Node &groupIf(Node n, Function &context) {
     if (then.length > 0)then.setKind(expression);
     if (otherwise.length > 0)otherwise.setKind(expression);
 
-    ef["condition"] = analyze(condition, context);
+    ef["condition"] = analyze(condition, context);// ⚠️ condition is STACK value => ERROR!!!
     ef["then"] = analyze(then, context);
     ef["else"] = analyze(otherwise, context);
     analyzed[ef.hash()] = true;
@@ -712,7 +711,7 @@ Node &groupTypes(Node &expression, Function &context, bool as_param) {
         return expression; // later
     if (types.size() == 0)initTypes();
 
-    //	Node typed_list;
+    //	Node &typed_list;
     for (int i = 0; i < expression.length; i++) {
         Node &node = expression.children[i];
         if (node.name == "as") {
@@ -808,6 +807,7 @@ void updateLocal(Function &context, String name, Type type) {
 
 bool compatibleTypes(Type type1, Type type2) {
     if (type1 == type2)return true;
+    if (type1 == longs and type2 == ints)return true; // upcast
     if (type1 == longs and type2 == strings)return false; // upcast
     if (type1 == string_struct and type2 == strings)return true;
     if (type1 == stringp and type2 == strings)return true;
@@ -852,7 +852,6 @@ Node &groupGlobal(Node &node, Function &function) {
 }
 
 void checkLists() {
-    check(builtin_constants.has("π"));
        // if (not builtin_constants.has("π")) {
         // print(">>builtin_constants");
         // print(&builtin_constants);
@@ -876,7 +875,6 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
         error("keyword as local name: "s + name);
     // todo: kotlin style context sensitive symbols!
     // checkLists();
-    // check(builtin_constants.has("π"));
     if (builtin_constants.has(name))
         return true;
     if (name == "π")
@@ -902,7 +900,7 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
     //#endif
 }
 
-Node extractReturnTypes(Node decl, Node body);
+Node &extractReturnTypes(Node &decl, Node &body);
 
 Node &classDeclaration(Node &node, Function &function);
 
@@ -978,7 +976,7 @@ void use_runtime(const char *function) {
 }
 
 Node &
-groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body,
+groupFunctionDeclaration(String &name, Node *return_type, Node &modifieres, Node &arguments, Node &body,
                          Function &context) {
     // Type return_type;
     // if(return_type0)
@@ -1029,8 +1027,8 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     return decl;
 }
 
-Node extractModifiers(Node &expression) {
-    Node modifieres;
+Node &extractModifiers(Node &expression) {
+    Node &modifieres= *new Node();
     for (auto child: expression) {
         if (function_modifiers.contains(child.name)) {
             modifieres.add(child);
@@ -1044,7 +1042,7 @@ Node extractModifiers(Node &expression) {
 // def foo(x,y) => x+y  vs  groupFunctionDeclaration foo := x+y
 Node &groupFunctionDefinition(Node &expression, Function &context) {
     auto first = expression.first();
-    Node modifieres = extractModifiers(expression);
+    Node &modifieres = extractModifiers(expression);
     auto kw = expression.containsAny(function_keywords, false); // todo fest='def' QUOTED!!
     if (expression.index(kw) != 0)
         error("function keywords must be first");
@@ -1052,8 +1050,8 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
     expression.length--; // get rid of first 'function' keyword
     auto fun = expression.first();
     Node *return_type = 0;
-    Node arguments = groupTypes(fun.childs(), context); // children f(x,y)
-    Node body;
+    Node &arguments = groupTypes(fun.childs(), context); // children f(x,y)
+    Node &body= *new Node();
     auto ret = expression.containsAny(return_keywords);
     if (ret) {
         return_type = &expression.from(ret);
@@ -1070,12 +1068,12 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
     auto opa = expression.containsAny(function_operators); // fun x := x+1
     if (opa)
         body = expression.from(opa);
-    return groupFunctionDeclaration(fun.name, return_type, NIL, arguments, body, context);
+    return groupFunctionDeclaration(fun.name, return_type, (Node&)NIL, arguments, body, context);
 }
 
 // f x:=x*x  vs groupFunctionDefinition fun x := x*x
 Node &groupFunctionDeclaration(Node &expression, Function &context) {
-    Node modifieres = extractModifiers(expression);
+    Node &modifieres = extractModifiers(expression);
     auto op = expression.containsAny(function_operators);
     auto left = expression.to(op);
     auto rest = expression.from(op);
@@ -1102,7 +1100,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
             Node modifieres = NIL;
             Node &arguments = fun.values();
             Node &body = expression.last();
-            return groupFunctionDeclaration(name, typ, NIL, arguments, body, context);
+            return groupFunctionDeclaration(name, typ, modifieres, arguments, body, context);
         } else if (isType(first.first())) {
             auto fun = first[1];
             String name = fun.name;
@@ -1110,7 +1108,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
             Node modifieres = NIL;
             Node &arguments = expression[1];
             Node &body = expression.last();
-            return groupFunctionDeclaration(name, &typ, NIL, arguments, body, context);
+            return groupFunctionDeclaration(name, &typ, modifieres, arguments, body, context);
         } else {
             warn("declaration"s + expression.serialize());
             return expression;
@@ -1143,8 +1141,8 @@ Node &groupDeclarations(Node &expression, Function &context) {
         // todo: public export function jaja (a:num …) := …
 
         // BEGINNING OF Declaration ANALYSIS
-        Node left = expression.to(node); // including public… + ARGS! :(
-        Node rest = expression.from(node); // body
+        Node &left = expression.to(node); // including public… + ARGS! :(
+        Node &rest = expression.from(node); // body
         String name = extractFunctionName(left);
         if (left.length == 0 and not declaration_operators.has(node.name))
             name = node.name; // todo: get rid of strange heuristics!
@@ -1185,12 +1183,12 @@ bool isKeyword(String &op) {
     return false;
 }
 
-Node extractReturnTypes(Node decl, Node body) {
+Node &extractReturnTypes(Node &decl, Node &body) {
     return DoubleType; // LongType;// todo
 }
 
 void checkRequiredCasts(String &op, const Node &lhs, Node &rhs, Function &context) {
-    // todo maybe add cast node here instead of in emit?
+    // todo maybe add cast Node &here instead of in emit?
     Type left_kind = lhs.kind;
     Type right_kind = rhs.kind;
     if (right_kind == operators or right_kind == expression or right_kind == reference or right_kind == call)
@@ -1271,7 +1269,7 @@ Node &groupOperators(Node &expression, Function &context) {
         if (node.length)continue; // already processed
         Node &next = expression.children[i + 1];
         next = analyze(next, context);
-        Node prev;
+        Node &prev= *new Node();;
         if (i > 0) {
             prev = expression.children[i - 1];
             // if(prev.kind == Kind::groups) prev.setType(Kind::expression);
@@ -1414,7 +1412,7 @@ Node &groupKebabMinus(Node &node, Function &context) {
     auto re = name.substring(0, name.indexOf('-'));
     auto lhs = Node(re, true);
     if (context.locals.has(re) or globals.has(re)) {
-        Node op = Node("-").setKind(operators, true);
+        Node &op = Node("-").setKind(operators, true);
         auto right = name.substring(name.indexOf('-') + 1);
         auto rhs = analyze(*new Node(right, true), context); // todo expression!
         op.add(lhs);
@@ -1604,7 +1602,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         expressiona.setKind(call, false);
         if (not functions.has(expressiona.name))
             error("! missing import for function "s + expressiona.name);
-        //		if (not expressiona.value.node and arity>0)error("missing args");
+        //		if (not expressiona.value.Node &and arity>0)error("missing args");
         functions[expressiona.name].is_used = true;
     }
 
@@ -1642,13 +1640,14 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             if (node.length == 1) {
                 // while()… or …while()
                 node[0] = analyze(node[0], context);
-                Node then = expressiona.from("while"); // todo: to closer!?
+                Node &then = expressiona.from("while"); // todo: to closer!?
                 int remaining = then.length;
-                node.add(analyze(then, context).clone());
+                auto thenn = analyze(then, context);
+                node.add(thenn);
                 expressiona.remove(i + 1, i + remaining);
                 continue;
             } else {
-                Node n = expressiona.from("while");
+                Node& n = expressiona.from("while");
                 Node &iff = groupWhile(n, context); // todo: sketchy!
                 int j = expressiona.lastIndex(iff.last().next) - 1; // huh?
                 if (j > i)expressiona.replace(i, j, iff);
@@ -1696,7 +1695,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         }
         if (minArity == 0)continue;
         if (maxArity < 0)continue; // todo
-        Node rest;
+        Node &rest= *new Node();
         if (i < expressiona.length - 1 and expressiona[i + 1].kind == groups) {
             // f(x)
             // todo f (x) (y) (z)
@@ -1704,7 +1703,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             rest = expressiona[i + 1];
             if (rest.length > 1)
                 rest.setKind(expression);
-            Node args = analyze(rest, context);
+            Node &args = analyze(rest, context);
             node.add(args);
             expressiona.remove(i + 1, i + 1);
             continue;
@@ -1936,15 +1935,15 @@ Node &groupForClassic2(Node &node, Function &context) {
     if (fore.size() != 3)
         error("Invalid 'for' loop structure. Expected three parts like for(i=0;i<10;i++){}");
 
-    Node initializer = fore[0];
-    Node condition = fore[1];
-    Node increment = fore[2];
+    Node &initializer = fore[0];
+    Node &condition = fore[1];
+    Node &increment = fore[2];
     initializer = analyze(initializer, context);
     condition = analyze(condition, context);
     increment = analyze(increment, context);
     // todo for loop creates it's own scope!!
     Node &body = analyze(node[1], context); // Loop body
-    // Create a node for the 'for' loop
+    // Create a Node &for the 'for' loop
     Node *forNode = new Node("fori");
     Node &grouped = *forNode;
     grouped.kind = expression; // Mark as an expression node
@@ -1978,7 +1977,7 @@ Node &groupForClassic(Node &node, Function &context) {
     if (!increment.value.data)
         error("Missing increment in 'for' loop.");
 
-    // Create a node for the 'for' loop
+    // Create a Node &for the 'for' loop
     Node *forNode = new Node("fori");
     Node &grouped = *forNode;
     grouped.kind = expression; // Mark as an expression node
@@ -2036,7 +2035,7 @@ Node &groupFor(Node &n, Function &context) {
     // for i in iterable {}
     Node &variable = n.children[0];
     Node &iterable = n.children[1];
-    Node body = (n.length > 2) ? n.children[2] : Node();
+    Node &body = (n.length > 2) ? n.children[2] : *new Node();
 
     addLocal(context, variable.name, int32t, false);
 
@@ -2060,7 +2059,7 @@ Node &groupWhile(Node &n, Function &context) {
 
     // Extract condition and 'then' block
     Node &condition = n.children[0];
-    Node then = (n.length > 1) ? n.children[1] : Node(); // Use explicit initialization
+    Node &then = (n.length > 1) ? n.children[1] : *new Node(); // Use explicit initialization
 
     // Handle ":" and "do" grouping
     if (n.has(":")) {
@@ -2130,7 +2129,6 @@ Node &groupTemplate(Node &node, Function &function) {
  * should be replaced with elegant modular solar panels
  */
 Node &analyze(Node &node, Function &function) {
-    // check(builtin_constants.has("π"));
     String &context = function.name;
     if (context != "global" and !functions.has(context)) {
         function.is_declared = true;
@@ -2220,7 +2218,7 @@ Node &analyze(Node &node, Function &function) {
         return groupOperatorCall(node, function); // call, NOT definition
 
     Node &groupedTypes = groupTypes(node, function);
-    Node groupedDeclarations = groupDeclarations(groupedTypes, function);
+    Node &groupedDeclarations = groupDeclarations(groupedTypes, function);
     Node &groupedFunctions = groupFunctionCalls(groupedDeclarations, function);
     Node &grouped = groupOperators(groupedFunctions, function);
     if (analyzed[grouped.hash()])return grouped; // done!
@@ -2351,7 +2349,7 @@ void preRegisterFunctions() {
     functions["invokeExternRef"].signature.add(externref).add(charp, "method").add(charp, "params").returns(smarti64);
 
     //    functions["invokeExternRef"].signature.add(externref).add(strings, "method").add(node, "params").returns(smarti64);
-    //    TODO get pointer of node on stack
+    //    TODO get pointer of Node &on stack
 
     functions["getExternRefPropertyValue"].import(); // for consumption
     functions["getExternRefPropertyValue"].signature.add(externref, "object").add(charp, "field").returns(smarti64);
@@ -2412,7 +2410,7 @@ void clearAnalyzerContext() {
 
 
 // emit via library merge
-Node runtime_emit(String prog) {
+Node &runtime_emit(String prog) {
 #ifdef RUNTIME_ONLY
     printf("emit wasm not built into release runtime");
     return ERROR;
@@ -2425,14 +2423,14 @@ Node runtime_emit(String prog) {
     Code code = compile(prog, false); // should use libraries!
     code.needs_relocate = false;
     code.save("merged.wasm");
-    int64 result_val = code.run(); // todo parse stdout string as node and merge with emit() !
+    int64 result_val = code.run(); // todo parse stdout string as Node &and merge with emit() !
     return *smartNode(result_val);
 }
 
 
 // smart pointers returned if ABI does not allow multi-return, as in int main(){}
 
-Node smartNode32(int smartPointer32) {
+Node &smartNode32(int smartPointer32) {
     auto smart_pointer = smartPointer32 & 0x00FFFFFF; // data part
     if ((smartPointer32 & 0xF0000000) == array_header_32 /* and abi=wasp */) {
         // smart pointer to smart array
@@ -2441,7 +2439,7 @@ Node smartNode32(int smartPointer32) {
         if (kind == array_header_32)
             kind = *index++;
         int len = *index++; // todo: leb128 vector later
-        Node arr = Node();
+        Node &arr = *new Node();
         //		arr.kind.value = kind;
         int pos = 0;
         while (len-- > 0) {
@@ -2455,10 +2453,10 @@ Node smartNode32(int smartPointer32) {
     }
     if ((smartPointer32 & 0xFF000000) == string_header_32 /* and abi=wasp */) {
         // smart pointer for string
-        return Node(((char *) wasm_memory) + smart_pointer);
+        return *new Node(((char *) wasm_memory) + smart_pointer);
     }
     error1("missing smart pointer type "s + typeName(Type(smartPointer32)));
-    return Node();
+    return *new Node();
 }
 
 float precedence(Node &operater) {

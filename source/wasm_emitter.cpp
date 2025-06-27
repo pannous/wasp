@@ -4321,6 +4321,7 @@ void clearEmitterContext() {
 
 Code emitDwarfSections(); // sorry, no DwarfEmitter.h
 
+String xxx="abc";
 [[nodiscard]]
 Code &emit(Node &root_ast, String program) {
     memoryHandling = export_memory;
@@ -4331,8 +4332,11 @@ Code &emit(Node &root_ast, String program) {
     add_imports_and_builtins();
     start = "wasp_main"; // necessary, else docs fail
     functions[start].is_declared = true;
+    Code code1("custom123");
+    Code code2("random custom section data");
+    auto data = code1 + code2;
     //    const Code customSectionvector;
-    Code const &customSectionvector = encodeVector(Code("custom123") + Code("random custom section data"));
+    Code customSectionvector = encodeVector(data);
     auto customSection = createSection(custom_section, customSectionvector);
     Code typeSection1 = emitTypeSection(); // types must be defined in analyze(), not in code declaration
     Code importSection1 = emitImportSection(); // needs type indices
@@ -4367,21 +4371,15 @@ Code &emit(Node &root_ast, String program) {
 }
 
 Code &compile(String code, bool clean) {
-    // check(builtin_constants.has("π"));
     if (clean) {
         clearEmitterContext();
         clearAnalyzerContext(); // needs to be outside analyze, because analyze is recursive
     }
-
-    // check(builtin_constants.has("π"));
-
     Node parsed = parse(code);
-    // check(builtin_constants.has("π"));
-
     //    print(parsed.serialize());
     Node &ast = analyze(parsed, functions["wasp_main"]);
-    // check(builtin_constants.has("π"));
-
+    // static const char *s = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    // printf("%s\n", s);
     Code &binary = emit(ast, code);
     //    binary.debug();
     binary.save("main.wasm");

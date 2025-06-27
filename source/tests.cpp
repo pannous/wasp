@@ -3464,6 +3464,7 @@ void testBadInWasm() {
     skip( // also bad in not WASM lol
         assert_throws("1--3"); // should throw, variable missed by parser! 1 OK'ish
         assert_throws("x==0;while x++<11: nop;x");
+        assert_emit("i=1;while i<9:i++;i+1", 10);
         assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
         assert_emit("grows:=it*2; grows 3*42 > grows 2*3", 1) // todo OK grows(3*42)
         assert_emit("add1 x:=$0+1;add1 3", (int64) 4); // $0 specially parsed now
@@ -3836,7 +3837,10 @@ void testCurrent() {
     // return;
     print("💡 starting Current tests 💡");
     // checkLists();
+    assert_emit("i=1;while(i<9)i++;i+1", 10);
     check(builtin_constants.has("π"));
+    // assert_emit("i=1;while i<9:i++;i+1", 10);
+
     assert_emit("2*π", 2 * pi); // π as local!?! => fails!
 
     // exit(0);

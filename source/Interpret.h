@@ -24,7 +24,7 @@ Node If(Node condition, Node then);
 // todo? a until b == until b : a
 Node If(Node n);
 
-Node eval(String code);
+// Node eval(String code);
 
 Node do_call(Node left, Node op0, Node right);
 

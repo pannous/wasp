@@ -65,7 +65,7 @@ extern Map<String, Function> functions;
 // It is operator driven https://github.com/pannous/angle/wiki/
 class Angle {
 public:
-    static Node &analyze(Node code);
+    static Node &analyze(Node &code);
 };
 
 void clearAnalyzerContext();
@@ -104,14 +104,14 @@ Node &
 analyze(Node &node, Function &function = *new Function{.name = "wasp_main"});
 
 // wasp -> node  // build ast via operators
-//Node eval(String code);// interpret OR emit :
+//Node &eval(String code);// interpret OR emit :
 Node interpret(String code); // wasp -> code -> data   // interpreter mode vs:
-//Node emit(String code, ParseOptions options = nix);//  doesn't work with std::thread compile(emit, String(code.data()))
-//Node run(String source);// wasp -> code -> wasm() -> data
-Node runtime_emit(String prog); // wasp -> code + runtime -> wasm (via emit)
+//Node &emit(String code, ParseOptions options = nix);//  doesn't work with std::thread compile(emit, String(code.data()))
+//Node &run(String source);// wasp -> code -> wasm() -> data
+Node &runtime_emit(String prog); // wasp -> code + runtime -> wasm (via emit)
 //extern Map<String, Signature> functionSignatures;
 
-Node constants(Node n);
+Node &constants(Node &n);
 
 void preRegisterFunctions();
 

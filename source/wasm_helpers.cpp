@@ -109,6 +109,12 @@ void newline() {
     //    put_char('\n');
 }
 
+// add_compile_options(-finstrument-functions)
+extern "C" void __cyg_profile_func_enter(void *func, void *caller) __attribute__((no_instrument_function));
+extern "C" void __cyg_profile_func_exit(void *func, void *caller) __attribute__((no_instrument_function));
+extern "C" void __cyg_profile_func_enter(void *func, void *caller) { fprintf(stderr, "ENTER %p from %p\n", func, caller); }
+extern "C" void __cyg_profile_func_exit(void *func, void *caller) { fprintf(stderr, "EXIT %p from %p\n", func, caller); }
+
 void info(chars msg) {
     // if (not tracing)return; // todo finer levels!
 #if not RELEASE

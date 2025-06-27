@@ -49,10 +49,28 @@ endif ()
 
 if (SANITIZE)
     message("SANITIZE")
+    set(ENV{MallocScribble} "1")
+    set(ENV{MallocGuardEdges} "1")
+    set(ENV{MallocCheckHeapStart} "1")
+    set(ENV{MallocCheckHeapEach} "1")
+    add_compile_options(-fno-omit-frame-pointer)
+    add_compile_options(-fstack-protector-all)
     add_compile_options(-fsanitize=null)
+    add_compile_options(-fsanitize=address)
     add_compile_options(-fsanitize=bounds) # several allowed
     add_compile_options(-fsanitize=undefined)
+     add_compile_options(-fsanitize-address-use-after-scope)
+    add_compile_options(-finstrument-functions) # log function calls
+    add_compile_options(-Wno-deprecated)
+    add_compile_options(-fno-pie)
+    add_compile_options(-no-pie)
+    add_compile_options(-O0)
+    add_compile_options(-g)
+
+
+#    extern "C" void __cyg_profile_func_enter(void *func, void *caller) { fprintf(stderr, "ENTER %p from %p\n", func, caller); }
     add_link_options(-fsanitize=undefined)
+    add_link_options(-fsanitize=address)
 #    target_link_libraries(wasp ubsan)
     message("just use lldb -- /Users/me/dev/apps/wasp/cmake-build-debug-sanitize/wasp test; run")
 endif ()
@@ -898,7 +916,7 @@ endif ()
 # Please either delete it manually or select another generation directory => delete CMakeCache.txt
 
 
-set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/increase-wasp-version.py)
+set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/source/increase-wasp-version.py)
 
 # Custom target to always run the python script
 add_custom_target(run_version_script ALL
