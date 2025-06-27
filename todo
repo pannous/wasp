@@ -6,3 +6,10 @@ size_t __builtin_wasm_memory_size(int);
 
 len("hi")
 lenxx("hi")  unknown function error!!
+
+
+commit 1cab42dfc785f9eb9933757e1037c1d783be6633 (HEAD -> main, origin/main, origin/HEAD)
+Author: pannous <info@pannous.com>
+Date:   Sat Jun 28 00:52:25 2025 +0200
+
+    DID I GO THE WRONG WAY??
