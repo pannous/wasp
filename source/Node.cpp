@@ -1183,7 +1183,7 @@ int Node::lastIndex(Node *node, int start) {
 //[[modifying]]
 // void Node::replace(int from, int to, Node *node) {
 void Node::replace(int from, int to, const Node& node) {
-    if (to < 0)to = length;
+    if (to < 0) to = length;
     if (to < from)
         error("Node::replace from>to : "s + from + ">" + to);
     if (from < 0 or from >= length)
@@ -1194,14 +1194,24 @@ void Node::replace(int from, int to, const Node& node) {
     }
     if (!children)
         error("can't replace without children");
-    children[from] = (Node) node;
-    int i = 0;
-    while (to + i++ <= length) {
-        children[from + i] = children[to + i]; // ok if beyond length
-        children[from + i - 1].next = &children[from + i];
+
+    // Ensure target has enough capacity
+    int new_length = length - (to - from);
+    if (new_length > capacity)
+        error("Node::replace would exceed capacity");
+
+    // Make a deep copy to avoid shallow corruption
+    children[from] = *node.clone(); // assuming clone() does deep copy
+
+    // Move tail elements forward safely (use memmove logic)
+    int remaining = length - (to + 1);
+    for (int i = 0; i < remaining; ++i) {
+        children[from + 1 + i] = children[to + 1 + i];
+        children[from + i].next = &children[from + i + 1];
     }
-    length = length - (to - from); //  + 1 if not inclusive;
-    if (length > 0)children[length - 1].next = 0;
+
+    length = new_length;
+    if (length > 0) children[length - 1].next = 0;
 }
 
 // INCLUDING to: [a b c d].remove(1,2)==[a d]

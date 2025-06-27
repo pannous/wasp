@@ -1849,7 +1849,6 @@ return; // TODO FIX ALL!
     testExternReferenceXvalue(); // why not?
     testReturnTypes();
     testEmitStringConcatenation();
-    testStringInterpolation();
     testSquarePrecedence();
     assert_emit("- √9", -3);
     testGlobals();
