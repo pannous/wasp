@@ -564,18 +564,22 @@ short utf8_byte_count(codepoint ucs_character) {
 //	return ret;
 //}
 
-
-codepoint *String::extractCodepoints(bool again) const {
-    if (codepoints and not again)
-        return codepoints;
-    codepoint_count = 0;
-    codepoints = (codepoint *) calloc(length, sizeof(codepoint));
-    for (int i = 0; i < length;) {
+codepoint *extractCodepointsNoConst(String& s, bool again) {
+    if (s.codepoints and not again)
+        return s.codepoints;
+    s.codepoint_count = 0;
+    s.codepoints = (codepoint *) calloc(s.length, sizeof(codepoint));
+    for (int i = 0; i < s.length;) {
         short count; // = utf8_byte_count(data[i]);
-        codepoints[codepoint_count++] = decode_unicode_character(&data[i], &count);
+        s.codepoints[s.codepoint_count++] = decode_unicode_character(&s.data[i], &count);
         i += count;
     }
-    return codepoints;
+    return s.codepoints;
+}
+
+
+codepoint *String::extractCodepoints(bool again) const {
+    return extractCodepointsNoConst(*const_cast<String *>(this),again);
 }
 
 bool String::startsWith(chars string, int from) {

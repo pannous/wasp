@@ -3461,13 +3461,15 @@ void testBadInWasm() {
     // WHY do thesAe tests break in particular, sometimes?
     testMergeOwn();
     testEmitter(); // huh!?!
-    skip(// also bad in not WASM lol
-    assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
-    assert_emit("grows:=it*2; grows 3*42 > grows 2*3", 1) // todo OK grows(3*42)
-    assert_emit("add1 x:=$0+1;add1 3", (int64) 4); // $0 specially parsed now
-    assert_emit("print 3", 3); // todo dispatch!
+    skip( // also bad in not WASM lol
+        assert_throws("1--3"); // should throw, variable missed by parser! 1 OK'ish
+        assert_throws("x==0;while x++<11: nop;x");
+        assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
+        assert_emit("grows:=it*2; grows 3*42 > grows 2*3", 1) // todo OK grows(3*42)
+        assert_emit("add1 x:=$0+1;add1 3", (int64) 4); // $0 specially parsed now
+        assert_emit("print 3", 3); // todo dispatch!
 
-        )
+    )
 }
 
 
@@ -3566,7 +3568,7 @@ void tests() {
     todo_done();
     assurances();
 #if not WASM
-    testFunctionDeclarationParse();// why not WASM??
+    testFunctionDeclarationParse(); // why not WASM??
     testUnicode_UTF16_UTF32();
 #endif
     testPower();
@@ -3833,17 +3835,19 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting Current tests 💡");
+    // checkLists();
+    check(builtin_constants.has("π"));
+    assert_emit("2*π", 2 * pi); // π as local!?! => fails!
 
+    // exit(0);
     check(precedence("++") < precedence("<"));
     check(contains(function_list, "square"));
     check(contains(functor_list, "while"));
-    // check(builtin_constants.has("π"));
 
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
 #else  // ⚠️ assert_emit NOT IN WASM
-    assert_emit("2*π", 2 * pi); // π
     // exit(0); // todo: remove later
     assert_emit("square 3", 9);
     testConcatenation();

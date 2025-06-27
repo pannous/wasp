@@ -16,6 +16,7 @@ extern codepoint grouper_list[];
 extern codepoint opening_special_brackets[];// circumfixOperators «…»
 extern chars import_keywords[];
 extern List<chars> operator_list;
+// extern List<String> operator_list;
 
 extern "C" Node *Parse(chars source);
 

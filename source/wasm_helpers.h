@@ -56,14 +56,19 @@ extern "C" byte *getHeapEnd();
 //     return &__heap_base + heap_offset;
 // }
 #if WASM
-inline byte* addHeapEnd(size_t size) {
-    heap_offset += size;
-    return &__heap_base + heap_offset;
-}
+// inline byte* addHeapEnd(size_t size) {
+//     heap_offset += size;
+//     return &__heap_base + heap_offset;
+// }
+void addHeapEnd(size_t size);
+// inline void addHeapEnd(size_t size) {
+//     heap_end += size;
+// }
+
 #else
-inline byte* addHeapEnd(size_t size) {
-    return 0;
-} // who calles this??
+// inline byte* addHeapEnd(size_t size) {
+//     return 0;
+// } // who calles this??
 #endif
 
 

@@ -6,6 +6,10 @@
 
 extern List<String> falseKeywords;
 extern List<String> nilKeywords;
+extern List<chars> builtin_constants;
+// extern List<String> builtin_constants;
+extern List<String> class_keywords;
+
 
 #if MY_WASM
 static bool hosted = true; // special functions for wasm
@@ -182,3 +186,5 @@ bool knownSymbol(String name, Function &context);
 int findBestVariant(const Function &function, const Node &node, Function *context);
 
 bool compatibleTypes(Type type1, Type type2);
+
+extern void checkLists();

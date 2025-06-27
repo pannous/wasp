@@ -123,7 +123,13 @@ public:
 
 
     //#ifndef PURE_WASM
-    List(const std::initializer_list<S> &inis) : List() {
+List(const std::initializer_list<S> &inis) : List() {
+    for (const S &s: inis) {
+        add(s); // instead of manual copying
+    }
+}
+
+ /*   List(const std::initializer_list<S> &inis) : List() {
         auto item_count = inis.end() - inis.begin();
         while (item_count >= capacity)grow();
         for (const S &s: inis) {
@@ -134,7 +140,7 @@ public:
             items[size_++] = s;
         }
     }
-
+*/
     //#endif
 
     List(S *args, int count, bool share = true) {
@@ -167,9 +173,8 @@ public:
     }
 
     void grow() {
-        if(capacity==0)capacity=LIST_DEFAULT_CAPACITY;
+        // printf("List grow %d\n", capacity);
         capacity *= 2;
-//        printf("grow %d\n", capacity);
 #if not WASM
         items = static_cast<S *>(realloc(items, capacity * sizeof(S)));
 #else
@@ -180,7 +185,7 @@ public:
     }
 
     S &add(const S& s) {
-//        if(!items)grow();// how?
+        if(!items)grow();// how?
         if (size_ >= capacity)grow();
         items[size_++] = s;
         return items[size_ - 1];
@@ -253,21 +258,21 @@ public:
     }
 
 
-    int position(S s) {
+    int position(const S& s) const{
         for (int i = 0; i < size_; ++i) {
-            if (items[i] == s)return i;
-            if (eq(items[i], s))return i;// needs to be defined for all S
+            if (items[i] == s)return i;// not for chars =>
+            if (eq(items[i], s)) return i;// needs to be defined for all S
         }
         return -1;
     }
 
-
-    int position(S *s) {
-        if (!s)return -1;// don't allow null pointer!
-        for (int i = 0; i < size_; ++i)
-            if (&items[i] == s)return i;
-        return -1;
-    }
+    //
+    // int position(S *s) {
+    //     if (!s)return -1;// don't allow null pointer!
+    //     for (int i = 0; i < size_; ++i)
+    //         if (&items[i] == s)return i;
+    //     return -1;
+    // }
 
 //
 //    int position(S& s) {
@@ -295,23 +300,12 @@ public:
         return *this;
     }
 
-    bool has(S *item) {
-        if (!item)return false;
-        return position(item) >= 0;
-    }
+    // synonym for contains in List but not in Map where has returns value
+	bool has(const S &item) const {
+		return position(item) >= 0;
+	}
 
-//	bool has(S &item) {
-//		return position(item) >= 0;
-//	}
-    bool has(S item) {
-        return position(item) >= 0;
-    }
-
-    bool contains(S *item) {
-        return position(item) >= 0;
-    }
-
-    bool contains(S item) {
+    bool contains(const S &item) const {
         return position(item) >= 0;
     }
 

@@ -228,9 +228,11 @@ public:
     int length = -1;
     int kind = string_header_32; // post header ;) static const
     //	Primitive kind = (Primitive) string_header_32;  // post header ;) static const
-    mutable codepoint *codepoints = 0;
+    // mutable
+    codepoint *codepoints = 0;
     //  todo reuse data field after decode? nah, breaks fd_write  extract on demand from data or via constructor
-    mutable int codepoint_count = -1; // 'type' field in list, node and array_header, semi compatible
+    // mutable
+    int codepoint_count = -1; // 'type' field in list, node and array_header, semi compatible
     bool shared_reference = false;
     // length terminated substrings! copy on modify if shared views. // todo: move to header?
     // todo is shared_reference sufficient for (im)mutable final const keywords?
@@ -259,10 +261,16 @@ public:
     }
 
     String(String *copy_move_assignment) {
-        if(copy_move_assignment==NULL)return;
+        data = 0;
+        length = 0;
+        codepoints = 0;
+        codepoint_count = -1;
+        shared_reference = false;
+        if (copy_move_assignment == NULL)
+            return;
         data = copy_move_assignment->data;
         length = copy_move_assignment->length;
-        shared_reference = true; // shared;// better safe than sorry
+        shared_reference = true;
     }
 
     //#ifndef WASM
@@ -288,16 +296,14 @@ public:
 #endif
 
     explicit String(char *datas, int len, bool share) {
+if(!datas)return;
         data = datas;
-        if(len<0)len=strlen(datas);
+        if (len < 0)len = strlen(datas);
         length = len;
         shared_reference = share;
         if (!share) {
             data = (char *) alloc(sizeof(char), length + 1); // including \0
-            if (length > 0)
                 memcpy(data, datas, length);
-            else
-                strcpy2(data, datas, length);
             data[length] = 0;
         }
     }
@@ -322,7 +328,7 @@ public:
     String(const char string[], int length0) {
         // todo signature for merger experimental!
         //		shared_reference= true;
-        if(length0<0)length0=strlen(string);
+        if (length0 < 0)length0 = strlen(string);
         length = length0;
         //		data =(char*) reinterpret_cast<const char *>(string);
         data = (char *) (alloc(sizeof(char), length + 1));
@@ -447,6 +453,20 @@ public:
         initUtf16((char16_t *) char16_ts);
     }
 
+    explicit String(double real) {
+        int max_length = 4;
+        data = formatLong(real);
+        length = len();
+        //		itof :
+        append('.');
+        real = real - (int64(real));
+        while (length < max_length) {
+            real = (real - int64(real)) * 10;
+            if (int(real) == 0)break; // todo 0.30303
+            append(int(real) + '0'); // = '0'+1,2,3
+        }
+    }
+
     void initUtf16(char16_t *const char16_ts) {
         // todo: third representation: UTF-16 (char16_t) code units for efficiency?
         // UTF-16 is worst of both worlds, but used in JS and Java and MS, so we need it
@@ -464,20 +484,6 @@ public:
                 codepoints[i] = char16_ts[i]; // non surrogate
             }
             i++;
-        }
-    }
-
-    explicit String(double real) {
-        int max_length = 4;
-        data = formatLong(real);
-        length = len();
-        //		itof :
-        append('.');
-        real = real - (int64(real));
-        while (length < max_length) {
-            real = (real - int64(real)) * 10;
-            if (int(real) == 0)break; // todo 0.30303
-            append(int(real) + '0'); // = '0'+1,2,3
         }
     }
 
@@ -516,6 +522,7 @@ public:
     }
 
     size_t len() {
+        // todo rename to length() and use by_codepoints?
         return length >= 0 ? length : !shared_reference and strlen(data);
     }
 

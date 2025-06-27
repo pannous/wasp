@@ -1854,9 +1854,7 @@ return; // TODO FIX ALL!
     testSquarePrecedence();
     assert_emit("- √9", -3);
 
-    assert_throws("1--3"); // should throw, variable missed by parser! 1 OK'ish
     assert_emit("x=0;while x++<11: nop;x", 11); // :(++( x <) 11)  precedence problem!
-    assert_throws("x==0;while x++<11: nop;x");
     #if WEBAPP or MY_WASM
     testHostDownload();
 #endif

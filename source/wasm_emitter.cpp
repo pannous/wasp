@@ -4367,13 +4367,21 @@ Code &emit(Node &root_ast, String program) {
 }
 
 Code &compile(String code, bool clean) {
+    // check(builtin_constants.has("π"));
     if (clean) {
         clearEmitterContext();
         clearAnalyzerContext(); // needs to be outside analyze, because analyze is recursive
     }
+
+    // check(builtin_constants.has("π"));
+
     Node parsed = parse(code);
+    // check(builtin_constants.has("π"));
+
     //    print(parsed.serialize());
     Node &ast = analyze(parsed, functions["wasp_main"]);
+    // check(builtin_constants.has("π"));
+
     Code &binary = emit(ast, code);
     //    binary.debug();
     binary.save("main.wasm");

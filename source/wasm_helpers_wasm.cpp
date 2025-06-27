@@ -20,6 +20,10 @@ extern "C" void __wasm_call_ctors();
 
 extern "C" byte *getHeapEnd() { return &__heap_base + heap_offset; }
 
+void addHeapEnd(size_t size) {
+    heap_end += size;
+}
+
 extern "C" void setHeapEnd(byte *neu) {
     // check_silent(neu >= heap_end); // don't allow overwrite! except in reset_heap()
     addHeapEnd(neu - getHeapEnd());
@@ -36,6 +40,7 @@ void free(void *) {
 }
 
 _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void *) _NOEXCEPT {
+    /*lol*/
 }
 
 
@@ -241,7 +246,7 @@ void debugCalloc(size_t num, size_t size) {
 
 void *realloc(void *__ptr, size_t __size) {
     void *neu = malloc(__size);
-    memcpy(neu, __ptr, __size);
+    memcpy(neu, __ptr, __size);// may copy garbage, but that's ok
     free(__ptr);
     return neu;
 }

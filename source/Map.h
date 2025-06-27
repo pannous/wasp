@@ -348,12 +348,13 @@ public: // todo careful Map<char*,…> eq
 
     void grow() {
         // todo don't grow when holding references!
+        // printf("Map grow %d\n", capacity);
         if (capacity == 0)capacity = MAP_INITIAL_CAPACITY;
         capacity = capacity * 2;
         check_silent(capacity < MAP_MAX_CAPACITY);
         //        warn("GROWING");
-        keys = (S*)realloc(keys, sizeof(S) * capacity);
-        values = (T*)realloc(values, sizeof(T) * capacity);
+        keys = (S *) realloc(keys, sizeof(S) * capacity);
+        values = (T *) realloc(values, sizeof(T) * capacity);
         //
         // S *new_keys = (S *) alloc(sizeof(S), capacity);
         // T *new_values = (T *) alloc(sizeof(T), capacity);
@@ -379,7 +380,7 @@ public: // todo careful Map<char*,…> eq
         // keys = (S *) calloc(sizeof(S), capacity);
         // values = (T *) calloc(sizeof(T), capacity);
         memset(keys, 0, sizeof(S) * capacity);
-        memset((void*)values, 0, sizeof(T) * capacity);
+        memset((void *) values, 0, sizeof(T) * capacity);
         //std::fill(keys, keys + capacity, S{});
         //std::fill(values, values + capacity, T{});
         _size = 0;

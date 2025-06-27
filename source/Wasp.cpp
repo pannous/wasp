@@ -139,6 +139,7 @@ chars import_keywords[] = {"use", "require", "import", "include", "using", 0};
 //List<chars> operator_list;
 //#else
 // ⚠️ changing list BREAKS WASM!! HOW???
+// List<String> operator_list = {
 List<chars> operator_list = {
     "return", "+", "-", "*", "/", ":=", "≔", "else", "then" /*pipe*/ ,
     "is", "equal", "equals", "==", "!=", "≠", "#", "=", "." /*attribute operator!*/,

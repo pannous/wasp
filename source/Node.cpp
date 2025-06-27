@@ -11,6 +11,7 @@
 #include "String.h"
 #include "NodeTypes.h"
 #include "Util.h"
+#include "Wasp.h"
 
 
 //void todo(chars error) {
@@ -74,11 +75,16 @@ float precedence(String name);
 
 void initSymbols() {
     print("initSymbols");
+    // WASM FAILs at initializing List<String> as of 2025-06-25 !!!
 #ifdef WASM
 		if (True.kind == bools)
 			error("Wasm DOES init symbols!?");
 		__wasm_call_ctors(); // still needed in WASM! e.g. for operator_list
 #endif// no need outside WASM
+    // check(contains(function_list, "print"));
+    // check(operator_list.has("+")); // ok
+    // check(class_kinds
+    // check(builtin_constants.has("π")); // NOT ok!
 }
 
 Node &Node::operator=(int i) {

@@ -108,7 +108,8 @@ List<chars> declaration_operators = {
 // x=7
 // double:=it*2  // variable of type 'block' ?
 
-List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
+List<chars> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
+// List<String> builtin_constants = {"pi", "π", "tau", "τ", "euler", "ℯ"};
 
 List<String> class_keywords = {
     "struct", "type", "class",
@@ -614,6 +615,8 @@ List<String> collectOperators(Node &expression) {
 
 
 bool maybeVariable(Node &node) {
+    if (builtin_constants.has(node.name))
+        return false;
     if (node.kind != reference and node.kind != key and !node.isSetter())
         return false;
     if (node.kind == strings)return false;
@@ -624,7 +627,7 @@ bool isGlobal(Node &node, Function &function) {
     if (not node.name.empty()) {
         if (globals.has(node.name))
             return true;
-        if (builtin_constants.contains(node.name))
+        if (builtin_constants.has(node.name))
             return true;
     }
     if (node.first().name == "global")
@@ -848,6 +851,23 @@ Node &groupGlobal(Node &node, Function &function) {
     return node;
 }
 
+void checkLists() {
+    check(builtin_constants.has("π"));
+       // if (not builtin_constants.has("π")) {
+        // print(">>builtin_constants");
+        // print(&builtin_constants);
+        // print(builtin_constants.size());
+        // for (auto s: builtin_constants) print(s);
+        // print("<<builtin_constants");
+        // print(class_keywords.size());
+        // for (auto s: class_keywords) print(s);
+        // print("return_keywords");
+        // print(return_keywords.size());
+        // for (auto s: return_keywords) print(s);
+        //
+        // check(builtin_constants.size() >= 6, "builtin_constants corrupted: too small");
+    // }
+}
 
 // return: done?
 // todo return clear enum known, added, ignore ?
@@ -855,8 +875,12 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
     if (isKeyword(name))
         error("keyword as local name: "s + name);
     // todo: kotlin style context sensitive symbols!
+    // checkLists();
+    // check(builtin_constants.has("π"));
     if (builtin_constants.has(name))
         return true;
+    if (name == "π")
+        error("can't use π as local name, use builtin constant instead"s);
     if (types.has(name))
         // error("type as local name: "s + name);
         return true; // already declared as type, e.g. Point
@@ -1400,11 +1424,13 @@ Node &groupKebabMinus(Node &node, Function &context) {
     return node;
 }
 
-static Module* wasp_runtime = nullptr;
+static Module *wasp_runtime = nullptr;
 //  through js load_runtime_bytes
 extern "C" void parseRuntime(bytes buffer, size_t size) {
     info("⚠️ parseRuntime 'wasp' from js provided bytes");
+#if WASM
     addHeapEnd(size); // js HEAP out of sync, even bigger to allocate demangle strings!
+#endif
     Module &wasp = read_wasm(buffer, size);
     wasp.code.name = "wasp";
     wasp.name = "wasp";
@@ -1417,7 +1443,7 @@ extern "C" void parseRuntime(bytes buffer, size_t size) {
 }
 
 Module &loadRuntime() {
-    if(wasp_runtime)return *wasp_runtime;
+    if (wasp_runtime)return *wasp_runtime;
 #if WASM // and not MY_WASM
     if(not module_cache.has("wasp"s.hash()))
       error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
@@ -2104,6 +2130,7 @@ Node &groupTemplate(Node &node, Function &function) {
  * should be replaced with elegant modular solar panels
  */
 Node &analyze(Node &node, Function &function) {
+    // check(builtin_constants.has("π"));
     String &context = function.name;
     if (context != "global" and !functions.has(context)) {
         function.is_declared = true;
