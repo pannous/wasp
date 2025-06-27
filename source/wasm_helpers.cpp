@@ -16,7 +16,7 @@ const char *RUNTIME_ONLY_ERROR = "This variant of wasp.wasm compiled as 'RUNTIME
 #ifdef RUNTIME_ONLY // No Angle.cpp!
 void clearContext() {}
 Node &analyze(Node &node, String context) { return *new Node(RUNTIME_ONLY_ERROR); }
-Node eval(String code) { return Node(RUNTIME_ONLY_ERROR); }
+Node &eval(String code) { return *new Node(RUNTIME_ONLY_ERROR); }
 Node interpret(String code) { return Node(RUNTIME_ONLY_ERROR); }
 extern "C" int64 run_wasm_file(chars file) {
 	error(RUNTIME_ONLY_ERROR);

@@ -776,9 +776,9 @@ public:
 
     int index(String string, int start = 0, bool reverse = false);
 
-    void replace(int from, int to, Node &node);
-
-    void replace(int from, int to, Node *node);
+    void replace(int from, int to, const Node &node);
+    // void replace(int from, int to, Node &node);
+    // void replace(int from, int to, Node *node);
 
     [[modifying]] // todo  ⚠️ DANGER! any references pointing to children become INVALID!   ⚠️
     void remove(int at, int to);

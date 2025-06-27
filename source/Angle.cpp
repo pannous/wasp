@@ -832,7 +832,7 @@ Node &groupGlobal(Node &node, Function &function) {
             node.first().setKind(global, false);
         else
             error("global declaration not a reference "s + node.first());
-        Node &grouped = groupOperators(node, function).flat();
+        Node &grouped = groupOperators(*node.clone(), function).flat();
         //        Node &grouped = analyze(node, function).flat();
         //        if (grouped.kind != operators)
         //            error("global declaration not an assignment "s + grouped);
@@ -875,6 +875,7 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
         error("keyword as local name: "s + name);
     // todo: kotlin style context sensitive symbols!
     // checkLists();
+    // check(builtin_constants.has("π")); // breaks randomly in WASM <<<
     if (builtin_constants.has(name))
         return true;
     if (name == "π")
@@ -1265,13 +1266,13 @@ Node &groupOperators(Node &expression, Function &context) {
         op = checkCanonicalName(op);
 
         // we can't keep references here because expression.children will get mutated later via replace(…)
-        Node &node = expression.children[i];
+        Node &node = *expression.children[i].clone();
         if (node.length)continue; // already processed
-        Node &next = expression.children[i + 1];
+        Node &next = *expression.children[i + 1].clone();
         next = analyze(next, context);
         Node &prev= *new Node();;
         if (i > 0) {
-            prev = expression.children[i - 1];
+            prev = *expression.children[i - 1].clone();
             // if(prev.kind == Kind::groups) prev.setType(Kind::expression);
             prev = analyze(prev, context);
         }
@@ -1342,7 +1343,7 @@ Node &groupOperators(Node &expression, Function &context) {
                 expression.replace(i, node.length, node);
             } else if (isFunction(next)) {
                 // 3 + double 8
-                Node &rest = expression.from(i + 1);
+                Node &rest = *expression.from(i + 1).clone();
                 Node &args = analyze(rest, context);
                 node.add(prev);
                 node.add(args);

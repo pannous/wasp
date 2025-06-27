@@ -1181,7 +1181,8 @@ int Node::lastIndex(Node *node, int start) {
 // inclusive from…to todo make to exclusive like py?
 // ⚠️ DANGER! any references pointing to children become INVALID!
 //[[modifying]]
-void Node::replace(int from, int to, Node *node) {
+// void Node::replace(int from, int to, Node *node) {
+void Node::replace(int from, int to, const Node& node) {
     if (to < 0)to = length;
     if (to < from)
         error("Node::replace from>to : "s + from + ">" + to);
@@ -1193,7 +1194,7 @@ void Node::replace(int from, int to, Node *node) {
     }
     if (!children)
         error("can't replace without children");
-    children[from] = *node;
+    children[from] = (Node) node;
     int i = 0;
     while (to + i++ <= length) {
         children[from + i] = children[to + i]; // ok if beyond length
@@ -1223,9 +1224,9 @@ void Node::remove(int from, int to) {
 }
 
 
-void Node::replace(int from, int to, Node &node) {
-    replace(from, to, &node);
-}
+// void Node::replace(int from, int to, Node &node) {
+//     replace(from, to, &node);
+// }
 
 //Node &Node::metas() {
 //	if (!meta) {
