@@ -3922,7 +3922,7 @@ void testWaspRuntimeModule() {
 void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
-    print("💡 starting Current tests 💡");
+    print("💡 starting current tests 💡");
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
