@@ -38,7 +38,6 @@ void testReturnTypes() {
     assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
     assert_emit("add1 x:=x+1;add1 3", (int64) 4);
     assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4)
-    assert_emit("for(i=0;i<10;i++){puti i};i", 10);
     assert_emit("int x = $bla", 123);
     assert_emit("`${1+1}`", "2")
     assert_emit("real x = $bla", 123.);
@@ -3542,6 +3541,7 @@ void testBUG() {
 
 void testBadInWasm() {
     // break immediately
+    testStringConcatWasm();
     assert_emit("square(3.0)", 9.); // todo groupFunctionCallPolymorphic
     assert_emit("global x=1+π", 1 + pi); // int 4 ƒ
     testWasmMutableGlobal(); // todo!

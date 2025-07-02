@@ -61,6 +61,8 @@ extern "C" void testRun() {
 
 
     assert_emit("square(√3)", 3);
+    assert_emit("42", 42);// if browser fails here just run it again! todo YieldThread out of sync WHY?!
+    assert_emit("42+1", 43);
     assert_emit("square(3)", 9);
     assert_emit("square(√3^2)", 9); // illegal opcode WDYM?
 
