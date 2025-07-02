@@ -3,7 +3,7 @@ let exampleCode = {
   getElementById: '$canvas.tagName', // OK via chars
   // getElementById: '$canvas.style',
   invokeRef: `$canvas.getContext('2d')`,
-  download: `download http://pannous.com/files/test`,
+  download: `download https://pannous.com/files/test`,
   math: `1+2*√3^2`,
   hello: `"Hello, World!" // last item in root block is its return value, which is printed"`,
   math2: `√π²`,
@@ -24,29 +24,24 @@ let exampleCode = {
   // html2: `html: div id="app"; app.innerHTML = "Hello, World!"`,
   alert: 'script: alert("Hello, World!")',
   // draw_sine: `// sine wave\nfor i in 0..1000\n  ctx.lineTo(i, 100 + Math.sin(i / 10) * 50)\nctx.stroke()`,
-  sine: `double sin(double x){
-    double
-    S1  = -1.66666666666666324348e-01, 
-    S2  =  8.33333333332248946124e-03, 
-    S3  = -1.98412698298579493134e-04, 
-    S4  =  2.75573137070700676789e-06, 
-    S5  = -2.50507602534068634195e-08, 
-    S6  =  1.58969099521155010221e-10; 
-    ;;
-    double z,r,w;
-    double tau=6.283185307179586;// 2*pi
-
-    x = modulo_double(x,tau);
-    // if(x<0) return -sin(-x);
-    if(x >= pi) return -sin(modulo_double(x,pi));
-
-    // if(x%tau > pi) return -sin(x%tau);
-    z = x*x;
-    w = z*z;
-    r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);
-    return x + z*x*(S1 + z*r);
+  sine: `real sin(real x){
+  	if(x<0) return -sin(-x)
+  		
+    # magical taylor constants
+    S1 = -1/6. 
+    S2 =  1/120.
+    S3 = -1/5040. 
+    S4 =  1/362880. 
+    S5 = -1/39916800.
+    S6 =  1/6227020800.
+    
+    x = x%τ # modulo 2π
+    z = x*x
+    w = z*z
+    r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6)
+    return x + z*x*(S1 + z*r)
 }
-sin(3.1415926)
+sin(π/2)
     `,
   paint2d: `// TODO!\nctx = $canvas.getContext('2d')\nctx.fillStyle = 'red'\nctx.fillRect(10, 10, 150, 100)`,
   scene3d: `// TODO!\nload tree.3ds\nscene.render();`
