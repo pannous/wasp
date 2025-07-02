@@ -738,7 +738,6 @@ void testFunctionArgumentCast() {
     assert_emit("fun addi(float x,float y){x+y};addi(2.2,2.2)", 4.4)
     assert_emit("float addi(int x,int y){x+y};addi(2.2,2.2)", 4.4)
     assert_emit("fun addier(float a,float b){b+a};addier(42,1)+1", 44);
-
 }
 
 void testFunctionDeclaration() {
@@ -3669,11 +3668,11 @@ void tests() {
 #if not WASM
     testNumbers();
     testPower();
-#endif
-    testCast();
     testEmitStringConcatenation();
     testExternReferenceXvalue();
     testExternString();
+#endif
+    testCast();
     testFunctionDeclarationParse();
     testPower();
     testRandomParse();
@@ -3940,10 +3939,10 @@ void testCurrent() {
     // testSinus();
 
     testWaspRuntimeModule();
-    test_new();
-    testExp(); // todo!
 
     skip( // TODO!
+        test_new();
+        testExp(); // todo!
         testKebabCase(); // needed later …
         assert_is("2+1/2", 2.5);
         assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);

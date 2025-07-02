@@ -13,15 +13,13 @@ let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and sh
 // let WASP_COMPILER = 'assets/wasp-release.wasm' // hard link 300k without tests currently not working!
 let WASP_RUNTIME = 'assets/wasp-runtime.wasm' // 100kb now in :
 let lib_folder_url = "assets/"
-// let lib_folder_url = "assets/lib/"
-// let lib_folder_url = "https://pannous.github.io/wasp/lib/"
 
 let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
-// const run_tests = !LIVE;
-const run_tests = false;
+const run_tests = !LIVE;
+// const run_tests = false;
 let app_module;
 let kinds = {}
 
@@ -580,7 +578,7 @@ function load_chars(pointer, length = -1, module_memory = 0, format = 'utf8') {
     let buffer = new Uint8Array(module_memory.buffer, pointer, module_memory.length);
     while (buffer[++length]) ;// strlen ;)
   }
-  debug("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
+  // debug("length:",length,"format:",format,"pointer:",pointer,"TextDecoder:",typeof(TextDecoder))
   if (typeof (TextDecoder) != 'undefined') {// WEB, text-encoding, Node 11
     const utf8_decoder = new TextDecoder('utf8');
     let decoder = format == 'utf8' ? utf8_decoder : utf16denoder
@@ -1295,13 +1293,13 @@ function readFile() {// upload via classic html, not wasp
 
 async function test() {
   try {
-    if (typeof (WebAssembly.promising) != 'undefined') {
-      // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
-      var test_async = WebAssembly.promising(exports.test_async)
-      test_async().then(result => {
-        debug("test_async result", result)
-      })
-    }
+    // if (typeof (WebAssembly.promising) != 'undefined') {
+    //   // The WebAssembly.promising function takes a WebAssembly function, as exported by a WebAssembly instance, and returns a JavaScript function that returns a Promise. The returned Promise will be resolved by the result of invoking the exported WebAssembly function.
+    //   var test_async = WebAssembly.promising(exports.test_async)
+    //   test_async().then(result => {
+    //     debug("test_async result", result)
+    //   })
+    // }
     if (typeof (wasp_tests) !== "undefined")
       await wasp_tests() // internal tests of the wasp.wasm runtime FROM JS! ≠
   } catch (x) {

@@ -15,7 +15,6 @@
 #define VMCxt context
 typedef WasmEdge_CallingFrameContext FrameContext;
 
-uint32_t SquareFunc(uint32_t A) { return A * A; }
 
 uint32_t AddFunc(uint32_t A, uint32_t B) { return A + B; }
 
@@ -25,10 +24,9 @@ uint32_t MulFunc(uint32_t A, uint32_t B) { return A * B; }
 WasmEdge_Result ExternSquare(void *Data,
                              const FrameContext *CallFrameCxt,
                              const WasmEdge_Value *In, WasmEdge_Value *Out) {
-    // Function type: {externref, i32} -> {i32}
-    //	uint32_t (*Func)(uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
-    //	uint32_t C = Func(WasmEdge_ValueGetI32(In[1]));
-    //	Out[0] = WasmEdge_ValueGenI32(C);
+    error("square should ALWAYS be liked to runtime => be never used here!");
+    auto x= WasmEdge_ValueGetI32(In[0]);
+    Out[0] = WasmEdge_ValueGenI32(x*x);
     return WasmEdge_Result_Success;
 }
 
