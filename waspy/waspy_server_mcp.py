@@ -62,13 +62,19 @@ def index(lib, func, args):
 		return f"Error executing {lib}: {str(e)}"
 
 
+def fix_params(params, binary=None, func=""):
+	if not params: return {}
+	if not isinstance(params, str):
+		return {"value":params}
+	return params
 
 def register_mcp(lib, func):
 		print("registering mcp", lib, func)
 		@mcp.tool(f"{lib}.{func}")
-		def inner(**argument_dict):
+		def inner(argument_dict={}):
 			try:
-				return waspy.run_wasm(binaries[lib], argument_dict, func=func)
+				argument_dict= fix_params(argument_dict, binaries[lib], func)
+				return waspy.run_wasm(binaries[lib], **argument_dict, func=func)
 			except Exception as e:
 				return f"Error executing {lib}.{func}: {str(e)}"
 		register_queue.put((inner, f"{lib}.{func}"))

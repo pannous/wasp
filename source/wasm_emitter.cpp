@@ -20,7 +20,7 @@
 
 // these are all reset via clearWasmContext()
 // todo: wrap all these into a class WasmContext
-int last_index = -1;// code index and call index for functions
+int last_index = -1; // code index and call index for functions
 extern Map<String, Global> globals;
 //Map<String, Signature> functions;// todo Signature copy by value is broken
 
@@ -2948,7 +2948,7 @@ Code cast(Type from, Type to) {
     if (from == referencex and to == long32) // generic name good since host can handle it!
         return emitCall("toLong", no_context).add(cast(longs, long32));
     // if (from == referencex)
-        // return emitCall("toNode", no_context);
+    // return emitCall("toNode", no_context);
 
     last_type = to; // ⚠️ danger: hides last_type in caller!
 
@@ -3851,8 +3851,25 @@ Code emitExportSection() {
         globalExports.add(globalExport); // todo << NOW
         exports_count++;
     }
+    Code functionExports;
+    for (int i = 0; i < functions.size(); i++) {
+        String &name = functions.keys[i];
+        if(name == start)continue;
+        if(name == "_start")continue;
+        Function &function = functions[name];
+        if (function.is_import or function.is_builtin or not function.is_used)
+            continue;
+        if (function.call_index < 0) {
+            warn("function "s + name + " is not used, skipping export");
+            continue;
+        }
+        Code functionExport = encodeString(name) + (byte) func_export + Code(function.call_index);
+        functionExports.add(functionExport);
+        exports_count++;
+    }
+
     Code exportsData = encodeVector(
-        Code(exports_count) + memoryExport + mainExport + globalExports);
+        Code(exports_count) + memoryExport + mainExport + globalExports+functionExports);
 
     auto exportSection = createSection(export_section, exportsData);
     return exportSection;

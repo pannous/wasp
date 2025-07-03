@@ -170,6 +170,8 @@ def run_wasm(wasm_bytes, new_params=None, func=None):
 
 	main_func = instance.exports(store)["_start"]
 	if func:
+		if not func in instance.exports(store):
+			raise Exception(f"Function '{func}' not found in exports.")
 		main_func = instance.exports(store)[func]
 	# help(main_func)
 	# print(dir(main_func)) # todo get parameter types & count HOW? via reflection!
@@ -193,10 +195,10 @@ if __name__ == "__main__":
 	# compile('`hello ${1 + $bla}`')
 	# compile('`hello $dada`')
 	# compile('$dada')
-	compile('42')
+	# compile('42')
 	# compile('"hello" + $name')
 	# compile('"hello" + $bla')
-	# compile('fun addier(x, y){ x + y }')
+	compile('fun addier(x, y){ x + y }')
 	# compile('"hello" + "hi"')
 
 	file = "test.wasm" # ^^ compiled
