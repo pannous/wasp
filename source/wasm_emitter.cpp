@@ -3857,7 +3857,7 @@ Code emitExportSection() {
         if(name == start)continue;
         if(name == "_start")continue;
         Function &function = functions[name];
-        if (function.is_import or function.is_builtin or not function.is_used)
+        if (function.is_import or function.is_builtin)
             continue;
         if (function.call_index < 0) {
             warn("function "s + name + " is not used, skipping export");
