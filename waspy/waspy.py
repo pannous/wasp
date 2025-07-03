@@ -145,6 +145,15 @@ def cast(arguments,types):
 		arguments[i]=argument
 	return arguments
 
+def instantiate(wasm_bytes):
+	try:
+		module = Module(store.engine, wasm_bytes)
+		return module, store
+		# return linker.instantiate(store, module), store
+	except Exception as e:
+		print("Error instantiating module:", e)
+		raise e
+
 global memory
 def run_wasm(wasm_bytes, new_params=None, func=None):
 	global memory
@@ -153,6 +162,7 @@ def run_wasm(wasm_bytes, new_params=None, func=None):
 	module = Module(store.engine, wasm_bytes)
 	# instance = Instance(store, module, imports)
 	instance = linker.instantiate(store, module)
+	memory = instance.exports(store)["memory"]
 
 	for name, export in instance.exports(store).items():
 		if isinstance(export, Func):
@@ -161,7 +171,6 @@ def run_wasm(wasm_bytes, new_params=None, func=None):
 	main_func = instance.exports(store)["_start"]
 	if func:
 		main_func = instance.exports(store)[func]
-	memory = instance.exports(store)["memory"]
 	# help(main_func)
 	# print(dir(main_func)) # todo get parameter types & count HOW? via reflection!
 	if main_func.type(store).params:
@@ -184,14 +193,15 @@ if __name__ == "__main__":
 	# compile('`hello ${1 + $bla}`')
 	# compile('`hello $dada`')
 	# compile('$dada')
+	compile('42')
 	# compile('"hello" + $name')
 	# compile('"hello" + $bla')
-	compile('fun addier(x, y){ x + y }')
+	# compile('fun addier(x, y){ x + y }')
 	# compile('"hello" + "hi"')
 
 	file = "test.wasm" # ^^ compiled
 	# file="module.wasm"
-	file = "../test.wasm"
+	# file = "../test.wasm"
 	with open(file, "rb") as f:
 		wasm_bytes = f.read()
 		# run_wasm(wasm_bytes)

@@ -29,6 +29,12 @@
 
 #include "asserts.h"
 
+void test2Def() {
+    // parse("def test1(x){x+1};def test2(x){x+1};test2(3)");
+    assert_emit("def test1(x){x+1};def test2(x){x+1};test2(3)", 4);
+    assert_emit("def test1(x){x+3};def test2(x){x+1};test2(3)", 6);
+}
+
 void testReturnTypes() {
     assert_emit("fun addier(a,b){b+a};addier(42,1)", 43);
     assert_emit("fun addier(a,b){b+a};addier(42,1)+1", 44);
@@ -3922,6 +3928,7 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting current tests 💡");
+    test2Def();
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");

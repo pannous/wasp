@@ -417,7 +417,7 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
         params = groupTypes(params, function);
         if (params.name != function.name)
             args.add({function.name, params.name, params.type ? params.type : nextType});
-    }
+    } //else
     for (Node &arg: params) {
         if (arg.kind == groups) {
             arg = groupTypes(arg, function,true);
@@ -450,7 +450,7 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
             //			error("duplicate argument name: "s + name);
         }
         signature.add(arg.type, name); // todo: arg type, or pointer
-        addLocal(function, arg.name, arg.type, true);
+        addLocal(function, name, arg.type, true);
     }
 
     Function *variant = &function;
@@ -481,7 +481,12 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
         function.signature = signature;
     }
     for (auto arg: args) {
-        addLocal(*variant, arg.name, arg.type, true);
+        auto name = arg.name;
+        if (empty(name)) {
+            warn("empty argument name, using $n"s);
+            name = String("$"s + variant->locals.size());
+        }
+        addLocal(*variant, name, arg.type, true);
     }
     // NOW add locals to function context:
     //	for (auto arg: variant->signature.parameters)
@@ -851,6 +856,8 @@ Node &groupGlobal(Node &node, Function &function) {
 // return: done?
 // todo return clear enum known, added, ignore ?
 bool addLocal(Function &context, String name, Type type, bool is_param) {
+    if(not name)
+        error("addLocal: empty name");
     if (isKeyword(name))
         error("keyword as local name: "s + name);
     // todo: kotlin style context sensitive symbols!

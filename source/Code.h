@@ -146,6 +146,7 @@ public:
     }
 
     Code(chars string, bool size_header = true, bool null_terminated = false) {
+        // if(not string)return; // hides bugs
         short len = strlen(string);
 //        if (null_terminated)len++;
         if (size_header) { push(len); }
