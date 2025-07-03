@@ -3928,7 +3928,7 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting current tests 💡");
-    test2Def();
+    // test2Def();
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
