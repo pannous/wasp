@@ -1466,7 +1466,7 @@ private:
                 case ']': // ..
                     //					break loop;// not in c++
                     parserError("wrong closing bracket");
-                //				case '+': // todo WHO writes +1 ?
+                // case '+': // todo WHO writes +1 ?
                 case '-':
                     if (parserOptions.arrow and next == '>') {
                         // a->b immediate key:value

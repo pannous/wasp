@@ -5,7 +5,7 @@ import waspy
 
 app = Flask(__name__)
 CORS(app)
-binaries = {}
+wasm_files = {}
 
 form_ = '''
 <form method="post" action="/">
@@ -42,8 +42,8 @@ def index(lib, func, args):
 	print("lambda name:", lib)
 	print("function name:", func)
 	print("params:", params)
-	if not lib or not lib in binaries: return form_
-	file_path = binaries[lib]
+	if not lib or not lib in wasm_files: return form_
+	file_path = wasm_files[lib]
 	with open(file_path, "rb") as f:
 		try:
 			wasm_bytes = f.read()
@@ -59,7 +59,7 @@ def upload():
 	name = request.form.get('name') or file.filename.rsplit('.', 1)[0]
 	filename = f"./lambdas/{file.filename}"
 	file.save(filename)
-	binaries[name] = filename
+	wasm_files[name] = filename
 	return redirect(url_for('index') + name)
 
 
