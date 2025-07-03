@@ -3929,6 +3929,8 @@ void testCurrent() {
     // return;
     print("💡 starting current tests 💡");
     // test2Def();
+    assert_emit("fun addier(x, y){ x + y }",0)
+    exit(   0);
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");

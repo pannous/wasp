@@ -78,6 +78,9 @@ node_header_32 = 0x80000000
 
 
 def smart_value(data0: int):  # , memory
+	if not isinstance(data0, int):
+		return data0 # already a value via FuncResult
+
 	type_ = data0 >> 32
 	data = int(data0 & 0xFFFFFFFF)
 
