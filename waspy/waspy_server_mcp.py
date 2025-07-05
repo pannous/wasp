@@ -33,7 +33,7 @@ form_ = '''
 def index(lib, func, args):
 	path = request.path
 	if not path or not lib:
-		return ""
+		return form_
 	blocked = ["robots.txt", ".ico", ".png", ".jpg", ".jpeg", ".gif", "wp-", ".php", "setup/","sitemap.xml"]
 	for b in blocked:
 		if b in path: return ""
