@@ -1,6 +1,8 @@
 from wasmtime import Store, Module, Linker, FuncType, Func, ValType, Instance
 import struct
 import os
+import json5  # json.loads('{x: 1}')
+
 
 store = Store()
 
@@ -139,14 +141,41 @@ linker.define_wasi()
 for key, value in env.items():
 	linker.define(store, "env", key, Func(store, FuncType(value[0], value[1]), value[2]))
 
-def cast(arguments,types):
-	for i in range(len(arguments)):
+# todo accept other than list of values!
+def cast(args, types):
+	print("CASTING", args, "to", types)
+	print(type(args))
+	if len(types) == 0:
+		print("Warning: no types, IGNORING arguments", args)
+		args = []
+	if isinstance(args, dict):
+		args=list(args.values())
+	if isinstance(args, list) and len(args) == 1 and len(types) >1 and isinstance(args[0], str):
+		args = args[0]
+	if isinstance(args, str):
+		args = args.strip()
+		if len(types) == 1:
+			args = [args]  # single value
+		if len(types) > 1:
+			if args[0] == "{" and args[-1] == "}":
+				args = json5.loads(args)
+				args = list(args.values())  # dict to list  TODO match!
+			else:
+				while args[0] == "[" and args[-1] == "]":
+					args = args[1:-1]
+				while args[0] == "(" and args[-1] == ")":
+					args = args[1:-1]
+				args = args.split(",")
+	if len(args) != len(types):
+		raise Exception(f"Expected {len(types)} arguments of types {types}, got {len(args)}: {args} ")
+
+	for i in range(len(args)):
 		typ = types[i]
-		argument = arguments[i]
+		argument = args[i]
 		if typ == f64:
 				argument = float(argument)
-		arguments[i]=argument
-	return arguments
+		args[i]=argument
+	return args
 
 def instantiate(wasm_bytes):
 	try:
@@ -179,7 +208,7 @@ def run_wasm(wasm_bytes, new_params=None, func=None):
 	# help(main_func)
 	# print(dir(main_func)) # todo get parameter types & count HOW? via reflection!
 	if main_func.type(store).params:
-		arguments = cast(list(params.values()),export.type(store).params)
+		arguments = cast(params,export.type(store).params)
 		ok = main_func(store, *arguments)
 	else:
 		ok = main_func(store)
