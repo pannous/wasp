@@ -64,25 +64,22 @@ def index(lib, func, args):
 
 def fix_params(params, binary=None, func=""):
 	if not params: return {}
-	if not isinstance(params, str):
-		return {"value":params}
+	if not isinstance(params, dict):
+		return {"value2":params}
 	return params
 
 def register_mcp(lib, func):
 		print("registering mcp", lib, func)
 		@mcp.tool(f"{lib}.{func}")
-		def inner(argument_dict={}):
-			try:
-				argument_dict= fix_params(argument_dict, binaries[lib], func)
-				return waspy.run_wasm(binaries[lib], **argument_dict, func=func)
-			except Exception as e:
-				return f"Error executing {lib}.{func}: {str(e)}"
+		def inner(arguments={}):
+				# argument_dict= fix_params(arguments, binaries[lib], func)
+				return waspy.run_wasm(binaries[lib], arguments, func=func)
 		register_queue.put((inner, f"{lib}.{func}"))
 
 
 def register_test():
 		@mcp.tool("test.hallo")
-		def hallo(name):
+		def hallo(name="World"):
 				return f"Hallo {name}!"
 		register_queue.put((hallo, f"hallo"))
 
@@ -98,7 +95,6 @@ def register_exports_as_mcp(lib, filename):
 
 @app.route('/upload', methods=['POST'])
 def upload():
-	register_test()  #OK
 	file = request.files['file']
 	name = request.form.get('name') or file.filename.rsplit('.', 1)[0]
 	filename = f"./lambdas/{file.filename}"
@@ -121,7 +117,8 @@ def mcp_server():
 application = app  #!gunicorn waspy_server:application
 if __name__ == '__main__':
 	print("for LIVE environment, use `gunicorn waspy_server:application`")
-	# register_exports_as_mcp("tee", "test.wasm")
 	threading.Thread(target=lambda: mcp_server(), daemon=True).start()
+	register_test()  #OK
+	register_exports_as_mcp("tee", "test.wasm")
 	# app.run(debug=True, port=9000)
 	app.run(debug=True, port=9000, use_reloader=False)
