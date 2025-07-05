@@ -1,12 +1,13 @@
 #!gunicorn waspy_server:application
 from flask import Flask, request, redirect, url_for
 from flask_cors import CORS  # pip install flask-cors
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP # pip install "mcp[cli]"
 import threading, queue
 import waspy
 
 register_queue = queue.Queue()
-mcp = FastMCP("waspy", host="0.0.0.0", port=3001, debug=True)
+mcp = FastMCP("waspy", host="0.0.0.0", port=3001, debug=True )  # FastMCP instance for managing tools
+
 app = Flask(__name__)
 CORS(app)
 
@@ -31,7 +32,9 @@ form_ = '''
 @app.route('/<lib>/<func>/<args>')
 def index(lib, func, args):
 	path = request.path
-	blocked = ["robots.txt", ".ico", ".png", ".jpg", ".jpeg", ".gif", "wp-", ".php", "setup/"]
+	if not path or not lib:
+		return ""
+	blocked = ["robots.txt", ".ico", ".png", ".jpg", ".jpeg", ".gif", "wp-", ".php", "setup/","sitemap.xml"]
 	for b in blocked:
 		if b in path: return ""
 	params = {}
@@ -74,14 +77,17 @@ def register_mcp(lib, func):
 		def inner(arguments={}):
 				# argument_dict= fix_params(arguments, binaries[lib], func)
 				return waspy.run_wasm(binaries[lib], arguments, func=func)
-		register_queue.put((inner, f"{lib}.{func}"))
+		description = f"Tool {lib}-{func} registered without description, must be inferred from name and function signature."
+		register_queue.put((inner, f"{lib}-{func}", description))
 
 
 def register_test():
-		@mcp.tool("test.hallo")
+		# @mcp.tool("test-hallo",description="send greetings to a user with provided name")
 		def hallo(name="World"):
 				return f"Hallo {name}!"
-		register_queue.put((hallo, f"hallo"))
+		register_queue.put((lambda:"pong", f"ping", "Respond with 'pong' to a ping request."))
+		register_queue.put((lambda echo:echo, f"echo", "Echo the input back to the user."))
+		register_queue.put((hallo, f"hallo", "Send greetings to a user with provided name."))
 
 
 def register_exports_as_mcp(lib, filename):
@@ -108,17 +114,23 @@ def upload():
 def mcp_server():
 		def poll_registers(): # needs to be run in a separate thread
 				while True:
-						func, name = register_queue.get()
-						print(f"Registering tool: {name}")
-						mcp.add_tool(mcp.tool(name)(func), name)
+						func, name, description = register_queue.get()
+						print(f"Registering tool: {name} with description: {description}")
+						# mcp.add_tool(mcp.tool(name,description=description)(func), name, description=description)
+						mcp.add_tool(func, name, description=description)
 		threading.Thread(target=poll_registers, daemon=True).start()
-		mcp.run(transport="sse")
+		# mcp.run(transport="sse") can only use one
+		mcp.run(transport="streamable-http")
+
+
+# Start thread (non-daemon so it stays alive unless cleanly shut down)
+thread = threading.Thread(target=mcp_server)
+thread.start()
 
 application = app  #!gunicorn waspy_server:application
 if __name__ == '__main__':
 	print("for LIVE environment, use `gunicorn waspy_server:application`")
-	threading.Thread(target=lambda: mcp_server(), daemon=True).start()
+	# threading.Thread(target=lambda: mcp_server(), daemon=True).start()
 	register_test()  #OK
-	register_exports_as_mcp("tee", "test.wasm")
 	# app.run(debug=True, port=9000)
 	app.run(debug=True, port=9000, use_reloader=False)
