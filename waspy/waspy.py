@@ -31,6 +31,9 @@ def getElementById(id):
 	name = readString(id)
 	return name  # name as id!
 
+def invokeExternRef(ref, name):
+	# dummy NOT SECURE!
+	return ref
 
 def toString(ref):
 	return writeString(params[ref])
@@ -125,6 +128,7 @@ env = {
 	"fgetc": ([i32], [i32], nop), # TODO: use wasi !?
 	"fclose": ([i32], [i32], nop), # TODO: use wasi !?
 	"exit": ([i32], [], nop), # TODO: use wasi !?
+	"invokeExternRef": ([externref, chars], [externref], nop), # dummy
 	"toString": ([externref], [chars], toString),
 	"toNode": ([externref], [nodep], toNode),
 	"toLong": ([externref], [i64], toLong),
