@@ -123,7 +123,7 @@ def register_mcp(lib, func):
 		# argument_dict= fix_params(arguments, binaries[lib], func)
 		return waspy.run_wasm(binaries[lib], arguments, func=func)
 
-	description = f"Tool {lib}-{func} registered without description, must be inferred from name and function signature."
+	description = f"Tool description must be inferred from name and function signature."
 	register_queue.put((inner, f"{lib}-{func}", description))
 	known_mcps.append((lib,func))
 
