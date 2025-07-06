@@ -132,9 +132,8 @@
   <!--  <button onclick="download_file(editor.getValue(), 'source.wasp', 'wasp')" title="download wasp">💾⤓ source.wasp</button>-->
   <button onclick="download_file(wasm_buffer, 'compiled.wasm', 'wasm')" title="download compiled.wasm">📥 download wasm
   </button>
-  <hidden style="display: none;">
-  <label for="auto_deploy">auto</label><input checked id="auto_deploy" type="checkbox"/>
-  </hidden>
+  <hidden style="display: none;">NO AUTO_DEPLOY!!!<input id="auto_deploy" type="checkbox"/></hidden>
+<!--  <label for="auto_deploy">auto</label><input checked id="auto_deploy" type="checkbox"/>-->
   <button onclick="deploy()" title="deploy as serverless lambda handler and mcp">
     <img src="https://www.fermyon.com/static/image/events/spin-icon-dot.png"
          style="height: 1em;vertical-align: middle;"/> deploy as
