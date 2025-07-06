@@ -29,6 +29,10 @@
 
 #include "asserts.h"
 
+void testPing() {
+    assert_emit("def ping(): 'pong'; ping()", "pong");
+}
+
 void test2Def() {
     // parse("def test1(x){x+1};def test2(x){x+1};test2(3)");
     assert_emit("def test1(x){x+1};def test2(x){x+1};test2(3)", 4);
@@ -3058,7 +3062,9 @@ void testParamizedKeys() {
     assert_equals(label0["for"], "password");
 
     // 1. paramize keys: label{param=(for:password)}:"Text"
-    Node label1 = parse("label(for:password):'Passwort'");
+    Node label1 = parse("label(for:password):'Passwort'"); // declaration syntax :(
+    // Node label1 = parse("label{for:password}:'Passwort'");
+    // Node label1 = parse("label[for:password]:'Passwort'");
     label1.print();
     assert_equals(label1, "Passwort");
     assert_equals(label1["for"], "password");
@@ -3935,6 +3941,7 @@ void testCurrent() {
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
 #else
+    testPing();
     testFunctionArgumentCast();
     testFunctionDeclaration();
     testReturnTypes();

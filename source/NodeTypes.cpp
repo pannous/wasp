@@ -467,6 +467,8 @@ Primitive mapTypeToPrimitive(Node &n) {
         //        return Primitive::byte_char;
         //    if (n == CharsType)
         return Primitive::charp;
+    if(n.kind == strings)
+        return smarti64;// Primitive::stringp; // todo: string_ref?
     if (n.kind == flags)
         return Primitive::wasm_int64; // Kind::flags;
     else if (mapType(n.name, false) != unknown_type)

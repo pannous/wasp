@@ -54,6 +54,7 @@ extern List<Module *> libraries; // merged:
 //extern Map<String, Signature> functionSignatures;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 //extern Map<String, Function> library_functions;// use as import (implicit and explicit)
 extern Map<String, Function> functions;
+extern List<chars> function_keywords;
 // for funcs AND imports, serialized differently (inline for imports and extra functype section)
 
 //#include "Map.h"

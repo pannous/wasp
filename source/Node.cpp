@@ -74,6 +74,7 @@ Node Nan = Node("NaN");
 Node *reconstructArray(int *array_struct);
 
 extern "C" void __wasm_call_ctors();
+
 void initSymbols() {
     print("initSymbols");
     // ((Node) NIL).name = nil_name;
@@ -1252,8 +1253,8 @@ Node &Node::setKind(Kind kin, bool check) {
     if (kind == modul and kin == key)
         return *this; // todo   import host: host-funcs     module{.name=host}.value=host-funcs
     if (kind == 0)check = false;
-    if (kind == operators and kin == expression)return *this;
-
+    if (kind == operators and kin == expression)return *this; // don't generalize
+    if (kind == declaration and kin == expression)return *this; // don't generalize
     // todo remove these check = false hacks and call setType() with check = false !
     if (kind == codepoint1 and kin == operators)check = false; // and name==(codepoint)value.longy
     if (kind == groups and (kin == expression or kin == functor))check = false;
