@@ -19,8 +19,8 @@ let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
-// const run_tests = !LIVE;
-const run_tests = false;
+const run_tests = !LIVE;
+// const run_tests = false;
 let app_module;
 let kinds = {}
 
@@ -334,6 +334,11 @@ let imports = {
     async_yield: x => { // called from inside wasm, set callback handler resume before!
       throw new YieldThread() // unwind wasm, re-enter through resume() after run_wasm
     },
+    toNode: ref => node(ref, app.memory),
+    toLong: ref => BigInt(ref.value || ref),
+    toReal: ref => Number(ref.value || ref), // todo: get ref value how?
+    formatReal: r => string("" + r, app.memory),
+    toString: ref => string(ref.toString(), app.memory),
     // the following dependencies only appear when using the linker!!
     vsnprintf: getRidOfDependency,
     stat: getRidOfDependency,
