@@ -34,6 +34,7 @@ public: // todo careful Map<char*,…> eq
 
 
     Map(int initial_capacity = MAP_INITIAL_CAPACITY) {
+        if (initial_capacity == 0)initial_capacity = MAP_INITIAL_CAPACITY;
         capacity = initial_capacity;
         _size = 0;
         keys = (S *) calloc(sizeof(S), capacity);
@@ -102,23 +103,30 @@ public: // todo careful Map<char*,…> eq
     }
 
     // returns -1 if not found
-    int position(S s) {
-        for (int i = 0; i < _size; i++) //  or keys[i]!=0
-            if (s == keys[i])
+    int position(const S &s) const {
+        // int position(S s){
+        for (int i = 0; i < _size; i++) {
+            //  or keys[i]!=0
+            // print("key[i] = ");
+            //     print(keys[i]);
+            // print("cmp key[i] == s: ");
+            //     print(keys[i] == s);
+            if (s == (const S &) keys[i])
                 return i;
+        }
         return -1;
     }
 
-    int position(S *s) {
-        if (s >= begin() and s <= end())
-            return s - begin(); // pointer matches directly
-        for (int i = 0; i < _size; i++)
-            if (*s == keys[i]) // compare VALUES!
-                return i;
-        return -1;
-    }
+    // int position(S *s) {
+    //     if (s >= begin() and s <= end())
+    //         return s - begin(); // pointer matches directly
+    //     for (int i = 0; i < _size; i++)
+    //         if (*s == keys[i]) // compare VALUES!
+    //             return i;
+    //     return -1;
+    // }
 
-    int position(T t) {
+    int position(const T &t) const {
         for (int i = 0; i < _size; i++) //  (values[i] or keys[i]) and
             if (values[i] == t)
                 return i;
@@ -133,18 +141,19 @@ public: // todo careful Map<char*,…> eq
         return _size;
     }
 
-    int add(S *key, T *value) {
-        int found = position(key);
-        if (found >= 0)
-            error("DUPLICATE KEY: "s + key + " at " + found); // or use insert_or_assign
-        if (keys == 0)
-            error("how?");
-        keys[_size] = key;
-        values[_size] = value;
-        _size++;
-        if (_size >= capacity)grow();
-        return _size;
-    }
+    //
+    // int add(S *key, T *value) {
+    //     int found = position(key);
+    //     if (found >= 0)
+    //         error("DUPLICATE KEY: "s + key + " at " + found); // or use insert_or_assign
+    //     if (keys == 0)
+    //         error("how?");
+    //     keys[_size] = key;
+    //     values[_size] = value;
+    //     _size++;
+    //     if (_size >= capacity)grow();
+    //     return _size;
+    // }
 
     template<typename... Args>
     int emplace(const S &key, Args &&... args) {
@@ -160,6 +169,7 @@ public: // todo careful Map<char*,…> eq
 
     // const & works just as well as int add(S key, T value) !!
     int add(const S &key, const T &value) {
+        if (keys == 0 or _size >= capacity) grow();
         int found = position(key);
         if (found >= 0) {
 #if not WASM
@@ -172,7 +182,6 @@ public: // todo careful Map<char*,…> eq
             print(value);
             error("DUPLICATE KEY: "s + key); // or use insert_or_assign
         }
-        if (keys == 0 or _size >= capacity) grow();
         keys[_size] = key;
         values[_size] = value;
         _size++;
@@ -249,7 +258,8 @@ public: // todo careful Map<char*,…> eq
         // CREATING on access! use map.has(x) if not desired
         //        trace("map[key]");
         if (_size >= capacity)grow();
-        int position1 = position(key);
+        // int position1 = position(key);
+        int position1 = this->position(static_cast<const S &>(key));
         if (position1 >= 0) {
             //            trace("Key known");
             return values[position1];
@@ -331,9 +341,15 @@ public: // todo careful Map<char*,…> eq
 
     void grow() {
         // todo don't grow when holding references!
+        // printf("Map grow %d\n", capacity);
+        if (capacity == 0)capacity = MAP_INITIAL_CAPACITY;
         capacity = capacity * 2;
         check_silent(capacity < MAP_MAX_CAPACITY);
         //        warn("GROWING");
+        //
+        // keys = (S *) realloc(keys, sizeof(S) * capacity);
+        // values = (T *) realloc(values, sizeof(T) * capacity);
+
         S *new_keys = (S *) alloc(sizeof(S), capacity);
         T *new_values = (T *) alloc(sizeof(T), capacity);
         if (keys and values) {
@@ -351,6 +367,7 @@ public: // todo careful Map<char*,…> eq
 
     void clear() {
         if (size() == 0)return;
+          if (capacity == 0)capacity = MAP_INITIAL_CAPACITY; //tood:??
         free(keys); // todo  (interrupted by signal 6: SIGABRT) in WebApp why?
         free(values);
         keys = (S *) calloc(sizeof(S), capacity);

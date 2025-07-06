@@ -40,6 +40,11 @@ bool isnumber(char c) { return c >= '0' and c <= '9'; }
 
 #include "WitReader.h"
 
+int __force_link_parser_globals = 1; // put this in other .cpp files to force linking parser globals:
+// extern int __force_link_parser_globals;
+// int* __force_link_parser_globals_ptr = &__force_link_parser_globals;
+
+
 int SERVER_PORT = 1234;
 //bool eval_via_emit = false;// not all tests yet
 bool eval_via_emit = true; // << todo!  assert_is(…)

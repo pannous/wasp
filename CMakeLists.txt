@@ -49,10 +49,28 @@ endif ()
 
 if (SANITIZE)
     message("SANITIZE")
+    set(ENV{MallocScribble} "1")
+    set(ENV{MallocGuardEdges} "1")
+    set(ENV{MallocCheckHeapStart} "1")
+    set(ENV{MallocCheckHeapEach} "1")
+    add_compile_options(-fno-omit-frame-pointer)
+    add_compile_options(-fstack-protector-all)
     add_compile_options(-fsanitize=null)
+    add_compile_options(-fsanitize=address)
     add_compile_options(-fsanitize=bounds) # several allowed
     add_compile_options(-fsanitize=undefined)
+     add_compile_options(-fsanitize-address-use-after-scope)
+    add_compile_options(-finstrument-functions) # log function calls
+    add_compile_options(-Wno-deprecated)
+    add_compile_options(-fno-pie)
+    add_compile_options(-no-pie)
+    add_compile_options(-O0)
+    add_compile_options(-g3)
+
+
+#    extern "C" void __cyg_profile_func_enter(void *func, void *caller) { fprintf(stderr, "ENTER %p from %p\n", func, caller); }
     add_link_options(-fsanitize=undefined)
+    add_link_options(-fsanitize=address)
 #    target_link_libraries(wasp ubsan)
     message("just use lldb -- /Users/me/dev/apps/wasp/cmake-build-debug-sanitize/wasp test; run")
 endif ()
@@ -131,7 +149,7 @@ if (WASM)
     set(MY_WASI 1) # manually write via fd_write, NOT via wasi-sdk printf=>fd_write
     ADD_DEFINITIONS(-DMY_WASI)
     ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
-    ADD_COMPILE_FLAG(-s SIDE_MODULE=1) # add .metadata custom section
+#    ADD_COMPILE_FLAG(-s SIDE_MODULE=1) # add .metadata custom section
 
     if (DEBUG)
         message("WASM DEBUG with DWARF!")
@@ -645,8 +663,8 @@ if (WASM) # OR WASI)
                 #                COMMAND wasm2wat --generate-names --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map -o ${CMAKE_BINARY_DIR}/wasp-hosted.wat ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
 
                 # 2025-06 broken dwarf_to_json.js
-#                COMMAND python3 /Users/me/dev/script/wasm/wasm-sourcemap.py ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
-#                COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../source/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
+                COMMAND python3 /Users/me/dev/script/wasm/wasm-sourcemap.py ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
+                COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../source/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
 
                 #                COMMAND wasm-opt ${CMAKE_BINARY_DIR}/wasp-hosted -g -o ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
                 #                COMMAND wasm2js --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
