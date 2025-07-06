@@ -1124,8 +1124,13 @@ function load_compiler() {
     debug("compiler_exports already loaded")
     return
   }
-  WASP_COMPILER_BYTES = fetch(WASP_COMPILER)
-  WebAssembly.instantiateStreaming(WASP_COMPILER_BYTES, imports).then(obj => {
+  // WASP_COMPILER_BYTES = fetch(WASP_COMPILER)
+  // WebAssembly.instantiateStreaming(WASP_COMPILER_BYTES, imports).then(obj => {
+  fetch(WASP_COMPILER)
+  .then(response => response.arrayBuffer())
+  .then(bytes => WebAssembly.instantiate(bytes, imports))
+  .then(obj => {
+      WASP_COMPILER_BYTES = bytes
       compiler_instance = obj.instance
       compiler_exports = compiler_instance.exports
       // global.
