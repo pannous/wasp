@@ -825,7 +825,7 @@ public:
 
 typedef const Node Nodec;
 
-void initSymbols(); // wasm doesn't do it why!?
+extern "C" void initSymbols(); // wasm doesn't do it why!?
 class [[maybe_unused]] BoolBridge {
     bool _b;
 
