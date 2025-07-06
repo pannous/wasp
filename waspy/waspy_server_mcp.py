@@ -5,6 +5,8 @@ from mcp.server.fastmcp import FastMCP  # pip install "mcp[cli]"
 import threading, queue
 import waspy
 
+known_mcps = []
+
 register_queue = queue.Queue()
 mcp = FastMCP("waspy", host="0.0.0.0", port=3001, debug=True)  # FastMCP instance for managing tools
 
@@ -25,6 +27,24 @@ form_ = '''
 	<input type="submit" value="Upload">
 </form>
 '''
+
+
+@app.route('/')
+def list_tools():
+	html = "<h1>Available WASM Lambdas</h1>"
+	for lib, tool in known_mcps:
+		html += f"<li><a href='/{lib}/{tool}'>{lib}-{tool}</a></li>"
+	html += """
+	<h2>Available AS MCP</h2>
+	Endpoint (streamable-http transport) : https://mcp.pannous.com/mcp/ <br>
+	<a href='https://pannous.com/files/mcp_client_http.py'>Download MCP client (python)</a><br>
+	<h2>Write new lambda/mcp</h2>
+	<a href='https://wasp.pannous.com/'>Wasp Editor</a> <br>
+	<h2>Upload a new WASM file</h2>
+	WASM file exports will immediately be available as lambda and mcp.<br>
+	"""
+	html += form_
+	return html
 
 
 @app.route('/', defaults={'lib': None, 'func': '_start', 'args': ''})
@@ -94,7 +114,6 @@ def register_exports_as_mcp(lib, filename):
 				register_mcp(lib, func.name)
 
 
-known_mcps = []
 def register_mcp(lib, func):
 	print("registering mcp", lib, func)
 
@@ -109,13 +128,13 @@ def register_mcp(lib, func):
 
 
 def register_test():
-	@mcp.tool("test-hallo", description="send greetings to a user with provided name")
+	# @mcp.tool("test-hello", description="send greetings to a user with provided name")
 	def hallo(name="World"):
-		return f"Hallo {name}!"
+		return f"Hello {name}!"
 
 	register_queue.put((lambda: "pong", f"ping", "Respond with 'pong' to a ping request."))
 	register_queue.put((lambda echo: echo, f"echo", "Echo the input back to the user."))
-	register_queue.put((hallo, f"hallo", "Send greetings to a user with provided name."))
+	register_queue.put((hallo, f"hello", "Send greetings to a user with provided name."))
 
 
 def mcp_server():
