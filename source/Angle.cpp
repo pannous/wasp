@@ -417,7 +417,7 @@ Signature &groupFunctionArgs(Function &function, Node &params) {
     // todo: dynamic type in square / add1 x:=x+1;add1 3
     if (params.length == 0) {
         params = groupTypes(params, function);
-        if (params.name != function.name)
+        if (params.name != function.name and not params.name.empty())
             args.add({function.name, params.name, params.type ? params.type : nextType});
     } //else
     for (Node &arg: params) {
@@ -1071,7 +1071,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
     if (expression.kind == groups) // handle later!
         return expression;
     //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
-    if (expression.contains(":=")) {
+    if (expression.contains(":=") ) { // add_raw
         return groupFunctionDeclaration(expression, context);
     }
 

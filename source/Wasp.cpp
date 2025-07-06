@@ -1562,7 +1562,10 @@ private:
                         add_to_whole_expression = true; // a b : c => (a b):c  // todo: symbol :a as in ruby?
                     if (is_operator(previous))
                         add_raw = true; // == *=
-
+                    if(previous==')' and function_keywords.has(actual.first().name)) {
+                        actual.setKind(declaration, false);
+                        add_raw= true; // fun():body
+                    }
                     //					char prev = previous;// preserve
                     Node op = operatorr(); // extend *= ...
                     if (next == '>' and parserOptions.arrow)

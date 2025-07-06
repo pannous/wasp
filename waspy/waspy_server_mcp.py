@@ -17,10 +17,6 @@ wasm_files = {}  # name -> filename
 binaries = {}  # name -> wasm bytes
 
 form_ = '''
-<form method="post" action="/">
-	Lambda name: <input type="text" name="name">
-	<input type="submit" value="Execute">
-</form>
 <form method="post" enctype="multipart/form-data" action="/upload">
 	Upload WASM: <input type="file" name="file">
 	Lambda name: <input type="text" name="name">
@@ -33,7 +29,10 @@ form_ = '''
 def list_tools():
 	html = "<h1>Available WASM Lambdas</h1>"
 	for lib, tool in known_mcps:
-		html += f"<li><a href='/{lib}/{tool}'>{lib}-{tool}</a></li>"
+		if not lib:
+			html += f"<li><a href='/{tool}'>{tool}</a></li>"
+		else:
+			html += f"<li><a href='/{lib}/{tool}'>{lib}-{tool}</a></li>"
 	html += """
 	<h2>Available AS MCP</h2>
 	Endpoint (streamable-http transport) : https://mcp.pannous.com/mcp/ <br>
@@ -124,7 +123,7 @@ def register_mcp(lib, func):
 
 	description = f"Tool {lib}-{func} registered without description, must be inferred from name and function signature."
 	register_queue.put((inner, f"{lib}-{func}", description))
-	known_mcps.append(f"{lib}-{func}")
+	known_mcps.append((lib,func))
 
 
 def register_test():
@@ -142,9 +141,7 @@ def mcp_server():
 		while True:
 			func, name, description = register_queue.get()
 			print(f"Registering tool: {name} with description: {description}")
-			# mcp.add_tool(mcp.tool(name,description=description)(func), name, description=description)
 			mcp.add_tool(func, name, description=description)
-			known_mcps.append(name)
 
 	threading.Thread(target=poll_registers, daemon=True).start()
 	register_test()  # OK
