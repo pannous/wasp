@@ -125,7 +125,8 @@ def register_mcp(lib, func):
 
 	description = f"Tool description must be inferred from name and function signature."
 	register_queue.put((inner, f"{lib}-{func}", description))
-	known_mcps.append((lib,func))
+	if not (lib,func) in known_mcps:
+		known_mcps.append((lib,func))
 
 
 def register_test():
