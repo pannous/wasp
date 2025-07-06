@@ -19,8 +19,8 @@ let runtime_bytes = null; // for reflection or linking
 let needs_runtime = false; // set per app!
 // const use_big_runtime = true; // use compiler as runtime for now
 const use_big_runtime = false; // link / use small runtime IN compiler
-const run_tests = !LIVE;
-// const run_tests = false;
+// const run_tests = !LIVE;
+const run_tests = false;
 let app_module;
 let kinds = {}
 
