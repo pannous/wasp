@@ -3851,25 +3851,25 @@ Code emitExportSection() {
         globalExports.add(globalExport); // todo << NOW
         exports_count++;
     }
-    Code functionExports;
-    for (int i = 0; i < functions.size(); i++) {
-        String &name = functions.keys[i];
-        if(name == start)continue;
-        if(name == "_start")continue;
-        Function &function = functions[name];
-        if (function.is_import or function.is_builtin)
-            continue;
-        if (function.call_index < 0) {
-            warn("function "s + name + " is not used, skipping export");
-            continue;
-        }
-        Code functionExport = encodeString(name) + (byte) func_export + Code(function.call_index);
-        functionExports.add(functionExport);
-        exports_count++;
-    }
+    // Code functionExports;
+    // for (int i = 0; i < functions.size(); i++) {
+    //     String &name = functions.keys[i];
+    //     if(name == start)continue;
+    //     if(name == "_start")continue;
+    //     Function &function = functions[name];
+    //     if (function.is_import or function.is_builtin)
+    //         continue;
+    //     if (function.call_index < 0) {
+    //         warn("function "s + name + " is not used, skipping export");
+    //         continue;
+    //     }
+    //     Code functionExport = encodeString(name) + (byte) func_export + Code(function.call_index);
+    //     functionExports.add(functionExport);
+    //     exports_count++;
+    // }
 
     Code exportsData = encodeVector(
-        Code(exports_count) + memoryExport + mainExport + globalExports+functionExports);
+        Code(exports_count) + memoryExport + mainExport + globalExports);// +functionExports
 
     auto exportSection = createSection(export_section, exportsData);
     return exportSection;

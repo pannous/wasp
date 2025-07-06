@@ -155,10 +155,10 @@
       },
     });
     editor.on('change', function () {
-      if(auto_run.checked)
-        compile_and_run(editor.getValue());
-      if(auto_deploy.checked)
-        deploy();
+      // if(auto_run.checked)
+      //   compile_and_run(editor.getValue());
+      // if(auto_deploy.checked) and error free
+      //   deploy();
       // editor.save();
       editor.focus();
     });

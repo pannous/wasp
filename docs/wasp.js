@@ -1130,8 +1130,9 @@ function load_compiler() {
       HEAP_END += 0x100000
       memory = compiler_exports.memory || compiler_exports._memory || memory
       buffer = new Uint8Array(memory.buffer, 0, memory.length);
-      main = compiler_instance.start || compiler_exports.teste || compiler_exports.main || compiler_exports.wasp_main || compiler_exports._start
-      main = compiler_instance._Z11testCurrentv || main
+      main = compiler_exports.initSymbols
+      //   || compiler_exports.teste || compiler_exports.main || compiler_exports.wasp_main || compiler_exports._start
+      // main = compiler_instance._Z11testCurrentv || main
       if (main) {
         debug("got main")
         result = main()
