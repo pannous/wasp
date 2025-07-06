@@ -73,32 +73,15 @@ Node Nan = Node("NaN");
 
 Node *reconstructArray(int *array_struct);
 
+extern "C" void __wasm_call_ctors();
 void initSymbols() {
     print("initSymbols");
-    ((Node) NIL).name = nil_name;
-#ifdef WASI
-    print("no initSymbols in WASI??");
-    return; // ??
-#elif  WASM
-	//	__wasm_call_ctors();??
+    // ((Node) NIL).name = nil_name;
+#if WASM
 		if (True.kind == bools)
 			error("Wasm DOES init symbols!?");
-#else
-	return; // no need outside WASM
+		__wasm_call_ctors();
 #endif
-    //    nil_name = "nil";
-    EMPTY = "";
-    EMPTY = String('\0');
-    ((Node) NIL) = Node(nil_name).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
-    //	Unknown = Node("unknown").setType(nils).setValue(0); // maybe-existent
-    //	Undefined = Node("undefined").setType(nils).setValue(0); // maybe-existent, maybe error
-    //	Missing = Node("missing").setType(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
-    ERROR = Node("ERROR").setKind(errors); // internal error ≠ Error class ≠ NIL
-    True = Node("True").setKind(bools).setValue(true);
-    False = Node("False").setKind(bools);
-    Infinity = Node("Infinity");
-    NegInfinity = Node("-Infinity");
-    Nan = Node("NaN");
 }
 
 Node &Node::operator=(int i) {

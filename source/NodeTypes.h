@@ -501,11 +501,11 @@ union Type {
 
     explicit operator const char *() const { return typeName(this); }
 
-    bool operator==(Type other) {
+    bool operator==(Type other) const{
         return value == other.value;
     }
 
-    bool operator==(Primitive other) {
+    bool operator==(Primitive other) const{
         return type == other;
     }
 

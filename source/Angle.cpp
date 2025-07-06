@@ -23,6 +23,8 @@
 #endif
 #endif
 
+extern int __force_link_parser_globals;
+int* __force_link_parser_globals_ptr = &__force_link_parser_globals;
 
 Module *module; // todo: use?
 bool use_interpreter = false;

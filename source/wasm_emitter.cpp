@@ -18,6 +18,9 @@
 #include "wasm_merger.h"
 //#include "asserts.h"
 
+extern int __force_link_parser_globals;
+int* __force_link_parser_globals_ptr1 = &__force_link_parser_globals;
+
 // these are all reset via clearWasmContext()
 // todo: wrap all these into a class WasmContext
 int last_index = -1; // code index and call index for functions
