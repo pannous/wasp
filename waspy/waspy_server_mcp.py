@@ -82,7 +82,7 @@ def register_mcp(lib, func):
 
 
 def register_test():
-		# @mcp.tool("test-hallo",description="send greetings to a user with provided name")
+		@mcp.tool("test-hallo",description="send greetings to a user with provided name")
 		def hallo(name="World"):
 				return f"Hallo {name}!"
 		register_queue.put((lambda:"pong", f"ping", "Respond with 'pong' to a ping request."))
