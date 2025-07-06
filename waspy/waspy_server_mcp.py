@@ -31,6 +31,8 @@ def list_tools():
 	for lib, tool in known_mcps:
 		if not lib:
 			html += f"<li><a href='/{tool}'>{tool}</a></li>"
+		elif tool=="_start" or tool=="wasp_main":
+			html += f"<li><a href='/{lib}'>{lib}</a></li>"
 		else:
 			html += f"<li><a href='/{lib}/{tool}'>{lib}-{tool}</a></li>"
 	html += """
