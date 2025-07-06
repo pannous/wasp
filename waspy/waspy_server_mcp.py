@@ -112,6 +112,7 @@ def upload():
 
 
 def mcp_server():
+		register_test()  # OK
 		def poll_registers(): # needs to be run in a separate thread
 				while True:
 						func, name, description = register_queue.get()
@@ -121,6 +122,7 @@ def mcp_server():
 		threading.Thread(target=poll_registers, daemon=True).start()
 		# mcp.run(transport="sse") can only use one
 		mcp.run(transport="streamable-http")
+# 		https://mcp.pannous.com/mcp/ or local http://localhost:3001/mcp/
 
 
 # Start thread (non-daemon so it stays alive unless cleanly shut down)
@@ -131,6 +133,5 @@ application = app  #!gunicorn waspy_server:application
 if __name__ == '__main__':
 	print("for LIVE environment, use `gunicorn waspy_server:application`")
 	# threading.Thread(target=lambda: mcp_server(), daemon=True).start()
-	register_test()  #OK
 	# app.run(debug=True, port=9000)
 	app.run(debug=True, port=9000, use_reloader=False)

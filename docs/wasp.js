@@ -5,6 +5,7 @@
 * offering host functions to wasi/wasp modules, like download() and run_wasm()
 * Converts wasm types to/from JS objects via node() and string() as a shim for wasm GC types
 * */
+// ⚠️ some script specific to examples resides in index.html!
 let LIVE = !window.location.href.includes("localhost");
 let Wasp = {}
 let WASP_COMPILER = 'assets/wasp-hosted.wasm' // hard link 4MB with tests and shortcuts, 6.6MB with linker!
@@ -86,6 +87,7 @@ function error(msg) {
 let nop = x => 0 // careful, some wasi shim needs 0!
 
 const fd_write = function (fd, c_io_vector, iovs_count, nwritten) {
+  if(!results)results= document.getElementById("results");// safari
   while (iovs_count-- > 0) {
     let text = string(c_io_vector);
     if (fd === 0)

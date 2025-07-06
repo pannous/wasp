@@ -70,7 +70,7 @@
     if (LIVE)
       server = "https://lambda.pannous.com/";
     else
-      server = "http://localhost:8000/";
+      server = "http://localhost:9000/";
 
     // upload wasm_buffer to
     if (wasm_buffer) {
@@ -93,8 +93,8 @@
     } else {
       alert("No wasm compiled yet!");
     }
-    // open new tab with server + name
-    window.open(server + name, '_blank');
+    if (!auto_deploy.checked)
+      window.open(server + name, '_blank');
 
   }</script>
 </head>
@@ -155,10 +155,10 @@
       },
     });
     editor.on('change', function () {
-      // if(auto_run.checked)
-      //   compile_and_run(editor.getValue());
-      // if(auto_deploy.checked) and error free
-      //   deploy();
+      if(auto_run.checked)
+        compile_and_run(editor.getValue());
+      if(auto_deploy.checked) // todo and error free
+        deploy();
       // editor.save();
       editor.focus();
     });
