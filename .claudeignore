@@ -8,6 +8,7 @@ cmake_install.cmake
 *.i
 *.dwarf
 *.bak
+*.log
 *.map
 build.ninja
 .ninja_deps
@@ -105,3 +106,6 @@ x
 wiki/:=.md
 /wapm/
 */wapm
+
+source/own_merge/
+Frameworks/
