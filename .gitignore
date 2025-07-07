@@ -120,3 +120,5 @@ main.c
 .cache
 lib/webview/
 lib/webview/
+
+trace.txt
