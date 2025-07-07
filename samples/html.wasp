@@ -1,20 +1,17 @@
 html{
   body{
-    form{                                  // object type-name 'form'
-      //comment
-      div{ class:"form-group"               // nested Mark object
-              label{ for:email                  // object with property 'for'
-              "Email address:"                  // text needs to be quoted
-          }
-          input{ type:email id:email}     // object without any contents
-        }
-        div{ class:"form-group"
+    form{
+      div{ class:"form-group" // free form values need to be quoted
+          input{ type:email id:email } // single values need no quotes
+          label{ for:email "Email address:"} // html text appears as free string (without key:)
+      }
+      div{ class:"form-group"
             label(for:pwd):"Password"
-            input{ type:password id:"pwd"}    // comma is optional
-        }
-        button{ class:['btn' 'btn-info']      // property with complex values
-            'Submit'                            // text quoted with single quote
-        }
+            input{ id:pwd type:password}
+      }
+      button{ class:['btn' 'btn-info']      // property with value list
+            'Submit'                        // text quoted with single quote
+      }
     }
   }
 }
