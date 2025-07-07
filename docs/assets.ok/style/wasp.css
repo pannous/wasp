@@ -1,0 +1,37 @@
+body { /* Default (light mode) styles */
+    background-color: floralwhite;
+    color: black;
+    font-family: Arial, sans-serif;
+    margin-left: 30px;
+}
+
+@media (prefers-color-scheme: dark) {
+    body { /* Dark mode styles */
+        background-color: #06062b;
+        color: white;
+    }
+}
+
+
+.CodeMirror {
+    resize: both; /* This enables resizing */
+    /*overflow: auto;*/
+    min-height: 100px; /* Minimum height for the editor */
+    min-width: 200px; /* Minimum width for the editor */
+    border: 1px solid #ddd;
+    background-color: white;
+    color: black;
+    @media (prefers-color-scheme: dark) {
+        background-color: #06062b;
+        color: floralwhite;
+    }
+}
+
+#results {
+    background-color: white;
+    color: black;
+    @media (prefers-color-scheme: dark) {
+        background-color: #06062b;
+        color: floralwhite;
+    }
+}

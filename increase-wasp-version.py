@@ -1,0 +1,1 @@
+./source/increase-wasp-version.py

@@ -37,7 +37,17 @@ def list_tools():
 			html += f"<li><a href='/{lib}/{tool}'>{lib}-{tool}</a></li>"
 	html += """
 	<h2>Available AS MCP</h2>
-	Endpoint (streamable-http transport) : https://mcp.pannous.com/mcp/ <br>
+	ALL lambdas available via endpoint (streamable-http transport) : https://mcp.pannous.com/mcp/ <br>
+	<a href='https://pannous.com/files/mcp.json'>mcp.json</a> example for cursor / vs-code / …: <br> 
+	{<br>
+   "servers": {<br>
+     "lambdas": {<br>
+        "type": "http",<br>
+        "url": "https://mcp.pannous.com/mcp/"<br>
+      }<br>
+    }<br>
+  }<br>
+	<br>
 	<a href='https://pannous.com/files/mcp_client_http.py'>Download MCP client (python)</a><br>
 	<h2>Write new lambda/mcp</h2>
 	<a href='https://wasp.pannous.com/'>Wasp Editor</a> <br>

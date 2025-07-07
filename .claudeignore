@@ -1,0 +1,107 @@
+# Build artifacts
+cmake-build-*
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.bc
+*.o
+*.i
+*.dwarf
+*.bak
+*.map
+build.ninja
+.ninja_deps
+.ninja_log
+default.profraw
+
+# WebAssembly files
+*.wasm
+*.wat
+*.wast
+
+# IDE files
+.idea/
+.vscode/
+kotlinc.xml
+
+# Dependencies
+node_modules/
+Frameworks/
+/wabt/
+/m3/
+lib/webview/
+
+# Temporary files
+tmp/
+.DS_Store
+.cache
+.env
+.wasp_history
+.aider*
+.cmake/
+.fake
+
+# Build directories
+/cmake-build-*/
+/Testing/Temporary/
+docs/
+docs/out/
+coverage/
+bin/
+old/
+page/
+Platform/
+playground/
+examples/
+test/
+lib/
+samples/aoc/
+
+# Package files
+package-lock.json*
+yarn.lock
+npm-debug.log
+Cargo.lock
+.python-version
+
+# Dynamic libraries
+*.dylib
+libSystem.B.dylib
+
+# Project specific
+wasp
+wasp.cbp
+eigen.natvis
+*.wasm.disassembly
+*.wasm.validation
+sourceMappingURL.txt
+trace.txt
+wasm.toolchain.cmake
+readline-config.cmake
+spin.toml
+wasp-jetbrains-plugin/
+increase-wasp-version.py
+README.md
+Makefile
+main.c
+clean.sh
+resolve-trace.sh
+index.html
+favicon.ico
+FindSDL.cmake
+FindSDL2.cmake
+
+# Misc
+xxx
+CNAME
+angle
+features
+t.c
+test.angle.data
+xwabt
+wasm-micro-runtime.me
+x
+:=.md
+wiki/:=.md
+/wapm/
+*/wapm
