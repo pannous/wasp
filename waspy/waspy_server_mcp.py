@@ -38,6 +38,10 @@ def list_tools():
 	html += """
 	<h2>Available AS MCP</h2>
 	ALL lambdas available via endpoint (streamable-http transport) : https://mcp.pannous.com/mcp/ <br>
+	```
+	claude mcp add --transport http wasp https://mcp.pannous.com/mcp/
+	claude mcp list
+	```` <br> 
 	<a href='https://pannous.com/files/mcp.json'>mcp.json</a> example for cursor / vs-code / …: <br> 
 	{<br>
    "servers": {<br>
@@ -145,14 +149,26 @@ def register_test():
 		return f"Hello {name}!"
 
 	register_queue.put((lambda: "pong", f"ping", "Respond with 'pong' to a ping request."))
-	register_queue.put((lambda echo: echo, f"echo", "Echo the input back to the user."))
+	register_queue.put((lambda message: message, f"echo", "Echo the input back to the user."))
 	register_queue.put((hallo, f"hello", "Send greetings to a user with provided name."))
 
+def sanitize(name):
+	# sanitize name for mcp tool registration
+	name = name.replace(" ", "_").replace("-", "_").replace(".", "_")
+	if not name[0].isalpha():
+		name = "tool_" + name  # ensure it starts with a letter
+	# test pattern ^[a-zA-Z0-9_-]{1,128}$'
+	if len(name) > 128:
+		name = name[:128]  # truncate to max length
+	if not name.isidentifier():
+		name = ''.join(c if c.isalnum() or c in '_-' else '_' for c in name)
+	return name
 
 def mcp_server():
 	def poll_registers():  # needs to be run in a separate thread
 		while True:
 			func, name, description = register_queue.get()
+			name = sanitize(name)
 			print(f"Registering tool: {name} with description: {description}")
 			mcp.add_tool(func, name, description=description)
 
