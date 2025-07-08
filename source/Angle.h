@@ -38,7 +38,7 @@ static chars function_list[] = {
 }; // MUST END WITH 0, else BUG
 
 //chars runtime_function_list[]={};
-static chars wasi_function_list[] = {"proc_exit", "fd_write", "args_sizes_get", "args_get", 0};
+static chars wasi_function_list[] = {"proc_exit", "fd_write", "args_sizes_get", "args_get","fclose","fgetc","exit","fprintf","fopen","getenv", 0};
 
 // a funclet is a (tiny) wasm function stored in its own little file, e.g. pow.wasm for Math.power
 // they get automatically linked when used without requiring the wasp runtime

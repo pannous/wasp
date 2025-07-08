@@ -6,7 +6,8 @@
       "Bash(git push:*)",
       "Bash(chmod:*)",
       "Bash(docker:*)",
-      "Bash(./build.sh:*)"
+      "Bash(./build.sh:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

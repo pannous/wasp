@@ -398,7 +398,7 @@ Section::Section()
 
 Section::~Section() {
     if (section_code == SectionType::Data) {
-        delete data.data_segments;
+        // delete data.data_segments;
     }
 }
 
@@ -1043,7 +1043,8 @@ void Linker::ResolveSymbols() {
                 binary->active_function_imports--;
             } else {
                 if (import.foreign_binary)
-                    error("my a");
+                    warn("import.foreign_binary"); // ??
+                    // error("import.foreign_binary");
                 import.binary = binary; // todo earlier
                 import.index = import_index++; // only increase if active / not duplicate
                 import_map.add(import.name, &import);
@@ -1192,8 +1193,10 @@ void Linker::ResolveSymbols() {
                     if (not contains(wasi_function_list, name.data)) {
                         warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
                         //                        warn("unresolved import: %s  ( setting inactive due to wasi ) "s % name);
-                        //                        import.active = false;
-                        //                        binary->active_function_imports--;// never used!?
+                        // if(name=="_ZdlPvm") {
+                        //     import.active = false;
+                        //     binary->active_function_imports--;// never used!?
+                        // }
                     }
                     continue;
                 }

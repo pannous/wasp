@@ -587,8 +587,11 @@ Node &Node::add(const Node *node) {
     if (length >= capacity - 1) {
         warn("Out of node capacity "s + capacity + " in " + name);
         capacity *= 2;
-        Node *new_children = (Node *) calloc(capacity, sizeof(Node));
-        memcpy(new_children, children, length);
+        Node *new_children = new Node[capacity];  // Use new[] to call constructors
+        // Copy existing children using assignment operator
+        for (int i = 0; i < length; i++) {
+            new_children[i] = children[i];
+        }
         children = new_children;
     }
     if (lastChild >= MAX_NODE_CAPACITY)
@@ -1516,7 +1519,7 @@ Node *reconstructWasmNode(wasm_node_index pointer) {
         if (nodeStruct.child_pointer >= 0) {
             // -1 means no children (debug/bug)
 
-            reconstruct.children = (Node *) malloc(reconstruct.length * sizeof(Node)); // … :
+            reconstruct.children = new Node[reconstruct.length]; // Use new[] to call constructors
             reconstruct.capacity = reconstruct.length; // can grow later
             int *child_pointers = (int *) (((char *) wasm_memory) + nodeStruct.child_pointer);
             for (int i = 0; i < reconstruct.length; ++i) {

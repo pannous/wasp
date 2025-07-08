@@ -2184,7 +2184,7 @@ Node &analyze(Node &node, Function &function) {
         return groupOperatorCall(node, function); // call, NOT definition
 
     Node &groupedTypes = groupTypes(node, function);
-    Node groupedDeclarations = groupDeclarations(groupedTypes, function);
+    Node &groupedDeclarations = groupDeclarations(groupedTypes, function);
     Node &groupedFunctions = groupFunctionCalls(groupedDeclarations, function);
     Node &grouped = groupOperators(groupedFunctions, function);
     if (analyzed[grouped.hash()])return grouped; // done!
