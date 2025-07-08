@@ -206,13 +206,15 @@ public:
 
 
     Node() {
+        length = 0;  // Explicitly initialize to prevent uninitialized memory access
         kind = objects;
+        children = nullptr;  // Ensure children pointer is null
         //		if(debug)name = "[]";
     }
 
     void init_children(int nr = -1) {
         if (nr < 0)nr = capacity;
-        if (!children)children = (Node *) calloc(capacity, sizeof(Node));
+        if (!children)children = new Node[capacity];  // Use new[] to call constructors
     }
 
 
@@ -486,15 +488,16 @@ public:
     }
 
     Node &first() {
-        if (length > 0 and children)
+        // Ensure length is properly initialized before checking
+        if (length > 0 && children != nullptr)
             return children[0];
         //        if (children)
         //            return children[0]; // hack for missing length!
-        if (kind == assignment and value.node)
+        if (kind == assignment && value.node != nullptr)
             return *value.node; // todo sure??, could be direct type!?
-        if (kind == operators and next)
+        if (kind == operators && next != nullptr)
             return *next; // todo remove hack
-        if (kind == key and value.node)
+        if (kind == key && value.node != nullptr)
             return *value.node;
         return *this; // (x)==x   danger: loops
         //		error("No such element");

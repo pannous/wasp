@@ -122,7 +122,7 @@ int test_V8_cpp_Javascript() {
 	isolate->Dispose();
 	v8::V8::Dispose();
 //	v8::V8::ShutdownPlatform();
-	delete create_params.array_buffer_allocator;
+	// delete create_params.array_buffer_allocator;
 	return 0;
 }
 #endif

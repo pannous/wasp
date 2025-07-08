@@ -118,6 +118,11 @@ WasmEdge_Result createHtml(void *Data, const FrameContext *CallFrameCxt, const W
     return WasmEdge_Result_Success;
 }
 
+WasmEdge_Result nop(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                           WasmEdge_Value *Out) {
+    return WasmEdge_Result_Success;
+}
+
 WasmEdge_Result concat_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     auto val1 = WasmEdge_ValueGetI32(In[0]);
     auto val2 = WasmEdge_ValueGetI32(In[1]);
@@ -218,6 +223,7 @@ WasmEdge_ModuleInstanceContext *CreateWasiModule() {
         WasmEdge_ModuleInstanceAddFunction(HostModuleWasi, HostName, HostFunc);
         WasmEdge_StringDelete(HostName);
     }
+
     return HostModuleWasi;
 }
 
@@ -394,6 +400,19 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
         WasmEdge_StringDelete(HostName);
     }
+    // _ZdlPvm operator delete(void*, unsigned long)
+    {
+        WasmEdge_ValType P[2], R[0];
+        P[0] = WasmEdge_ValTypeGenI32(); // pointer to delete
+        P[1] = WasmEdge_ValTypeGenI32(); // size of pointer
+        HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 0);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, nop, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("_ZdlPvm");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+
     return HostMod;
 }
 

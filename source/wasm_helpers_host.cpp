@@ -19,6 +19,7 @@ void *wasm_memory = 0; // c pointer of VM, NOT memory inside wasm module
 
 // these wrappers are helpful because different hosts have different signatures, so wasm_helpers.h would need many #if's
 void memcpy1(bytes dest, bytes source, int i) {
+    if(not dest or not source or i <= 0) return;
     memcpy(dest, source, i);
 }
 

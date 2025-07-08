@@ -53,6 +53,7 @@ Code encodeVector(const Code &data);
 Code &unsignedLEB128(int64 n);
 
 Code &signedLEB128(int64 value);
+
 //
 //struct Position {
 //    int line;
@@ -62,28 +63,30 @@ Code &signedLEB128(int64 value);
 
 class Code {
 public:
-    int header = array_header_32;// todo: code_header_32 if extra fields are needed beyond standard
+    int header = array_header_32; // todo: code_header_32 if extra fields are needed beyond standard
     int kind = byte_i8;
     int length = 0;
     bytes data = 0;
-    int start = 0;// internal reader pointer
-    bool encoded = false;// first byte = size of vector
+    int start = 0; // internal reader pointer
+    bool encoded = false; // first byte = size of vector
     bool needs_relocate = true; // unless specified
-	mutable bool shared = true; // can be changed in const clone()
-	// can't free data until all views are destroyed OR because this is a view on other's data!!
-    String name;// function or file
-//    Position position; makes little sense since code segments constitute several lines
-    Code() {}
+    mutable bool shared = true; // can be changed in const clone()
+    // can't free data until all views are destroyed OR because this is a view on other's data!!
+    String name; // function or file
+    //    Position position; makes little sense since code segments constitute several lines
+    Code() {
+    }
 
-	Code(byte string[]) {
-		data = (bytes) string;
-		length = strlen((char *) string);
-	}
+    Code(byte string[]) {
+        data = (bytes) string;
+        length = strlen((char *) string);
+    }
 
-	Code(List<byte> list) {
-		length = list.size();
-		data = list.data(); // clone?
-	}
+    Code(List<byte> list) {
+        length = list.size();
+        data = list.data(); // clone?
+    }
+
     Code(bytes a, int len, bool needs_copy = true) {
         data = a;
         length = len;
@@ -95,13 +98,15 @@ public:
     }
 
     virtual ~Code() {
-//		if (!shared and data and length)// mechanism doesn't work
-//			free(data);// pointer being freed was not allocated
+        //		if (!shared and data and length)// mechanism doesn't work
+        //			free(data);// pointer being freed was not allocated
         data = 0;
     }
 
-    Code(char *datas, int size, bool needs_copy = true) : Code((bytes) datas, size, needs_copy) {}
-//	Code(byte *data0, int from, int pos, bool copy=false) : Code(data0,from,copy) {}
+    Code(char *datas, int size, bool needs_copy = true) : Code((bytes) datas, size, needs_copy) {
+    }
+
+    //	Code(byte *data0, int from, int pos, bool copy=false) : Code(data0,from,copy) {}
 
     Code(byte byte) {
         data = (bytes) alloc(1, 1);
@@ -121,9 +126,10 @@ public:
     }
 
 
-    Code(int nr, bool LEB = true) {// ambiguous: byte (un)signedLEB128 or int32 !!
+    Code(int nr, bool LEB = true) {
+        // ambiguous: byte (un)signedLEB128 or int32 !!
         if (LEB) {
-//			push(nr, false, LEB);
+            //			push(nr, false, LEB);
             push(nr, nr < 0, LEB);
         } else {
             data = new byte[4];
@@ -148,20 +154,20 @@ public:
     Code(chars string, bool size_header = true, bool null_terminated = false) {
         // if(not string)return; // hides bugs
         short len = strlen(string);
-//        if (null_terminated)len++;
+        //        if (null_terminated)len++;
         if (size_header) { push(len); }
         push((bytes) string, len);
         if (null_terminated)push((byte) 0);
         // wasm strings start with their length and do NOT end with 0 !! :(
     }
 
-//	Code(char byte){
-//		data = static_cast<bytes>(alloc(sizeof(char),1));
-//		data[0] = byte;
-//		length = 1;
-//	}
+    //	Code(char byte){
+    //		data = static_cast<bytes>(alloc(sizeof(char),1));
+    //		data[0] = byte;
+    //		length = 1;
+    //	}
 
-    /*Code(bytes datas, int from, int to*//*exclusive*//*) {
+    /*Code(bytes datas, int from, int to*//*exclusive*/ /*) {
 		// AMBIGUOUS: from offset on DATA?
 		if(from<0 or to<0 or from>=to)
 			error("bad indices");
@@ -190,7 +196,7 @@ public:
         return data + length;
     }
 
-//     Code &operator++() {
+    //     Code &operator++() {
     //         if (length == 0)return *this;
     // //		start++;
     //         data++;
@@ -208,7 +214,8 @@ public:
     //         return *this;
     //     }
 
-    Code &operator+(Code more) { // todo use non-modifying version if …
+    Code &operator+(Code more) {
+        // todo use non-modifying version if …
         return this->push(more);
     }
 
@@ -229,25 +236,24 @@ public:
     }
 
     Code &operator+=(short more) {
-        this->push((byte) (more & 0xff));// little endian
-        this->push((byte) (more >> 8));// little endian
+        this->push((byte) (more & 0xff)); // little endian
+        this->push((byte) (more >> 8)); // little endian
         return *this;
     }
 
     Code &operator+=(uint more) {
-        this->push((byte) (more & 0xff));// little endian
-        this->push((byte) (more >> 8));// little endian
-        this->push((byte) (more >> 16));// little endian
-        this->push((byte) (more >> 24));// little endian
+        this->push((byte) (more & 0xff)); // little endian
+        this->push((byte) (more >> 8)); // little endian
+        this->push((byte) (more >> 16)); // little endian
+        this->push((byte) (more >> 24)); // little endian
         return *this;
     }
-
 
 
     bool operator==(Code &other) {
         if (length != other.length)
             return false;
-        if (data == other.data)return true;// same pointer shortcut
+        if (data == other.data)return true; // same pointer shortcut
         for (int i = 0; i < length; ++i) {
             if (data[i] != other.data[i])
                 return false;
@@ -255,7 +261,7 @@ public:
         return true;
     }
 
-    operator bytes() { return data; }// implicit cast yay
+    operator bytes() { return data; } // implicit cast yay
     Code &push(Code more) {
         data = concat(data, more.data, length, more.length);
         length = length + more.length;
@@ -268,11 +274,11 @@ public:
         return *this;
     }
 
-//	Code &add(Code &more) {
-//		if (more.length > 0)
-//			push(more);
-//		return *this;
-//	}
+    //	Code &add(Code &more) {
+    //		if (more.length > 0)
+    //			push(more);
+    //		return *this;
+    //	}
     Code &add(Code more) {
         if (more.length > 0)
             push(more);
@@ -295,7 +301,7 @@ public:
         if (opcode < 0x100)
             return add((byte) opcode);
         data = concat(data, (byte) (opcode / 0x100), length);
-//        data = concat(data, 0xFB, length);
+        //        data = concat(data, 0xFB, length);
         data = concat(data, (byte) (opcode % 0x100), length + 1);
         length += 2;
         return *this;
@@ -321,7 +327,7 @@ public:
         return *this;
     }
 
-//	All integers are encoded using the LEB128 variable-length integer encoding!  LEB=false should ONLY occur in custom data section!
+    //	All integers are encoded using the LEB128 variable-length integer encoding!  LEB=false should ONLY occur in custom data section!
     Code &push(int64 nr, bool sign = true, bool LEB = true) {
         Code val;
         if (LEB) {
@@ -355,31 +361,33 @@ public:
         return *this;
     }
 
-	Code &clone(bool deep = true) const {
+    Code &clone(bool deep = true) const {
         Code *copy = new Code();
-//		*copy = *this;// DOESNT!
+        //		*copy = *this;// DOESNT!
         copy->data = data;
         copy->length = length;
         if (deep) {
             copy->shared = false;
             copy->data = static_cast<bytes>(malloc(length));
-            memcpy(copy->data, data, length);
+            if (data)
+                memcpy(copy->data, data, length);
+            else copy->length = 0;
         } else shared = true;
         return *copy;
     }
 
-	bool contains(Code other) {
-		return ::contains(data, other.data, length, other.length);
-	}
+    bool contains(Code other) {
+        return ::contains(data, other.data, length, other.length);
+    }
 
     void debug() {
         String s;
         for (int i = length - 1000; i < length; i++) {
-//            put_chars(hex(data[i]));
+            //            put_chars(hex(data[i]));
             s += hex(data[i], 1) + ", ";
         }
         print(s);
-//        save();
+        //        save();
     }
 
     Code &save(chars file_name = "test.wasm") {
@@ -398,38 +406,38 @@ public:
         return run_wasm(data, length);
     }
 
-//	Code& vector() {
-//		if(encoded)return *this;
-//		Code code = unsignedLEB128(length) + flatten(*this);
-//		code.encoded = true;
-//		return code;
-//	}
+    //	Code& vector() {
+    //		if(encoded)return *this;
+    //		Code code = unsignedLEB128(length) + flatten(*this);
+    //		code.encoded = true;
+    //		return code;
+    //	}
     Code rest(int start0 = -1) {
         if (start0 < 0)start0 = start;
-        shared = true;// can't free until this is destroyed:
+        shared = true; // can't free until this is destroyed:
         return Code(data + start0, length - start0);
-//		return Code(data, start, length);
+        //		return Code(data, start, length);
     }
 
     Code addInt(int i, bool leb = true) {
-//  ⚠️ as op PARAM/VALUE , use addConst32 for STACK VALUE (prefixed with i32_const)
-//  ⚠️ leb = true in most cases in Code!
+        //  ⚠️ as op PARAM/VALUE , use addConst32 for STACK VALUE (prefixed with i32_const)
+        //  ⚠️ leb = true in most cases in Code!
         push((int64) i, true, leb);
         return *this;
     }
 
     Code addConst32(unsigned int i) {
         add(0x41 /*i32_const*/);
-        if (i > 0x80000000)push(-(int64) i, false, true);// stupid sign bit hack
+        if (i > 0x80000000)push(-(int64) i, false, true); // stupid sign bit hack
         else push(i, true, true);
-//		else push(i, false, true);
+        //		else push(i, false, true);
         return *this;
     }
 
     Code &addConst64(int64 i) {
-//		if (i < 0x100000000 and i > -0x100000000)
-//			add(0x41 /*i32_const*/);
-//		else
+        //		if (i < 0x100000000 and i > -0x100000000)
+        //			add(0x41 /*i32_const*/);
+        //		else
         add(0x42 /* i64_const */);
         push(i);
         return *this;
@@ -460,13 +468,13 @@ int stackItemSize(Type type, bool throws = true);
 // https://webassembly.github.io/spec/core/binary/instructions.html <<< list
 // USE wasm-objdump -d  to see function disassembled:
 enum Opcodes {
-//	start = 0x00,
+    //	start = 0x00,
     start_function = 0x00,
-//	unreachable = 0x00,
+    //	unreachable = 0x00,
     nop_ = 0x01, // useful for relocation padding call 1 -> call 10000000
     block = 0x02,
     loop = 0x03,
-    if_i = 0x04,// precede by i32 result, follow by i32_type (7f)
+    if_i = 0x04, // precede by i32 result, follow by i32_type (7f)
     else_ = 0x05,
 
     // EXTENSIONS:
@@ -478,7 +486,7 @@ enum Opcodes {
     delegate_ = 0x18,
 
     end_block = 0x0b, //11
-    br_branch = 0x0c,// ususally called 'br' but it interfered with c++ break autocomplete
+    br_branch = 0x0c, // ususally called 'br' but it interfered with c++ break autocomplete
     br_if = 0x0d,
     br_table = 0x0e,
     return_block = 0x0f,
@@ -487,11 +495,11 @@ enum Opcodes {
     call_indirect = 0x11,
 
     // EXTENSIONS:
-    return_call = 0x12,  // the tail-call version of call ≠ return_block
+    return_call = 0x12, // the tail-call version of call ≠ return_block
     return_call_indirect = 0x13, // the tail-call version of call_indirect
     call_ref = 0x14, // [ts1 (ref $t)] -> [ts2] iff $t = [ts1] -> [ts2]
     return_call_ref = 0x15,
-    func_bind = 0x16,// (type $t) 	$t : u32
+    func_bind = 0x16, // (type $t) 	$t : u32
     let_local = 0x17, // 	let <bt> <locals> 	bt : blocktype, locals : (as in functions)
 
     drop = 0x1a, // pop stack
@@ -499,13 +507,13 @@ enum Opcodes {
     select_t = 0x1C, // extension … ?
 
     local_get = 0x20,
-    get_local = 0x20,// get to stack
+    get_local = 0x20, // get to stack
 
     local_set = 0x21,
     local_tee = 0x22,
     // aliases:
-    set_local = 0x21,// set and pop
-    tee_local = 0x22,// set and leave on stack
+    set_local = 0x21, // set and pop
+    tee_local = 0x22, // set and leave on stack
 
     get_global = 0x23,
     global_get = 0x23,
@@ -520,9 +528,9 @@ enum Opcodes {
 
     i8_load = 0x2d, //== 𝟶𝚡𝟸𝙳, i32.load8_u
     i16_load = 0x2f, //== 𝟶𝚡𝟸𝙳, i32.load8_u
-    i32_load = 0x28,// load word from i32 address
+    i32_load = 0x28, // load word from i32 address
     f32_load = 0x2A,
-    i32_store = 0x36,// store word at i32 address
+    i32_store = 0x36, // store word at i32 address
     f32_store = 0x38,
     // todo : peek 65536 as float directly via opcode
     i64_load = 0x29, // memory.peek memory.get memory.read
@@ -534,7 +542,7 @@ enum Opcodes {
     i32_store_16 = 0x3B,
     i16_store = 0x3B,
 
-//	i32_store_byte = 0x3a,// store byte at i32 address
+    //	i32_store_byte = 0x3a,// store byte at i32 address
     i32_auto = (byte) 0x41,
     i32_const = 0x41, // i32.const
     i64_auto = 0x42,
@@ -547,8 +555,8 @@ enum Opcodes {
     i32_eqz = 0x45, // use for not!
     f32_eqz = 0x45, // HACK: no such thing!
 
-//	negate = 0x45,
-//	not_truty = 0x45,
+    //	negate = 0x45,
+    //	not_truty = 0x45,
     i32_eq = 0x46,
     i32_ne = 0x47,
     i32_lt = 0x48,
@@ -629,13 +637,13 @@ enum Opcodes {
     f32_ceil = 0x8D,
     f32_floor = 0x8E,
     f32_trunc = 0x8F,
-    f32_round = 0x90,// truncation ≠ proper rounding!
+    f32_round = 0x90, // truncation ≠ proper rounding!
     f32_nearest = 0x90,
 
     f32_sqrt = 0x91,
     f32_add = 0x92,
     f32_sub = 0x93,
-    f32_mul = 0x94,// f32.mul
+    f32_mul = 0x94, // f32.mul
     f32_div = 0x95,
     // proposed for vector pipelin?
     f32_min = 0x96,
@@ -681,12 +689,12 @@ enum Opcodes {
     f64_promote_f32 = 0xBB,
     i32_reinterpret_f32 = 0xBC, // f32->i32 bit wise reinterpret != cast/trunc/convert
     i64_reinterpret_f64 = 0xBD, // use to hack smart pointers as main return: f64 has int range which is never hit
-    f32_reinterpret_i32 = 0xBE,// i32->f32
+    f32_reinterpret_i32 = 0xBE, // i32->f32
     f64_reinterpret_i64 = 0xBF,
     f32_from_f64 = f32_demote_f64,
     f64_from_f32 = f64_promote_f32,
     f32_from_int32 = 0xB2,
-    f32_cast_to_i32_s = 0xa8,// truncation ≠ proper rounding (f32_round = 0x90)!
+    f32_cast_to_i32_s = 0xa8, // truncation ≠ proper rounding (f32_round = 0x90)!
 
 
     //	signExtensions
@@ -695,38 +703,38 @@ enum Opcodes {
     i64_extend8_s = 0xC2,
     i64_extend16_s = 0xC3,
     i64_extend32_s = 0xC4,
-//	i64_extend_i32_s = 0xAC, WHAT IS THE DIFFERENCE?
-// i64.extend_s/i32 sign-extends an i32 value to i64, whereas
-// i64.extend32_s sign-extends an i64 value to i64
+    //	i64_extend_i32_s = 0xAC, WHAT IS THE DIFFERENCE?
+    // i64.extend_s/i32 sign-extends an i32 value to i64, whereas
+    // i64.extend32_s sign-extends an i64 value to i64
 
-//referenceTypes
-//https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
+    //referenceTypes
+    //https://github.com/WebAssembly/function-references/blob/master/proposals/function-references/Overview.md#local-bindings
     ref_null = 0xD0,
     ref_is_null = 0xD1,
     ref_func = 0xD2, // 0xd2 varuint32 0x0b Returns a funcref reference to function $funcidx
-//	ref_null=-0x14,// 	(ref null ht) 	$t : heaptype  -0x10:func -0x11:extern i >= 0 :	i
-//	ref_typed=-0x15,// 	(ref ht) 	$t : heaptype
-    ref_as_non_null = 0xd3,// 	ref.as_non_null
+    //	ref_null=-0x14,// 	(ref null ht) 	$t : heaptype  -0x10:func -0x11:extern i >= 0 :	i
+    //	ref_typed=-0x15,// 	(ref ht) 	$t : heaptype
+    ref_as_non_null = 0xd3, // 	ref.as_non_null
     br_on_null = 0xd4, //	br_on_null $l 	$l : u32
-    br_on_non_null = 0xd6,// 	br_on_non_null $l 	$l : u32
+    br_on_non_null = 0xd6, // 	br_on_non_null $l 	$l : u32
 
-// saturated truncation  saturatedFloatToInt
-//i32_trunc_sat_f32_s=0xFC00,
-//i32_trunc_sat_f32_u=0xFC01,
-//i32_trunc_sat_f64_s=0xFC02,
-//i32_trunc_sat_f64_u=0xFC03,
-//i64_trunc_sat_f32_s=0xFC04,
-//i64_trunc_sat_f32_u=0xFC05,
-//i64_trunc_sat_f64_s=0xFC06,
-//i64_trunc_sat_f64_u=0xFC07,
+    // saturated truncation  saturatedFloatToInt
+    //i32_trunc_sat_f32_s=0xFC00,
+    //i32_trunc_sat_f32_u=0xFC01,
+    //i32_trunc_sat_f64_s=0xFC02,
+    //i32_trunc_sat_f64_u=0xFC03,
+    //i64_trunc_sat_f32_s=0xFC04,
+    //i64_trunc_sat_f32_u=0xFC05,
+    //i64_trunc_sat_f64_s=0xFC06,
+    //i64_trunc_sat_f64_u=0xFC07,
 
-// DON'T USE Prefixes directly, use the corresponding functions with 'short' opcodes e.g. 0xfb03
-//    struct_prefix = 0xfb, // struct.get, struct.set, struct.new, struct.narrow, struct.widen see ~/dev/wasm/gc_structs/module.wat
-//    string_prefix = 0xfb, // string_new, string_length, string_get, string_set, string_copy, string_fill, string_grow, string_size, string_drop
+    // DON'T USE Prefixes directly, use the corresponding functions with 'short' opcodes e.g. 0xfb03
+    //    struct_prefix = 0xfb, // struct.get, struct.set, struct.new, struct.narrow, struct.widen see ~/dev/wasm/gc_structs/module.wat
+    //    string_prefix = 0xfb, // string_new, string_length, string_get, string_set, string_copy, string_fill, string_grow, string_size, string_drop
 
     math_prefix_s = 0xfc,
 
-// bulkMemory
+    // bulkMemory
     memory_init = 0xFC08,
     data_drop = 0xFC09,
     memory_copy = 0xFC0a,
@@ -739,13 +747,14 @@ enum Opcodes {
     table_fill = 0xFC11,
 
     float_rounding___ = 0xFC, // proposed prefix https://github.com/WebAssembly/design/issues/1456
-// SIMD
+    // SIMD
     simd____ = 0xFD,
 };
 
 
 // struct_prefix 0xfb …
-enum struct_opcodes { // on Valtype wasm_struct = 0x6b,
+enum struct_opcodes {
+    // on Valtype wasm_struct = 0x6b,
     struct_get = (short) 0xfb03, // fb 03 00 00  struct.get $type(0) $field(0) (stack: instance-ref)
     struct_set = 0xfb06, // fb 06 00 00  struct.set $type(0) $mut_field(0) (stack: instance-ref value)
     struct_new = (short) 0xfb07, // fb 07 00  struct.new $type(0)  (stack: params)
@@ -760,7 +769,8 @@ enum struct_opcodes { // on Valtype wasm_struct = 0x6b,
     //    struct_widen = 0x0?,
 };
 
-enum array_opcodes { // on Valtype wasm_array = 0x…,
+enum array_opcodes {
+    // on Valtype wasm_array = 0x…,
     arrayGet = 0xfb13, // array.get
     arrayGetS = 0xfb14, // array.get_s
     arrayGetU = 0xfb15, // array.get_u
@@ -776,7 +786,8 @@ enum array_opcodes { // on Valtype wasm_array = 0x…,
     arrayNewElem = 0xfb1f, // array.new_elem
 };
 
-enum reference_opcodes { // on Valtype wasm_i31 = 0x…,
+enum reference_opcodes {
+    // on Valtype wasm_i31 = 0x…,
     i31New = 0xfb20, // i31.new
     i31GetS = 0xfb21, // i31.get_s
     i31GetU = 0xfb22, // i31.get_u
@@ -807,9 +818,11 @@ enum reference_opcodes { // on Valtype wasm_i31 = 0x…,
 // https://github.com/WebAssembly/stringref/blob/master/proposals/stringref/Overview.md
 // https://github.com/WebAssembly/wabt/issues/2144 wat2wasm --enable-all --enable-stringref << IN PROGRESS!
 // idx point to section stringrefs ::= section_14(0x00 vec(vec(u8)))
-enum string_ops { // on Valtype stringref = 0x64
+enum string_ops {
+    // on Valtype stringref = 0x64
     string_new_utf8 = 0xfb80, // $mem:u32  BROKEN!? use string_new_wtf8
-    string_new_wtf16 = 0xfb81, // $mem:u32   (Wobbly Transformation Format, 8-bit) unpaired surrogate halves (U+D800 through U+DFFF) are allowed.
+    string_new_wtf16 = 0xfb81,
+    // $mem:u32   (Wobbly Transformation Format, 8-bit) unpaired surrogate halves (U+D800 through U+DFFF) are allowed.
     string_const = 0xfb82, // $idx:u32 (idx points to section stringrefs) <<<
 
     // length
@@ -850,7 +863,8 @@ enum string_ops { // on Valtype stringref = 0x64
     stringview_iter_slice = 0xfba4, //
 
     // chrome v8 :
-    string_compare = 0xfba8, // (str1: string, str2: string) -> int32  -1, 0 or 1 if the compared strings are lessThan, equal or greaterThan
+    string_compare = 0xfba8,
+    // (str1: string, str2: string) -> int32  -1, 0 or 1 if the compared strings are lessThan, equal or greaterThan
     string_from_code_point = 0xfba9, // (cp: int32) -> string
     string_hash = 0xfbaa, // (str: string) -> int32
 
@@ -864,7 +878,7 @@ enum string_ops { // on Valtype stringref = 0x64
     string_encode_lossy_utf8_array = 0xfbb6, //           [gc]
     string_encode_wtf8_array = 0xfbb7, //           [gc]
 
-//    stringrefs ::= section_14(0x00 vec(vec(u8)))
+    //    stringrefs ::= section_14(0x00 vec(vec(u8)))
 };
 
 
@@ -876,16 +890,16 @@ enum string_ops { // on Valtype stringref = 0x64
 //	)
 
 
-
 // don't forget the PREFIX before each vector op:
 // combined with vector prefix Valtypes, e.g. vec_i64 = 0x77 => 0x7700 == vec_i64.length
 // https://github.com/WebAssembly/flexible-vectors/blob/main/proposals/flexible-vectors/BinaryFlexibleVectors.md
-enum VectorOpcodes { // Immediate operands in comments:
+enum VectorOpcodes {
+    // Immediate operands in comments:
     vector_length_op = 0x00,
     vector_splat_op = 0x10,
     extract_lane_imm_u = 0x11, // i:ImmLaneIdx16 for i8, ImmLaneIdx4 for i32 etc ( product must be 64!)
     extract_lane_imm_s = 0x12, // i:ImmLaneIdx… ^^
-    replace_lane_imm = 0x13,   // i:ImmLaneIdx… ^^
+    replace_lane_imm = 0x13, // i:ImmLaneIdx… ^^
     extract_lane_u = 0x14,
     extract_lane_s = 0x15,
     replace_lane = 0x16,
@@ -900,7 +914,7 @@ enum VectorOpcodes { // Immediate operands in comments:
     vector_add = 0x30, // ok overlap with i32.add … would be nonsensical
     vector_sub = 0x31,
     vector_mul = 0x32,
-//    vector_div = 0x3x, "intentionally missing"  because not in simd128 either
+    //    vector_div = 0x3x, "intentionally missing"  because not in simd128 either
     vector_neg = 0x33,
     vector_min_u = 0x34,
     vector_min_s = 0x35,
@@ -943,7 +957,7 @@ enum VectorOpcodes { // Immediate operands in comments:
     // … space!
     vector_store = 0x87,
 
-// Floating-point :
+    // Floating-point :
     vector_neg_f = 0x90,
     vector_abs_f = 0x91,
     vector_pmin = 0x92,
@@ -1020,16 +1034,16 @@ class Variable {
 */
 
 enum ABI {
-//	unknown,
+    //	unknown,
     erased = 0, // unknown type info erased
     native = 0, // wasm/c also wasi?
     cpp, // _Z5abs_ff demangle, ill defined type arguments
-	wasp,// multi-value return tuples (value, type), node header tuples (head, type, meta, size, children) see ABI.h
-	wasp_smart_pointers, // compatible with lacking multi-value in wasm engine
-	canonical, // type string = (pointer,length) …
-	wit = canonical, // lookup type and data schemes in wit 'header' files
-//	meta, // types specified in custom meta section
-//	meta_names, // function types specified via naming convention square__int_as_int, square__float_as_float
+    wasp, // multi-value return tuples (value, type), node header tuples (head, type, meta, size, children) see ABI.h
+    wasp_smart_pointers, // compatible with lacking multi-value in wasm engine
+    canonical, // type string = (pointer,length) …
+    wit = canonical, // lookup type and data schemes in wit 'header' files
+    //	meta, // types specified in custom meta section
+    //	meta_names, // function types specified via naming convention square__int_as_int, square__float_as_float
 };
 
 class Function;
@@ -1039,10 +1053,10 @@ class Arg {
 public:
     String function;
     String name;
-//	Valtype type;
-//	Valtype kind;
+    //	Valtype type;
+    //	Valtype kind;
     Type type = unknown_type;
-//	Node *type;
+    //	Node *type;
     Node modifiers;
 };
 
@@ -1050,26 +1064,27 @@ public:
 // wasm function type signatures plus some…
 class Signature {
 public:
-	int type_index = -1;// in type section ≠ function index!!
-	ABI abi = wasp_smart_pointers;//erased;
-// todo: add true Wasp Type Signature to wasm Valtype Signature
-	List<Function *> functions;// using this Signature; debug only?
+    int type_index = -1; // in type section ≠ function index!!
+    ABI abi = wasp_smart_pointers; //erased;
+    // todo: add true Wasp Type Signature to wasm Valtype Signature
+    List<Function *> functions; // using this Signature; debug only?
 
-//    List<Argument> params; :
-//	List<String> parameter_names;// per function 😕
-//	List<Type> parameters;// implicit index
-    List<Arg> parameters;// implicit index
+    //    List<Argument> params; :
+    //	List<String> parameter_names;// per function 😕
+    //	List<Type> parameters;// implicit index
+    List<Arg> parameters; // implicit index
 
-	List<Type> return_types;// should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
-//	Type return_type{};// use return_types.last(default)
-	Valtype wasm_return_type = voids;// until checked debug only!
-	bool is_handled = false;
-	// these explicit constructions are needed when using types return_types as reference!
-//	Signature() : return_types(*new List<Valtype>), types(*new Map<int, Valtype>) {}
-//	Signature() : return_types(*new List<Type>), types(*new Map<int, Type>) {}
+    List<Type> return_types;
+    // should be 2 in standard Wasp ABI unless emitting pure primitive functions or arrays/structs?
+    //	Type return_type{};// use return_types.last(default)
+    Valtype wasm_return_type = voids; // until checked debug only!
+    bool is_handled = false;
+    // these explicit constructions are needed when using types return_types as reference!
+    //	Signature() : return_types(*new List<Valtype>), types(*new Map<int, Valtype>) {}
+    //	Signature() : return_types(*new List<Type>), types(*new Map<int, Type>) {}
 
 #if DEBUG and not WASM
-    String debug_name;// todo can .lldbinit call format() !?!
+    String debug_name; // todo can .lldbinit call format() !?!
 #endif
 
     bool operator==(const Signature &other) const {
@@ -1082,46 +1097,46 @@ public:
                 return false;
         }
         if (return_types != other.return_types) {
-	        breakpoint_helper
-	        return false;
+            breakpoint_helper
+            return false;
         }
         for (int i = 0; i < return_types.size(); ++i) {
             if (return_types[i] != other.return_types[i])
                 return false;
         }
-        return type_index == other.type_index and \
-        wasm_return_type == other.wasm_return_type;
+        return type_index == other.type_index and
+               wasm_return_type == other.wasm_return_type;
     }
 
-//	Signature(const Signature& old) : return_types(old.return_types), types(old.types) {}
-//	Signature(List<Valtype> &returnTypes, Map<int, Valtype> &types) : return_types(returnTypes), types(types) {}
-//	Signature &operator=(const Signature old){
-//		if (this == &old) return *this;
-//		return_types=old.return_types;
-//		types=old.types;
-//		// really neccessary??
-//		is_import  = old.is_import ;
-//		is_runtime = old.is_runtime;
-//		is_builtin = old.is_builtin;
-//		is_handled = old.is_handled;
-//		is_used  = old.is_used ;
-//		emit  = old.emit ;
-//		return *this;
-//	}
+    //	Signature(const Signature& old) : return_types(old.return_types), types(old.types) {}
+    //	Signature(List<Valtype> &returnTypes, Map<int, Valtype> &types) : return_types(returnTypes), types(types) {}
+    //	Signature &operator=(const Signature old){
+    //		if (this == &old) return *this;
+    //		return_types=old.return_types;
+    //		types=old.types;
+    //		// really neccessary??
+    //		is_import  = old.is_import ;
+    //		is_runtime = old.is_runtime;
+    //		is_builtin = old.is_builtin;
+    //		is_handled = old.is_handled;
+    //		is_used  = old.is_used ;
+    //		emit  = old.emit ;
+    //		return *this;
+    //	}
 
-//		Signature &operator=(const Signature &old){
-//		if (this == &old) return *this;
-//		return_types=old.return_types;
-//		types=old.types;
-//		// really neccessary??
-//		is_import  = old.is_import ;
-//		is_runtime = old.is_runtime;
-//		is_builtin = old.is_builtin;
-//		is_handled = old.is_handled;
-//		is_used  = old.is_used ;
-//		emit  = old.emit ;
-//		return *this;
-//	}
+    //		Signature &operator=(const Signature &old){
+    //		if (this == &old) return *this;
+    //		return_types=old.return_types;
+    //		types=old.types;
+    //		// really neccessary??
+    //		is_import  = old.is_import ;
+    //		is_runtime = old.is_runtime;
+    //		is_builtin = old.is_builtin;
+    //		is_handled = old.is_handled;
+    //		is_used  = old.is_used ;
+    //		emit  = old.emit ;
+    //		return *this;
+    //	}
 
     int size() const {
         return parameters.size();
@@ -1130,11 +1145,11 @@ public:
 
     Signature &add(Type t, String name = "") {
 #if DEBUG and not WASM
-	    debug_name += typeName(t);
-	    debug_name += " ";
+        debug_name += typeName(t);
+        debug_name += " ";
 #endif
-	    parameters.add(Arg{"", name, t, Node{}});// todo modifiers
-	    return *this;
+        parameters.add(Arg{"", name, t, Node{}}); // todo modifiers
+        return *this;
     }
 
     Signature &add(Valtype t, String name = "") {
@@ -1145,20 +1160,20 @@ public:
         return add((Type) mapTypeToPrimitive(type), name);
     }
 
-//
-//		Signature &returns(Node& type) {
-//		return_type = Type(type);
-//		wasm_return_type = mapTypeToWasm(type);
-//		if (type.kind != nils)// todo? type.kind!=undefined … ?
-//		{
-//			Valtype valtype = mapTypeToWasm(type);
-//			return_types.add(valtype);
-//		}// value, should map to int32 unless unboxing int64, float
-//		return *this;
-//	}
+    //
+    //		Signature &returns(Node& type) {
+    //		return_type = Type(type);
+    //		wasm_return_type = mapTypeToWasm(type);
+    //		if (type.kind != nils)// todo? type.kind!=undefined … ?
+    //		{
+    //			Valtype valtype = mapTypeToWasm(type);
+    //			return_types.add(valtype);
+    //		}// value, should map to int32 unless unboxing int64, float
+    //		return *this;
+    //	}
 
     Signature &returns(Type type) {
-//		return_type = type;
+        //		return_type = type;
         if (type.kind != nils and type.kind != undefined and type.kind != unknown) {
             if (multi_return_values or return_types.size() == 0)
                 return_types.add(type);
@@ -1173,7 +1188,8 @@ public:
         return *this;
     }
 
-    Signature &returns(Valtype valtype, String name = "") { // todo use name as default variable name
+    Signature &returns(Valtype valtype, String name = "") {
+        // todo use name as default variable name
         wasm_return_type = valtype;
         if (valtype != voids and valtype != none) {
             if (valtype == float64t or valtype == float32t or valtype == int32t or valtype == i64)
@@ -1187,32 +1203,33 @@ public:
             debug_name += typeName(valtype);
 #endif
         }
-//		return_type = Type(valtype);// OVERLAP HAS TO BE OK!?!
+        //		return_type = Type(valtype);// OVERLAP HAS TO BE OK!?!
         return *this;
     }
 
     static String format() {
         String f;
-//#if RELEASE
-//#else
-//		f += this->function;
-//		f += "(";
-//		for (auto type:this->types) {
-//			f += typeName(this->types[type]);
-//			f += ",";
-//		}
-//		f += ")";
-//		f += typeName(this->return_type);
-//#endif
+        //#if RELEASE
+        //#else
+        //		f += this->function;
+        //		f += "(";
+        //		for (auto type:this->types) {
+        //			f += typeName(this->types[type]);
+        //			f += ",";
+        //		}
+        //		f += ")";
+        //		f += typeName(this->return_type);
+        //#endif
         return f;
     }
 
-    void merge(Signature &s) { // ok don't duplicate, just fill empties
+    void merge(Signature &s) {
+        // ok don't duplicate, just fill empties
         if (type_index < 0)type_index = s.type_index;
-//		return_type = s.return_type;
+        //		return_type = s.return_type;
         if (return_types.empty()) {
             wasm_return_type = s.wasm_return_type;
-            return_types = s.return_types;// todo copy construktor OK??
+            return_types = s.return_types; // todo copy construktor OK??
             if ((wasm_return_type == void_block or wasm_return_type == voids) and return_types.size_ > 0)
                 wasm_return_type = mapTypeToWasm(return_types.last());
         }
@@ -1239,7 +1256,7 @@ public:
 
     String serialize() {
         String s;
-//        s+=functions
+        //        s+=functions
         s += "(";
         for (int i = 0; i < parameters.size(); ++i) {
             if (i > 0)s += ",";
@@ -1263,14 +1280,15 @@ public:
 
 
 struct Global {
-    int index = -1;// always set!
+    int index = -1; // always set!
     String name;
     Type type = unknown;
     Node *value; // expression
-    bool is_mutable = true;// default!
+    bool is_mutable = true; // default!
     bool is_import = false;
     bool is_export = true;
 };
+
 static void print(Global g) {
     print("Global");
     print(g.name);
@@ -1279,18 +1297,20 @@ static void print(Global g) {
     print("\n");
 }
 
-struct Local { // todo: use
-//    bool is_global;
+struct Local {
+    // todo: use
+    //    bool is_global;
     bool is_param; // function arguments and locals share same index space, but are emitted differently
     int position; // also implicit in Function{ List<Local> locals;}
     String name;
-//    Valtype type = unknown_type;
-//    Primitive grrr
+    //    Valtype type = unknown_type;
+    //    Primitive grrr
     Type type = unknown_type;
     Node *typeXX; // todo: REMOVE!
-    Node *ref;// why still needed?
-    int data_pointer = 0;// compile time handling of reference data, e.g. after emitData()
+    Node *ref; // why still needed?
+    int data_pointer = 0; // compile time handling of reference data, e.g. after emitData()
 };
+
 // void print(Local l) ;
 static void print(Local l) {
     print("Local");
@@ -1304,16 +1324,15 @@ static void print(Local l) {
 
 
 class Function {
-
 public:
-//    Function() = default;
-//    Function(const Function& other) = default;
-//    Function(Function&& other) noexcept = default;
-//    Function& operator=(const Function& other) = default;
-//    Function& operator=(Function&& other) noexcept = default;
+    //    Function() = default;
+    //    Function(const Function& other) = default;
+    //    Function(Function&& other) noexcept = default;
+    //    Function& operator=(const Function& other) = default;
+    //    Function& operator=(Function&& other) noexcept = default;
 
-    int code_index = -1;// todo: split into code_index and call_index (== code_index + import_count) ???
-    int call_index = -1;// code_index + module.function_import.size()
+    int code_index = -1; // todo: split into code_index and call_index (== code_index + import_count) ???
+    int call_index = -1; // code_index + module.function_import.size()
     String name;
     String export_name;
     Signature signature;
@@ -1322,30 +1341,31 @@ public:
     Code *code = 0;
 
     bool is_import = false; // not serialized in functype section, but in import section wt
-//    bool is_declared; // has fresh Code body to emit!
-    bool is_declared = false;// only those types/functions that are declared (export) or used in call
-    bool is_runtime = false;// old special imports to wasm.wasm
+    //    bool is_declared; // has fresh Code body to emit!
+    bool is_declared = false; // only those types/functions that are declared (export) or used in call
+    bool is_runtime = false; // old special imports to wasm.wasm
     bool is_handled = false; // already emitted (e.g. as runtime)
-    bool is_builtin = false;// hard coded functions, tests only? todo remove
-    bool is_used = false;// called imports / buildins
-    bool is_polymorphic = false;// IF polymorph, this 'Function' acts as abstract only, all REAL Functions are in variants
-    List<Function *> variants;// = 20;//={.capacity=20};// multi dispatch!
+    bool is_builtin = false; // hard coded functions, tests only? todo remove
+    bool is_used = false; // called imports / buildins
+    bool is_polymorphic = false;
+    // IF polymorph, this 'Function' acts as abstract only, all REAL Functions are in variants
+    List<Function *> variants; // = 20;//={.capacity=20};// multi dispatch!
 
     //    Code* code; // todo: use
-    Map<String, Local> locals;  // todo: use, instead of global locals!
-String fullname; // original name: mangled or complex wat name. Just use name in variants! But keep for first!
+    Map<String, Local> locals; // todo: use, instead of global locals!
+    String fullname; // original name: mangled or complex wat name. Just use name in variants! But keep for first!
 
-Function &handled() {
-    is_handled = true;
-    return *this;
-}
+    Function &handled() {
+        is_handled = true;
+        return *this;
+    }
 
-Function &import() {
-    is_import = true;
-    return *this;
-}
+    Function &import() {
+        is_import = true;
+        return *this;
+    }
 
-Function &builtin() {
+    Function &builtin() {
         is_builtin = true;
         return *this;
     }
@@ -1356,7 +1376,7 @@ Function &builtin() {
         return *this;
     }
 
-//    explicit
+    //    explicit
     operator String() {
         return name;
     }
@@ -1365,41 +1385,42 @@ Function &builtin() {
         return name == other.name and signature == other.signature;
     }
 
-	void track(Node &node, const Code &statement, int offset = -1) {
-		if (code) {
-			if (code->contains(statement)) // todo double statements x==0 etc
-				warn("Statement already tracked");
-			else
-				code->add(statement);
-		} else code = &statement.clone();
-		if (offset < 0)offset = code->length;
-//        if (offset >= 0)
-//            code->position = {.line = node.lineNumber, .column = node.column, .offset = offset};
-//        else
-//            code->position = {.line = node.lineNumber, .column = node.column};
+    void track(Node &node, const Code &statement, int offset = -1) {
+        if (code) {
+            if (code->contains(statement)) // todo double statements x==0 etc
+                warn("Statement already tracked");
+            else
+                code->add(statement);
+        } else code = &statement.clone();
+        if (offset < 0)offset = code->length;
+        //        if (offset >= 0)
+        //            code->position = {.line = node.lineNumber, .column = node.column, .offset = offset};
+        //        else
+        //            code->position = {.line = node.lineNumber, .column = node.column};
 
-//        sourceMap[node.lineNumber] = data_index_end; // todo how to keep track of growing code?
-//	code.position = {.line = node.lineNumber, .column = node.column};
-	}
+        //        sourceMap[node.lineNumber] = data_index_end; // todo how to keep track of growing code?
+        //	code.position = {.line = node.lineNumber, .column = node.column};
+    }
 
-	Function *clone() {
+    Function *clone() {
         Function *neu = new Function(*this);
         neu->signature = signature.clone();
         neu->signature.parameters = signature.parameters;
         neu->variants = variants;
         // neu->locals = locals.clone(); // TODO!!?
         // neu->code = code->clone();
-        neu->body = body->clone();
+        if (body)
+            neu->body = body->clone();
         return neu;
-}
+    }
 
-int allocateLocal(String local_name = "") {
-    int index = locals.size();
-    if (local_name.empty())
-        local_name = "local_"s + index;
-    locals.add(local_name, Local{.position = index, .name = local_name});
-    return index;
-}
+    int allocateLocal(String local_name = "") {
+        int index = locals.size();
+        if (local_name.empty())
+            local_name = "local_"s + index;
+        locals.add(local_name, Local{.position = index, .name = local_name});
+        return index;
+    }
 };
 
 static void print(Function f) {
@@ -1438,7 +1459,7 @@ Code &signedLEB128(int64 value);
 36028797018963968 80000000000000 9
  */
 short lebByteSize(
-        uint64 neu);// unsigned variants have delayed size increase by factor 2! ( 0x80 needs 2 bytes vs 0x40 signed!!)
+    uint64 neu); // unsigned variants have delayed size increase by factor 2! ( 0x80 needs 2 bytes vs 0x40 signed!!)
 short lebByteSize(unsigned int neu);
 
 /*
