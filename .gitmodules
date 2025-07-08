@@ -4,3 +4,6 @@
 [submodule "wasm-micro-runtime"]
 	path = Frameworks/wasm-micro-runtime
 	url =  Frameworks/wasm-micro-runtime
+[submodule "wiki"]
+	path = wiki
+	url = https://github.com/pannous/wasp.wiki.git
