@@ -1,0 +1,59 @@
+name: Test
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          libcurl4-openssl-dev \
+          libreadline-dev
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: wasp-build
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+    
+    - name: Make executables executable
+      run: |
+        chmod +x wasp wasp-* || true
+    
+    - name: Run tests
+      run: |
+        if [ -f "./wasp" ]; then
+          ./wasp test > test_output.txt 2>&1 || true
+        else
+          echo "wasp binary not found - build may have failed"
+          exit 1
+        fi
+        cat test_output.txt
+        
+    - name: Check test results
+      run: |
+        if grep -q "CURRENT TESTS PASSED" test_output.txt; then
+          echo "Tests passed successfully!"
+          exit 0
+        else
+          echo "Tests failed - 'CURRENT TESTS PASSED' not found in output"
+          echo "Test output:"
+          cat test_output.txt
+          exit 1
+        fi

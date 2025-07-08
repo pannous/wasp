@@ -27,7 +27,9 @@ include(FetchContent) # external projects like webview
 #set(VERBOSE 1)
 #set(DEBUG 1)
 #set(TRACE 1)
-set(STRICT 1) # ALL WARNINGS, AS ERRORS
+if(NOT DEFINED STRICT)
+    set(STRICT 1) # ALL WARNINGS, AS ERRORS
+endif()
 #set(SDL 1) # Graphics
 #set(WASM 1) # SET VIA TOOLCHAIN!
 set(INCLUDE_MERGER 1) # include wasm_linker.cpp
