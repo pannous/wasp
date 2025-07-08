@@ -484,8 +484,10 @@ public:
 
     codepoint codepointAt(int i) {
         if (!codepoints)extractCodepoints();
-        if (i > codepoint_count)
-            error("index > codepoint count");
+        if(codepoint_count==0 and i==0)
+            return 0; // empty string[0]==0 ok
+        if (i >= codepoint_count)
+            error("index >= codepoint count");
         return codepoints[i];
     }
 
