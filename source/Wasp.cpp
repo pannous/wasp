@@ -807,7 +807,7 @@ private:
                     auto nodes = valueNode('}');
                     chunks.add(nodes); //.setKind(expression)); // ${1+2}
                 } else {
-                    chunks.add(Node(identifier()).setKind(referencex)); // $test
+                    chunks.add(Node(identifier().clone()).setKind(referencex)); // $test
                 }
             } else {
                 int start = at;
@@ -815,13 +815,13 @@ private:
                     proceed();
                 if (start == at)break;
                 String tee = text.substring(start, at);
-                chunks.add(Node(tee).setKind(strings));
-                // chunks.add(Node(tee.clone()).setKind(strings));
+                // chunks.add(Node(tee).setKind(strings));
+                chunks.add(Node(tee.clone()).setKind(strings));
             }
         }
-        proceed(); // skip ` done
         if (end_of_text())
             parserError("Unterminated string");
+        proceed(); // skip ` done
         return chunks;
     }
 
