@@ -1,0 +1,25 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+      - '**'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+      - name: Configure
+        run: cmake -B build 
+      - name: Build
+        run: cmake --build build
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasp-build
+          path: build/

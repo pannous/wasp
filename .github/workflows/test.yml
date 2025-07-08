@@ -1,0 +1,29 @@
+name: Test
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasp-build
+          path: build
+      - name: Run wasp tests and check output
+        run: |
+          cd build
+          ./wasp test | tee test_output.txt
+          if grep -q "current tests passed" test_output.txt; then
+            echo "✅ Tests passed!"
+          else
+            echo "❌ Tests failed!"
+            exit 1
+          fi
