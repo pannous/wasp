@@ -145,6 +145,7 @@ ENDFUNCTION()
 
 
 if (WASM)
+    set(CMAKE_EXECUTABLE_SUFFIX ".wasm")
     set(WASI 0) # increases size by factor 10!! 100873 wasp => 1074221 wasp.wasm_10x_with_WASI
     set(MY_WASI 1) # manually write via fd_write, NOT via wasi-sdk printf=>fd_write
     ADD_DEFINITIONS(-DMY_WASI)
@@ -228,8 +229,8 @@ endif ()
 
 
 set(CMAKE_CXX_STANDARD 20)
-if(LINUX)
-set_property(GLOBAL PROPERTY JOB_POOLS link=1) # hack for ninja on linux
+if (LINUX)
+    set_property(GLOBAL PROPERTY JOB_POOLS link=1) # hack for ninja on linux
 endif ()
 
 ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
@@ -355,7 +356,10 @@ endif ()
 set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/String.cpp ${SOURCE}/Node.cpp ${SOURCE}/Map.cpp ${SOURCE}/Util.cpp ${SOURCE}/List.cpp
         ${SOURCE}/Wasp.cpp ${SOURCE}/wasm_helpers.cpp ${SOURCE}/Code.cpp ${SOURCE}/NodeTypes.cpp ${SOURCE}/smart_types.cpp)
 
-
+if (NO_CONSOLE)
+    message("NO_CONSOLE")
+    set(CONSOLE 0)
+endif ()
 if (CONSOLE)
     message(CONSOLE)
     ADD_DEFINITIONS(-DCONSOLE)
@@ -536,6 +540,8 @@ if (WASM) # OR WASI)
     MESSAGE("USING PURE WASM")
     message(WASM)
     ADD_DEFINITIONS(-DWASM)
+    set(CMAKE_OSX_ARCHITECTURES "")
+    set(CMAKE_OSX_SYSROOT "")
     if (EMSCRIPTEN)
         ADD_COMPILE_FLAG("-sERROR_ON_UNDEFINED_SYMBOLS=0")
         set(__aarch64__ 1)
@@ -638,10 +644,10 @@ if (WASM) # OR WASI)
         set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/exceptions.cpp)
         #    --no-validation   --debug
         ADD_COMPILE_FLAG("-Oz -Qn")
-        ADD_COMPILE_FLAG("-Wl,-O4")
-        ADD_COMPILE_FLAG("-O4")
+        ADD_COMPILE_FLAG("-Wl,-O3")
+        ADD_COMPILE_FLAG("-O3")
         # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
-        # todo ^^   warning: unknown warning option '-Ws,--lto-O3,-O4,--gc-sections'  --lto-O3,
+        # todo ^^   warning: unknown warning option '-Ws,--lto-O3,-O3,--gc-sections'  --lto-O3,
         ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
         if (EMCC) # emscripten
             ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
@@ -784,16 +790,20 @@ elseif (WASMEDGE)
     MESSAGE("USING WASMEDGE")
     MESSAGE("${SOURCE}")
     ADD_DEFINITIONS(-DWASMEDGE)
-    set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_edge.cpp )
+#    set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
-#    FetchContent_Declare(wasmedge GIT_REPOSITORY https://github.com/WasmEdge/WasmEdge.git)
-#    FetchContent_MakeAvailable(wasmedge)
-#    VERSION=0.14.1 curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh  | sudo bash -s -- -p /usr/local -v $VERSION
-    target_include_directories(wasp PRIVATE /usr/local/include) # brew install wasmedge
-#    target_include_directories(wasp PRIVATE /usr/include) # libwasmedge-dev too old :(
-    target_include_directories(wasp PRIVATE ~/.wasmedge/include) # https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh
-    link_directories(~/.wasmedge/lib/)
-    target_link_libraries(wasp PRIVATE WasmEdge)
+    #    FetchContent_Declare(wasmedge GIT_REPOSITORY https://github.com/WasmEdge/WasmEdge.git)
+    #    FetchContent_MakeAvailable(wasmedge)
+    #    VERSION=0.14.1 curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh  | sudo bash -s -- -p Frameworks -v $VERSION
+    if (LINUX)
+        target_include_directories(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/include) # wasmedge-dev
+        target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/lib/libwasmedge.so)
+    else ()
+        link_directories(Frameworks/WasmEdge/lib/)
+        target_include_directories(wasp PRIVATE /usr/local/include)
+        target_link_libraries(wasp PRIVATE WasmEdge) # MAC
+    endif ()
     target_link_libraries(wasp PRIVATE curl)
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
@@ -894,7 +904,18 @@ endif ()
 if (CONSOLE AND NOT WEBAPP)
     if (LINUX)
         message("LINUX Readline")
-        set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/")
+        if (READLINE_INCLUDE_DIR AND READLINE_LIBRARY AND NCURSES_LIBRARY)
+            set(READLINE_FOUND TRUE)
+        else (READLINE_INCLUDE_DIR AND READLINE_LIBRARY AND NCURSES_LIBRARY)
+            FIND_PATH(READLINE_INCLUDE_DIR readline/readline.h /usr/include/readline)
+            FIND_LIBRARY(READLINE_LIBRARY NAMES readline)
+            include(FindPackageHandleStandardArgs)
+            FIND_PACKAGE_HANDLE_STANDARD_ARGS(Readline DEFAULT_MSG READLINE_INCLUDE_DIR READLINE_LIBRARY)
+
+            MARK_AS_ADVANCED(READLINE_INCLUDE_DIR READLINE_LIBRARY)
+        endif (READLINE_INCLUDE_DIR AND READLINE_LIBRARY AND NCURSES_LIBRARY)
+        set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/") # for FindReadline.cmake
+        set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/") # for FindReadline.cmake
     endif ()
     find_package(Readline)
     find_library(readline NAMES Readline)
@@ -927,7 +948,8 @@ endif ()
 set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/source/increase-wasp-version.py)
 
 # Custom target to always run the python script
+if(NOT LINUX)
 add_custom_target(run_version_script ALL
         COMMAND ${PYTHON_EXECUTABLE} ${VERSION_SCRIPT}
         COMMENT "Running Version increment script")
-
+endif()
