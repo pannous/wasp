@@ -888,12 +888,12 @@ endif ()
 
 # todo CONSOLE checke above!?
 if (CONSOLE AND NOT WEBAPP)
-    find_package(Readline)
-    find_library(readline NAMES Readline)
     if(LINUX)
         set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/FindReadline.cmake")
         message("LINUX Readline")
     endif ()
+    find_package(Readline)
+    find_library(readline NAMES Readline)
     if (WASM)
 
         #            set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/ReadlineConfig.cmake")
