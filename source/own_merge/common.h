@@ -17,8 +17,8 @@
 #ifndef WABT_COMMON_H_
 #define WABT_COMMON_H_
 
-//#include <algorithm>
-//#include <cassert>
+#include <algorithm>
+#include <cassert>
 #include <cstdarg>
 //#include <cstddef>
 //#include <cstdint>

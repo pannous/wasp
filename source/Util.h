@@ -40,10 +40,6 @@ typedef byte *bytes;
 //#define min(a, b) (a < b ? a : b)
 static int64 min(int64 a, int64 b) { return (a < b ? a : b); }
 
-#if LINUX
-static bool isnumber(char x){return x>='0' and x<='9';}
-#endif
-
 // saves one backtrace entry:
 //#if WASM
 //#define error(msg) {\

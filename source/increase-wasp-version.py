@@ -22,7 +22,7 @@ class IncrementSemanticVersion():
 
 
 	def _update_version(self):
-		pattern = re.compile('^(static chars wasp_version)\s*=\s*"([0-9\.]+)";')
+		pattern = re.compile('^(static chars wasp_version)\\s*=\\s*"([0-9\\.]+)";')
 		output = BytesIO()
 		new_version=None
 		count=0
