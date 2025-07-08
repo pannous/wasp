@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # Production build environment
+  wasp-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: wasp-build
+    volumes:
+      - .:/workspace
+      - wasp-build-cache:/workspace/build
+    environment:
+      - CMAKE_BUILD_TYPE=Release
+      - WASM_TARGET=wasp-hosted
+    profiles:
+      - production
+
+  # Development environment with debugging tools
+  wasp-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile  
+      target: development
+    container_name: wasp-dev
+    volumes:
+      - .:/workspace
+      - wasp-dev-cache:/workspace/build
+    environment:
+      - CMAKE_BUILD_TYPE=Debug
+      - WASM_TARGET=wasp-hosted
+    stdin_open: true
+    tty: true
+    profiles:
+      - development
+
+  # Runtime-only build for smaller output
+  wasp-runtime:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: wasp-runtime
+    volumes:
+      - .:/workspace
+      - wasp-runtime-cache:/workspace/build
+    environment:
+      - CMAKE_BUILD_TYPE=Release
+      - WASM_TARGET=wasp-runtime
+      - RUNTIME_ONLY=1
+    profiles:
+      - runtime
+
+  # Test runner
+  wasp-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: wasp-test
+    volumes:
+      - .:/workspace
+      - wasp-test-cache:/workspace/build
+    environment:
+      - CMAKE_BUILD_TYPE=Debug
+    command: ["sh", "-c", "cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DWASM=1 -DMY_WASM=1 .. && make wasp-hosted && ctest --verbose"]
+    profiles:
+      - test
+
+volumes:
+  wasp-build-cache:
+  wasp-dev-cache:
+  wasp-runtime-cache:
+  wasp-test-cache:

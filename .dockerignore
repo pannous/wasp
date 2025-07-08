@@ -1,0 +1,85 @@
+# Build artifacts
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.bc
+*.o
+*.i
+*.dwarf
+*.bak
+*.log
+*.map
+build.ninja
+.ninja_deps
+.ninja_log
+default.profraw
+build/
+
+# WebAssembly files
+*.wasm
+*.wat
+*.wast
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+README.md
+wiki/
+
+# Test outputs
+test/
+examples/
+
+# Temporary files
+tmp/
+.DS_Store
+.cache
+.env
+.wasp_history
+.aider*
+.fake
+
+# Binaries
+bin/
+wasp
+wasp-*
+
+# Dependencies (will be built in container)
+node_modules/
+Frameworks/c-api/
+Frameworks/uvwasi/
+Frameworks/wasm3/
+Frameworks/wabt/
+Frameworks/wasmer-c-api/
+Frameworks/wasmtime-c-api/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Package files  
+package-lock.json
+yarn.lock
+Cargo.lock
+
+# Archives
+*.tar.gz
+*.zip
+*.7z
+
+# Large framework files that should be downloaded fresh
+lib/
+Platform/
+page/
+playground/
