@@ -1482,7 +1482,7 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
                     error("unexpected opcode at function end %x "s % b + opcode.GetName() + " control_depth: " + control_depth);
                 // else
                     // error("unexpected opcode at function end %x "s % b + opcode.GetName());
-                breakpoint_helper;
+                // breakpoint_helper;
             } else last_opcode = end_block;
             call_index = function_imports_count + code_index;
             //			trace("begin_function %d\n", current_fun);
