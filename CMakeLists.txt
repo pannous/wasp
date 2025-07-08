@@ -59,7 +59,7 @@ if (SANITIZE)
     add_compile_options(-fsanitize=address)
     add_compile_options(-fsanitize=bounds) # several allowed
     add_compile_options(-fsanitize=undefined)
-     add_compile_options(-fsanitize-address-use-after-scope)
+    add_compile_options(-fsanitize-address-use-after-scope)
     add_compile_options(-finstrument-functions) # log function calls
     add_compile_options(-Wno-deprecated)
     add_compile_options(-fno-pie)
@@ -68,10 +68,10 @@ if (SANITIZE)
     add_compile_options(-g3)
 
 
-#    extern "C" void __cyg_profile_func_enter(void *func, void *caller) { fprintf(stderr, "ENTER %p from %p\n", func, caller); }
+    #    extern "C" void __cyg_profile_func_enter(void *func, void *caller) { fprintf(stderr, "ENTER %p from %p\n", func, caller); }
     add_link_options(-fsanitize=undefined)
     add_link_options(-fsanitize=address)
-#    target_link_libraries(wasp ubsan)
+    #    target_link_libraries(wasp ubsan)
     message("just use lldb -- /Users/me/dev/apps/wasp/cmake-build-debug-sanitize/wasp test; run")
 endif ()
 
@@ -149,7 +149,7 @@ if (WASM)
     set(MY_WASI 1) # manually write via fd_write, NOT via wasi-sdk printf=>fd_write
     ADD_DEFINITIONS(-DMY_WASI)
     ADD_DEFINITIONS(-DNO_CPP_DEMANGLE)
-#    ADD_COMPILE_FLAG(-s SIDE_MODULE=1) # add .metadata custom section
+    #    ADD_COMPILE_FLAG(-s SIDE_MODULE=1) # add .metadata custom section
 
     if (DEBUG)
         message("WASM DEBUG with DWARF!")
@@ -228,6 +228,9 @@ endif ()
 
 
 set(CMAKE_CXX_STANDARD 20)
+if(LINUX)
+set_property(GLOBAL PROPERTY JOB_POOLS link=1) # hack for ninja on linux
+endif ()
 
 ADD_COMPILE_FLAG("-fshort-enums") # enum types only use as many bytes as it needs for the declared range of possible values.
 # makes TypedValue 1+8 bytes, doesn't help for multi-value (int32 int64)
@@ -257,13 +260,18 @@ endif ()
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
-ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
-#ADD_COMPILE_FLAG("-Wl,--allow-undefined") # really?
-ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
 
-if (LINUX)
-    ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
+#if(APPLE)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
+    #ADD_COMPILE_FLAG("-Wl,--allow-undefined") # really?
+    ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
     ADD_COMPILE_FLAG("-Wno-writable-strings") # dangerous! fix assert_is("square 3", 9)
+    ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
+    ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
+    ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
+endif ()
+if (LINUX)
     # DEBIAN
     # 2023-10-9 /wasp/${SOURCE}/tests.cpp:48:25: gcc internal compiler error
     # todo remove when gcc fixed
@@ -281,12 +289,9 @@ if (LINUX)
     ADD_COMPILE_FLAG("-Wno-error=write-strings") # message = "error"; ??
     #    error: declaration of ‘codepoint Value::codepoint’ changes meaning of ‘codepoint’  todo: just rename
 endif ()
-ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
-ADD_COMPILE_FLAG("-Wno-varargs") # contra: "passing an object that undergoes default argument promotion to 'va_start' has undefined behavior" ??
 
 #if(NOT LINUX)
 #ADD_COMPILE_FLAG("-Wno-non-pod-varargs") #  usually only Plain Old Data structures!
-#ADD_COMPILE_FLAG("-Wno-unused-command-line-argument") # may conflict between builds, so disable freely!
 #endif()
 # todo Just use initiator lists? ^^
 if (APPLE)
@@ -416,7 +421,7 @@ if (INCLUDE_MERGER)
 endif ()
 
 
-if (APPLE)
+if (APPLE) # clang!
     add_compile_options(-Werror=deprecated-enum-compare) # check(Primitive::charp == (Valtype) Primitive::charp) FAILS!!!
     add_compile_options(-Wdeprecated-enum-compare)
     #add_compile_options(-Wall)
@@ -424,10 +429,10 @@ if (APPLE)
     ADD_COMPILE_FLAG("-Wno-unknown-pragmas") # always allow
     ADD_COMPILE_FLAG("-Wno-unused-parameter") # always
     ADD_COMPILE_FLAG("-Wno-deprecated-copy-with-user-provided-copy") # what's this?
+    add_compile_options(-Wno-return-type-c-linkage) # allow C functions to return multi-value struct / C++ types
+    add_compile_options(-Wno-vla-cxx-extension) # allow array[len]
 endif ()
-add_compile_options(-Wno-vla-cxx-extension) # allow array[len]
 add_compile_options(-Werror)
-add_compile_options(-Wno-return-type-c-linkage) # allow C functions to return multi-value struct / C++ types
 #add_compile_options(-fno-exceptions) # disables exceptions => cannot use 'throw'
 #add_compile_options(-fno-rtti) # disables Run-Time Type Information, ensuring no dynamic type dependencies
 #add_compile_options(-fno-unwind-tables -fno-asynchronous-unwind-tables) # !?!? ----
@@ -779,18 +784,16 @@ elseif (WASMEDGE)
     MESSAGE("USING WASMEDGE")
     MESSAGE("${SOURCE}")
     ADD_DEFINITIONS(-DWASMEDGE)
-    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_edge.cpp)
+    set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
-    #    target_include_directories(wasp PUBLIC Frameworks/wasmedge)
-    target_include_directories(wasp PUBLIC /opt/wasm/WasmEdge/include/api/)
-    target_link_libraries(wasp PRIVATE /opt/wasm/WasmEdge/lib/api/libwasmedge.dylib)
-    #    find_package(WasmEdge REQUIRED)
-    #    target_include_directories(wasp PRIVATE ${WasmEdge_INCLUDE_DIRS})
+#    FetchContent_Declare(wasmedge GIT_REPOSITORY https://github.com/WasmEdge/WasmEdge.git)
+#    FetchContent_MakeAvailable(wasmedge)
+#    VERSION=0.14.1 curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh  | sudo bash -s -- -p /usr/local -v $VERSION
+    target_include_directories(wasp PRIVATE /usr/local/include) # brew install wasmedge
+    target_include_directories(wasp PRIVATE /usr/include) # libwasmedge-dev
+    target_include_directories(wasp PRIVATE ~/.wasmedge/include) # https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh
     target_link_libraries(wasp PRIVATE WasmEdge)
-    #    target_include_directories(wasp PUBLIC Frameworks/wasmedge/include/api/)
-    #    target_include_directories(wasp PUBLIC Frameworks/wasmedge_api)
     target_link_libraries(wasp PUBLIC -lcurl)
-    #    target_link_libraries(wasp PRIVATE wasmedge) # libwasmedge.dylib 88MB -> now 5MB ok
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
     ADD_DEFINITIONS(-DWASMTIME)
@@ -888,7 +891,7 @@ endif ()
 
 # todo CONSOLE checke above!?
 if (CONSOLE AND NOT WEBAPP)
-    if(LINUX)
+    if (LINUX)
         message("LINUX Readline")
         set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/lib/")
     endif ()
