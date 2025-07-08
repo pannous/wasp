@@ -1054,6 +1054,7 @@ void testRecentRandomBugs() {
     testRecentRandomBugsAgain = false;
     assert_emit("-42", -42)
     assert_emit("‖3‖-1", 2);
+    assert_emit("test42", 42); // OK in WASM too?
     assert_emit("test42+1", 43); // OK in WASM too?
     assert_emit("square 3*42 > square 2*3", 1)
 #if not WASM

@@ -82,7 +82,9 @@ int fileSize(char const *file) {
 #if WASM && !WASI
 #else
 
+#if not LINUX
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 
 int64 file_last_modified(char *file) {
@@ -96,6 +98,7 @@ float file_last_modified(String &file) {
     stat(file, &attr);
     return attr.st_mtime;
 }
+#endif
 
 #endif
 
@@ -103,10 +106,8 @@ template<class>
 class List; //<String>;
 
 #include <stdio.h>
-#include <sys/types.h>
-#include <dirent.h>
 #include <errno.h>
-
+#include <dirent.h>
 bool isDir(const char *name) {
 #ifdef WASM
     return false;
@@ -157,7 +158,9 @@ String findFile(String filename, String current_dir) {
             }
     }
     if (paths.empty())return "";
+#if not LINUX
     paths.sort(&file_last_modified);
+#endif
     String &best = paths.last();
     return best;
 #endif
