@@ -1480,8 +1480,8 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             if (b != end_block) {
                 if(control_depth>0)
                     error("unexpected opcode at function end %x "s % b + opcode.GetName() + " control_depth: " + control_depth);
-                // else
-                    // error("unexpected opcode at function end %x "s % b + opcode.GetName());
+                else
+                    error("unexpected opcode at function end %x "s % b + opcode.GetName());
                 breakpoint_helper;
             } else last_opcode = end_block;
             call_index = function_imports_count + code_index;
