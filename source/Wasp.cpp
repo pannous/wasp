@@ -803,8 +803,9 @@ private:
             if (ch == '$') {
                 if (next == '{') {
                     proceed(); // skip $
-                    proceed(); // skip $
-                    chunks.add(valueNode('}')); //.setKind(expression)); // ${1+2}
+                    proceed(); // skip {
+                    auto nodes = valueNode('}');
+                    chunks.add(nodes); //.setKind(expression)); // ${1+2}
                 } else {
                     chunks.add(Node(identifier()).setKind(referencex)); // $test
                 }
@@ -815,6 +816,7 @@ private:
                 if (start == at)break;
                 String tee = text.substring(start, at);
                 chunks.add(Node(tee).setKind(strings));
+                // chunks.add(Node(tee.clone()).setKind(strings));
             }
         }
         proceed(); // skip ` done

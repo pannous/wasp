@@ -440,7 +440,7 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_FunctionReferences); // function pointers!!
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_GC);
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ImportExportMutGlobals);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Memory64);
+    // WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Memory64);
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiValue); // ✓
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiMemories); // ✓ --enable-multi-memory
     WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_TailCall);

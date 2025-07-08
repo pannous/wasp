@@ -544,7 +544,8 @@ Node Node::operator+(Node other) {
         return merge(other);
     if (other.kind == objects)
         return other.insert(*this, 0);
-    error("Operator + not supported for node types %s and %s"s % typeName(kind) % typeName(other.kind));
+    error("Operator + not supported for node types");
+    // error("Operator + not supported for node types %s and %s"s % typeName(kind) % typeName(other.kind));
     return ERROR;
 };
 
@@ -1110,7 +1111,8 @@ Node &Node::flat() {
             return *this;
         }
     }
-    return *this; //->clone();
+    // return *this; //->clone();
+    return *this->clone();
 }
 
 Node &Node::setName(chars name0) {

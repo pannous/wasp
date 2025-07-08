@@ -5,3 +5,37 @@ len("hi")
 lenxx("hi")  unknown function error!!
 
 restored
+
+
+
+`${1+1}`
+
+
+=================================================================
+==16555==ERROR: AddressSanitizer: stack-use-after-return on address 0xe8fd313e5760 at pc 0xc96364bfb844 bp 0xffffc5ea02d0 sp 0xffffc5ea02c0
+READ of size 32 at 0xe8fd313e5760 thread T0
+    #0 0xc96364bfb840 in String::operator%(char const*) /home/ubuntu/wasp/source/own_merge/../String.h:664
+    #1 0xc96364c4577c in Wasp::parseTemplate() (/mnt/me/dev/apps/wasp/build/wasp+0x9a577c) (BuildId: 2d31b8cd75282604d48846fa32783524c7c99da3)
+    #2 0xc96364c45b10 in Wasp::quote(char32_t) (/mnt/me/dev/apps/wasp/build/wasp+0x9a5b10) (BuildId: 2d31b8cd75282604d48846fa32783524c7c99da3)
+    #3 0xc96364c59dd0 in Wasp::valueNode(char32_t, Node*) (/mnt/me/dev/apps/wasp/build/wasp+0x9b9dd0) (BuildId: 2d31b8cd75282604d48846fa32783524c7c99da3)
+    #4 0xc96364c396e0 in Wasp::parse(char const*, ParserOptions) (/mnt/me/dev/apps/wasp/build/wasp+0x9996e0) (BuildId: 2d31b8cd75282604d48846fa32783524c7c99da3)
+    #5 0xc96364c202e0 in parse(String, ParserOptions) /home/ubuntu/wasp/source/Wasp.cpp:2177
+    #6 0xc96364f97a44 in compile(String, bool) /home/ubuntu/wasp/source/wasm_emitter.cpp:4391
+    #7 0xc96364e3dc50 in eval(String) /home/ubuntu/wasp/source/Angle.cpp:379
+    #8 0xc96364d31c70 in testReturnTypes() /home/ubuntu/wasp/source/tests.cpp:48
+    #9 0xc96364e096c8 in testCurrent /home/ubuntu/wasp/source/tests.cpp:3950
+    #10 0xc96364c1d5a8 in main /home/ubuntu/wasp/source/Wasp.cpp:1974
+    #11 0xe8fd346284c0 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #12 0xe8fd34628594 in __libc_start_main_impl ../csu/libc-start.c:360
+    #13 0xc96364baba6c in _start (/mnt/me/dev/apps/wasp/build/wasp+0x90ba6c) (BuildId: 2d31b8cd75282604d48846fa32783524c7c99da3)
+
+Address 0xe8fd313e5760 is located in stack of thread T0 at offset 96 in frame
+    #0 0xc96364c004fc in String::replace(char const*, char const*, int) /home/ubuntu/wasp/source/own_merge/../String.h:1105
+
+  This frame has 3 object(s):
+    [32, 64) '<unknown>'
+    [96, 128) '<unknown>' <== Memory access at offset 96 is inside this variable
+    [160, 192) '<unknown>'
+HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
+      (longjmp and C++ exceptions *are* supported)
+SUMMARY: AddressSanitizer: stack-use-after-return /home/ubuntu/wasp/source/own_merge/../String.h:664 in String::operator%(char const*)
