@@ -2064,7 +2064,7 @@ Type guessType(Node &node, Function &function) {
 
 // todo move to parseTemplate
 Node &groupTemplate(Node &node, Function &function) {
-    for (auto child: node) {
+    for (Node& child: node) {
         Type kind = child.kind;
         if (kind != strings) {
             child = analyze(child, function); // analyze each child node
@@ -2072,6 +2072,7 @@ Node &groupTemplate(Node &node, Function &function) {
             if (kind == expression)
                 kind = child.first().kind; // todo: hacky, but works for now
             if (kind == referencex or kind == reference) useFunction("toString");
+            else if (kind == undefined) useFunction("formatLong"); // TODO!
             else if (kind == long32) useFunction("formatLong"); // itoa0
             else if (kind == longs) useFunction("formatLong"); // ltoa
             else if (kind == reals or kind == realsF) useFunction("formatReal"); // ftoa
