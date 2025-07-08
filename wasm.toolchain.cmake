@@ -15,8 +15,6 @@ set(CMAKE_C_COMPILER ${SDK}/bin/clang)
 set(CMAKE_CXX_COMPILER ${SDK}/bin/clang)
 
 set(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot/)
-set(CMAKE_OSX_ARCHITECTURES "")
-set(CMAKE_OSX_SYSROOT "")
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
