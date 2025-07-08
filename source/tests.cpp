@@ -3934,6 +3934,9 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting current tests 💡");
+    // assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
+    // assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4) // fails linking _ZdlPvm operator delete(void*, unsigned long)
+    // assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
     // test2Def();
     // assert_emit("fun addier(x, y){ x + y }",0)
     // exit(   0);
