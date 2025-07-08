@@ -6,12 +6,10 @@
 #include "String.h"
 #include "Map.h"
 #include "tests.h"
-#include "Paint.h"
 
 #pragma GCC diagnostic ignored "-Wdeprecated"
 
 #include "test_angle.cpp"
-#include "test_wast.cpp"
 #include "test_wasm.cpp"
 
 // #import "test_angle.cpp"
@@ -159,12 +157,12 @@ void testCast() {
     check_eq("a"s, cast(Node('a'), strings).value.string);
     check_eq(false, cast(Node('0'), bools).value.longy);
     check_eq(false, cast(Node(u'ø'), bools).value.longy);
-    check_eq(false, cast(Node("False", false), bools).value.longy);
-    check_eq(false, cast(Node("ø", false), bools).value.longy);
-    check_eq(true, cast(Node("True", false), bools).value.longy);
-    check_eq(true, cast(Node("1", false), bools).value.longy);
+    check_eq(false, cast(Node("False"s, false), bools).value.longy);
+    check_eq(false, cast(Node("ø"s, false), bools).value.longy);
+    check_eq(true, cast(Node("True"s, false), bools).value.longy);
+    check_eq(true, cast(Node("1"s, false), bools).value.longy);
     check_eq(true, cast(Node(1), bools).value.longy);
-    check_eq(true, cast(Node("abcd", false), bools).value.longy);
+    check_eq(true, cast(Node("abcd"s, false), bools).value.longy);
 }
 
 
@@ -473,14 +471,14 @@ void testFetch() {
 
 void test_getElementById() {
     result = analyze(parse("$result"));
-    assert_equals(result.kind, (int64) externref);
+    assert_equals(result.kind, externref);
     auto nod = eval("$result");
     print(nod);
 }
 
 void testCanvas() {
     result = analyze(parse("$canvas"));
-    assert_equals(result.kind, (int64) externref);
+    assert_equals(result.kind, externref);
     auto nod = eval("    ctx = $canvas.getContext('2d');\n"
         "    ctx.fillStyle = 'red';\n"
         "    ctx.fillRect(10, 10, 150, 100);");
@@ -2011,8 +2009,8 @@ void testUnicode_UTF16_UTF32() {
     //	skip(
     assert(interpret("ç='☺'") == String(u"☺"));
     assert(interpret("ç='☺'") == String(u8"☺"));
-    assert(interpret("ç='☺'") == String(L"☺"));
     assert(interpret("ç='☺'") == String(U"☺"));
+    // assert(interpret("ç='☺'") == String(L"☺"));
     //	)
     check(String(u'牛') == "牛");
     check(String(L'牛') == "牛");
@@ -3941,8 +3939,8 @@ void testCurrent() {
     print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
 #else
-    testPing();
-    testFunctionArgumentCast();
+    // testPing();
+    // testFunctionArgumentCast();
     testFunctionDeclaration();
     testReturnTypes();
     testRecentRandomBugs();

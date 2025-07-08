@@ -790,19 +790,25 @@ elseif (WASMEDGE)
     MESSAGE("USING WASMEDGE")
     MESSAGE("${SOURCE}")
     ADD_DEFINITIONS(-DWASMEDGE)
-    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_edge.cpp )
-#    set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
+#    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_edge.cpp )
+    set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
     #    FetchContent_Declare(wasmedge GIT_REPOSITORY https://github.com/WasmEdge/WasmEdge.git)
     #    FetchContent_MakeAvailable(wasmedge)
     #    VERSION=0.14.1 curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh  | sudo bash -s -- -p Frameworks -v $VERSION
     if (LINUX)
-        target_include_directories(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/include) # wasmedge-dev
-        target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/lib/libwasmedge.so)
+        target_include_directories(wasp PRIVATE ~/.wasmedge/include/) # wasmedge-dev
+#        target_include_directories(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/include) # wasmedge-dev
+#        target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/lib/libwasmedge.so)
+        target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/lib/libwasmedge.so)
     else ()
-        link_directories(Frameworks/WasmEdge/lib/)
-        target_include_directories(wasp PRIVATE /usr/local/include)
-        target_link_libraries(wasp PRIVATE WasmEdge) # MAC
+#        target_include_directories(wasp PRIVATE /usr/local/include)
+        target_include_directories(wasp PUBLIC /opt/wasm/WasmEdge/include/api/)
+#        target_link_libraries(wasp PRIVATE /opt/wasm/WasmEdge/lib/api/libwasmedge.dylib)
+#        link_directories(Frameworks/WasmEdge/lib/)
+#        link_directories(/usr/local/lib/)
+#        target_link_libraries(wasp PRIVATE wasmedge) # MAC
+        target_link_libraries(wasp PRIVATE /usr/local/lib/libwasmedge.dylib) # via brew
     endif ()
     target_link_libraries(wasp PRIVATE curl)
 elseif (WASMTIME)

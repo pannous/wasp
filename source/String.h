@@ -612,11 +612,11 @@ public:
     }
 
 
-    String operator%(String &c) {
+    String& operator%(String &c) {
         if (!contains("%s"))
             return *this + c;
-        String b = this->clone();
-        String d = b.replace("%s", c);
+        String& b = this->clone();
+        String& d = b.replace("%s", c);
         return d;
     }
 
