@@ -790,10 +790,11 @@ elseif (WASMEDGE)
 #    FetchContent_MakeAvailable(wasmedge)
 #    VERSION=0.14.1 curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh  | sudo bash -s -- -p /usr/local -v $VERSION
     target_include_directories(wasp PRIVATE /usr/local/include) # brew install wasmedge
-    target_include_directories(wasp PRIVATE /usr/include) # libwasmedge-dev
+#    target_include_directories(wasp PRIVATE /usr/include) # libwasmedge-dev too old :(
     target_include_directories(wasp PRIVATE ~/.wasmedge/include) # https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh
+    link_directories(~/.wasmedge/lib/)
     target_link_libraries(wasp PRIVATE WasmEdge)
-    target_link_libraries(wasp PUBLIC -lcurl)
+    target_link_libraries(wasp PRIVATE curl)
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
     ADD_DEFINITIONS(-DWASMTIME)
