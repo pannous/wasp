@@ -2215,6 +2215,7 @@ Node &analyze(Node &node, Function &function) {
 }
 
 
+#if !defined(WASMX) && !defined(WASMEDGE) && !defined(WASM3) && !defined(WABT) && !defined(V8) && !defined(MICRO)
 extern "C" int64 run_wasm_file(chars file) {
     let buffer = load(String(file));
 #if RUNTIME_ONLY
@@ -2224,6 +2225,7 @@ extern "C" int64 run_wasm_file(chars file) {
     return run_wasm((bytes) buffer.data, buffer.length);
 #endif
 }
+#endif
 
 void fixFunctionNames() {
     for (String name: functions) {

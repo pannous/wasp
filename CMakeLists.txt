@@ -110,7 +110,9 @@ if (NOT WASM)
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         # ⚠️ NO engine has (c-api) support for wit / component model as of 2025-03 !!! ⚠️
         # https://github.com/bytecodealliance/wasmtime/issues/6987
-        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        if(NOT DEFINED WASMEDGE)
+            SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        endif()
         #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
         #        SET(SPIN 1) WebAssembly Gateway Interface (WAGI) OK: Write to STDOUT, ENV[QUERY_STRING] for input, uploads through STDIN
         #        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
@@ -850,8 +852,13 @@ elseif (WASM3)
     #    add_custom_target(BuildWasm3 ALL DEPENDS angle) #.exe
     #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
 elseif (WASMX)
+    ADD_DEFINITIONS(-DWASMX)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_console.cpp)
     add_executable(wasp ${SOURCE_FILES})
+    if (CURL)
+        target_link_libraries(wasp PRIVATE ${CURL_LIBRARIES})
+        target_link_libraries(wasp PRIVATE -lcurl)
+    endif ()
 elseif (V8)
     MESSAGE("USING V8")
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
@@ -871,8 +878,8 @@ else () # NORMAL:
     #    add_custom_target(BuildWasp ALL DEPENDS angle)
     target_include_directories(${PROJECT_NAME} PUBLIC ${SOURCE}/own_merge)
     if (CURL)
-        target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
-        target_link_libraries(${PROJECT_NAME} -lcurl)
+        target_link_libraries(${PROJECT_NAME} PRIVATE ${CURL_LIBRARIES})
+        target_link_libraries(${PROJECT_NAME} PRIVATE -lcurl)
     endif ()
 endif ()
 
@@ -906,7 +913,7 @@ if (CONSOLE AND NOT WEBAPP)
 endif ()
 
 if (SDL)
-    target_link_libraries(wasp SDL2::SDL2)
+    target_link_libraries(wasp PRIVATE SDL2::SDL2)
 endif ()
 
 #set(CMAKE_SUPPRESS_REGENERATION)

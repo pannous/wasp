@@ -1570,7 +1570,7 @@ extern "C" Node *getField(Node *n, smart_pointer_64 field) {
 extern "C"
 Node cast(const Node &from, Type to_type) {
     if (from.kind == to_type.kind)return from;
-    if (from.kind == reals and to_type.kind == longs)return Node((int64_t) from.value.real); // boring, done by wasm?
+    if (from.kind == reals and to_type.kind == longs)return Node((int64) from.value.real); // boring, done by wasm?
     if (from.kind == longs and to_type.kind == reals)return Node((double) from.value.longy);
     if (from.kind == longs and to_type.kind == bools)return Node((bool) from.value.longy);
     // REAL CASTS "2" to '2' to 2
@@ -1595,7 +1595,7 @@ Node cast(const Node &from, Type to_type) {
         if (c == '0' or c == 'f' or c == 'F' or c == 'n' or c == 'N' or c == u'ø')return Node(false);
         return Node(atoi1(c) != 0);
     }
-    if (from.kind == codepoint1 and to_type.kind == longs)return Node((int64_t) from.value.longy);
+    if (from.kind == codepoint1 and to_type.kind == longs)return Node((int64) from.value.longy);
     if (from.kind == codepoint1 and to_type.kind == strings)return Node(String((codepoint) from.value.longy), false);
     todo("cast "s + from.serialize() + " to " + typeName(to_type));
     return ERROR;

@@ -934,29 +934,29 @@ source/wasm_reader.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_reader.cpp.s
 .PHONY : source/wasm_reader.cpp.s
 
-source/wasm_runner_edge.o: source/wasm_runner_edge.cpp.o
-.PHONY : source/wasm_runner_edge.o
+source/wasm_runner_console.o: source/wasm_runner_console.cpp.o
+.PHONY : source/wasm_runner_console.o
 
 # target to build an object file
-source/wasm_runner_edge.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_runner_edge.cpp.o
-.PHONY : source/wasm_runner_edge.cpp.o
+source/wasm_runner_console.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_runner_console.cpp.o
+.PHONY : source/wasm_runner_console.cpp.o
 
-source/wasm_runner_edge.i: source/wasm_runner_edge.cpp.i
-.PHONY : source/wasm_runner_edge.i
+source/wasm_runner_console.i: source/wasm_runner_console.cpp.i
+.PHONY : source/wasm_runner_console.i
 
 # target to preprocess a source file
-source/wasm_runner_edge.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_runner_edge.cpp.i
-.PHONY : source/wasm_runner_edge.cpp.i
+source/wasm_runner_console.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_runner_console.cpp.i
+.PHONY : source/wasm_runner_console.cpp.i
 
-source/wasm_runner_edge.s: source/wasm_runner_edge.cpp.s
-.PHONY : source/wasm_runner_edge.s
+source/wasm_runner_console.s: source/wasm_runner_console.cpp.s
+.PHONY : source/wasm_runner_console.s
 
 # target to generate assembly for a file
-source/wasm_runner_edge.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_runner_edge.cpp.s
-.PHONY : source/wasm_runner_edge.cpp.s
+source/wasm_runner_console.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/wasp.dir/build.make CMakeFiles/wasp.dir/source/wasm_runner_console.cpp.s
+.PHONY : source/wasm_runner_console.cpp.s
 
 # Help Target
 help:
@@ -1067,9 +1067,9 @@ help:
 	@echo "... source/wasm_reader.o"
 	@echo "... source/wasm_reader.i"
 	@echo "... source/wasm_reader.s"
-	@echo "... source/wasm_runner_edge.o"
-	@echo "... source/wasm_runner_edge.i"
-	@echo "... source/wasm_runner_edge.s"
+	@echo "... source/wasm_runner_console.o"
+	@echo "... source/wasm_runner_console.i"
+	@echo "... source/wasm_runner_console.s"
 .PHONY : help
 
 
