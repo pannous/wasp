@@ -40,7 +40,7 @@
 //}
 
 //new String();
-//auto ws = {' ', '\t', '\r', '\n'};
+//auto &ws = {' ', '\t', '\r', '\n'};
 //NIL=0;
 //Node NIL;
 //const Node NIL = Node(nil_name).setType(nils).setValue(0);// non-existent. NOT a value, but a keyword!
@@ -401,8 +401,8 @@ bool Node::operator==(Node &other) {
     //	if (kind.type == int_array and other.kind.type == int_array)
     //		return value.real == other.value.longy;
 
-    //	auto a1 = isNil();
-    //	auto a2 = other.isNil();
+    //	auto &a1 = isNil();
+    //	auto &a2 = other.isNil();
 
     if (name == NIL.name.data or name == False.name.data or name == "")
         if (other.name == NIL.name.data or other.name == False.name.data or other.name == "") {
@@ -842,7 +842,7 @@ chars Node::serializeValue(bool deep) const {
                 if (type->kind != flags)
                     error("flags type ≠ flags?");
                 String flag_list;
-                for (auto flag: *type)
+                for (auto &flag: *type)
                     if (val.longy && flag.value.longy)
                         flag_list = flag.name + " | ";
                 return flag_list;

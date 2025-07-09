@@ -1,7 +1,7 @@
 #pragma once
 
 #define let auto
-//#define var auto // conflicts with const Var &var …
+//#define var auto &// conflicts with const Var &var …
 
 #define allow_untyped_nodes true  // IMPORTANT!  {a b c}#2"=="b" VALID or NOT ?!?
 //#include "asserts.h" // 30.11. XXX

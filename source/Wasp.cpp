@@ -173,7 +173,7 @@ void load_aliases() {
     hash_to_normed_alias.setDefault(new String());
     data_mode = true;
     auto list = parseFile("lib/aliases.wasp");
-    for (auto key: list) {
+    for (auto &key: list) {
         auto normed = key.name;
         aliases[normed] = key.toList();
         for (auto alias: key) {

@@ -324,7 +324,7 @@ public:
     }
 
     void remove(S &item) {
-        auto pos = position(item);
+        auto &pos = position(item);
         if (pos < 0)return;
         memmove(items + pos, items + pos + 1, size_ - pos);
         size_--;
@@ -349,17 +349,17 @@ public:
     }
 
     void addAll(S *more[]) {
-        for (auto s: more)
+        for (auto &s: more)
             add(s);
     }
 
     void addAll(S more[]) {
-        for (auto s: more)
+        for (auto &s: more)
             add(s);
     }
 
     void each(void (*lambda)(S)) {
-        for (auto s: *this) {
+        for (auto &s: *this) {
             lambda(s);
         }
     }
@@ -369,7 +369,7 @@ public:
     template<class T>
     List<T> map(T (*lambda)(S)) {
         List<T> neu;
-        for (auto s: *this) {
+        for (auto &s: *this) {
             neu.add(lambda(s));
         }
         return neu;
@@ -390,7 +390,7 @@ public:
 
     String join(String string) {
         String s;
-        for (auto i: *this) {
+        for (auto &i: *this) {
             if (not i)continue;
             s += i;
             s += string;
