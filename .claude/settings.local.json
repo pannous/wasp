@@ -11,7 +11,10 @@
       "Bash(.claude/hooks/stop.sh:*)",
       "Bash(claude --version)",
       "Bash(claude config get auto_update)",
-      "Bash(export EDITOR=subl)"
+      "Bash(export EDITOR=subl)",
+      "Bash(mkdir:*)",
+      "Bash(cmake:*)",
+      "Bash(make:*)"
     ],
     "deny": []
   }
