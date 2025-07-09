@@ -50,7 +50,7 @@ void test_fibonacci() {
 // Main test runner that can run all tests or individual tests
 int main(int argc, char **argv) {
     print("Running new isolated tests...");
-    
+    // working dir :  $CMakeCurrentLocalGenerationDir$ ?
     try {
         if (argc > 1) {
             // Run specific test

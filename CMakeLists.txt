@@ -476,14 +476,14 @@ if (SANITIZE) #  OR TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("ASAN sanitize=address …")
-#    ASAN_OPTIONS=detect_leaks=0 ./build/wasp test
-#    ASAN_OPTIONS=detect_stack_use_after_return=1 ./build/wasp
+    #    ASAN_OPTIONS=detect_leaks=0 ./build/wasp test
+    #    ASAN_OPTIONS=detect_stack_use_after_return=1 ./build/wasp
     if (GCC)
         ADD_COMPILE_FLAG("-static-libasan")
     elseif (NOT APPLE) # c++: error: static AddressSanitizer runtime is not supported on darwin
         ADD_COMPILE_FLAG("-static-libsan")
     endif ()
-#     LD_PRELOAD=$(gcc -print-file-name=libasan.so)  valgrind --track-origins=yes ./build/wasp test # ⚠️ NOPE :(
+    #     LD_PRELOAD=$(gcc -print-file-name=libasan.so)  valgrind --track-origins=yes ./build/wasp test # ⚠️ NOPE :(
     # strace -f -e mmap,munmap ./build2/wasp test
 
     if (VERBOSE)
@@ -661,6 +661,12 @@ if (WASM) # OR WASI)
     #    add_library(wasp SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
     if (RUNTIME_ONLY) # not tests, compiler, ... 100kb as of 2024-04
         add_executable(wasp-runtime ${SOURCE_FILES}) # same as add_library, with or without --export-all
+        # Add these commands after your main target definitions
+        add_custom_command(TARGET wasp-runtime POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/cmake-build-test/"
+                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/source/"
+                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/docs/assets/"
+        )
     elseif (WASP_FULL) # including merger
         add_executable(wasp-full ${SOURCE_FILES})
     elseif (MY_WASM) # hosted
@@ -669,23 +675,17 @@ if (WASM) # OR WASI)
         ADD_COMPILE_FLAG("-g")
         #        ADD_COMPILE_FLAG("-g -gsource-map") # emcc only :( // --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map")
         add_executable(wasp-hosted ${SOURCE_FILES}) # run_wasm() put() panic() ...
-        add_custom_command(
-                TARGET wasp-hosted POST_BUILD
+        add_custom_command(TARGET wasp-hosted POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-hosted.wasm" "${CMAKE_SOURCE_DIR}/docs/assets/"
+
                 COMMAND ${CMAKE_COMMAND} -E echo "Generating source map for wasp-hosted.wasm"
                 COMMAND ${CMAKE_COMMAND} -E echo "Extracting debug symbols"
-                #                COMMAND llvm-dwarfdump -debug-info ${CMAKE_BINARY_DIR}/wasp-hosted | wasm-sourcemap ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
-                #                COMMAND llvm-dwarfdump -debug-info ${CMAKE_BINARY_DIR}/wasp-hosted > ${CMAKE_BINARY_DIR}/wasp-hosted.dwarf
-                #                COMMAND emcc --source-map --output ${CMAKE_BINARY_DIR}/wasp-hosted ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
-                #                COMMAND wasm2wat --generate-names --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map -o ${CMAKE_BINARY_DIR}/wasp-hosted.wat ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
 
-                # 2025-06 broken dwarf_to_json.js
+                # 2025-06 broken dwarf_to_json.js 2025-07 works again! needs correct debug info in wasm!
+                # .debug_abbrev .debug_info .debug_ranges .debug_str .debug_line .debug_loc via -g?
                 COMMAND python3 /Users/me/dev/script/wasm/wasm-sourcemap.py ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
                 COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../source/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
-
-                #                COMMAND wasm-opt ${CMAKE_BINARY_DIR}/wasp-hosted -g -o ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
-                #                COMMAND wasm2js --source-map=${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map ${CMAKE_BINARY_DIR}/wasp-hosted.debug.wasm
-                #                COMMAND llvm-dsymutil ${CMAKE_BINARY_DIR}/wasp-hosted -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
-                #                COMMAND /opt/wasm/wasi-sdk/bin/wasm-ld --strip-debug=false --export-dynamic -o wasp-hosted source.o
+                # see commit 1119c50803856ce2049c566ff065b01e6238a775 or before for other options (not working)
                 COMMAND ${CMAKE_COMMAND} -E echo "Source map generated: ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map"
         )
         #        add_executable(wasp ${SOURCE_FILES})
@@ -710,6 +710,51 @@ elseif (WASI)
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
     add_executable(wasp ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
+elseif (CTESTS) # Enable CTest #if(NOT NO_TESTS AND NOT WASM)
+    enable_testing()
+
+    #    add_test(NAME test_current COMMAND wasp test)
+
+    ADD_DEFINITIONS(-DCTESTS)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/test_new.cpp)
+    set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
+
+    # Build test executable
+    add_executable(wasp_tests ${SOURCE_FILES})
+
+    if (WASMEDGE)
+        target_include_directories(wasp_tests PUBLIC /opt/wasm/WasmEdge/include/api/)
+        target_link_libraries(wasp_tests /usr/local/lib/libwasmedge.dylib) # via brew
+    else ()
+        message("WASM tests need WASMEDGE or WASMTIME")
+    endif ()
+
+    # Link same libraries as main wasp executable
+    if (CURL)
+        target_link_libraries(wasp_tests ${CURL_LIBRARIES})
+        target_link_libraries(wasp_tests -lcurl)
+    endif ()
+
+    if (CONSOLE)
+        target_link_libraries(wasp_tests readline)
+    endif ()
+
+    # Copy includes and definitions from main target
+    target_include_directories(wasp_tests PUBLIC ${SOURCE}/own_merge)
+
+    # Add individual tests
+    add_test(NAME test_arithmetic COMMAND wasp_tests arithmetic)
+    add_test(NAME test_strings COMMAND wasp_tests strings)
+    add_test(NAME test_functions COMMAND wasp_tests functions)
+    add_test(NAME test_variables COMMAND wasp_tests variables)
+    add_test(NAME test_fibonacci COMMAND wasp_tests fibonacci)
+
+    # Add test to run all at once
+    add_test(NAME test_all COMMAND wasp_tests)
+
+    # Set test properties
+    set_tests_properties(test_arithmetic test_strings test_functions test_variables test_fibonacci test_all
+            PROPERTIES TIMEOUT 30)
 elseif (MICRO) # wasm-micro-vm:
     MESSAGE("USING WASM MICRO VM")
     if (WASI)
@@ -795,7 +840,7 @@ elseif (WASMEDGE)
     MESSAGE("USING WASMEDGE")
     MESSAGE("${SOURCE}")
     ADD_DEFINITIONS(-DWASMEDGE)
-#    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_edge.cpp )
+    #    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_edge.cpp )
     set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
     #    FetchContent_Declare(wasmedge GIT_REPOSITORY https://github.com/WasmEdge/WasmEdge.git)
@@ -803,16 +848,16 @@ elseif (WASMEDGE)
     #    VERSION=0.14.1 curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh  | sudo bash -s -- -p Frameworks -v $VERSION
     if (LINUX)
         target_include_directories(wasp PRIVATE ~/.wasmedge/include/) # wasmedge-dev
-#        target_include_directories(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/include) # wasmedge-dev
-#        target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/lib/libwasmedge.so)
+        #        target_include_directories(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/include) # wasmedge-dev
+        #        target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/lib/libwasmedge.so)
         target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/lib/libwasmedge.so)
     else ()
-#        target_include_directories(wasp PRIVATE /usr/local/include)
+        #        target_include_directories(wasp PRIVATE /usr/local/include)
+        #        target_link_libraries(wasp PRIVATE /opt/wasm/WasmEdge/lib/api/libwasmedge.dylib)
+        #        link_directories(Frameworks/WasmEdge/lib/)
+        #        link_directories(/usr/local/lib/)
+        #        target_link_libraries(wasp PRIVATE wasmedge) # MAC
         target_include_directories(wasp PUBLIC /opt/wasm/WasmEdge/include/api/)
-#        target_link_libraries(wasp PRIVATE /opt/wasm/WasmEdge/lib/api/libwasmedge.dylib)
-#        link_directories(Frameworks/WasmEdge/lib/)
-#        link_directories(/usr/local/lib/)
-#        target_link_libraries(wasp PRIVATE wasmedge) # MAC
         target_link_libraries(wasp PRIVATE /usr/local/lib/libwasmedge.dylib) # via brew
     endif ()
     target_link_libraries(wasp PRIVATE curl)
@@ -897,6 +942,11 @@ else () # NORMAL:
         target_link_libraries(${PROJECT_NAME} ${CURL_LIBRARIES})
         target_link_libraries(${PROJECT_NAME} -lcurl)
     endif ()
+    if (NOT NO_TESTS AND NOT WASM)
+        message("Enable CTest")
+        enable_testing()
+        add_test(NAME test_current COMMAND wasp test)
+    endif ()
 endif ()
 
 if (NOT WASM)
@@ -912,7 +962,7 @@ if (NOT WASM)
 endif ()
 
 # todo CONSOLE checke above!?
-if (CONSOLE AND NOT WEBAPP)
+if (CONSOLE AND NOT WEBAPP AND NOT CTESTS)
     if (LINUX)
         message("LINUX Readline")
         if (READLINE_INCLUDE_DIR AND READLINE_LIBRARY AND NCURSES_LIBRARY)
@@ -959,43 +1009,9 @@ endif ()
 set(VERSION_SCRIPT ${CMAKE_SOURCE_DIR}/source/increase-wasp-version.py)
 
 # Custom target to always run the python script
-if(NOT LINUX)
-add_custom_target(run_version_script ALL
-        COMMAND ${PYTHON_EXECUTABLE} ${VERSION_SCRIPT}
-        COMMENT "Running Version increment script")
-endif()
+if (NOT LINUX)
+    add_custom_target(run_version_script ALL
+            COMMAND ${PYTHON_EXECUTABLE} ${VERSION_SCRIPT}
+            COMMENT "Running Version increment script")
+endif ()
 
-# Enable CTest
-if(NOT NO_TESTS AND NOT WASM)
-    enable_testing()
-
-    # Build test executable
-    add_executable(wasp_tests ${SOURCE_FILES})
-    
-    # Link same libraries as main wasp executable
-    if(CURL)
-        target_link_libraries(wasp_tests ${CURL_LIBRARIES})
-        target_link_libraries(wasp_tests -lcurl)
-    endif()
-    
-    if(CONSOLE)
-        target_link_libraries(wasp_tests readline)
-    endif()
-    
-    # Copy includes and definitions from main target
-    target_include_directories(wasp_tests PUBLIC ${SOURCE}/own_merge)
-    
-    # Add individual tests
-    add_test(NAME test_arithmetic COMMAND wasp_tests arithmetic)
-    add_test(NAME test_strings COMMAND wasp_tests strings)
-    add_test(NAME test_functions COMMAND wasp_tests functions)
-    add_test(NAME test_variables COMMAND wasp_tests variables)
-    add_test(NAME test_fibonacci COMMAND wasp_tests fibonacci)
-    
-    # Add test to run all at once
-    add_test(NAME test_all COMMAND wasp_tests)
-    
-    # Set test properties
-    set_tests_properties(test_arithmetic test_strings test_functions test_variables test_fibonacci test_all
-        PROPERTIES TIMEOUT 30)
-endif()
