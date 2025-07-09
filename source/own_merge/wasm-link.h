@@ -51,12 +51,12 @@ namespace wabt {
             String name;
             Index type_index;
             bool active; /* Is this import present in the linked binary */
-            LinkerInputBinary *binary;// original, may be relinked to
-            LinkerInputBinary *foreign_binary;
+            LinkerInputBinary *binary=nullptr;// original, may be relinked to
+            LinkerInputBinary *foreign_binary=nullptr;
             Index relocated_function_index;
             Index index;// implicit in list, but needed to link duplicate imports
             Index foreign_index;// after link to foreign export
-            ExportInfo *linked_function;
+            ExportInfo *linked_function=nullptr;
 
             FunctionImport() = default; // Default constructor
         };
@@ -162,7 +162,7 @@ namespace wabt {
             List<Section *> sections;
             List<Export> exports{1000};
             List<Func> functions;// only those with code, not imports:
-            List<FunctionImport> function_imports;
+            List<FunctionImport> function_imports{100};
             Index active_function_imports;
             List<GlobalImport> global_imports;
             Index active_global_imports;

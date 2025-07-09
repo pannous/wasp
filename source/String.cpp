@@ -757,6 +757,10 @@ void print(Type type) {
 }
 
 void print(Arg &arg) {
+    if(arg.name.empty()) {
+        print(arg.type);
+        return;
+    }
     print(arg.name);
     printf(":");
     print(arg.type);

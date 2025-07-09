@@ -1766,7 +1766,8 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         print("loading funclet "s + name);
         Module &funclet_module = read_wasm(findFile(name, "lib"));
         check(funclet_module.functions.has(name));
-        auto funclet = funclet_module.functions[name];
+        module_cache.insert_or_assign(funclet_module.name.hash(), &funclet_module);
+        Function& funclet = funclet_module.functions[name];
         print("GOT funclet "s + name);
         print(funclet.signature);
         addLibrary(&funclet_module);
