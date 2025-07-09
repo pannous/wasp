@@ -1919,7 +1919,7 @@ void usage() {
 //extern "C"
 // Code &compile(String code, bool clean = true); // exposed to wasp.js
 
-
+#if not CTESTS
 int main(int argc, char **argv) {
     if (getenv("SERVER_SOFTWARE"))
         printf("Content-Type: text/plain\n\n"); // todo html
@@ -2043,8 +2043,7 @@ int main(int argc, char **argv) {
     //	usleep(1000000000);
     return 1; //EXIT_FAILURE;
 }
-
-//#endif
+#endif
 
 #ifndef WASI
 //#ifndef RUNTIME_ONLY
