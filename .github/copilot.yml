@@ -4,5 +4,5 @@ copilot:
     - name: no-comments
       description: "Avoid generating comments in code completions"
       trigger: always
-      prompt: |
-        Do not generate any comments. Provide code only.
+      prompt: | # multi-line string via indentation
+        Do not generate any comments. Provide code only. Never touch code not part of the request. Never remove comments.

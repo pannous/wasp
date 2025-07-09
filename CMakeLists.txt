@@ -964,3 +964,90 @@ add_custom_target(run_version_script ALL
         COMMAND ${PYTHON_EXECUTABLE} ${VERSION_SCRIPT}
         COMMENT "Running Version increment script")
 endif()
+
+# Enable CTest
+if(NOT NO_TESTS AND NOT WASM)
+    enable_testing()
+    
+    # Create a separate test executable
+    set(TEST_SOURCE_FILES 
+        ${SOURCE}/String.cpp 
+        ${SOURCE}/Node.cpp 
+        ${SOURCE}/Map.cpp 
+        ${SOURCE}/Util.cpp 
+        ${SOURCE}/List.cpp
+        ${SOURCE}/Wasp.cpp 
+        ${SOURCE}/wasm_helpers.cpp 
+        ${SOURCE}/Code.cpp 
+        ${SOURCE}/NodeTypes.cpp 
+        ${SOURCE}/smart_types.cpp
+        ${SOURCE}/wasm_helpers_host.cpp
+        ${SOURCE}/test_new.cpp)
+    
+    if(NOT RUNTIME_ONLY)
+        set(TEST_SOURCE_FILES ${TEST_SOURCE_FILES} 
+            ${SOURCE}/Code.cpp
+            ${SOURCE}/Angle.cpp
+            ${SOURCE}/Interpret.cpp
+            ${SOURCE}/wasm_emitter.cpp
+            ${SOURCE}/DwarfEmitter.cpp
+            ${SOURCE}/WitReader.h
+            ${SOURCE}/wasm_reader.cpp)
+    endif()
+    
+    if(INCLUDE_MERGER)
+        set(TEST_SOURCE_FILES ${TEST_SOURCE_FILES} 
+            ${SOURCE}/wasm_linker.cpp
+            ${SOURCE}/own_merge/common.cc
+            ${SOURCE}/own_merge/binary.cc
+            ${SOURCE}/own_merge/binary-writer.cc
+            ${SOURCE}/own_merge/binary-reader-linker.cc
+            ${SOURCE}/own_merge/binary-reader.cc
+            ${SOURCE}/own_merge/opcode-code-table.c
+            ${SOURCE}/own_merge/binding-hash.cc
+            ${SOURCE}/own_merge/feature.cc
+            ${SOURCE}/own_merge/leb128.cc
+            ${SOURCE}/own_merge/stream.cc
+            ${SOURCE}/own_merge/opcode.cc
+            ${SOURCE}/own_merge/utf8.cc
+            ${SOURCE}/own_merge/ir.cc)
+    endif()
+    
+    if(CURL)
+        set(TEST_SOURCE_FILES ${TEST_SOURCE_FILES} ${SOURCE}/Fetch.cpp)
+    endif()
+    
+    if(CONSOLE)
+        set(TEST_SOURCE_FILES ${TEST_SOURCE_FILES} ${SOURCE}/console.cpp)
+    endif()
+    
+    # Build test executable
+    add_executable(wasp_tests ${TEST_SOURCE_FILES})
+    
+    # Link same libraries as main wasp executable
+    if(CURL)
+        target_link_libraries(wasp_tests ${CURL_LIBRARIES})
+        target_link_libraries(wasp_tests -lcurl)
+    endif()
+    
+    if(CONSOLE)
+        target_link_libraries(wasp_tests readline)
+    endif()
+    
+    # Copy includes and definitions from main target
+    target_include_directories(wasp_tests PUBLIC ${SOURCE}/own_merge)
+    
+    # Add individual tests
+    add_test(NAME test_arithmetic COMMAND wasp_tests arithmetic)
+    add_test(NAME test_strings COMMAND wasp_tests strings)
+    add_test(NAME test_functions COMMAND wasp_tests functions)
+    add_test(NAME test_variables COMMAND wasp_tests variables)
+    add_test(NAME test_fibonacci COMMAND wasp_tests fibonacci)
+    
+    # Add test to run all at once
+    add_test(NAME test_all COMMAND wasp_tests)
+    
+    # Set test properties
+    set_tests_properties(test_arithmetic test_strings test_functions test_variables test_fibonacci test_all
+        PROPERTIES TIMEOUT 30)
+endif()

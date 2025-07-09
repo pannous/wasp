@@ -50,11 +50,65 @@ if((condition)==0){printf("\n%s\n",#condition);error("assert FAILED");}else prin
 // todo merge with assert_isx
 bool assert_equals_x(String a, String b, chars context = "");
 
+bool assert_equals_x(Node &a, char *b, chars context = "");
+
+bool assert_equals_x(Node a, const char *b, chars context = "");
+
+bool assert_equals_x(Node a, int b, chars context = "");
+
+bool assert_equals_x(Node a, char b, chars context = "");
+
+bool assert_equals_x(Node a, wchar_t b, chars context = "");
+
+bool assert_equals_x(Node a, char16_t b, chars context = "");
+
+bool assert_equals_x(Node a, codepoint b, chars context = "");
+
+bool assert_equals_x(Node a, bool b, chars context = "");
+
+bool assert_equals_x(Node &a, wchar_t b, chars context = "");
+
+bool assert_equals_x(Node &a, double b, chars context = "");
+
+bool assert_equals_x(Node a, double b, chars context = "");
+
+bool assert_equals_x(Node a, int64 b, chars context = "");
+
+bool assert_equals_x(Node a, String b, chars context = "");
+
+bool assert_equals_x(Node a, Node b, chars context = "");
+
+bool assert_equals_x(Node *a, const Node *b, chars context = "");
+
+bool assert_equals_x(Node *a, Node *b, chars context = "");
+
 bool assert_equals_x(int64 a, int64 b, chars context = "");
+
+bool assert_equals_x(int a, int b, chars context = "");
+
+bool assert_equals_x(Kind a, Kind b, chars context = "");
 
 bool assert_equals_x(double a, double b, chars context = "");
 
-bool assert_equals_x(Node a, int b, chars context = "");
+bool assert_equals_x(float a, float b, chars context = "");
+
+bool assert_isx(chars wasp, Node expect);
+
+bool assert_isx(chars mark, chars expect);
+
+bool assert_isx(chars mark, int expect);
+
+bool assert_isx(chars mark, int64 expect);
+
+bool assert_isx(chars mark, double expect);
+
+bool assert_isx(chars mark, bool expect);
+
+String normSerialization(String input);
+
+void assertSerialize(const char *input);
+
+Node assert_parsesx(chars mark);
 
 static List<String> done;
 

@@ -21,12 +21,12 @@ bool assert_equals_x(String a, String b, chars context) {
     else printf("FAILED assert_equals!\n %s should be %s %s\n", a.data, b.data, context);
     return a == b;
 }
+//
+// bool assert_equals_x(String *a, String b, chars context) {
+//     return assert_equals_x(*a, b, context);
+// }
 
-bool assert_equals_x(String *a, String b, chars context = "") {
-    return assert_equals_x(*a, b, context);
-}
-
-bool assert_equals_x(Node &a, char *b, chars context = "") {
+bool assert_equals_x(Node &a, char *b, chars context ) {
     if (a.name != b)
         printf("FAILED assert_equals! %s should be %s %s\n", a.name.data ? a.name.data : "???", b, context);
     else printf(" OK %s==%s %s\n", a.name.data, b, context);
@@ -34,7 +34,7 @@ bool assert_equals_x(Node &a, char *b, chars context = "") {
 }
 
 
-bool assert_equals_x(Node a, const char *b, chars context = "") {
+bool assert_equals_x(Node a, const char *b, chars context) {
     if (a.name != b)printf("FAILED assert_equals! %s should be %s %s\n", a.name.data, b, context);
     else printf(" OK %s==%s %s\n", a.name.data, b, context);
     return a == b;
@@ -50,7 +50,7 @@ bool assert_equals_x(Node a, int b, chars context) {
     return a == b;
 }
 
-bool assert_equals_x(Node a, char b, chars context = "") {
+bool assert_equals_x(Node a, char b, chars context) {
     if (a != Node(b))
         print("\nFAILED assert_equals! %lld should be %c %s\n"s % a.value.longy % b % context);
     else
@@ -58,7 +58,7 @@ bool assert_equals_x(Node a, char b, chars context = "") {
     return a == b;
 }
 
-bool assert_equals_x(Node a, wchar_t b, chars context = "") {
+bool assert_equals_x(Node a, wchar_t b, chars context) {
     if (a != Node(b))
         print("\nFAILED assert_equals! %lld should be %c %s\n"s % a.value.longy % b % context);
     else
@@ -66,7 +66,7 @@ bool assert_equals_x(Node a, wchar_t b, chars context = "") {
     return a == b;
 }
 
-bool assert_equals_x(Node a, char16_t b, chars context = "") {
+bool assert_equals_x(Node a, char16_t b, chars context) {
     if (a != Node(b))
         print("\nFAILED assert_equals! %lld should be %c %s\n"s % a.value.longy % b % context);
     else
@@ -74,7 +74,7 @@ bool assert_equals_x(Node a, char16_t b, chars context = "") {
     return a == b;
 }
 
-bool assert_equals_x(Node a, codepoint b, chars context = "") {
+bool assert_equals_x(Node a, codepoint b, chars context) {
     if (a != Node(b))
         print("\nFAILED assert_equals! %lld should be %c %s\n"s % a.value.longy % b % context);
     else
@@ -83,7 +83,7 @@ bool assert_equals_x(Node a, codepoint b, chars context = "") {
 }
 
 // WTF why is char* unexplicitly cast to bool!?!
-bool assert_equals_x(Node a, bool b, chars context = "") {
+bool assert_equals_x(Node a, bool b, chars context) {
     if (a != Node(b))print("\nFAILED assert_equals! %lld should be %d %s\n"s % a.value.longy % b % context);
     else printf(" OK %d==%d\n", (int) a.value.longy, (int) b);
     return a == b;
@@ -102,7 +102,7 @@ bool assert_equals_x(Node &a, double b, chars context) {
     return a == b;
 }
 
-bool assert_equals_x(Node a, double b, chars context = "") {
+bool assert_equals_x(Node a, double b, chars context) {
     if (a != Node(b))
         print("\nFAILED assert_equals! %f should be %f %s\n"s % a.value.real % b % context);
     else if (a.kind == longs)
@@ -112,14 +112,14 @@ bool assert_equals_x(Node a, double b, chars context = "") {
     return a == b;
 }
 
-//bool assert_equals_x(Node &a, int64 b, chars context = "") {
+//bool assert_equals_x(Node &a, int64 b, chars context) {
 //	if (!(a == b))prinft("FAILED assert_equals! %s should be %d %s\n"s, a.name, b, context);
 //	else printf(" OK %ld==%ld %s\n", a.value.longy, b, context);
 //	return a == b;
 //}
 
 
-bool assert_equals_x(Node a, int64 b, chars context = "") {
+bool assert_equals_x(Node a, int64 b, chars context) {
     if (!(a == b))
         print("\nFAILED assert_equals! %s %lld should be %ld %s\n"s % a.name.data % a.value.longy % b % context);
     else print(" OK %lld==%ld %s\n"s % a.value.longy % b % context);
@@ -127,7 +127,7 @@ bool assert_equals_x(Node a, int64 b, chars context = "") {
 }
 
 
-bool assert_equals_x(Node a, String b, chars context = "") {
+bool assert_equals_x(Node a, String b, chars context) {
     String &name = a.name;
     bool ok = name == b or a == b; //  b == name or  !(name != b and b != a.value.string;)
     if (ok)
@@ -138,7 +138,7 @@ bool assert_equals_x(Node a, String b, chars context = "") {
 }
 
 
-bool assert_equals_x(Node a, Node b, chars context = "") {
+bool assert_equals_x(Node a, Node b, chars context) {
     //	check(NIL.value.longy == 0);// WHEN DOES IT BREAK??
     char *as = a.serialize().data;
     char *bs = b.serialize().data;
@@ -151,7 +151,7 @@ bool assert_equals_x(Node a, Node b, chars context = "") {
     return a == b;
 }
 
-bool assert_equals_x(Node *a, const Node *b, chars context = "") {
+bool assert_equals_x(Node *a, const Node *b, chars context) {
     if (!a) {
         if (b)printf("FAILED assert_equals! NULL should be %s %s\n", b->serialize().data, context);
         return !b;
@@ -159,13 +159,13 @@ bool assert_equals_x(Node *a, const Node *b, chars context = "") {
     return assert_equals_x(*a, *b, context);
 }
 
-bool assert_equals_x(Node *a, Node *b, chars context = "") {
+bool assert_equals_x(Node *a, Node *b, chars context) {
     if (!a)return !b;
     if (!b)return false;
     return assert_equals_x(*a, *b, context);
 }
 
-//bool assert_equals(chars a, chars b, chars context = "") {
+//bool assert_equals(chars a, chars b, chars context) {
 //	if (a != b)// err
 //		printf("F\nAILED assert_equals! %s should be %s %s\n"s % a % b % context);
 //	else printf(" OK %s==%s %s\n"s % a % b % context);
@@ -179,13 +179,13 @@ bool assert_equals_x(int64 a, int64 b, chars context) {
     return a == b;
 }
 
-bool assert_equals_x(int a, int b, chars context = "") {
+bool assert_equals_x(int a, int b, chars context) {
     if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
     else print(" OK %d==%d %s\n"s % a % b % context);
     return a == b;
 }
 
-bool assert_equals_x(Kind a, Kind b, chars context = "") {
+bool assert_equals_x(Kind a, Kind b, chars context) {
     if (a != b)print("\nFAILED assert_equals! %d should be %d %s\n"s % a % b % context);
     else print(" OK %d==%d %s\n"s % a % b % context);
     return a == b;
@@ -199,7 +199,7 @@ bool assert_equals_x(double a, double b, chars context) {
     return ok;
 }
 
-bool assert_equals_x(float a, float b, chars context = "") {
+bool assert_equals_x(float a, float b, chars context) {
     auto ok = similar(a, b);
     if (!ok)print("\nFAILED assert_equals!\n %f should be %f %s\n"s % a % b % context);
     else print(" OK %f==%f %s\n"s % a % b % context);
