@@ -1341,7 +1341,7 @@ private:
                 // overloadable grouping operators, but not builtin (){}[]
                 let grouper = ch;
                 proceed();
-                auto body = valueNode(closingBracket(grouper));
+                auto &body = valueNode(closingBracket(grouper));
                 Node group(grouper);
                 group.setKind(operators, false); // name==« (without »)
                 group.add(body);

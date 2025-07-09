@@ -126,7 +126,7 @@ class WitReader {
         Node &resource = node[1];
         trace("\nwit resource:");
         trace(resource);
-        for (auto field: resource) {
+        for (auto &field: resource) {
             Node &member = analyzeWit(field);
             member.kind = fields;
         }
@@ -158,7 +158,7 @@ class WitReader {
         Module &mod = findOrCreateModule(interface.name);
         Function modulHolder;
         modulHolder.module = &mod;
-        for (auto field: interface) {
+        for (auto &field: interface) {
             //            Node &member =
             analyze(field, modulHolder);
 
@@ -280,7 +280,7 @@ class WitReader {
         modulHolder.module = &mod;
         world.value.module = &mod;
         world.kind = modul;
-        for (auto field: world) {
+        for (auto &field: world) {
             //            Node &member = analyze(field, modulHolder);
             //            Node &member =
             analyzeWit(field);

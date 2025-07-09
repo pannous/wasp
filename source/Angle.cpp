@@ -1015,7 +1015,7 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 
 Node extractModifiers(Node &expression) {
     Node modifieres;
-    for (auto child: expression) {
+    for (auto& child: expression) {
         if (function_modifiers.contains(child.name)) {
             modifieres.add(child);
             expression.remove(child);
@@ -1034,7 +1034,7 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
         error("function keywords must be first");
     expression.children++;// get rid of first 'function' keyword
     expression.length--;// get rid of first 'function' keyword
-    auto fun = expression.first();
+    auto &fun = expression.first();
     Node *return_type = 0;
     Node arguments = groupTypes(fun.childs(), context); // children f(x,y)
     Node body;
@@ -1061,8 +1061,8 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
 Node &groupFunctionDeclaration(Node &expression, Function &context) {
     Node modifieres = extractModifiers(expression);
     auto op = expression.containsAny(function_operators);
-    auto left = expression.to(op);
-    auto rest = expression.from(op);
+    auto &left = expression.to(op);
+    auto &rest = expression.from(op);
     auto fun = left.first();
     return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
 }
@@ -1075,12 +1075,12 @@ Node &groupDeclarations(Node &expression, Function &context) {
         return groupFunctionDeclaration(expression, context);
     }
 
-    auto first = expression.first();
+    auto &first = expression.first();
     //	if (contains(functor_list, first.name))
     //		return expression;
     if (expression.kind == declaration) {
         if (isType(first)) {
-            auto fun = expression[1];
+            auto &fun = expression[1];
             String name = fun.name;
             Node *typ = first.clone();
             Node modifieres = NIL;
@@ -1088,7 +1088,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
             Node &body = expression.last();
             return groupFunctionDeclaration(name, typ, NIL, arguments, body, context);
         } else if (isType(first.first())) {
-            auto fun = first[1];
+            auto &fun = first[1];
             String name = fun.name;
             Node &typ = first.first();
             Node modifieres = NIL;
@@ -1400,7 +1400,7 @@ Node &groupKebabMinus(Node &node, Function &context) {
     if (context.locals.has(re) or globals.has(re)) {
         Node op = Node("-").setKind(operators, true);
         auto right = name.substring(name.indexOf('-') + 1);
-        auto rhs = analyze(*new Node(right, true), context); // todo expression!
+        auto &rhs = analyze(*new Node(right, true), context); // todo expression!
         op.add(lhs);
         op.add(rhs);
         return *op.clone();
@@ -1540,11 +1540,11 @@ int findBestVariant(const Function &function, const Node &node, Function *contex
     int best = -1;
     for (Function *variant: function.variants) {
         best++;
-        auto signature = variant->signature;
+        auto &signature = variant->signature;
         if (signature.size() == node.length) {
             bool ok = true;
             for (int i = 0; i < signature.size(); ++i) {
-                auto sig = signature.parameters[i];
+                auto &sig = signature.parameters[i];
                 Type aType = sig.type;
                 Type pType = preEvaluateType(*node[i].clone(), context);
                 if (not compatibleTypes(aType, pType)) {
@@ -1580,7 +1580,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         // todo: MOVE!
         if (name == "if") // kinda functor
         {
-            auto args = expressiona.from("if");
+            auto &args = expressiona.from("if");
             Node &iff = groupIf(node.length > 0 ? node.add(args) : args, context);
             int j = expressiona.lastIndex(iff.last().next) - 1;
             if (i == 0 and j == expressiona.length - 1)return iff;
@@ -1631,8 +1631,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         function.name = name; // hack shut've Never Been Lost
         Signature &signature = function.signature;
         if (function.is_polymorphic) {
-            auto params0 = expressiona.from(i + 1);
-            auto params = analyze(params0, context);
+            auto &params0 = expressiona.from(i + 1);
+            auto &params = analyze(params0, context);
             int variantNr = findBestVariant(function, *wrap(params), &context);
             Function *variant = function.variants[variantNr];
             signature = variant->signature; // todo hack
@@ -1805,7 +1805,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 
 void addLibrary(Module *modul) {
     if (not modul)return;
-    for (auto lib: libraries)
+    for (auto &lib: libraries)
         if (lib->name == modul->name)return;
     libraries.add(modul); // link it later via import or use its code directly?
 }
@@ -1827,7 +1827,7 @@ Function *use_required_import(Function *function) {
         auto ali = findLibraryFunction(alias, false);
         if (ali)addLibraryFunctionAsImport(*ali);
     }
-    for (auto vari: function->variants) {
+    for (auto &vari: function->variants) {
         vari->is_used = true;
     }
     //    for(Function& dep:function.required)
@@ -2442,7 +2442,7 @@ Function getWaspFunction(String name) {
     // signature only, code must be loaded from wasm or imported and linked
     if ("floor"s == name)error1("use builtin floor!");
 
-    auto runtime = loadRuntime();
+    auto &runtime = loadRuntime();
     if (runtime.functions.has(name)) {
         print("runtime has function "s + name);
         return runtime.functions[name];

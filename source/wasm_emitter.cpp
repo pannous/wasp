@@ -493,7 +493,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
 
     emitPaddingAlignment(8);
     List<wasm_node_index> children;
-    for (auto child: node) {
+    for (auto &child: node) {
         wasm_node_index child_index = emitNodeBinary(child, context);
         children.add(child_index);
     }
@@ -504,7 +504,7 @@ wasm_node_index emitNodeBinary(Node &node, Function &context) {
         //        emitLongData(0x5741535044415441L, false);
         node_children_pointer = data_index_end;
         //        emitLongData(0xAA00aa00aa00, false);
-        for (auto child: children)
+        for (auto &child: children)
             emitIntData(child);
         //        emitLongData(0xFFEEDDCCBBAA9988L, false);
         //        emitLongData(0x5741535044415441L, false);
@@ -589,7 +589,7 @@ Code emitPrimitiveArray(Node &node, Function &context) {
 Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
     Code code;
     if (node.name == "html") {
-        for (auto &child: node)
+        for (auto &&child: node)
             code.add(emitHtml(child, function, parent)); // html is not parent
         return code;
     }
@@ -1201,7 +1201,7 @@ Code emitIndexRead(Node &op, Function &context, bool base_on_stack, bool offset_
     int base; // …
     if (array.kind == reference or array.kind == key) {
         String &ref = array.name;
-        auto local = context.locals[ref];
+        auto &local = context.locals[ref];
         if (not local.type.isArray())
             error("reference not declared as array type: "s + ref);
         last_type = valueType(local.type);
@@ -1503,7 +1503,7 @@ Code emitStringData(Node &node, Function &context) {
 Code emitGetGlobal(Node &node /* context : global ;) */) {
     Code code;
     String &name = node.first().name;
-    auto global = globals[name];
+    auto &global = globals[name];
     int i = globals.position(name);
     if (i < 0)
         error("cant find global with name "s + name);
@@ -1949,7 +1949,7 @@ Code emitOperator(Node &node, Function &context) {
         code.add(cast(last_type, return_type));
         code.add(return_block);
     } else if (name == "as") {
-        auto target = node[1]; //
+        auto &target = node[1]; //
         Type targetType = target.kind; // .type
         if (target.kind == clazz)
             targetType = mapType(target.name); // todo: map to wasm type
@@ -2240,7 +2240,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
                         " should be registered in analyze()!");
                 }
             }
-            auto local = context.locals.at(local_index);
+            auto &local = context.locals.at(local_index);
             if (node.isSetter()) {
                 //SET
                 if (node.kind == key)

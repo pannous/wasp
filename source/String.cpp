@@ -767,14 +767,14 @@ void print(Arg &arg) {
 }
 
 void print(Signature &signature) {
-    for (auto &&type: signature.parameters) {
+    for (auto &type: signature.parameters) {
         print(type);
 #if not WASM
         print(" ");
 #endif
     }
     printf(":");
-    for (auto &&type: signature.return_types) {
+    for (auto &type: signature.return_types) {
         print(type);
 #if not WASM
         printf(" ");
