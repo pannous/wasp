@@ -484,6 +484,7 @@ if (SANITIZE) #  OR TRACE
         ADD_COMPILE_FLAG("-static-libsan")
     endif ()
 #     LD_PRELOAD=$(gcc -print-file-name=libasan.so)  valgrind --track-origins=yes ./build/wasp test # ⚠️ NOPE :(
+    # strace -f -e mmap,munmap ./build2/wasp test
 
     if (VERBOSE)
         set(ASAN_OPTIONS verbosity=3)
