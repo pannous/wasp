@@ -3935,6 +3935,15 @@ void testWaspRuntimeModule() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
+void testClaude() {
+    print("🤖 testing Claude integration");
+    // Test basic Wasp syntax understanding
+    assert_emit("'Hello Claude!'", "Hello Claude!");
+    assert_emit("2 + 2", 4);
+    assert_emit("def greet(name) { 'Hello ' + name }; greet('Claude')", "Hello Claude");
+    print("✅ Claude integration test passed");
+}
+
 void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
@@ -3965,6 +3974,7 @@ void testCurrent() {
     // testFibonacci(); // much TODO!
     // testSinus();
 
+    testClaude();
     testWaspRuntimeModule();
 
     skip( // TODO!
