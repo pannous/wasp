@@ -124,3 +124,9 @@ lib/webview/
 trace.txt
 .fuse*
 lib/libwasmedge.so.0.1.0
+
+build2
+
+build
+
+perf.data
