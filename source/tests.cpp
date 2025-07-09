@@ -1658,10 +1658,10 @@ a:
 d
 e
 	)";
-    auto groups = parse(indented);
-    //	auto groups = parse("a:\n b\n c\n\nd\ne\n");
+    auto &groups = parse(indented);
+    //	auto &groups = parse("a:\n b\n c\n\nd\ne\n");
     check(groups.length == 3); // a(),d,e
-    auto parsed = groups.first();
+    auto &parsed = groups.first();
     check(parsed.length == 2);
     check(parsed[1] == "c");
     check(parsed.name == "a");
@@ -1691,12 +1691,12 @@ a:
 d
 e
 	)";
-    auto groups = parse(indented);
+    auto &groups = parse(indented);
     //	auto groups = parse("a:\n b\n c\nd\ne\n");
     print(groups.serialize());
     print(groups.length);
     check(groups.length == 3); // a(),d,e
-    auto parsed = groups.first();
+    auto &parsed = groups.first();
     check(parsed.name == "a");
     check(parsed.length == 2);
     print(parsed[1]);
@@ -1711,12 +1711,12 @@ a
 d
 e
 	)";
-    auto groups = parse(indented);
+    auto &groups = parse(indented);
     //	auto groups = parse("a:\n b\n c\nd\ne\n");
     print(groups.serialize());
     print(groups.length);
     check(groups.length == 3); // a(),d,e
-    auto parsed = groups.first();
+    auto &parsed = groups.first();
     check(parsed.name == "a");
     check(parsed.length == 2);
     print(parsed[1]);
@@ -3257,7 +3257,7 @@ void testGroupCascade() {
         "a4 b4 c4 ,d4 e4 f4; g4 h4 i4 ,j4 k4 l4}");
     result.print();
     assert_equals(result.kind, groups); // ( {} {} ) because 2 {}!
-    auto first = result.first();
+    auto &first = result.first();
     assert_equals(first.kind, objects); // { a b c … }
     assert_equals(first.first().kind, groups); // or expression if x is op
     assert_equals(result.length, 2) // {…} and {and}
