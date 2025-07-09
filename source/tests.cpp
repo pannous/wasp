@@ -48,8 +48,8 @@ void testReturnTypes() {
     assert_emit("`${1+1}`", "2")
     assert_emit("real x = $bla", 123.);
     skip(
-    assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4) // fails linking _ZdlPvm operator delete(void*, unsigned long)
-    assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
+        assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4) // fails linking _ZdlPvm operator delete(void*, unsigned long)
+        assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
     )
 }
 
@@ -109,8 +109,8 @@ void testExternString() {
     assert_emit("string x=$test", "hello");
     // exit(1);
     skip(
-    assert_emit("puts($test)", 21); // "hello"
-    assert_emit("puts(toString($hello))", 21);
+        assert_emit("puts($test)", 21); // "hello"
+        assert_emit("puts(toString($hello))", 21);
         assert_emit("$hello as string + 'world'", "helloworld");
         assert_emit("`$test world`", "hello world");
         assert_emit("var x=$hello as string", "hello"); // todo should work with analyze / guess type
@@ -3940,7 +3940,6 @@ void testCurrent() {
     // return;
     print("💡 starting current tests 💡");
 
-    assert_emit("n=3;2ⁿ", 8);
     // assert_emit("`hello ${1+1}`", "hello 2");
     // assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
     // assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4) // fails linking _ZdlPvm operator delete(void*, unsigned long)
@@ -3954,6 +3953,7 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
+    assert_emit("n=3;2ⁿ", 8);
     testFunctionDeclaration();
     testReturnTypes();
     testRecentRandomBugs();
@@ -3986,6 +3986,8 @@ void testCurrent() {
         testLengthOperator();
         testNamedDataSections();
         testHostDownload();
+        testHostIntegration();
+
     ) //
     // testListGrowth<const int&>();// pointer to a reference error
 
@@ -3994,7 +3996,6 @@ void testCurrent() {
     //    assert_emit("a = [1, 2, 3]; a[2]", 3);
     // testJS();
     // testHtmlWasp();
-    testHostIntegration();
     testSourceMap();
     //	testDwarf();
 
