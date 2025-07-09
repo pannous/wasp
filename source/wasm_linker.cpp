@@ -972,7 +972,7 @@ void Linker::RemoveRuntimeMainExport() {
 }
 
 void Linker::RemoveAllExports() {
-// except globals, wasp_main and _start for stupid wasmtime:
+    // except globals, wasp_main and _start for stupid wasmtime:
     //  (export "nil_name" (global 1))
     // 1: command export 'nil_name' is not a function
     for (auto &bin: inputs_) {
@@ -1042,9 +1042,9 @@ void Linker::ResolveSymbols() {
                 //                import.linked_function= hack;
                 binary->active_function_imports--;
             } else {
-                if (import.foreign_binary)
+                if (import.foreign_binary!=nullptr)
                     warn("import.foreign_binary"); // ??
-                    // error("import.foreign_binary");
+                // error("import.foreign_binary");
                 import.binary = binary; // todo earlier
                 import.index = import_index++; // only increase if active / not duplicate
                 import_map.add(import.name, &import);
@@ -1102,7 +1102,8 @@ void Linker::ResolveSymbols() {
                 }
             } else {
                 export_list.add(ExportInfo(&_export, binary));
-                warn("ignore export of kind %d %s"s % (short) _export.kind % GetKindName(_export.kind));
+                warn("ignore export");
+                // warn("ignore export of kind %d %s"s % (short) _export.kind % (chars) GetKindName(_export.kind));
             }
         }
         info("load binary functions to private_map");
@@ -1191,7 +1192,10 @@ void Linker::ResolveSymbols() {
                 Index func_index = func_map.FindIndex(name);
                 if (func_index == kInvalidIndex) {
                     if (not contains(wasi_function_list, name.data)) {
-                        warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
+                        if (name.data)
+                            warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
+                        else
+                            warn("unresolved import: <null>");
                         //                        warn("unresolved import: %s  ( setting inactive due to wasi ) "s % name);
                         // if(name=="_ZdlPvm") {
                         //     import.active = false;
@@ -1481,10 +1485,11 @@ List<Reloc> Linker::CalculateRelocs(LinkerInputBinary *&binary, Section *section
             code_index++;
             call_index++;
             if (b != end_block) {
-                if(control_depth>0)
-                    error("unexpected opcode at function end %x "s % b + opcode.GetName() + " control_depth: " + control_depth);
+                if (control_depth > 0)
+                    error("unexpected opcode at function end %x "s % b + opcode.GetName() + " control_depth: " +
+                    control_depth);
                 // else
-                    // error("unexpected opcode at function end %x "s % b + opcode.GetName());
+                // error("unexpected opcode at function end %x "s % b + opcode.GetName());
                 // breakpoint_helper;
             } else last_opcode = end_block;
             call_index = function_imports_count + code_index;

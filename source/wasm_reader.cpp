@@ -739,7 +739,7 @@ Module &read_wasm(String file) {
         error("file not found: "s + file);
     buffer = (bytes) malloc(size + 4096 * 16); // do not free
     FILE *stream = fopen(file, "rb");
-    fread(buffer, sizeof(buffer), size, stream); // demands blocks of 4096!
+    fread(buffer, 1, size, stream); // demands blocks of 4096!
     fclose(stream);
 #endif
     Module &wasm_module = read_wasm(buffer, size);
