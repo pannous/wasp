@@ -440,10 +440,12 @@ void emitShortData(short i, bool pad = false) {
 
 // append int to wasm data memory
 void emitIntData(int i, bool pad = true) {
-    if (pad)while (((int64) (data + data_index_end) % 4))data_index_end++; // type 'int' requires 4 byte alignment
-    if ((int64) (data + data_index_end) % 4) // no pad => we know what we do?
+    if (pad) while (((uintptr_t)(data + data_index_end) % 4)) data_index_end++;
+    if (((uintptr_t)(data + data_index_end) % 4))
         trace("emitIntData unaligned!");
-    *(int *) (data + data_index_end) = i;
+
+    int aligned_value = i;
+    std::memcpy(data + data_index_end, &aligned_value, sizeof(int));
     data_index_end += 4;
 }
 
