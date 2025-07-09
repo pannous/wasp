@@ -450,18 +450,29 @@ if (TRACE)
     #    add_compile_options(-Wall)
     #    add_compile_options(-Wextra)
 endif ()
-#add_compile_options(-enable-coverage)
-#add_compile_options(--coverage)
-#add_compile_options(-ftest-coverage)
-#add_compile_options(-fprofile-arcs)
-#add_compile_options(-fprofile-generate)
-#add_compile_options(-fprofile-use)
-#add_compile_options(-fprofile-dir=${CMAKE_BINARY_DIR}/coverage)
-#add_compile_options(-fprofile-update=atomic)
-#add_compile_options(-fprofile-correction)
-#add_compile_options(-fprofile-abs-path)
-#add_compile_options(-fprofile-use=atomic)
-#add_compile_options(-fprofile-use=correction)
+
+if (COVERAGE)
+    add_compile_options(-Wno-ignored-optimization-argument)
+#    add_compile_options(-enable-coverage)
+#    add_compile_options(--coverage) # OLD!! GCov MUST NOT BE COMBINED with -fprofile-generate or -fprofile-use
+#    add_compile_options(-fprofile-generate) # LLVM PGO
+
+
+    add_compile_options(-fprofile-instr-generate)
+    add_compile_options(-fcoverage-mapping)
+    add_link_options(-fprofile-instr-generate)
+#LLVM_PROFILE_FILE=wasp.profraw ./wasp
+
+    add_compile_options(-ftest-coverage)
+    add_compile_options(-fprofile-arcs)
+    add_compile_options(-fprofile-dir=${CMAKE_BINARY_DIR}/coverage)
+    add_compile_options(-fprofile-update=atomic)
+#    add_compile_options(-fprofile-correction)
+#    add_compile_options(-fprofile-abs-path)
+#    add_compile_options(-fprofile-use) # conflicts with -fprofile-generate
+#    add_compile_options(-fprofile-use=atomic)
+#    add_compile_options(-fprofile-use=correction)
+endif ()
 
 if (SANITIZE) #  OR TRACE
     message("SANITIZE")
@@ -710,51 +721,39 @@ elseif (WASI)
     #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
     add_executable(wasp ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
-elseif (CTESTS) # Enable CTest #if(NOT NO_TESTS AND NOT WASM)
+elseif (CTESTS) # Enable CTest
     enable_testing()
-
-    #    add_test(NAME test_current COMMAND wasp test)
-
     ADD_DEFINITIONS(-DCTESTS)
-    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/test_new.cpp)
+    set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS}")
     set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
-
-    # Build test executable
-    add_executable(wasp_tests ${SOURCE_FILES})
-
+    # Add wasp_core static library and include dirs for tests
+    add_library(wasp_core STATIC ${SOURCE_FILES})
+    target_include_directories(wasp_core PUBLIC ${SOURCE}/own_merge)
+    if (CURL)
+        target_link_libraries(wasp_core ${CURL_LIBRARIES})
+    endif ()
     if (WASMEDGE)
-        target_include_directories(wasp_tests PUBLIC /opt/wasm/WasmEdge/include/api/)
-        target_link_libraries(wasp_tests /usr/local/lib/libwasmedge.dylib) # via brew
+        target_include_directories(wasp_core PUBLIC /opt/wasm/WasmEdge/include/api/)
+        target_link_libraries(wasp_core /usr/local/lib/libwasmedge.dylib) # via brew
     else ()
         message("WASM tests need WASMEDGE or WASMTIME")
     endif ()
+    function(ADD_WASP_TEST name)
+        add_executable(test_${name} ${SOURCE}/tests/test_${name}.cpp)
+        target_link_libraries(test_${name} wasp_core)
+        target_include_directories(test_${name} PUBLIC ${SOURCE}/own_merge)
+        target_link_libraries(test_${name} ${CURL_LIBRARIES} -lcurl)
 
-    # Link same libraries as main wasp executable
-    if (CURL)
-        target_link_libraries(wasp_tests ${CURL_LIBRARIES})
-        target_link_libraries(wasp_tests -lcurl)
-    endif ()
-
-    if (CONSOLE)
-        target_link_libraries(wasp_tests readline)
-    endif ()
-
-    # Copy includes and definitions from main target
-    target_include_directories(wasp_tests PUBLIC ${SOURCE}/own_merge)
-
-    # Add individual tests
-    add_test(NAME test_arithmetic COMMAND wasp_tests arithmetic)
-    add_test(NAME test_strings COMMAND wasp_tests strings)
-    add_test(NAME test_functions COMMAND wasp_tests functions)
-    add_test(NAME test_variables COMMAND wasp_tests variables)
-    add_test(NAME test_fibonacci COMMAND wasp_tests fibonacci)
-
-    # Add test to run all at once
-    add_test(NAME test_all COMMAND wasp_tests)
-
-    # Set test properties
-    set_tests_properties(test_arithmetic test_strings test_functions test_variables test_fibonacci test_all
-            PROPERTIES TIMEOUT 30)
+        add_test(NAME test_${name} COMMAND test_${name})
+        set_tests_properties(test_${name} PROPERTIES TIMEOUT 30)
+    endfunction()
+    ADD_WASP_TEST(arithmetic)
+    ADD_WASP_TEST(strings)
+    ADD_WASP_TEST(new)
+    #    ADD_WASP_TEST(functions)
+    #    ADD_WASP_TEST(variables)
 elseif (MICRO) # wasm-micro-vm:
     MESSAGE("USING WASM MICRO VM")
     if (WASI)
