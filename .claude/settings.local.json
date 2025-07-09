@@ -7,7 +7,11 @@
       "Bash(chmod:*)",
       "Bash(docker:*)",
       "Bash(./build.sh:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(.claude/hooks/stop.sh:*)",
+      "Bash(claude --version)",
+      "Bash(claude config get auto_update)",
+      "Bash(export EDITOR=subl)"
     ],
     "deny": []
   }
