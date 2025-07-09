@@ -28,7 +28,7 @@ typename FuncLet<S, T>::lambda wasmlet(Path file, String func = "") {
     if (func == "")
         func = file.substring(file.lastIndexOf("/")).substring(0, file.lastIndexOf(".wasm")); // or just main()!
     // todo: capture [func] ?
-    auto lamb = [](S s) -> T {
+    auto &lamb = [](S s) -> T {
         //  Module m=parse_wasm_file(file);
         //  return m.run(s)
         todo("wasmlet");
@@ -143,14 +143,14 @@ String findFile(String filename, String current_dir) {
         filename = "index"; // todo or main or lib or $filename
     }
     if (filename.contains("/"))
-        for (auto extension: extensions) {
+        for (auto &extension: extensions) {
             String &path = filename + extension;
             if (fileExists(path))
                 paths.add(path);
         }
     else {
-        for (auto folder: folders)
-            for (auto extension: extensions) {
+        for (auto &folder: folders)
+            for (auto &extension: extensions) {
                 String &path = current_dir + "/" + folder + "/" + filename + extension;
                 if (fileExists(path))
                     paths.add(path);

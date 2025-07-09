@@ -3670,7 +3670,7 @@ Code emitCodeSection(Node &root) {
     int print_node_import = call_indices.has("printNode") ? call_indices["printNode"] : 0;
 
     // https://pengowray.github.io/wasm-ops/
-    //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto  0x2A==42 0x0F==return 0x0B=='end (context block)' opcode @+39
+    //	char code_data[] = {0x01,0x05,0x00,0x41,0x2A,0x0F,0x0B};// 0x41==i32_auto &0x2A==42 0x0F==return 0x0B=='end (context block)' opcode @+39
     //	byte code_fourty2[] = {0/*locals_count*/, i32_auto, 42, return_block, end_block};
     byte code_nop[] = {0/*locals_count*/, end_block}; // NOP
     byte code_start[] = {

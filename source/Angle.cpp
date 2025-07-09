@@ -245,7 +245,7 @@ Node &getType(Node &node) {
         vector = true;
     }
     if (types.has(name)) {
-        auto pNode = types[name];
+        auto &pNode = types[name];
         if (not pNode)
             error1("getType: types corruption: type %s not found (NULL)", name);
         return *pNode;
@@ -264,7 +264,7 @@ Node &getType(Node &node) {
 }
 
 bool isPlural(Node &word) {
-    auto name = word.name;
+    auto &name = word.name;
     static List<String> plural_exceptions = {
         "flags", "puts", "plus", "minus", "times", "is", "has", "was", "does",
         "equals"
@@ -275,7 +275,7 @@ bool isPlural(Node &word) {
 }
 
 bool isType(Node &expression) {
-    auto name = expression.name;
+    auto &name = expression.name;
     if (expression.kind == functor) //todo ...
         return false;
     if (expression.kind == operators)

@@ -299,8 +299,8 @@ chars formatRealWithBaseAndPrecision(double num, int base = 10, int digits_after
     /*significant_digits*/
     //	int p = powi(base,digits_after_zero+1);
     auto remainder = std::abs(num) - std::abs(int64(num));
-    //	auto remainder = abs_f(num) - abs_l(int64(num));
-    //	auto remainder = itoa0(abs(int((num - (int64) num) * p)), base);
+    //	auto &remainder = abs_f(num) - abs_l(int64(num));
+    //	auto &remainder = itoa0(abs(int((num - (int64) num) * p)), base);
     chars f = concat(formatLongWithBase(int(num), base), ".");
     //	significant_digits-=strlen(f)-1
     while (digits_after_zero-- > 0) {
@@ -551,7 +551,7 @@ short utf8_byte_count(codepoint ucs_character) {
 
 //List<codepoint> split_by_codepoint(String input) {
 //	List<codepoint> ret;
-//	auto it = input.begin();
+//	auto &it = input.begin();
 //	while (it != input.end()) {
 //		uint8_t count = utf8_byte_count(*it);
 //		ret.add(input.codepointAt(it));
@@ -767,14 +767,14 @@ void print(Arg &arg) {
 }
 
 void print(Signature &signature) {
-    for (auto &type: signature.parameters) {
+    for (auto &&type: signature.parameters) {
         print(type);
 #if not WASM
         print(" ");
 #endif
     }
     printf(":");
-    for (auto &type: signature.return_types) {
+    for (auto &&type: signature.return_types) {
         print(type);
 #if not WASM
         printf(" ");

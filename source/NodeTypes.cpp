@@ -79,11 +79,11 @@ Type mapType(Node &arg) {
         case flags:
             return Primitive::wasm_int64;
         case call: {
-            auto fun = arg.name;
+            auto &fun = arg.name;
             //            findLibraryFunction(fun, true); too much here
 #if not RUNTIME_ONLY
             if (functions.has(fun)) {
-                auto function = functions[fun];
+                auto &function = functions[fun];
                 return function.signature.return_types.last(voids);
             }
 #endif
@@ -383,8 +383,8 @@ chars typeName(Type t) {
     if (t.value < last_kind)return typeName(t.kind);
     if (t.value < 0x10000)return typeName((Primitive) t);
     if (isGeneric(t)) {
-        auto kind = t.generics.kind;
-        auto type = t.generics.value_type;
+        auto &kind = t.generics.kind;
+        auto &type = t.generics.value_type;
         return ""s + typeName((Kind) kind, false) + "<" + typeName((Primitive) type) + ">";
     }
     // todo : make sure to emit Nodes at > 0x10000 …

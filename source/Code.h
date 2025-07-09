@@ -1091,8 +1091,8 @@ public:
         if (size() != other.size())
             return false;
         for (int i = 0; i < parameters.size(); ++i) {
-            auto type_x = parameters[i];
-            auto type_y = other.parameters[i];
+            auto &type_x = parameters[i];
+            auto &type_y = other.parameters[i];
             if (type_x.type != type_y.type)
                 return false;
         }
@@ -1213,7 +1213,7 @@ public:
         //#else
         //		f += this->function;
         //		f += "(";
-        //		for (auto type:this->types) {
+        //		for (auto &type:this->types) {
         //			f += typeName(this->types[type]);
         //			f += ",";
         //		}
@@ -1260,7 +1260,7 @@ public:
         s += "(";
         for (int i = 0; i < parameters.size(); ++i) {
             if (i > 0)s += ",";
-            auto arg = parameters[i];
+            auto &arg = parameters[i];
             s += " "s + typeName(arg.type);
             s += " "s + arg.name;
         }
