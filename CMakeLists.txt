@@ -476,11 +476,15 @@ if (SANITIZE) #  OR TRACE
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
     MESSAGE("ASAN sanitize=address …")
+#    ASAN_OPTIONS=detect_leaks=0 ./build/wasp test
+#    ASAN_OPTIONS=detect_stack_use_after_return=1 ./build/wasp
     if (GCC)
         ADD_COMPILE_FLAG("-static-libasan")
     elseif (NOT APPLE) # c++: error: static AddressSanitizer runtime is not supported on darwin
         ADD_COMPILE_FLAG("-static-libsan")
     endif ()
+#     LD_PRELOAD=$(gcc -print-file-name=libasan.so)  valgrind --track-origins=yes ./build/wasp test # ⚠️ NOPE :(
+
     if (VERBOSE)
         set(ASAN_OPTIONS verbosity=3)
     endif ()

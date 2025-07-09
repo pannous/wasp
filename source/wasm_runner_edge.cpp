@@ -1,3 +1,8 @@
+#if LINUX // todo: VM only!
+#define DEFAULT_MAX_MEMORY (2UL * 1024 * 1024 * 1024)  // 2GB or less  in multipass VM
+#endif
+
+
 #include <wasmedge/wasmedge.h>
 #include "wasm_runner.h"
 #include "Util.h"
@@ -126,8 +131,17 @@ WasmEdge_Result nop(void *Data, const FrameContext *CallFrameCxt, const WasmEdge
 WasmEdge_Result concat_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     auto val1 = WasmEdge_ValueGetI32(In[0]);
     auto val2 = WasmEdge_ValueGetI32(In[1]);
+    long wasm_memory_size = 0x1000000; // todo: get from VM!
+    check(wasm_memory != 0, "no wasm_memory (for concat)");
+    check(val1 >= 0, "val1 < 0 in concat_wrap");
+    check(val2 >= 0, "val2 < 0 in concat_wrap");
+    check(val1 < wasm_memory_size, "val1 out of bounds in concat_wrap");
+    check(val2 < wasm_memory_size, "val2 out of bounds in concat_wrap");
+    printf("concat_wrap %d + %d\n", val1, val2);
     auto left = (chars) wasm_memory + val1;
     auto right = (chars) wasm_memory + val2;
+    printf("concat_wrap  %s\n", left);
+    printf("concat_wrap  %s\n", right);
     printf("concat_wrap %s + %s\n", left, right);
     auto result=concat(left, right); // todo: concat and return new string
     int offset = 0; // todo: find free space in wasm_memory!!!
