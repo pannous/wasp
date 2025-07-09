@@ -77,6 +77,16 @@ Generate a big lot of debug information the only important thing is that the fin
 
 ## Development Guidelines
 
+**Important** Never modify any code not explicitly part of the task!
+**Important** Never remove existing code unless explicitly required by the task!
+**Important** Never remove existing comments unless explicitly stated as task!
+
+## Coding Style
+use `0` for `nullptr` 
+**Important** never use any std:: libraries, use the custom String, List, Map provided in the project 
+    or implement simple adhoc algorithms.
+
+
 ### Code Organization
 
 - **source/**: All C++ source code
@@ -84,15 +94,7 @@ Generate a big lot of debug information the only important thing is that the fin
 - **test/**: Test files and sample programs, todo: move test.cpp … from source here
 - **samples/**: Example Wasp/Angle programs
 - **Frameworks/**: External dependencies and runtime libraries (ignore!)
-
-### Configuration Management
-
-CMake configurations are extensive - key variables:
-- `WASM=1`: Target WebAssembly
-- `DEBUG=1`: Enable debug builds with DWARF info
-- `RELEASE=1`: Optimize for size/speed
-- `RUNTIME_ONLY=1`: Exclude compiler features
-- `INCLUDE_MERGER=1`: Include WASM linking capabilities
+- **CMakeLists.txt**: CMake build configuration files
 
 ### Memory Management
 
@@ -109,6 +111,7 @@ The project has deep WebAssembly integration:
 - Partly supports WASM component model and WIT interfaces
 
 ## Testing and Debugging
+
 
 ### Test Structure
 
