@@ -57,7 +57,7 @@
 //const Node NaN = Node("NaN");
 
 // must never be used in non-const references!
-const Node NIL = Node(String(nil_name, false)).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
+const Node NIL = Node(new String(nil_name, false)).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
 Node Unknown = Node("unknown").setKind(nils).setValue(0); // maybe-existent
 Node Undefined = Node("undefined").setKind(nils).setValue(0); // maybe-existent, maybe error
 Node Missing = Node("missing").setKind(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
@@ -77,7 +77,7 @@ extern "C" void __wasm_call_ctors();
 
 void initSymbols() {
     print("initSymbols");
-    // ((Node) NIL).name = nil_name;
+    ((Node&) NIL).name = nil_name;
 #if WASM
 		if (True.kind == bools)
 			error("Wasm DOES init symbols!?");
