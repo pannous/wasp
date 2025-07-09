@@ -968,61 +968,9 @@ endif()
 # Enable CTest
 if(NOT NO_TESTS AND NOT WASM)
     enable_testing()
-    
-    # Create a separate test executable
-    set(TEST_SOURCE_FILES 
-        ${SOURCE}/String.cpp 
-        ${SOURCE}/Node.cpp 
-        ${SOURCE}/Map.cpp 
-        ${SOURCE}/Util.cpp 
-        ${SOURCE}/List.cpp
-        ${SOURCE}/Wasp.cpp 
-        ${SOURCE}/wasm_helpers.cpp 
-        ${SOURCE}/Code.cpp 
-        ${SOURCE}/NodeTypes.cpp 
-        ${SOURCE}/smart_types.cpp
-        ${SOURCE}/wasm_helpers_host.cpp
-        ${SOURCE}/test_new.cpp)
-    
-    if(NOT RUNTIME_ONLY)
-        set(TEST_SOURCE_FILES ${TEST_SOURCE_FILES} 
-            ${SOURCE}/Code.cpp
-            ${SOURCE}/Angle.cpp
-            ${SOURCE}/Interpret.cpp
-            ${SOURCE}/wasm_emitter.cpp
-            ${SOURCE}/DwarfEmitter.cpp
-            ${SOURCE}/WitReader.h
-            ${SOURCE}/wasm_reader.cpp)
-    endif()
-    
-    if(INCLUDE_MERGER)
-        set(TEST_SOURCE_FILES ${TEST_SOURCE_FILES} 
-            ${SOURCE}/wasm_linker.cpp
-            ${SOURCE}/own_merge/common.cc
-            ${SOURCE}/own_merge/binary.cc
-            ${SOURCE}/own_merge/binary-writer.cc
-            ${SOURCE}/own_merge/binary-reader-linker.cc
-            ${SOURCE}/own_merge/binary-reader.cc
-            ${SOURCE}/own_merge/opcode-code-table.c
-            ${SOURCE}/own_merge/binding-hash.cc
-            ${SOURCE}/own_merge/feature.cc
-            ${SOURCE}/own_merge/leb128.cc
-            ${SOURCE}/own_merge/stream.cc
-            ${SOURCE}/own_merge/opcode.cc
-            ${SOURCE}/own_merge/utf8.cc
-            ${SOURCE}/own_merge/ir.cc)
-    endif()
-    
-    if(CURL)
-        set(TEST_SOURCE_FILES ${TEST_SOURCE_FILES} ${SOURCE}/Fetch.cpp)
-    endif()
-    
-    if(CONSOLE)
-        set(TEST_SOURCE_FILES ${TEST_SOURCE_FILES} ${SOURCE}/console.cpp)
-    endif()
-    
+
     # Build test executable
-    add_executable(wasp_tests ${TEST_SOURCE_FILES})
+    add_executable(wasp_tests ${SOURCE_FILES})
     
     # Link same libraries as main wasp executable
     if(CURL)
