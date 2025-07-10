@@ -455,23 +455,23 @@ endif ()
 if (COVERAGE)
     add_compile_options(-Wno-ignored-optimization-argument)
     add_compile_options(-fprofile-instr-generate)
-#    add_compile_options(-fprofile-generate) # LLVM PGO versus
-#    add_compile_options(--coverage) # OLD!! GCov MUST NOT BE COMBINED with -fprofile-generate or -fprofile-use
-#    add_compile_options(-enable-coverage)
+    #    add_compile_options(-fprofile-generate) # LLVM PGO versus
+    #    add_compile_options(--coverage) # OLD!! GCov MUST NOT BE COMBINED with -fprofile-generate or -fprofile-use
+    #    add_compile_options(-enable-coverage)
 
     add_compile_options(-fcoverage-mapping)
     add_link_options(-fprofile-instr-generate)
-#LLVM_PROFILE_FILE=wasp.profraw ./wasp
+    #LLVM_PROFILE_FILE=wasp.profraw ./wasp
 
     add_compile_options(-ftest-coverage)
     add_compile_options(-fprofile-arcs)
     add_compile_options(-fprofile-dir=${CMAKE_BINARY_DIR}/coverage)
     add_compile_options(-fprofile-update=atomic)
-#    add_compile_options(-fprofile-correction)
-#    add_compile_options(-fprofile-abs-path)
-#    add_compile_options(-fprofile-use) # conflicts with -fprofile-generate
-#    add_compile_options(-fprofile-use=atomic)
-#    add_compile_options(-fprofile-use=correction)
+    #    add_compile_options(-fprofile-correction)
+    #    add_compile_options(-fprofile-abs-path)
+    #    add_compile_options(-fprofile-use) # conflicts with -fprofile-generate
+    #    add_compile_options(-fprofile-use=atomic)
+    #    add_compile_options(-fprofile-use=correction)
 endif ()
 
 if (SANITIZE) #  OR TRACE
@@ -726,7 +726,7 @@ elseif (CTESTS) # Enable CTest
     MESSAGE("USING CTESTS, todo migrate all from tests.cpp here")
     enable_testing()
     ADD_DEFINITIONS(-DCTESTS)
-#    set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
+    #    set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS}")
     set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
@@ -843,27 +843,17 @@ elseif (WASMEDGE)
     add_executable(wasp ${SOURCE_FILES})
     #    FetchContent_Declare(wasmedge GIT_REPOSITORY https://github.com/WasmEdge/WasmEdge.git)
     #    FetchContent_MakeAvailable(wasmedge)
-    #    VERSION=0.14.1 curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh  | sudo bash -s -- -p Frameworks -v $VERSION
-    if (LINUX)
-        target_include_directories(wasp PRIVATE ~/.wasmedge/include/) # wasmedge-dev
-        target_link_libraries(wasp PRIVATE /home/ubuntu/.wasmedge/lib/libwasmedge.so)
-        #        target_include_directories(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/include) # wasmedge-dev
-        #        target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/lib/libwasmedge.so)
-#        target_link_libraries(wasp ${CMAKE_SOURCE_DIR}/lib/libwasmedge.so)
-    else ()
-        #        target_include_directories(wasp PRIVATE /usr/local/include)
-        #        target_link_libraries(wasp PRIVATE /opt/wasm/WasmEdge/lib/api/libwasmedge.dylib)
-        #        link_directories(Frameworks/WasmEdge/lib/)
-        #        link_directories(/usr/local/lib/)
-        #        target_link_libraries(wasp PRIVATE wasmedge) # MAC
-        target_include_directories(wasp PUBLIC /opt/wasm/WasmEdge/include/api/)
-        target_link_libraries(wasp PRIVATE /usr/local/lib/libwasmedge.dylib) # via brew
-    endif ()
+    #    curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh  | sudo bash -s -- -p $ENV{HOME}/.wasmedge -v $VERSION
+    target_include_directories(wasp PUBLIC $ENV{HOME}/.wasmedge/include/api/) #mac
+    target_include_directories(wasp PUBLIC $ENV{HOME}/.wasmedge/include/)
+    target_link_directories(wasp PUBLIC "$ENV{HOME}/.wasmedge/lib") # linux
+    target_link_directories(wasp PUBLIC /usr/local/lib/) # mac
+    target_link_libraries(wasp PRIVATE wasmedge)
     target_link_libraries(wasp PRIVATE curl)
     if (APPLE)
-      add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp" "${CMAKE_SOURCE_DIR}/bin/mac/")
-    else()
-      add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp" "${CMAKE_SOURCE_DIR}/bin/linux-arm64")
+        add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp" "${CMAKE_SOURCE_DIR}/bin/mac/")
+    else ()
+        add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp" "${CMAKE_SOURCE_DIR}/bin/linux-arm64")
     endif ()
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
