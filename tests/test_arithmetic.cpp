@@ -12,20 +12,13 @@ void test_arithmetic() {
 
 void test_harder_arithmetic() {
     print("Testing harder arithmetic...");
-	assert_emit("2+3*4", 14); // precedence
-	assert_emit("10-3*2", 4); // precedence
+    assert_emit("2+3*4", 14); // precedence
+    assert_emit("10-3*2", 4); // precedence
 }
-
 
 
 int main(int argc, char **argv) {
     print("Running arithmetic tests...");
-    try {
-        test_arithmetic();
-        print("All arithmetic tests passed successfully.");
-    } catch (const std::exception &e) {
-        printf("Arithmetic tests failed: %s,",e.what());
-        return 1; // Indicate failure
-    }
+    test_arithmetic(); // May fail with error
     return 0; // Indicate success
 }
