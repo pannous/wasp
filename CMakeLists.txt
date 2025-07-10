@@ -451,14 +451,14 @@ if (TRACE)
     #    add_compile_options(-Wextra)
 endif ()
 
+# NO NEED IN CLION, just do RUN -> 'Angle' with coverage
 if (COVERAGE)
     add_compile_options(-Wno-ignored-optimization-argument)
-#    add_compile_options(-enable-coverage)
-#    add_compile_options(--coverage) # OLD!! GCov MUST NOT BE COMBINED with -fprofile-generate or -fprofile-use
-#    add_compile_options(-fprofile-generate) # LLVM PGO
-
-
     add_compile_options(-fprofile-instr-generate)
+#    add_compile_options(-fprofile-generate) # LLVM PGO versus
+#    add_compile_options(--coverage) # OLD!! GCov MUST NOT BE COMBINED with -fprofile-generate or -fprofile-use
+#    add_compile_options(-enable-coverage)
+
     add_compile_options(-fcoverage-mapping)
     add_link_options(-fprofile-instr-generate)
 #LLVM_PROFILE_FILE=wasp.profraw ./wasp
@@ -670,12 +670,13 @@ if (WASM) # OR WASI)
         endif ()
     endif ()
     #    add_library(wasp SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
-    if (RUNTIME_ONLY) # not tests, compiler, ... 100kb as of 2024-04
+    if (RUNTIME_ONLY AND RELEASE) # not tests, compiler, ... 100kb as of 2024-04
         add_executable(wasp-runtime ${SOURCE_FILES}) # same as add_library, with or without --export-all
         # Add these commands after your main target definitions
         add_custom_command(TARGET wasp-runtime POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/cmake-build-test/"
                 COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/source/"
+                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/bin/wasm/"
                 COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/docs/assets/"
         )
     elseif (WASP_FULL) # including merger
@@ -722,9 +723,10 @@ elseif (WASI)
     add_executable(wasp ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
 elseif (CTESTS) # Enable CTest
+    MESSAGE("USING CTESTS, todo migrate all from tests.cpp here")
     enable_testing()
     ADD_DEFINITIONS(-DCTESTS)
-    set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
+#    set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_FLAGS}")
     set(SOURCE_FILES ${SOURCE}/wasm_runner_edge.cpp ${SOURCE_FILES})
@@ -741,11 +743,8 @@ elseif (CTESTS) # Enable CTest
         message("WASM tests need WASMEDGE or WASMTIME")
     endif ()
     function(ADD_WASP_TEST name)
-        add_executable(test_${name} ${SOURCE}/tests/test_${name}.cpp)
+        add_executable(test_${name} tests/test_${name}.cpp)
         target_link_libraries(test_${name} wasp_core)
-        target_include_directories(test_${name} PUBLIC ${SOURCE}/own_merge)
-        target_link_libraries(test_${name} ${CURL_LIBRARIES} -lcurl)
-
         add_test(NAME test_${name} COMMAND test_${name})
         set_tests_properties(test_${name} PROPERTIES TIMEOUT 30)
     endfunction()
@@ -847,9 +846,10 @@ elseif (WASMEDGE)
     #    VERSION=0.14.1 curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh  | sudo bash -s -- -p Frameworks -v $VERSION
     if (LINUX)
         target_include_directories(wasp PRIVATE ~/.wasmedge/include/) # wasmedge-dev
+        target_link_libraries(wasp PRIVATE /home/ubuntu/.wasmedge/lib/libwasmedge.so)
         #        target_include_directories(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/include) # wasmedge-dev
         #        target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/Frameworks/WasmEdge/lib/libwasmedge.so)
-        target_link_libraries(wasp PRIVATE ${CMAKE_SOURCE_DIR}/lib/libwasmedge.so)
+#        target_link_libraries(wasp ${CMAKE_SOURCE_DIR}/lib/libwasmedge.so)
     else ()
         #        target_include_directories(wasp PRIVATE /usr/local/include)
         #        target_link_libraries(wasp PRIVATE /opt/wasm/WasmEdge/lib/api/libwasmedge.dylib)
@@ -860,6 +860,11 @@ elseif (WASMEDGE)
         target_link_libraries(wasp PRIVATE /usr/local/lib/libwasmedge.dylib) # via brew
     endif ()
     target_link_libraries(wasp PRIVATE curl)
+    if (APPLE)
+      add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp" "${CMAKE_SOURCE_DIR}/bin/mac/")
+    else()
+      add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp" "${CMAKE_SOURCE_DIR}/bin/linux-arm64")
+    endif ()
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
     ADD_DEFINITIONS(-DWASMTIME)
