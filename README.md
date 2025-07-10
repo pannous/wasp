@@ -38,9 +38,39 @@ Html is just an arbitrary example of structured data, wasp can represent any dat
 s-expressions...
 The difference from passive data is that Wasp is fully typed and also used for active data, such as code.
 
-## Online Demo
+## Installation
 
+## Online Demo
 [wasp.pannous.com](https://wasp.pannous.com)
+
+### MacOS
+```
+  brew tap pannous/wasp
+  brew install pannous-wasp
+```
+
+### Binaries
+[Release binaries](https://github.com/pannous/wasp/releases/)
+[Nightly binaries](https://github.com/pannous/wasp/tree/main/bin)
+
+### Build from Source
+```bash
+git clone https://github.com/pannous/wasp/
+cd wasp
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+```
+or
+```bash
+cmake -B build -DDEBUG=1 -G Ninja . && ninja -C build && ./build/wasp
+```
+### Docker
+```bash
+docker build -t wasp:latest --target binary .
+docker run -it wasp:latest /bin/bash
+```
+
 
 ## Runtime
 

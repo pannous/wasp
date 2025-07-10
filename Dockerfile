@@ -1,8 +1,15 @@
 # Multi-stage build for WASP WebAssembly Programming Language
 FROM ubuntu:22.04 AS base
 
+WORKDIR /workspace
+
 # Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
+ENV HOME=/workspace
+ARG WASMEDGE_PATH=${HOME}/.wasmedge/
+#ARG WASMEDGE_PATH=Frameworks/WasmEdge relative to the project root
+ENV WASMEDGE_PATH=${WASMEDGE_PATH}
+
 
 # Install system dependencies
 
@@ -32,9 +39,6 @@ RUN apt-get update  \
     pkg-config \
 		ninja-build \
 		llvm-15-dev libllvm15
-
-# Create workspace
-WORKDIR /workspace
 
 COPY CMakeLists.txt ./
 COPY source/ ./source/
@@ -70,9 +74,9 @@ RUN cd cmake-build-wasm-runtime && \
 RUN cp cmake-build-wasm-runtime/wasp-runtime.wasm .
 
 FROM base AS wasmedge
-#RUN curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -p Frameworks/WasmEdge
-COPY Frameworks/install_wasmedge_0.14.sh Frameworks/install_wasmedge_0.14.sh
-RUN Frameworks/install_wasmedge_0.14.sh -p Frameworks/WasmEdge
+RUN curl -sSf https://raw.githubusercontent.com/WasmEdge/WasmEdge/master/utils/install.sh | bash -s -- -p ${WASMEDGE_PATH}
+#COPY Frameworks/install_wasmedge_0.14.sh Frameworks/install_wasmedge_0.14.sh
+#RUN Frameworks/install_wasmedge_0.14.sh -p ${WASMEDGE_PATH}
 
 FROM wasmedge AS shell
 CMD ["/bin/bash"]
@@ -86,13 +90,15 @@ COPY readline-config.cmake .
 COPY FindReadline.cmake .
 COPY source/increase-wasp-version.py source/increase-wasp-version.py
 
-RUN (test -f Frameworks/WasmEdge/lib/libwasmedge.so &&  echo "libwasmedge.so found") || (echo "libwasmedge.so not found" && exit 1)
+RUN (test -f ${WASMEDGE_PATH}/lib/libwasmedge.so &&  echo "libwasmedge.so found") || (echo "libwasmedge.so not found" && exit 1)
+ENV CXXFLAGS="-I${WASMEDGE_PATH}/include"
+ENV CXXFLAGS="${CXXFLAGS} -L${WASMEDGE_PATH}/lib -lwasmedge"
+ENV LD_LIBRARY_PATH=${WASMEDGE_PATH}/lib:${LD_LIBRARY_PATH}
 RUN cd cmake-build-release \
     && ln -s ../wasp-runtime.wasm \
     && cmake -DNO_CONSOLE=1 -DCURL_INCLUDE_DIR=$(pkg-config --cflags-only-I libcurl | sed 's/-I//') \
-      -DCURL_LIBRARY=$(pkg-config --libs-only-L libcurl | sed 's/-L//')libcurl.so  -DDEBUG=1 ..  \
-    && make && cp wasp ..
-
+      -DCURL_LIBRARY=$(pkg-config --libs-only-L libcurl | sed 's/-L//')libcurl.so  -DDEBUG=1 ..
+RUN --mount=type=cache,target=/root/.cache/ccache cd cmake-build-release &&  make -j$(nproc) && cp wasp ..
 
 # Development image with additional tools for debugging
 FROM binary AS development
