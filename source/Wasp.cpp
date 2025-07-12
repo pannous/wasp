@@ -1975,7 +1975,10 @@ int main(int argc, char **argv) {
 #else
             testCurrent();
 #endif
-        else if (args.startsWith("eval")) {
+        else if (args == "home" or args == "wiki" or args == "docs" or args == "documentation") {
+            print("Wasp documentation can be found at https://github.com/pannous/wasp/wiki");
+            system("open https://github.com/pannous/wasp/");
+        }else if (args.startsWith("eval")) {
             Node results = eval(args.from(" "));
             print("» "s + results.serialize());
         } else if (args == "repl" or args == "console" or args == "start" or args == "run") {

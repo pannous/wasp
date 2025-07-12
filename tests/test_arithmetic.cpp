@@ -17,8 +17,9 @@ void test_harder_arithmetic() {
 }
 
 
-int main(int argc, char **argv) {
-    print("Running arithmetic tests...");
-    test_arithmetic(); // May fail with error
-    return 0; // Indicate success
-}
+// I don't like it, it clutters search
+// int main(int argc, char **argv) {
+//     print("Running arithmetic tests...");
+//     test_arithmetic(); // May fail with error
+//     return 0; // Indicate success
+// }
