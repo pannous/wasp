@@ -46,8 +46,12 @@ The difference from passive data is that Wasp is fully typed and also used for a
 ### MacOS
 ```
   brew tap pannous/wasp
-  brew install pannous-wasp
+  brew install wasp
 ```
+Or directly:
+`brew install pannous/wasp/wasp`
+
+
 
 ### Binaries
 [Release binaries](https://github.com/pannous/wasp/releases/)
