@@ -40,8 +40,7 @@ def list_tools():
 	ALL lambdas available via endpoint (streamable-http transport) : https://mcp.pannous.com/mcp/ <br>
 	```
 	claude mcp add --transport http wasp https://mcp.pannous.com/mcp/
-	claude mcp list
-	```` <br> 
+	``` <br><br>
 	<a href='https://pannous.com/files/mcp.json'>mcp.json</a> example for cursor / vs-code / …: <br> 
 	{<br>
    "servers": {<br>

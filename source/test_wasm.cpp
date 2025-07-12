@@ -1819,7 +1819,7 @@ void testAllWasm() {
     // TRUE TESTS:
     testRecentRandomBugs();
     // testOldRandomBugs();
-    assert_is("١٢٣", 123); // todo UTF RTL control character!
+    assert_is("١٢٣", 123); //  numerals are left-to-right (LTR) even in Arabic!
 
     skip(
         testMergeOwn();

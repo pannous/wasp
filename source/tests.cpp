@@ -2919,7 +2919,7 @@ void testString() {
     check("hi %s ok"s % "ja" == "hi ja ok");
     assert_equals(atoi1('x'), -1);
     assert_equals(atoi1('3'), 3);
-    assert_equals(parseLong("١٢٣"), 123l);
+    assert_equals(parseLong("١٢٣"), 123l);// Arabic numerals are (LTR) too!
     check_eq(parseLong("123"), 123l); // can crash!?!
     //	assert_equals( atoi1(u'₃'),3);// op
     assert_equals(parseLong("0"), 0l);
