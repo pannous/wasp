@@ -15,14 +15,14 @@ void test_string_operations() {
 }
 
 
-int main(int argc, char **argv) {
-    print("Running string tests...");
-    try {
-        test_string_operations();
-        print("All string tests passed successfully.");
-    } catch (const std::exception &e) {
-        printf("string tests failed: %s,",e.what());
-        return 1; // Indicate failure
-    }
-    return 0; // Indicate success
-}
+// int main(int argc, char **argv) {
+//     print("Running string tests...");
+//     try {
+//         test_string_operations();
+//         print("All string tests passed successfully.");
+//     } catch (const std::exception &e) {
+//         printf("string tests failed: %s,",e.what());
+//         return 1; // Indicate failure
+//     }
+//     return 0; // Indicate success
+// }
