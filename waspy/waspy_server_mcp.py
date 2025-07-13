@@ -145,6 +145,7 @@ def register_mcp(lib, func):
 		register_queue.put((inner, f"{lib}", description))
 	else:
 		register_queue.put((inner, f"{lib}-{func}", description))
+		register_queue.put((inner, f"{func}", description)) # may overwrite other lib-func versions ok
 	if not (lib,func) in known_mcps:
 		known_mcps.append((lib,func))
 
@@ -160,14 +161,14 @@ def register_test():
 
 def sanitize(name):
 	# sanitize name for mcp tool registration
-	name = name.replace(" ", "_").replace("-", "_").replace(".", "_")
+	name = name.replace(" ", "-").replace(".", "-")
 	if not name[0].isalpha():
 		name = "tool_" + name  # ensure it starts with a letter
-	# test pattern ^[a-zA-Z0-9_-]{1,128}$'
 	if len(name) > 128:
 		name = name[:128]  # truncate to max length
+	# test pattern ^[a-zA-Z0-9_-]{1,128}$'
 	if not name.isidentifier():
-		name = ''.join(c if c.isalnum() or c in '_-' else '_' for c in name)
+		name = ''.join(c if c.isalnum() or c in '_-' else '-' for c in name)
 	return name
 
 def mcp_server():
