@@ -37,7 +37,11 @@ def list_tools():
 			html += f"<li><a href='/{lib}/{tool}'>{lib}-{tool}</a></li>"
 	html += """
 	<h2>Available AS MCP</h2>
-	ALL lambdas available via endpoint (streamable-http transport) : https://mcp.pannous.com/mcp/ <br>
+	ALL lambdas available via endpoint (streamable-http transport) <br>
+ https://mcp.pannous.com/mcp/ <br>
+ Try it with the MCP Inspector: <br>
+ `npx @modelcontextprotocol/inspector https://mcp.pannous.com/mcp/ <br>
+ ?transport=streamable-http&serverUrl=https://mcp.pannous.com/mcp/` <br>
 	```
 	claude mcp add --transport http wasp https://mcp.pannous.com/mcp/
 	``` <br><br>
@@ -131,13 +135,16 @@ def register_exports_as_mcp(lib, filename):
 def register_mcp(lib, func):
 	print("registering mcp", lib, func)
 
-	@mcp.tool(f"{lib}.{func}")
+	# @mcp.tool(f"{lib}-{func}")
 	def inner(arguments={}):
 		# argument_dict= fix_params(arguments, binaries[lib], func)
 		return waspy.run_wasm(binaries[lib], arguments, func=func)
 
-	description = f"Tool description must be inferred from name and function signature."
-	register_queue.put((inner, f"{lib}-{func}", description))
+	description = f"Tool description must be inferred from name and function signature." # Todo docstring!
+	if "main" in func or "start" in func:
+		register_queue.put((inner, f"{lib}", description))
+	else:
+		register_queue.put((inner, f"{lib}-{func}", description))
 	if not (lib,func) in known_mcps:
 		known_mcps.append((lib,func))
 
