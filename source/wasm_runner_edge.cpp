@@ -169,8 +169,13 @@ WasmEdge_Result download(void *Data, const FrameContext *CallFrameCxt, const Was
     printf("download %s\n", url);
     // todo("host download");
     auto data = fetch(url);
-    Out[0] = WasmEdge_ValueGenI64((uint64_t) data);
-    // Out[0]=WasmEdge_ValueGenI32((uint32_t)data);
+    printf("downloaded %s\n", data);
+    int l=strlen(data);
+    int offset = 0; // todo: find free space in wasm_memory!!!
+    strcpy2((char *) wasm_memory+offset, data);
+    if(l>0 and ((char*)wasm_memory)[offset+l-1] == '\n')
+        ((char*)wasm_memory)[offset+l-1] = 0; // remove trailing newline
+    Out[0]=WasmEdge_ValueGenI32((uint64_t)offset); // return pointer to result
     return WasmEdge_Result_Success;
 }
 
@@ -385,6 +390,16 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, download, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
         HostName = WasmEdge_StringCreateByCString("download");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    } {
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenI32(); // charp (id:string)
+        P[0] = WasmEdge_ValTypeGenI32(); // charp (id:string)
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, download, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("fetch"); // todo download alias!
         WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
         WasmEdge_StringDelete(HostName);
     } {

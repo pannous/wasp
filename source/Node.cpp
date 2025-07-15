@@ -932,6 +932,15 @@ String Node::serialize() const {
         return "<html>"s + value.string + "</html>"s;
 
     String wasp = "";
+    if(this->meta) {
+        for(Node& meta: *this->meta) {
+            auto val = meta.values().serialize();
+            if(meta.kind==key)val= meta.value.node->serializeValue();
+            // wasp += "@"s + meta.serialize() + " ";// todo THIS IS THE WAY!
+            // wasp += "@"s + meta.name + "(" + meta.serializeValue() + ") ";
+            wasp += "@"s + meta.name + "(" + val + ") ";
+        }
+    }
     if (not use_polish_notation or length == 0) {
         if (not name.empty()) wasp += name;
         //        String serializedValue=serializeValue();// todo IS THIS A GENERAL STRING BUG!? can't return "XXX" => String !?!

@@ -133,21 +133,24 @@
   <button onclick="download_file(wasm_buffer, 'compiled.wasm', 'wasm')" title="download compiled.wasm">📥 download wasm
   </button>
   <hidden style="display: none;">NO AUTO_DEPLOY!!!<input id="auto_deploy" type="checkbox"/></hidden>
-<!--  <label for="auto_deploy">auto</label><input checked id="auto_deploy" type="checkbox"/>-->
+  <!--  <label for="auto_deploy">auto</label><input checked id="auto_deploy" type="checkbox"/>-->
   <button onclick="deploy()" title="deploy as serverless lambda handler and mcp">
     <img src="https://www.fermyon.com/static/image/events/spin-icon-dot.png"
          style="height: 1em;vertical-align: middle;"/> deploy as
   </button>
-  <input placeholder="lambda name" id="lambda_name" value="test" />
+  <input placeholder="lambda name" id="lambda_name" value="test"/>
   <a href="https://lambda.pannous.com/" target="_blank">lambda / mcp</a>
-<!--         style="width: 100px;box-sizing: border-box;vertical-align: middle;"/>-->
+  <!--         style="width: 100px;box-sizing: border-box;vertical-align: middle;"/>-->
   <br/>
   <textarea cols="80" id="results" placeholder="RESULT… press run to compile" rows="14"
             style="width: 90%;box-sizing: border-box"></textarea>
 
+</div>
+<canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
 
-  <script>
-    var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+<script>
+  window.onload = function () {
+    editor = CodeMirror.fromTextArea(document.getElementById('code'), {
       lineNumbers: true,
       mode: "wasp",
       extraKeys: {
@@ -157,15 +160,14 @@
       },
     });
     editor.on('change', function () {
-      if(auto_run.checked)
+      if (auto_run.checked)
         compile_and_run(editor.getValue());
-      if(auto_deploy.checked) // todo and error free
+      if (auto_deploy.checked) // todo and error free
         deploy();
       // editor.save();
       editor.focus();
     });
-  </script>
-  <script> // fill from examples.js
+    // fill from examples.js
     for (let key in exampleCode) {
       const optionExists = (val) => Array.from(examples.options).some(option => option.value === val);
       if (!optionExists(key)) {
@@ -175,18 +177,16 @@
         examples.appendChild(newOption);
       }
     }
-  </script>
-  <!-- https://wasp.pannous.com/?example=lambda -->
-  <script> // select example from URL parameter ^^
+    // select example from URL parameter ^^
+    // https://wasp.pannous.com/?example=lambda -
     const urlParams = new URLSearchParams(window.location.search);
     const exampleParam = urlParams.get('example');
     if (exampleParam && exampleCode[exampleParam]) {
       examples.value = exampleParam;
       editor.setValue(exampleCode[exampleParam]);
     }
-  </script>
-</div>
-<canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
-<script>const ctx = canvas.getContext('2d')</script>
+  }
+  const ctx = canvas.getContext('2d')
+</script>
 </body>
 

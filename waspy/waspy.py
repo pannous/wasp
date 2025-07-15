@@ -110,6 +110,17 @@ def smart_value(data0: int):  # , memory
 	#     return nod.value()
 	# raise Exception(f"TODO emit.wasm values in wasp.wasm for kind {nod.kind} 0x{type_:08X}")
 
+def download(url):
+	from urllib.request import urlopen
+	url = readString(url)
+	print(f"Downloading from {url}")
+	data = urlopen(url).read()
+	try: data = data.decode('utf-8')
+	except: pass
+	pointer = writeString(data)
+	return pointer
+
+
 def nop():
 	return 0
 
@@ -120,8 +131,10 @@ f32 = ValType.f32()
 chars = ValType.i32()
 nodep = ValType.i32()
 externref = ValType.externref()
+# env::
 env = {
 	# "name" : ([param_types],[returns],fun),
+	"download": ([chars], [chars], download),
 	"getenv": ([chars], [chars], nop),
 	"fopen": ([chars,i32], [i32], nop), # TODO: use wasi !?
 	"fprintf": ([i32,chars,chars], [i32], nop), # TODO: use wasi !?

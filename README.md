@@ -74,8 +74,10 @@ cmake -B build -DDEBUG=1 -G Ninja . && ninja -C build && ./build/wasp
 docker build -t wasp:latest --target binary .
 docker run -it wasp:latest /bin/bash
 ```
-
-
+On MacOS, you can use Apples [container](https://github.com/apple/container/releases) :
+```
+container build --tag wasp --file Dockerfile .
+```
 ## Runtime
 
 The wasp runtime is available as
