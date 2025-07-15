@@ -387,6 +387,7 @@ let imports = {
     // HTML DOM JS functions
     // download: new WebAssembly.Suspending(download_async),
     download,
+    fetch:download,
     getWasmFunclet,
     init_graphics: nop, // canvas init by default
     requestAnimationFrame: nop, // todo
