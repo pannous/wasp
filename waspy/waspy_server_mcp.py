@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #!gunicorn waspy_server:application
 from flask import Flask, request, redirect, url_for
 from flask_cors import CORS  # pip install flask-cors
@@ -8,7 +9,7 @@ import waspy
 known_mcps = []
 
 register_queue = queue.Queue()
-mcp = FastMCP("waspy", host="0.0.0.0", port=3001, debug=True)  # FastMCP instance for managing tools
+mcp = FastMCP("waspy", host="0.0.0.0", port=3001, debug=True, stateless_http=True)  # FastMCP instance for managing tools
 
 app = Flask(__name__)
 CORS(app)
@@ -37,24 +38,13 @@ def list_tools():
 			html += f"<li><a href='/{lib}/{tool}'>{lib}-{tool}</a></li>"
 	html += """
 	<h2>Available AS MCP</h2>
-	ALL lambdas available via endpoint (streamable-http transport) <br>
+	ALL lambdas are available via MCP endpoint (streamable-http transport) <br>
  https://mcp.pannous.com/mcp/ <br>
- Try it with the MCP Inspector: <br>
- `npx @modelcontextprotocol/inspector https://mcp.pannous.com/mcp/ <br>
- ?transport=streamable-http&serverUrl=https://mcp.pannous.com/mcp/` <br>
-	```
-	claude mcp add --transport http wasp https://mcp.pannous.com/mcp/
-	``` <br><br>
-	<a href='https://pannous.com/files/mcp.json'>mcp.json</a> example for cursor / vs-code / …: <br> 
-	{<br>
-   "servers": {<br>
-     "lambdas": {<br>
-        "type": "http",<br>
-        "url": "https://mcp.pannous.com/mcp/"<br>
-      }<br>
-    }<br>
-  }<br>
+ Simply 'Add custom connector' in Claude Desktop <br>
+ <br>
+	claude mcp add --transport http wasp https://mcp.pannous.com/mcp/ <br>
 	<br>
+	<a href='https://pannous.com/files/mcp.json'>mcp.json</a> example for cursor / vs-code / …: <br>
 	<a href='https://pannous.com/files/mcp_client_http.py'>Download MCP client (python)</a><br>
 	<h2>Write new lambda/mcp</h2>
 	<a href='https://wasp.pannous.com/'>Wasp Editor</a> <br>

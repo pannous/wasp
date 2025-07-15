@@ -1,7 +1,11 @@
 # Multi-stage build for WASP WebAssembly Programming Language
-FROM ubuntu:22.04 AS base
+# FROM ubuntu:22.04 AS base
+# FROM debian:bullseye AS base
+FROM alpine AS base
 
 WORKDIR /workspace
+
+# RUN echo -e "nameserver 1.1.1.1\nnameserver 8.8.8.8" > /etc/resolv.conf
 
 # Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -14,16 +18,15 @@ ENV WASMEDGE_PATH=${WASMEDGE_PATH}
 # Install system dependencies
 
 # IF REFRESH
-#RUN rm -f /etc/apt/apt.conf.d/docker-clean \
-#RUN rm -rf /var/lib/apt/lists/*
-RUN echo 'Acquire::AllowUnauthenticated "true";' > /etc/apt/apt.conf.d/allow-insecure
-RUN apt-get update || true && apt-get install --reinstall -y ca-certificates gnupg
+RUN rm -f /etc/apt/apt.conf.d/docker-clean 
+RUN rm -rf /var/lib/apt/lists/*
+# RUN echo 'Acquire::AllowUnauthenticated "true";' > /etc/apt/apt.conf.d/allow-insecure
+# RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates gnupg
+# RUN apt-get update || true && apt-get install --reinstall -y ca-certificates gnupg
 #RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 #    --mount=target=/var/cache/apt,type=cache,sharing=locked \
 #    rm -f /etc/apt/apt.conf.d/docker-clean \
-#    && apt-get update  \
-RUN apt-get update  \
-    && apt-get -y --no-install-recommends install  \
+RUN apt-get update &&  apt-get -y --no-install-recommends install  \
     build-essential \
     cmake \
     clang \

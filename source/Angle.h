@@ -156,6 +156,7 @@ struct ParserOptions {
     bool percent_names = false; // escape keywords as names in wit   e.g.  %id %flags
     bool colon_symbols = false; // :symbol ruby style ⚠️ careful with map Obviously
     bool colon_immediate = true; // parse a:b,c as (a:b) c vs a:(b,c)   should be standard!
+    bool meta_attributes = true; // @meta @annotation lookahead  ⚠️ VERSUS:
     bool at_names = false; // @interface as in wat,wit  julia macros @code_llvm / @annotation ?
     bool use_tags = false; // <html> or
     bool use_generics = false;

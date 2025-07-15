@@ -1302,7 +1302,10 @@ private:
         // A JSON value could be an object, an array, a string, a number, or a word.
         Node &actual = *new Node(); // current already used in super context
         actual.parent = parent;
-        actual.setKind(groups); // may be changed later, default (1 2)==1,2
+        // if(close=='}') actual.setKind(objects);
+        // else if(close==']') actual.setKind(patterns);
+        // else
+            actual.setKind(groups);
 #if DEBUG
         if (line != "}") // why?
             actual.line = &line;
@@ -1356,8 +1359,25 @@ private:
                 //                    print("Ü");
                 case '@':
                 case '$':
-                    if (parserOptions.dollar_names or parserOptions.at_names)
+                    if ((ch == '$' and parserOptions.dollar_names) or (ch == '@' and parserOptions.at_names))
                         actual.add(Node(identifier()).setKind(referencex));
+                    else if (ch == '@' and parserOptions.meta_attributes) {
+                        proceed(); // skip @
+                        auto meta = identifier();
+                        Node* value = 0;
+                        if(ch=='(') {
+                            proceed();
+                            value = &valueNode(')');
+                        }
+                        auto node = valueNode();
+                        auto key = new Node(meta);
+                        if(value) {
+                            key->setKind(::key);
+                            key->value.node = value; // todo: clone?
+                        }
+                        node.addMeta(key); // todo: setKind
+                        actual.add(node);
+                    }
                     else
                         actual.add(operatorr());
                     break;
@@ -1463,6 +1483,8 @@ private:
                     else
                         actual.addSmart(object);
                     //					current.addSmart(&object,flatten);
+                    if(bracket == '{')
+                        actual.last().setKind(objects, false);
                     if (specialDeclaration)
                         actual.kind = declaration;
                     break;

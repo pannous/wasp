@@ -696,7 +696,7 @@ if (WASM) # OR WASI)
                 # 2025-06 broken dwarf_to_json.js 2025-07 works again! needs correct debug info in wasm!
                 # .debug_abbrev .debug_info .debug_ranges .debug_str .debug_line .debug_loc via -g?
                 COMMAND python3 /Users/me/dev/script/wasm/wasm-sourcemap.py ${CMAKE_BINARY_DIR}/wasp-hosted.wasm -o ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map
-                COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../source/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
+                COMMAND llvm-objcopy --add-section sourceMappingURL=${CMAKE_BINARY_DIR}/../Frameworks/sourceMappingURL.txt ${CMAKE_BINARY_DIR}/wasp-hosted.wasm
                 # see commit 1119c50803856ce2049c566ff065b01e6238a775 or before for other options (not working)
                 COMMAND ${CMAKE_COMMAND} -E echo "Source map generated: ${CMAKE_BINARY_DIR}/wasp-hosted.wasm.map"
         )

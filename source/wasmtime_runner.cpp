@@ -454,6 +454,7 @@ wasm_wrap *link_import(String name) {
     //    if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
     if (name == "put_char") return &wrap_putc; // todo: remove duplicates!
     if (name == "download") return &wrap_download;
+    if (name == "fetch") return &wrap_download;
     if (name == "getElementById") return &wrap_getElementById;
     if (name == "wasp_main") return &hello_callback;
     if (name == "memory")

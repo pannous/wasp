@@ -56,44 +56,18 @@ void testTodoBrowser();
 //  ⚠️ do NOT put synchronous tests here! use testCurrent for those!
 extern "C" void testRun() {
     // print("testRun DEACTIVATED!");
-    if (done.empty())
+    if (done.empty()) // async via done list
         print("💡💡💡NOW RUNNING all async emit TESTS!💡💡💡");
-
-
-    assert_emit("square(√3)", 3);
-    assert_emit("42", 42);// if browser fails here just run it again! todo YieldThread out of sync WHY?!
-    assert_emit("42+1", 43);
-    assert_emit("square(3)", 9);
-    assert_emit("square(√3^2)", 9); // illegal opcode WDYM?
-
-    // assert_emit("a = [1, 2, 3]; a[1]", 2);
-    // assert_emit("a = [1, 2, 3]; a[2] == a#3", 1);
-    //    testDownload(); // not on localhost
-    //	assert_emit("square := it*it; square 3", 9);
-    // tracing = true; // HACK!
-    // assert_emit("test42+1", 43); // OK in WASM too?
-    // return;
-    // testBadInWasm(); // breaks LATER! usually some map[key] where key missing!
-    testTodoBrowser();
-    // we may run into MEMORY OVERFLOW, test ONE for now!
+    // we may run into MEMORY OVERFLOW
     // ⚠️ ERROR: RuntimeError: memory access out of bounds / Duplicate export name 'main' (misleading!!)
+    testTodoBrowser();
     testAllAngle();
     testAllEmit();
     testAllWasm();
-    // testBadInWasm();
-    //	testWasmGC();
-
-    //    skip(
-    //            testIndexOffset();
-    //    )
-    //    assert_emit("puts('ok');(1 4 3)#2", 4); // EXPECT 4 GOT 1n
-
-
-    //    return;
-    //    assert_emit("42", 42);
+    skip( // TODO!
+        testBadInWasm();
+    )
+    // assert_emit("'TESTS OK'", "TESTS OK");// todo lol
     //    assert_emit("42", 43); // Error: ⚠️ TEST FAILED!  works
-    //    assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
-
-    //    heap_end=__initial_heap_end+0x100000;// reset on each run!
     print("testRun SUCCEEDED");
 }

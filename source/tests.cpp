@@ -27,6 +27,74 @@
 
 #include "asserts.h"
 
+void testMeta() {
+    Node ok= parse("tee{a:1}");
+    ok["@attrib"] = 42;
+    ok["@attrib2"] = 43;
+    assert_equals(ok.name, "tee");
+    assert_equals(ok.serialize(), "@attrib(42) @attrib2(43) tee{a:1}");
+    check(ok["@attrib"]);
+    check(ok["@attrib2"]);
+    check(ok["a"] == 1);
+    check(ok.length == 1);
+    check(ok["@attrib"].value.longy == 42);
+    check(ok["@attrib2"].value.longy == 43);
+}
+
+void testMetaAt() {
+    assert_equals(parse("tee{a:1}").name, "tee");
+    assert_equals(parse("tee{a:1}").serialize(), "tee{a:1}");
+    auto code= "@attrib tee{a:1}";
+    auto node = parse(code);
+    check(node.name == "tee");
+    check(node.length == 1);
+    check(node["a"] == 1);
+    check(node["@attrib"]);
+}
+
+
+void testMetaAt2() {
+    auto code= "@attrib(1) @attrib2(42) tee{a:1}";
+    auto node = parse(code);
+    check(node.name == "tee");
+    check(node.length == 1);
+    check(node["a"] == 1);
+    // check_is(node.serialize(),code); // todo ok except order!
+    check(node["@attrib"]);
+    check(node["@attrib2"]);
+    check_is(node["@attrib"], 1);
+    check_is(node["@attrib2"], 42);
+}
+
+void testWGSL() {
+    testMeta();
+    testMetaAt();
+    testMetaAt2();
+    auto code= R"( wgsl{
+@group(0) @binding(0)
+var<storage, read_write> data: array<u32>;
+
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) id: vec3<u32>) {
+    let i = id.x;
+    data[i] = data[i] * 2;
+}
+   } )";
+    auto wsgl = parse(code);
+    check(wsgl.name == "wgsl");
+    // OUR WGSL parser creates nodes, original is in a string
+    // check(node.kind == strings);
+    // check(node.kind == datas);
+    // check(node.value.string->contains("@compute"));
+    print(wsgl);
+    check(wsgl.length == 2);
+    // TODO: a lot ;)
+    // check(node[0].kind == wgsl_function);
+    // check(wsgl[1]["name"] == "main");
+    // check(wsgl[1]["workgroup_size"] == "64");
+    // check(wsgl[1]["body"].length == 1);
+}
+
 void testPing() {
     assert_emit("def ping(): 'pong'; ping()", "pong");
 }
@@ -469,6 +537,9 @@ void testFetch() {
     }
     check_eq(res, "test 2 5 3 7");
     check_emit("fetch https://pannous.com/files/test", "test 2 5 3 7");
+    check_emit("x=fetch https://pannous.com/files/test", "test 2 5 3 7");
+    check_emit("string x=fetch https://pannous.com/files/test", "test 2 5 3 7");
+    check_emit("string x=fetch https://pannous.com/files/test;y=7;x", "test 2 5 3 7");
 }
 
 void test_getElementById() {
@@ -3574,6 +3645,7 @@ void testBadInWasm() {
     assert_emit("if 4>1 then 2 else 3", 2)
 
     // bad only SOMETIMES / after a while!
+    assert_emit("puts('ok');(1 4 3)#2", 4); // EXPECT 4 GOT 1n
     assert_emit("'αβγδε'#3", U'γ'); // TODO! sometimes works!?
     assert_emit("3 + √9", (int64) 6); // why !?!
     assert_emit("id 3*42> id 2*3", 1)
@@ -3933,7 +4005,7 @@ void testWaspRuntimeModule() {
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-03 : 10 sec WITH runtime_emit, wasmtime 4.0 X86 on M1
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
-// 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1
+// 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1, 45 sec in Chrome (because print?)
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
     // print("testCurrent DEACTIVATED");
@@ -3953,6 +4025,8 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
+    testFetch();
+    testWGSL();
     assert_emit("n=3;2ⁿ", 8);
     testFunctionDeclaration();
     testReturnTypes();

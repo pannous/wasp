@@ -2268,6 +2268,9 @@ void preRegisterFunctions() {
 
     functions["download"].import();
     functions["download"].signature.add(charp, "url").returns(charp);
+    // todo alias ^^
+    functions["fetch"].import();
+    functions["fetch"].signature.add(charp, "url").returns(charp);
 
     // DOM functions
     functions["getDocumentBody"].import().signature.returns(externref);
