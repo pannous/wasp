@@ -173,8 +173,8 @@ WasmEdge_Result download(void *Data, const FrameContext *CallFrameCxt, const Was
     int l=strlen(data);
     int offset = 0; // todo: find free space in wasm_memory!!!
     strcpy2((char *) wasm_memory+offset, data);
-    if(l>0 and ((char*)wasm_memory)[offset+l-1] == '\n')
-        ((char*)wasm_memory)[offset+l-1] = 0; // remove trailing newline
+    // if(l>0 and ((char*)wasm_memory)[offset+l-1] == '\n')
+        // ((char*)wasm_memory)[offset+l-1] = 0; // remove trailing newline HELLNO!
     Out[0]=WasmEdge_ValueGenI32((uint64_t)offset); // return pointer to result
     return WasmEdge_Result_Success;
 }

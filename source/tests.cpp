@@ -536,10 +536,10 @@ void testFetch() {
         return;
     }
     check_eq(res, "test 2 5 3 7");
-    check_emit("fetch https://pannous.com/files/test", "test 2 5 3 7");
-    check_emit("x=fetch https://pannous.com/files/test", "test 2 5 3 7");
-    check_emit("string x=fetch https://pannous.com/files/test", "test 2 5 3 7");
-    check_emit("string x=fetch https://pannous.com/files/test;y=7;x", "test 2 5 3 7");
+    check_emit("fetch https://pannous.com/files/test", "test 2 5 3 7\n");
+    check_emit("x=fetch https://pannous.com/files/test", "test 2 5 3 7\n");
+    check_emit("string x=fetch https://pannous.com/files/test", "test 2 5 3 7\n");
+    check_emit("string x=fetch https://pannous.com/files/test;y=7;x", "test 2 5 3 7\n");
 }
 
 void test_getElementById() {
