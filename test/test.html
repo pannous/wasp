@@ -4,7 +4,7 @@
 <!--todo unify ^^-->
 <html>
 <head>
-    <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"/>
+  <META CONTENT="text/html; charset=UTF-8" HTTP-EQUIV="CONTENT-TYPE"/>
 </head>
 <!--onclick='test().then(_=>terminate0())' -->
 <body onload="test()" style='height: 1000px;'>
@@ -38,12 +38,12 @@
 <script> // errors here fail silently :(
 const is_node = (typeof process !== 'undefined') && (process.release.name === 'node')
 const is_v8 = z => {
-    var s = '';
-    for (x in {3: 3, 1: 1}) {
-        s += x
-    }
-    ;
-    return !is_node && s == '13'
+  var s = '';
+  for (x in {3: 3, 1: 1}) {
+    s += x
+  }
+  ;
+  return !is_node && s == '13'
 }
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -51,381 +51,381 @@ if (is_node) window = global
 BigInt.prototype.toJSON = () => this.toString()
 
 function resizeCanvas() {
-    canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-    canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
-    WIDTH = canvas.width;
-    HEIGHT = canvas.height;
-    // log(WIDTH, HEIGHT);
-    imageData = ctx.createImageData(WIDTH, HEIGHT);
-    // clearScreen();
-    // window.paint(loop);
+  canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+  canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+  WIDTH = canvas.width;
+  HEIGHT = canvas.height;
+  // log(WIDTH, HEIGHT);
+  imageData = ctx.createImageData(WIDTH, HEIGHT);
+  // clearScreen();
+  // window.paint(loop);
 }
 
 function loop() {
-    paint()
-    window.requestAnimationFrame(loop);
+  paint()
+  window.requestAnimationFrame(loop);
 }
 
 function paint() {
-    let data = imageData.data
-    for (var i = 0; i < data.length; i += 4) {
-        data[i] = Math.random() * 255 // red
-        data[i + 1] = Math.random() * 255 // green
-        data[i + 2] = Math.random() * 255 // blue
-        // data[i+3]     = Math.random()*255
-        data[i + 3] = 255 // else transparent!!!
-    }
-    ctx.putImageData(imageData, 0.5, 0.5);
+  let data = imageData.data
+  for (var i = 0; i < data.length; i += 4) {
+    data[i] = Math.random() * 255 // red
+    data[i + 1] = Math.random() * 255 // green
+    data[i + 2] = Math.random() * 255 // blue
+    // data[i+3]     = Math.random()*255
+    data[i + 3] = 255 // else transparent!!!
+  }
+  ctx.putImageData(imageData, 0.5, 0.5);
 }
 
 function terminate0() {
-    console.log("terminate0 disabled: enable by removing 0");
+  console.log("terminate0 disabled: enable by removing 0");
 }
 
 
 function print(...x) {
-    let xs = Array.isArray(x) ? x.join(' ') : x;
-    results.value += xs + "\n"
-    log(String(xs));// to stdout and window title!
-    // log(JSON.stringify(xs));// to stdout and window title!
-    console.log(...x);
+  let xs = Array.isArray(x) ? x.join(' ') : x;
+  results.value += xs + "\n"
+  log(String(xs));// to stdout and window title!
+  // log(JSON.stringify(xs));// to stdout and window title!
+  console.log(...x);
 }
 
 </script>
 
 <p id="message">RUNNING WASM TESTS</p>
 <script type="text/javascript">
-    $ = id => document.getElementById(id), // .bind(document); for debugging
-        ignore = x => x
-    nop = x => ignore(x)
-    const string_mask_64 = 0xFF10000000000000n // n means BigInt("…")
-    const string_header_64 = 0x0010000000000000n // n means BigInt("…")
-    const double_mask_64 = 0x7F00000000000000n
-    const negative_mask_64 = 0xFF00000000000000n
-    // smart_mask_64 = 0x00FF000000000000L,
-    //	negative_mask_64 = 0x8000000000000000,
+  $ = id => document.getElementById(id), // .bind(document); for debugging
+    ignore = x => x
+  nop = x => ignore(x)
+  const string_mask_64 = 0xFF10000000000000n // n means BigInt("…")
+  const string_header_64 = 0x0010000000000000n // n means BigInt("…")
+  const double_mask_64 = 0x7F00000000000000n
+  const negative_mask_64 = 0xFF00000000000000n
+  // smart_mask_64 = 0x00FF000000000000L,
+  //	negative_mask_64 = 0x8000000000000000,
 
-    let memory_size = 1024// pages à 64kb // 4GB!
-    // let memoryBase = 1024 * 16
-    // let table_size = 294
+  let memory_size = 1024// pages à 64kb // 4GB!
+  // let memoryBase = 1024 * 16
+  // let table_size = 294
 
-    let memory = new WebAssembly.Memory({initial: memory_size, maximum: 65336});
-    const hex = x => x >= 0 ? x.toString(16) : `0x${((BigInt(1) << BigInt(64)) + BigInt(x)).toString(16)}`
+  let memory = new WebAssembly.Memory({initial: memory_size, maximum: 65336});
+  const hex = x => x >= 0 ? x.toString(16) : `0x${((BigInt(1) << BigInt(64)) + BigInt(x)).toString(16)}`
 
-    // (BigInt(1) << (BigInt(x.toString(2).length))) + BigInt(x).toString(16);
-    function is_smart_pointer(result) {
-        let got_smart_pointer = Number.isInteger(result) && (result >= 0x10000000 || result <= -0x10000000);
-      if (typeof result === "bigint") got_smart_pointer = result >= BigInt(0x4000000000000000) && result <= BigInt(0x7FFFFFFFFFFFFFFF);
-      if (typeof result === "bigint") got_smart_pointer ||= ((result & string_mask_64) == string_header_64)
-        if (typeof result === "bigint" || got_smart_pointer)
-            console.log(">>> 0x", hex(result), got_smart_pointer ? " SMART " : "");
-        if (Array.isArray(result)) got_smart_pointer = true;// multivalue of length 2 always assumed smart pair
-        return got_smart_pointer;
+  // (BigInt(1) << (BigInt(x.toString(2).length))) + BigInt(x).toString(16);
+  function is_smart_pointer(result) {
+    let got_smart_pointer = Number.isInteger(result) && (result >= 0x10000000 || result <= -0x10000000);
+    if (typeof result === "bigint") got_smart_pointer = result >= BigInt(0x4000000000000000) && result <= BigInt(0x7FFFFFFFFFFFFFFF);
+    if (typeof result === "bigint") got_smart_pointer ||= ((result & string_mask_64) == string_header_64)
+    if (typeof result === "bigint" || got_smart_pointer)
+      console.log(">>> 0x", hex(result), got_smart_pointer ? " SMART " : "");
+    if (Array.isArray(result)) got_smart_pointer = true;// multivalue of length 2 always assumed smart pair
+    return got_smart_pointer;
+  }
+
+  // this is wasm side, can't do it wasp side in WebApp.cpp because of async bind!
+  function new_string(str) {
+    let len = str.length;
+    let ptr = memory.buffer.byteLength - str.length - 1;
+    for (let i = 0; i < len; i++) {
+      memory[ptr + i] = str.charCodeAt(i);
     }
+    memory[ptr + len] = 0;
+    return BigInt(ptr) | string_header_64;
+  }
 
-    // this is wasm side, can't do it wasp side in WebApp.cpp because of async bind!
-    function new_string(str) {
-        let len = str.length;
-        let ptr = memory.buffer.byteLength - str.length - 1;
-        for (let i = 0; i < len; i++) {
-            memory[ptr + i] = str.charCodeAt(i);
+  var last_result = 0;
+
+  // async NOT WORKING in wasm: Failed to parse String to BigInt
+  function smartResult(object) { // returns BigInt smart pointer to object
+    // if(is_smart_pointer(object))
+    //     return parseSmartResult(object)
+    last_result = object
+    if (typeof object === "number")
+      return BigInt(object)
+    // if (typeof object === "string" && !isNaN(object))
+    //     return BigInt(object)
+    // if (typeof object === "object")
+    //     return -123;//
+    try {
+      // print("smartResult: ", object, "trying to parse to BigInt")
+      let reflect = {}
+      for (let prop in object) {
+        if (typeof object[prop] === "function") {
+          // reflect[prop] = object[prop].toString()
+        } else {
+          reflect[prop] = object[prop]
         }
-        memory[ptr + len] = 0;
-        return BigInt(ptr) | string_header_64;
+      }
+      let typed = {}
+      let typ = typeof object
+      if (typ === "object") typ = object.constructor.name
+      typed[typ] = reflect
+      // serialized=JSON.stringify(object)
+      serialized = JSON.stringify(typed)
+      // serialized=JSON.stringify(reflect)
+
+      print("smartResult: typeof", typeof object, ": ", object, " =>", serialized)
+      last_result = serialized
+      let wrapped = new_string(serialized)
+      return BigInt(wrapped) // to be consumed by wasm, potentially returned to wasp via main and wasm_done
+    } catch (ex) {
+      // todo error handling via print!
+      console.error("smartResult: ", object, "failed to parse to BigInt", ex)
+      return -1
     }
+  }
 
-    var last_result = 0;
-    // async NOT WORKING in wasm: Failed to parse String to BigInt
-    function smartResult(object) { // returns BigInt smart pointer to object
-        // if(is_smart_pointer(object))
-        //     return parseSmartResult(object)
-        last_result = object
-        if (typeof object === "number")
-            return BigInt(object)
-        // if (typeof object === "string" && !isNaN(object))
-        //     return BigInt(object)
-        // if (typeof object === "object")
-        //     return -123;//
-        try {
-            // print("smartResult: ", object, "trying to parse to BigInt")
-            let reflect = {}
-            for (let prop in object) {
-                if (typeof object[prop] === "function") {
-                    // reflect[prop] = object[prop].toString()
-                } else {
-                    reflect[prop] = object[prop]
-                }
-            }
-            let typed = {}
-            let typ = typeof object
-            if (typ === "object") typ = object.constructor.name
-            typed[typ] = reflect
-            // serialized=JSON.stringify(object)
-            serialized = JSON.stringify(typed)
-            // serialized=JSON.stringify(reflect)
-
-            print("smartResult: typeof", typeof object, ": ", object, " =>", serialized)
-            last_result = serialized
-            let wrapped = new_string(serialized)
-            return BigInt(wrapped) // to be consumed by wasm, potentially returned to wasp via main and wasm_done
-        } catch (ex) {
-            // todo error handling via print!
-            console.error("smartResult: ", object, "failed to parse to BigInt", ex)
-            return -1
-        }
+  function parseSmartResult(data = 0) {
+    var type = -1
+    var address = data;
+    print("smartResult: ", hex(data))
+    if (!is_smart_pointer(data)) return data;
+    if (Array.isArray(data)) { // multivalue return always 'smarty
+      let _a = data
+      data = _a[0]
+      type = _a[1];
+    } else if (typeof data === "bigint") {
+      // console.log("smartResult: bigint", hex(data))
+      type = Number(data / BigInt(0x100000000));
+      data = BigInt.asIntN(32, data)// drop high bits
+    } else { // smartpointer32
+      type = data & 0xF0000000;
+      address = data & 0x0FFFFFFF;
+      print("smartResult 32 ", hex(data), hex(type), hex(address))
+      return string(address);
     }
+    print("smartResult: ", hex(type), hex(data), hex(address))
 
-    function parseSmartResult(data = 0) {
-        var type = -1
-        var address = data;
-        print("smartResult: ", hex(data))
-        if (!is_smart_pointer(data)) return data;
-        if (Array.isArray(data)) { // multivalue return always 'smarty
-            let _a = data
-            data = _a[0]
-            type = _a[1];
-        } else if (typeof data === "bigint") {
-            // console.log("smartResult: bigint", hex(data))
-            type = Number(data / BigInt(0x100000000));
-            data = BigInt.asIntN(32, data)// drop high bits
-        } else { // smartpointer32
-            type = data & 0xF0000000;
-            address = data & 0x0FFFFFFF;
-            print("smartResult 32 ", hex(data), hex(type), hex(address))
-            return string(address);
-        }
-        print("smartResult: ", hex(type), hex(data), hex(address))
-
-        if (type === 0xC0 || type === 0x10000000 || type === 0x100000 || type === string_header_64 || type === string_header_64 / 0x100000000n) {
-            print("smartResult: string", hex(data))
-            let str = string(Number(data), 10);
-            print("smartResult: string", hex(data), str)
-            return str; // chars
-        }
-        if (type === 0x7E) // float64
-            return reinterpretInt64AsFloat64(data) // wasp.js
-        // return reinterpret_f64(data);
-        if (!Number.isInteger(type))
-            console.error("smart type should be an integer: ", type, "of", data);
-        if (BigInt(type) & BigInt(0x40000000)) {// array
-            console.log("smart type: array")
-            console.log(memory[address])
-        }
-        return {data: data, type: type};
+    if (type === 0xC0 || type === 0x10000000 || type === 0x100000 || type === string_header_64 || type === string_header_64 / 0x100000000n) {
+      print("smartResult: string", hex(data))
+      let str = string(Number(data), 10);
+      print("smartResult: string", hex(data), str)
+      return str; // chars
     }
-
-    function loadBytes(byte_start, len) {
-        print("TODO loadBytes")
-        return new Uint8Array(start);
+    if (type === 0x7E) // float64
+      return reinterpretInt64AsFloat64(data) // wasp.js
+    // return reinterpret_f64(data);
+    if (!Number.isInteger(type))
+      console.error("smart type should be an integer: ", type, "of", data);
+    if (BigInt(type) & BigInt(0x40000000)) {// array
+      console.log("smart type: array")
+      console.log(memory[address])
     }
+    return {data: data, type: type};
+  }
 
-    function trimStack(x) {
-        return x
+  function loadBytes(byte_start, len) {
+    print("TODO loadBytes")
+    return new Uint8Array(start);
+  }
+
+  function trimStack(x) {
+    return x
+  }
+
+  let backtrace = function (print = 1) {
+    try {
+      throw new Error()
+    } catch (ex) {
+      if (print) console.error(trimStack(ex, 1)); else return trimStack(ex)
     }
+  }
 
-    let backtrace = function (print = 1) {
-        try {
-            throw new Error()
-        } catch (ex) {
-            if (print) console.error(trimStack(ex, 1)); else return trimStack(ex)
-        }
+  function raise(msg) {
+    print(msg)
+    exit(0)
+  }
+
+  let memset = function (ptr, value, num) {
+    memory[ptr] = value// todo SHOULD BE DONE INSIDE WASM!?
+    log('todo("memset")', ptr, value, num)
+    raise("memset should be part of wasp!?!")
+  }
+  let paintWasmToCanvas = (offset = 0) => {
+    // paint()
+    resizeCanvas();
+    let len = canvas.width * canvas.height * 4
+    data = new Uint8Array(memory.buffer, offset, len + offset);
+    // data = new Uint8Array(memory.buffer, 0, memory.buffer.byteLength);
+    // imageData.data.set(new Uint8ClampedArray(memory.buffer, 0,10000 ));// memory.length));
+    for (var i = 0; i < data.length; i += 4) {
+      // data[i] = Math.random() * 255
+      data[i + 3] = 255;//Math.random() * 255
     }
+    imageData.data.set(data);
+    ctx.putImageData(imageData, 0, 0);
+  }
+  identity = x => x
 
-    function raise(msg) {
-        print(msg)
-        exit(0)
+  alert = print // pop up window NOT supported by WebView, so we use print instead
+
+  const utf8_decoder = new TextDecoder('utf8');
+
+  const string = function (pointer, length, format) {
+    let buffer = new Uint8Array(memory.buffer, 0, memory.buffer.byteLength);
+    if (!length) length = 0;
+    if (length <= 0) while (buffer[pointer + ++length]) ; // auto length
+    const arr = new Uint8Array(buffer.subarray(pointer, pointer + length));
+    return utf8_decoder.decode(arr);
+  };
+
+  function reflect_global_js() {
+    for (builtin of Object.getOwnPropertyNames(window)) {
+      for (prop of Object.getOwnPropertyNames(window[builtin])) {
+        print("builtin", builtin, prop)
+      }
     }
+  }
 
-    let memset = function (ptr, value, num) {
-        memory[ptr] = value// todo SHOULD BE DONE INSIDE WASM!?
-        log('todo("memset")', ptr, value, num)
-        raise("memset should be part of wasp!?!")
-    }
-    let paintWasmToCanvas = (offset = 0) => {
-        // paint()
-        resizeCanvas();
-        let len = canvas.width * canvas.height * 4
-        data = new Uint8Array(memory.buffer, offset, len + offset);
-        // data = new Uint8Array(memory.buffer, 0, memory.buffer.byteLength);
-        // imageData.data.set(new Uint8ClampedArray(memory.buffer, 0,10000 ));// memory.length));
-        for (var i = 0; i < data.length; i += 4) {
-            // data[i] = Math.random() * 255
-            data[i + 3] = 255;//Math.random() * 255
-        }
-        imageData.data.set(data);
-        ctx.putImageData(imageData, 0, 0);
-    }
-    identity = x => x
-
-    alert = print // pop up window NOT supported by WebView, so we use print instead
-
-    const utf8_decoder = new TextDecoder('utf8');
-
-    const string = function (pointer, length, format) {
-        let buffer = new Uint8Array(memory.buffer, 0, memory.buffer.byteLength);
-        if (!length) length = 0;
-        if (length <= 0) while (buffer[pointer + ++length]) ; // auto length
-        const arr = new Uint8Array(buffer.subarray(pointer, pointer + length));
-        return utf8_decoder.decode(arr);
-    };
-
-    function reflect_global_js() {
-        for (builtin of Object.getOwnPropertyNames(window)) {
-            for (prop of Object.getOwnPropertyNames(window[builtin])) {
-                print("builtin", builtin, prop)
-            }
-        }
-    }
-
-    async function wasmx(code) {
-        try {
-            // let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
-            let imports = {
-                wasi_unstable: {proc_exit: terminate, fd_write: log, fd_read: nop, fd_seek: nop, fd_close: nop},
-              wasi_snapshot_preview1: {proc_exit: terminate, fd_write: log, fd_read: nop, fd_seek: nop, fd_close: nop},
-                env: {
-                    memory,
-                    // table,
-                    getDocumentBody: () => document.body,
-                    createHtml: (parent, innerHtml) => {
-                        let element = document.createElement("div"); // todo tag
-                        element.innerHTML = string(innerHtml);
-                        if (!parent) parent = document.body;
-                        parent.appendChild(element);
-                        return element;
-                    },
-                    addScript: (scriptContent) => {
-                        let script = document.createElement('script');
-                        script.textContent = string(scriptContent);
-                        document.body.appendChild(script);
-                    },
-                    createHtmlElement: (tag, id) => {
-                        let element = document.createElement(string(tag));
-                        element.id = string(id);
-                        document.body.appendChild(element);
-                        return element;
-                    },
-                    getElementById: id => {
-                        print("getElementById", id, string(id))
-                        return document.getElementById(string(id))
-                    },
-                    // getExternRefPropertyValue: async (ref, prop0) => { async not working in wasm!
-                    getExternRefPropertyValue: (ref, prop0) => {
-                        let prop = string(prop0)
-                        print("CALLING getExternRefPropertyValue", ref, prop)
-                        if (ref && typeof ref[prop] !== 'undefined') {
-                            print("getExternRefPropertyValue OK ", ref, prop, ref[prop])
-                            return smartResult(ref[prop])
-                            // return String(ref[prop])
-                        } else if (ref && typeof ref.getAttribute === 'function') {
-                            // check attribute
-                            let attribute = ref.getAttribute(prop);
-                            print("getExternRefPropertyValue OK ", ref, prop, attribute)
-                            // return String(attribute)
-                            return smartResult(attribute)
-                        } else {
-                            throw new Error(`'${prop}' is not a property of the provided reference`);
-                        }
-                    },
-                    invokeExternRef: (ref, fun, params) => {
-                        print("invokeExternRef", ref, fun, params)
-                        // Check if 'fun' is a valid method of 'ref'
-                        if (ref && typeof ref[fun] === 'function') {
-                            // Call the method with the provided parameters
-                            return ref[fun](...params);
-                        } else {
-                            // Handle the case where 'fun' is not a valid method
-                            throw new Error(`'${fun}' is not a function of the provided reference`);
-                        }
-                    },
-                    square: x => x * x, // usually native wasm, better test with 'grow'!
-                    pow: Math.pow, // usually wasp lib, better test other function
-                    powd: Math.pow,
-                    powf: Math.pow,
-                    powi: (a, b) => {
-                        res = a;
-                        while (b-- > 1) res *= a;
-                        return BigInt(res);
-                    },
-                    _Z3powdd: Math.pow,
-                    atoi: x => parseInt(x),
-
-                    fopen: nop,// WASI
-                    fseek: nop,
-                    ftell: nop,
-                    fread: nop,
-                    system: nop,
-                    access: nop,
-
-                    _Z11testCurrentv: test,
-
-                    _Z5raisePKc: log,
-                    _Z5tracePKc: nop,
-                    _ZdlPv: nop,//operator delete(void*) lol
-                    _ZSt9terminatev: terminate,
-                    panic: terminate,
-                    raise,
-                    __cxa_begin_catch: nop,
-                    __cxa_atexit: log,
-                    __cxa_demangle: identity,
-                    __cxa_guard_acquire: nop,//!?
-                    __cxa_guard_release: nop,//
-
-                    put_char: log,
-                    putchar: log,
-                    putc: log,
-                    puts: log,
-                    puti: log,
-                    putf: log,
-                    logi: log,
-                    logc: log,
-                    logf: log,
-                    printf: log,
-                    logs: log,
-                    memset,
-                    paint: paintWasmToCanvas,
-                    init_graphics: nop, // canvas value'ed by default
-                    requestAnimationFrame: paintWasmToCanvas,
-                    _Z21requestAnimationFramev: nop, // why sometimes mangled?
-                    _Z13init_graphicsv: nop,
-                    _Z8run_wasmPhi: (bytes, len) => wasmx(loadBytes(bytes, len)),// full circle yay!
-                    ext_memcpy: nop,
-                    sum: (x, y) => x + y,
-                }
-            };
-            // put("STARTING WASM!");
-            let module = await WebAssembly.compile(code)
-            // instance = await WebAssembly.instantiate(module, imports, memory).catch(ex => console.error(trimStack(ex)) || quit())
-            //const module = await WebAssembly.compileStreaming(fetch('program.wasm'));
-            const instance = await WebAssembly.instantiate(module, imports, memory);
-            memory = instance.memory || module.memory || instance.exports.memory || memory
-
-            //const { instance } = await WebAssembly.instantiateStreaming(fetch('program.wasm'));
-            // print("Exports: ", instance.exports);//show what we've got
-            let main = instance.exports.main || instance.exports._start;
-            if (main) {
-                let result = main()
-                print("result")
-                print(result)
-                print(hex(result))
-                let smart_result = parseSmartResult(result); // unwrap
-                print("smart_result", smart_result)
-                wasm_done(String(smart_result)); // wrap!
-                // wasm_done(JSON.stringify(result));// pass over raw result
+  async function wasmx(code) {
+    try {
+      // let table = new WebAssembly.Table({initial: table_size, maximum: table_size, element: "anyfunc"});
+      let imports = {
+        wasi_unstable: {proc_exit: terminate, fd_write: log, fd_read: nop, fd_seek: nop, fd_close: nop},
+        wasi_snapshot_preview1: {proc_exit: terminate, fd_write: log, fd_read: nop, fd_seek: nop, fd_close: nop},
+        env: {
+          memory,
+          // table,
+          getDocumentBody: () => document.body,
+          createHtml: (parent, innerHtml) => {
+            let element = document.createElement("div"); // todo tag
+            element.innerHTML = string(innerHtml);
+            if (!parent) parent = document.body;
+            parent.appendChild(element);
+            return element;
+          },
+          addScript: (scriptContent) => {
+            let script = document.createElement('script');
+            script.textContent = string(scriptContent);
+            document.body.appendChild(script);
+          },
+          createHtmlElement: (tag, id) => {
+            let element = document.createElement(string(tag));
+            element.id = string(id);
+            document.body.appendChild(element);
+            return element;
+          },
+          getElementById: id => {
+            print("getElementById", id, string(id))
+            return document.getElementById(string(id))
+          },
+          // getExternRefPropertyValue: async (ref, prop0) => { async not working in wasm!
+          getExternRefPropertyValue: (ref, prop0) => {
+            let prop = string(prop0)
+            print("CALLING getExternRefPropertyValue", ref, prop)
+            if (ref && typeof ref[prop] !== 'undefined') {
+              print("getExternRefPropertyValue OK ", ref, prop, ref[prop])
+              return smartResult(ref[prop])
+              // return String(ref[prop])
+            } else if (ref && typeof ref.getAttribute === 'function') {
+              // check attribute
+              let attribute = ref.getAttribute(prop);
+              print("getExternRefPropertyValue OK ", ref, prop, attribute)
+              // return String(attribute)
+              return smartResult(attribute)
             } else {
-                wasm_error("NO MAIN!");
+              throw new Error(`'${prop}' is not a property of the provided reference`);
             }
-        } catch (error) {
-            print(error)
-            print('COMPILE ERROR', error.message)
-            wasm_error(error.message);
-            // return error;
-            // exit(1)
-        }
-    }
+          },
+          invokeExternRef: (ref, fun, params) => {
+            print("invokeExternRef", ref, fun, params)
+            // Check if 'fun' is a valid method of 'ref'
+            if (ref && typeof ref[fun] === 'function') {
+              // Call the method with the provided parameters
+              return ref[fun](...params);
+            } else {
+              // Handle the case where 'fun' is not a valid method
+              throw new Error(`'${fun}' is not a function of the provided reference`);
+            }
+          },
+          square: x => x * x, // usually native wasm, better test with 'grow'!
+          pow: Math.pow, // usually wasp lib, better test other function
+          powd: Math.pow,
+          powf: Math.pow,
+          powi: (a, b) => {
+            res = a;
+            while (b-- > 1) res *= a;
+            return BigInt(res);
+          },
+          _Z3powdd: Math.pow,
+          atoi: x => parseInt(x),
 
-    window.onload = () => test()
-    // window.onload = () => run(code_input.value)
+          fopen: nop,// WASI
+          fseek: nop,
+          ftell: nop,
+          fread: nop,
+          system: nop,
+          access: nop,
+
+          _Z11testCurrentv: test,
+
+          _Z5raisePKc: log,
+          _Z5tracePKc: nop,
+          _ZdlPv: nop,//operator delete(void*) lol
+          _ZSt9terminatev: terminate,
+          panic: terminate,
+          raise,
+          __cxa_begin_catch: nop,
+          __cxa_atexit: log,
+          __cxa_demangle: identity,
+          __cxa_guard_acquire: nop,//!?
+          __cxa_guard_release: nop,//
+
+          put_char: log,
+          putchar: log,
+          putc: log,
+          puts: log,
+          puti: log,
+          putf: log,
+          logi: log,
+          logc: log,
+          logf: log,
+          printf: log,
+          logs: log,
+          memset,
+          paint: paintWasmToCanvas,
+          init_graphics: nop, // canvas value'ed by default
+          requestAnimationFrame: paintWasmToCanvas,
+          _Z21requestAnimationFramev: nop, // why sometimes mangled?
+          _Z13init_graphicsv: nop,
+          _Z8run_wasmPhi: (bytes, len) => wasmx(loadBytes(bytes, len)),// full circle yay!
+          ext_memcpy: nop,
+          sum: (x, y) => x + y,
+        }
+      };
+      // put("STARTING WASM!");
+      let module = await WebAssembly.compile(code)
+      // instance = await WebAssembly.instantiate(module, imports, memory).catch(ex => console.error(trimStack(ex)) || quit())
+      //const module = await WebAssembly.compileStreaming(fetch('program.wasm'));
+      const instance = await WebAssembly.instantiate(module, imports, memory);
+      memory = instance.memory || module.memory || instance.exports.memory || memory
+
+      //const { instance } = await WebAssembly.instantiateStreaming(fetch('program.wasm'));
+      // print("Exports: ", instance.exports);//show what we've got
+      let main = instance.exports.main || instance.exports._start;
+      if (main) {
+        let result = main()
+        print("result")
+        print(result)
+        print(hex(result))
+        let smart_result = parseSmartResult(result); // unwrap
+        print("smart_result", smart_result)
+        wasm_done(String(smart_result)); // wrap!
+        // wasm_done(JSON.stringify(result));// pass over raw result
+      } else {
+        wasm_error("NO MAIN!");
+      }
+    } catch (error) {
+      print(error)
+      print('COMPILE ERROR', error.message)
+      wasm_error(error.message);
+      // return error;
+      // exit(1)
+    }
+  }
+
+  window.addEventListener("load", test);
 </script>
 
 <style>

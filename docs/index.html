@@ -6,21 +6,23 @@
   <meta content="no-cache, no-store, must-revalidate" http-equiv="Cache-Control">
   <meta content="no-cache" http-equiv="Pragma">
   <meta content="0" http-equiv="Expires">
+
   <!-- <meta http-equiv="Content-Security-Policy" content="default-src script-src 'self' 'unsafe-inline'  file://*"/> -->
+
+  <!-- code specific to the demo site https://wasp.pannous.com/ -->
+  <script src='demo.js' type='module'></script>
+
+<!--WASP: WebAssembly Programming Language API/ABI-->
   <script src='wasp.js'></script>
-  <!--  <script src='wasp.js?v=nocache'></script> -->
-  <!--  <script>-->
-  <!--    &lt;!&ndash;      WTF js 2024 ???&ndash;&gt;-->
-  <!--    const script = document.createElement('script');-->
-  <!--    script.src = 'wasp.js?v=' + new Date().getTime();-->
-  <!--    document.head.appendChild(script);-->
-  <!--  </script>-->
+
+<!-- examples specific to this demo site  -->
   <script src='examples.js'></script>
+<!-- general tests, can be executed here by typing 'test'  -->
   <script src='assets/script/wasp_tests.js'></script>
   <!--    todo remove in production -->
 
-  <script src="assets/script/demangle.js" type="text/javascript"></script>
   <!--  <script src="assets/script/demangle.mjs" type="module"></script>-->
+  <script src="assets/script/demangle.js" type="text/javascript"></script>
   <!-- todo get rid of this dependency -->
 
   <!-- Include CodeMirror CSS & JS -->
@@ -34,69 +36,6 @@
   <!--    <link href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css" rel="stylesheet">-->
   <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.js"></script>-->
   <!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/javascript-hint.min.js"></script>-->
-
-  <script>window.exports = {};</script>
-  <!--  <script src="assets/script/wasm-parser-bundle.js"></script> &lt;!&ndash;  ok but no wast emitter &ndash;&gt;-->
-  <!--  <script src="https://webassembly.github.io/wabt/demo/libwabt.js"></script> &lt;!&ndash;  can't handle partial/erronous wasm &ndash;&gt;-->
-  <!--  <script type="module" src="https://cdn.jsdelivr.net/npm/@webassemblyjs/wasm-parser@1.14.1/lib/index.js"></script>-->
-  <!--  <script> WabtModule().then(function (wabt) {-->
-  <!--    window.wabt = wabt;-->
-  <!--    console.log('wabt loaded', wabt);-->
-  <!--  });</script>-->
-  <script type="module">
-    // import * as binaryen from "https://unpkg.com/binaryen@latest/index.js";
-    // import * as binaryen from "https://cdn.jsdelivr.net/npm/binaryen@latest/index.js"
-    import * as binaryen from "./assets/script/binaryen-latest.js"
-
-    console.log('OK wasm_to_wat via binaryen', binaryen);
-
-    export function wasm_to_wat(buffer) {
-      try {
-        const module = binaryen.default.readBinary(buffer);
-        const wat = module.emitText();
-        results.value += wat;
-        console.log("WAT output:\n", wat);
-      } catch (e) {
-        console.error(e);
-        results.value = e;
-      }
-    }
-
-    window.wasm_to_wat = wasm_to_wat;
-  </script>
-  <script>function deploy() {
-    let server;
-    let name = lambda_name.value || "test";
-    if (LIVE)
-      server = "https://lambda.pannous.com/";
-    else
-      server = "http://localhost:9000/";
-
-    // upload wasm_buffer to
-    if (wasm_buffer) {
-      const blob = new Blob([wasm_buffer], {type: 'application/wasm'});
-      const formData = new FormData();
-      formData.append('file', blob, 'compiled.wasm');
-      formData.append('name', name);
-      fetch(server + "upload?name=" + name, {
-        method: 'POST',
-        body: formData
-      }).then(response => response.text())
-        .then(data => {
-          console.log('Success:', data);
-          results.value = data;
-        })
-        .catch((error) => {
-          console.error('Error:', error);
-          results.value = error;
-        });
-    } else {
-      alert("No wasm compiled yet!");
-    }
-    if (!auto_deploy.checked)
-      window.open(server + name, '_blank');
-
-  }</script>
 </head>
 <body>
 <!--<body style="background: cornsilk">-->
@@ -148,45 +87,5 @@
 </div>
 <canvas id="canvas" style="margin: 0;padding: 0;"></canvas>
 
-<script>
-  window.onload = function () {
-    editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-      lineNumbers: true,
-      mode: "wasp",
-      extraKeys: {
-        "Ctrl-Space": "autocomplete", "Cmd-Enter": function () {
-          compile_and_run(editor.getValue())
-        }
-      },
-    });
-    editor.on('change', function () {
-      if (auto_run.checked)
-        compile_and_run(editor.getValue());
-      if (auto_deploy.checked) // todo and error free
-        deploy();
-      // editor.save();
-      editor.focus();
-    });
-    // fill from examples.js
-    for (let key in exampleCode) {
-      const optionExists = (val) => Array.from(examples.options).some(option => option.value === val);
-      if (!optionExists(key)) {
-        const newOption = document.createElement('option');
-        newOption.value = key;
-        newOption.text = key; // use exampleCode[key] on select!!
-        examples.appendChild(newOption);
-      }
-    }
-    // select example from URL parameter ^^
-    // https://wasp.pannous.com/?example=lambda -
-    const urlParams = new URLSearchParams(window.location.search);
-    const exampleParam = urlParams.get('example');
-    if (exampleParam && exampleCode[exampleParam]) {
-      examples.value = exampleParam;
-      editor.setValue(exampleCode[exampleParam]);
-    }
-  }
-  const ctx = canvas.getContext('2d')
-</script>
 </body>
 
