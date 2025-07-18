@@ -316,6 +316,8 @@ if (NOT TRACE)
                 ADD_COMPILE_FLAG("-Wno-error=#warnings") # allow pragma warnings as message
             endif ()
         endif ()
+
+        ADD_COMPILE_FLAG("-Wno-string-compare")
         ADD_COMPILE_FLAG("-Wno-unused-function")
         ADD_COMPILE_FLAG("-Wno-unused-variable")
         ADD_COMPILE_FLAG("-Wno-unused-private-field")
@@ -855,6 +857,8 @@ elseif (WASMEDGE)
     else ()
         add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp" "${CMAKE_SOURCE_DIR}/bin/linux-arm64")
     endif ()
+    add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/bin" "${CMAKE_SOURCE_DIR}/wasp-jetbrains-plugin/bin")
+
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
     ADD_DEFINITIONS(-DWASMTIME)

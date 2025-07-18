@@ -222,7 +222,7 @@ class String {
 
 public:
     char *data{}; // UTF-8 sequence
-    int length = -1;
+    mutable int length = -1;
     int kind = string_header_32; // post header ;) static const
     //	Primitive kind = (Primitive) string_header_32;  // post header ;) static const
     codepoint *codepoints = 0;
@@ -545,7 +545,7 @@ public:
 
     // excluding to
     // todo ref param is confusing as one can expect it to be 'include = true/false'
-    String substring(int from, int to = -1, bool ref = false /* true after all is tested*/) {
+    String substring(int from, int to = -1, bool ref = false /* true after all is tested*/) const {
         // excluding to
         if (from < 0 or (from == 0 and (to == length or to == -1))) return *this;
         if (to < 0) to = length + to + 1; // -2 : skip last character
@@ -1224,9 +1224,9 @@ public:
 
     codepoint *end();
 
-    bool startsWith(chars string, int from = 0);
+    bool startsWith(chars string, int from = 0) const;
 
-    bool endsWith(const char *string);
+    bool endsWith(const char *string) const;
 
     String to(const char *string);
 

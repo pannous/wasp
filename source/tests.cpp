@@ -27,6 +27,13 @@
 
 #include "asserts.h"
 
+void testTypeSynonyms() {
+    // check_is(Type("i32"s),Type("int32"s));
+    // check_is(Type("i32"s),Type("int"s));
+    // check_is(Type("f32"s),Type("float32"s));
+    // check_is(Type("f32"s),Type("float"s));
+}
+
 void testMeta() {
     Node ok= parse("tee{a:1}");
     ok["@attrib"] = 42;
