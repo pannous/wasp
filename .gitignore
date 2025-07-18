@@ -132,8 +132,7 @@ build
 perf.data
 
 .wasp_history
-
-settings.local.json
-
 old
 homebrew-wasp/
+settings.local.json
+**/settings.local.json
