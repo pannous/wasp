@@ -125,9 +125,9 @@ Type mapType(Node *arg) {
     //    todo("mapType Node")
 }
 
-Type mapType(String arg, bool throws) {
+Type mapType(String& arg, bool throws) {
     if (arg.startsWith("const ")) // todo modifiers!
-        arg = arg.substring(6);
+        return mapType(arg.substring(6).clone(), throws); // remove const
     //	if(arg=="const char*")return charp;
     if (arg.empty() or arg == "" or arg == " ") return voids;
     else if (arg == "void")return voids;

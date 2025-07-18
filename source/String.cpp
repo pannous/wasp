@@ -574,13 +574,13 @@ codepoint *String::extractCodepoints(bool again) {
     return codepoints;
 }
 
-bool String::startsWith(chars string, int from) {
+bool String::startsWith(chars string, int from) const {
     int len1 = strlen(string);
     if (len1 > length)return false;
     return eq(data + from, string, len1);
 }
 
-bool String::endsWith(const char *string) {
+bool String::endsWith(const char *string) const {
     int len1 = strlen(string);
     length = strlen(data); // todo LOST WHEN?
     return len1 <= length and eq(data + length - len1, string, len1);

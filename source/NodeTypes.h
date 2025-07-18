@@ -456,12 +456,22 @@ union Type {
         type = primitive;
     }
 
+    Type(String &name) {
+        Type mapType(String &arg, bool throws = false);
+        *this = mapType(name, true); // throws if not found
+    }
+
 
     Type(Kind kind) {
         this->kind = kind;
         if ((int) kind > 0x1000)
             error("erroneous or unsafe Type construction");
     }
+
+    // explicit Type(const String &string) {
+    //     Type mapType(const String &arg, bool throws = false);
+    //     *this = mapType(string, true); // throws if not found
+    // }
 
     explicit
     operator int() const { return this->value; }
@@ -501,11 +511,11 @@ union Type {
 
     explicit operator const char *() const { return typeName(this); }
 
-    bool operator==(Type other) const{
+    bool operator==(Type other) const {
         return value == other.value;
     }
 
-    bool operator==(Primitive other) const{
+    bool operator==(Primitive other) const {
         return type == other;
     }
 
@@ -607,7 +617,7 @@ Primitive mapTypeToPrimitive(Node &n);
 
 Valtype mapTypeToWasm(Primitive p);
 
-Type mapType(String arg, bool throws = false);
+Type mapType(String &arg, bool throws = false);
 
 Type mapType(Node &arg);
 
