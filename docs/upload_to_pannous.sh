@@ -1,4 +1,5 @@
-echo '⚠️ https://wasp.pannous.com/ points to GITHUB page!!'
+echo '⚠️ https://wasp.pannous.com/ now points to GITHUB page!!'
+echo 'https://github.com/pannous/wasp/settings/pages'
 
 increase-package-version.py wasp.js 
 
