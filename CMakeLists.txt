@@ -856,7 +856,8 @@ elseif (WASMEDGE)
     else ()
         add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp" "${CMAKE_SOURCE_DIR}/bin/linux-arm64")
     endif ()
-    add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_SOURCE_DIR}/bin" "${CMAKE_SOURCE_DIR}/wasp-jetbrains-plugin/bin")
+    add_custom_command(TARGET wasp POST_BUILD COMMAND ${CMAKE_COMMAND} -E
+            copy_directory "${CMAKE_SOURCE_DIR}/bin" "${CMAKE_SOURCE_DIR}/wasp-jetbrains-plugin/src/main/resources/bin")
 
 elseif (WASMTIME)
     MESSAGE("USING WASMTIME")
