@@ -1,0 +1,27 @@
+double sin(double x){
+	double
+	S1  = -1.66666666666666324348e-01, 
+	S2  =  8.33333333332248946124e-03, 
+	S3  = -1.98412698298579493134e-04, 
+	S4  =  2.75573137070700676789e-06, 
+	S5  = -2.50507602534068634195e-08, 
+	S6  =  1.58969099521155010221e-10; 
+	;;
+	double z,r,w;
+	double tau=6.283185307179586;// 2*pi
+
+	x = modulo_double(x,tau);
+//	 if(x<0) return -sin(-x);
+	if(x >= pi) return -sin(modulo_double(x,pi));
+
+	// if(x%tau > pi) return -sin(x%tau);
+	z = x*x;
+	w = z*z;
+	r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6);
+	return x + z*x*(S1 + z*r);
+}
+
+#double cos(double x){
+#	double pi_half=1.5707963267948966;
+#	return sin(x+pi/2);// todo: eval pi/2 in compiler!
+#}

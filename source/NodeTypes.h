@@ -121,6 +121,8 @@ extern Node ByteCharType; // ugly by design // todo char ≠ char* !
 extern Node ShortType;
 extern Node StringType;
 extern Node TemplateType; // `strings with $values`
+// extern Node ArrayType; // auto map to Node{kind=arrays} or Node{kind=vectors} or Node{kind=lists} etc
+
 
 //#include "Util.h" // for error() :(
 //#include "Code.h"
