@@ -3865,7 +3865,7 @@ Code emitExportSection() {
         if (function.is_import or function.is_builtin)
             continue;
         if (function.call_index < 0) {
-            warn("function "s + name + " is not used, skipping export");
+            trace("function "s + name + " is not used, skipping export");
             continue;
         }
         Code functionExport = encodeString(name) + (byte) func_export + Code(function.call_index);

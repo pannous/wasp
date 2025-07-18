@@ -799,7 +799,6 @@ elseif (MICRO) # wasm-micro-vm:
     ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
 
     add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
-    add_dependencies(wasp run_version_script)
 
     target_link_libraries(wasp PUBLIC -lcurl)
     target_link_libraries(wasp PUBLIC -liwasm) # libiwasm.a
@@ -948,6 +947,7 @@ else () # NORMAL:
 endif ()
 
 if (NOT WASM)
+    add_dependencies(wasp run_version_script)
     if (WABT_MERGE)
         target_include_directories(wasp PUBLIC Frameworks/wabt)
         target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt/src)

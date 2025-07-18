@@ -1,0 +1,60 @@
+// Wasp Language Sample
+a + b * 2.0
+
+/* Types */
+int x = 42
+string name = "Hello World"
+array numbers = [1, 2, 3]
+map data = {"key": "value"}
+map data = {key: "value"}
+float64 pi = 3.14159// Wasp Language Sample
+
+/* Types */
+int x = 42
+string name = "Hello World"
+array numbers = [1, 2, 3]
+tuple numbers = (1, 2, 3)
+map data = {"key":(1,2)}
+float64 pi = 3.14159
+bool flag = true
+
+/* Functions */
+fun calculate(a: int, b: real) -> float64 {
+    return a + b * 2.0
+}
+
+/* Control flow */
+if (x > 0) {
+    print("Positive")
+} else {
+    print("Non-positive")
+}
+
+/* Collections */
+for item in numbers {
+    print(item)
+}
+
+/* Arithmetic */
+result = 2 + 3 * 4
+bool flag = true
+
+/* Functions */
+fun calculate(a: int, b: real) -> float64 {
+    return a + b * 2.0
+}
+
+/* Control flow */
+if (x > 0) {
+    print("Positive")
+} else {
+    print("Non-positive")
+}
+
+/* Collections */
+for item in numbers {
+    print(item)
+}
+
+/* Arithmetic */
+result = 2 + 3 * 4
