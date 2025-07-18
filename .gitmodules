@@ -7,3 +7,6 @@
 [submodule "wiki"]
 	path = wiki
 	url = https://github.com/pannous/wasp.wiki.git
+[submodule "wasp-jetbrains-plugin"]
+	path = wasp-jetbrains-plugin
+	url = https://github.com/pannous/wasp-jetbrains-plugin.git
