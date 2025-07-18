@@ -1346,7 +1346,8 @@ function wasp_ready() {
   // testRun1()
   if (run_tests)
     setTimeout(test, 1);// make sync
-  else compile_and_run(editor.getValue())
+  else
+    setTimeout(x=>compile_and_run(editor.getValue()), 1000); // make sync
 }
 
 window.addEventListener("load", load_compiler)

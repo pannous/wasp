@@ -106,6 +106,7 @@ if (document.readyState === 'loading') {
     window.ctx = canvas.getContext('2d');
   });
 } else {
+  console.log('Initializing editor...');
   initEditor();
   window.ctx = canvas.getContext('2d');
 }
