@@ -78,6 +78,16 @@ On MacOS, you can use Apples [container](https://github.com/apple/container/rele
 ```
 container build --tag wasp --file Dockerfile .
 ```
+
+# Test
+## Online Demo
+[wasp.pannous.com](https://wasp.pannous.com) Type 'test'
+## Command Line
+```bash
+wasp √π²
+wasp test
+```
+
 ## Runtime
 
 The wasp runtime is available as

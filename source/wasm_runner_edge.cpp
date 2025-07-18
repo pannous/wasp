@@ -138,11 +138,11 @@ WasmEdge_Result concat_wrap(void *Data, const FrameContext *CallFrameCxt, const 
     }
     long wasm_memory_size = 0x1000000; // todo: get from VM!
     printf("concat_wrap %d + %d\n", val1, val2);
-    check(wasm_memory != 0, "no wasm_memory (for concat)");
-    check(val1 >= 0, "val1 < 0 in concat_wrap");
-    check(val2 >= 0, "val2 < 0 in concat_wrap");
-    check(val1 < wasm_memory_size, "val1 out of bounds in concat_wrap");
-    check(val2 < wasm_memory_size, "val2 out of bounds in concat_wrap");
+    check_silent(wasm_memory != 0, "no wasm_memory (for concat)");
+    check_silent(val1 >= 0, "val1 < 0 in concat_wrap");
+    check_silent(val2 >= 0, "val2 < 0 in concat_wrap");
+    check_silent(val1 < wasm_memory_size, "val1 out of bounds in concat_wrap");
+    check_silent(val2 < wasm_memory_size, "val2 out of bounds in concat_wrap");
     auto left = (chars) wasm_memory + val1;
     auto right = (chars) wasm_memory + val2;
     printf("concat_wrap  %s\n", left);
