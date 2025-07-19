@@ -27,6 +27,11 @@
 
 #include "asserts.h"
 
+void testAutoType() {
+    assert_emit("-1/6.",-1/6.);
+    assert_emit("-1/6",-1/6.);
+}
+
 void testTypeSynonyms() {
     // check_is(Type("i32"s),Type("int32"s));
     // check_is(Type("i32"s),Type("int"s));
@@ -4032,6 +4037,8 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
+    testAutoType();
+    testTypeSynonyms();
     testFetch();
     testWGSL();
     assert_emit("n=3;2ⁿ", 8);
