@@ -136,3 +136,4 @@ old
 homebrew-wasp/
 settings.local.json
 **/settings.local.json
+homebrew-wasp/.claude/settings.local.json
