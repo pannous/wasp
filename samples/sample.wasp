@@ -3,6 +3,7 @@ a + b * 2.0
 
 /* Types */
 int x = 42
+Int x = 42
 string name = "Hello World"
 array numbers = [1, 2, 3]
 map data = {"key": "value"}
