@@ -1,3 +1,17 @@
+//==============================================================================
+// Main test file for Wasp/Angle language
+//==============================================================================
+// This file contains ~200+ test functions organized into logical categories.
+// Test headers are modularized in *_tests.h files for better organization.
+//
+// TODO: Gradually split this monolithic file into category-specific files:
+//   - string_tests.cpp, list_tests.cpp, map_tests.cpp, type_tests.cpp
+//   - math_tests.cpp, node_tests.cpp, parser_tests.cpp, web_tests.cpp
+//   - feature_tests.cpp, implementation_tests.cpp, etc.
+//
+// Section markers below indicate where each category's tests are located.
+//==============================================================================
+
 #include "../source/Util.h"
 #include "../source/List.h"
 #include "../source/Node.h"
@@ -9,12 +23,8 @@
 
 #pragma GCC diagnostic ignored "-Wdeprecated"
 
-#include "test_angle.cpp"
-#include "test_wasm.cpp"
-
-// #import "test_angle.cpp"
-// #import "test_wast.cpp"
-// #import "test_wasm.cpp"
+#include "test_angle.cpp"  // Angle language tests (functions, control flow, logic)
+#include "test_wasm.cpp"   // WebAssembly compilation and runtime tests
 
 #pragma GCC diagnostic pop
 
@@ -23,9 +33,11 @@
 #include "../source/types/Number.h"
 #include "../source/own_merge/type.h"
 #include "../source/own_merge/common.h"
-
-
 #include "../source/asserts.h"
+
+//==============================================================================
+// TYPE SYSTEM TESTS (see type_tests.h for declarations)
+//==============================================================================
 
 void testGoTypes() {
     assert_emit("func add1(x int) int { return x + 1 };add1(41)", 42);
@@ -135,6 +147,11 @@ void testReturnTypes() {
         assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4) // fails linking _ZdlPvm operator delete(void*, unsigned long)
         assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
     )
+
+//==============================================================================
+// STRING TESTS (see string_tests.h)
+//==============================================================================
+
 }
 
 void testRandomParse() {
@@ -365,6 +382,11 @@ int test_wasmedge_gc() {
 
 void testMatrixOrder() {
     assert_emit("m=([[1, 2], [3, 4]]);m[0][1]", 2);
+
+//==============================================================================
+// LIST/ARRAY TESTS (see list_tests.h)
+//==============================================================================
+
     assert_emit("([[1, 2], [3, 4]])[0][1]", 2);
     assert_emit("([[1, 2], [3, 4]])[1][0]", 3);
     assert_emit("([1, 2], [3, 4])[1][0]", 3);
@@ -911,6 +933,11 @@ void testPower() {
         assert_equals(powd(3,1), 3.);
         assert_equals(powd(3,2), 9.);
         assert_equals(powd(3,2.1), 10.04510856630514);
+
+//==============================================================================
+// MAP TESTS (see map_tests.h)
+//==============================================================================
+
         assert_equals(powd(3.1,2.1), 10.761171606099687);
     )
     // assert_emit("√3^0", 0.9710078239440918); // very rough power approximation from where?
@@ -1274,6 +1301,11 @@ void testPattern() {
     check(result[0][0].kind == longs);
     check(result[0][0].value.longy == 1);
     //    assert_emit("(2 4 3)[0]", 2);
+
+//==============================================================================
+// WIT/COMPONENT MODEL TESTS (see feature_tests.h)
+//==============================================================================
+
 }
 
 void testWitInterface() {
@@ -1576,6 +1608,11 @@ void testIteration() {
 //	assert_equals(ln(ℯ),1.);
 //}
 
+
+
+//==============================================================================
+// PARSER/SYNTAX TESTS (see parser_tests.h)
+//==============================================================================
 
 void testUpperLowerCase() {
     //    assert_emit("lowerCaseUTF('ÂÊÎÔÛ')", "âêîôû")
@@ -1900,6 +1937,11 @@ void testNetBase() {
     warn("NETBASE OFFLINE");
     if (1 > 0)return;
     chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
+
+//==============================================================================
+// NETWORK/WEB TESTS (see web_tests.h)
+//==============================================================================
+
     //	print(url);
     chars json = fetch(url);
     //	print(json);
@@ -2203,6 +2245,11 @@ void testMarkMultiDeep() {
     Node &node = result["deep"]['c']['d'];
     assert_equals(node, "hi");
     assert(node == "hi"_s);
+
+//==============================================================================
+// MARK DATA NOTATION TESTS (see parser_tests.h)
+//==============================================================================
+
     assert(node == "hi");
     assert(node == c['d']);
 }
@@ -2415,6 +2462,11 @@ void testLogic() {
     assert_is("false or false", false);
     assert_is("true or false", true);
     assert_is("true or true", true);
+
+
+//==============================================================================
+// LOGIC/BOOLEAN TESTS (see angle_tests.h + feature_tests.h)
+//==============================================================================
 
     assert_is("true and true", true);
     assert_is("true and false", false);
@@ -2859,6 +2911,11 @@ void testNodeName() {
 
 void testIndentAsBlock() {
     todo_emit(
+
+//==============================================================================
+// NODE/DATA STRUCTURE TESTS (see node_tests.h)
+//==============================================================================
+
         assert_is((char *) "a\n\tb", "a{b}")
     )
     // 0x0E 	SO 	␎ 	^N 		Shift Out
@@ -3212,6 +3269,11 @@ void testIndex() {
         assert_is("b in {a:1 b:2}", 2)
         assert_is("{a:1 b:2}[b]", 2)
     )
+
+//==============================================================================
+// ADVANCED TESTS (see various)
+//==============================================================================
+
 }
 
 // can be removed because noone touches List.sort algorithm!
