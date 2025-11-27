@@ -17,6 +17,8 @@
 #include "Util.h"
 #include <math.h>
 
+#include "../Frameworks/wasmtime/crates/c-api/include/wasmtime/val.h"
+
 //#pragma clang diagnostic push
 //#pragma clang diagnostic ignored "-Wvla-cxx-extension"
 
@@ -30,6 +32,23 @@ static wasmtime_store_t *store = NULL;
 static wasmtime_context_t *context = NULL;
 //static uint8_t *wasm_memory = NULL;
 static bool initialized = false;
+
+// Helper to consistently write a null externref result regardless of header variant
+static inline void set_result_null_externref(wasmtime_val_t *out) {
+    out->kind = WASMTIME_EXTERNREF;
+    // Header variant check: in crates/c-api, `of.externref` is a value-type struct.
+    // In legacy c-api headers it may be a pointer. Use preprocessor cues if available;
+    // otherwise, prefer value initialization which matches crates/c-api we're including.
+#if defined(WASMTIME_ANYREF) || defined(WASMTIME_FEATURE_GC)
+    // GC/anyref-style headers: value type
+    wasmtime_externref_t tmp;
+    wasmtime_externref_set_null(&tmp);
+    out->of.externref = tmp;
+#else
+    // Legacy pointer-style headers
+    out->of.externref = NULL;
+#endif
+}
 
 void init_wasmtime() {
     if (initialized) return; // Prevent re-initialization
@@ -93,7 +112,8 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     List<wasmtime_extern_t> imports(import_count);
     // std::vector<wasmtime_extern_t> imports(import_count);
     // wasmtime_extern_t imports[import_count];
-    meta.functions["getElementById"].signature.add(charp, "id").returns(externref);
+    // meta.functions["getElementById"].signature.add(charp, "id").returns(externref);
+    // meta.functions["getElementById"].signature.add(i32, "id_ptr").add(i32,"len").returns(externref);
 
     int import_nr = 0;
     for (const String &import_name: meta.import_names) {
@@ -136,9 +156,25 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     wasmtime_val_t results;
     error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, 1, &trap);
     if (error != NULL || trap != NULL) exit_with_error("Failed to call function", error, trap);
-
-    int64_t result = results.of.i64;
-    return result;
+    // Do not assume i64; return a best-effort integer for convenience.
+    switch (results.kind) {
+        case WASMTIME_I32:
+            return results.of.i32;
+        case WASMTIME_I64:
+            return results.of.i64;
+        case WASMTIME_F32:
+            return (int64_t) (int32_t) results.of.f32;
+        case WASMTIME_F64:
+            return (int64_t) results.of.f64;
+        case WASMTIME_FUNCREF:
+            return 0; // not representable here
+        case WASMTIME_EXTERNREF:
+            return 0; // not representable; could log/debug if needed
+        case WASMTIME_V128:
+            return 0; // not representable
+        default:
+            return 0;
+    }
 }
 
 
@@ -321,7 +357,48 @@ wrap(nop) {
     return NULL;
 }
 
+wrap(todos) {
+    print("TODO implement wasmtime func …");
+    return NULL;
+}
+
+wrap(toLong) {
+    print("toLong!!");
+    // int n = args[0].of.i32;
+    // results[0].of.i64 = parseLong((chars) ((char *) wasm_memory) + n);
+    results[0].of.i64 = 123l; // dummy
+    // results[0].of.i32 = 123; //
+    return NULL;
+}
+
+// Some host helpers expected by modules likely return externref; provide stubs
+// that return null externref for now to satisfy typed signatures.
+wrap(toNode) {
+    print("toNode!!");
+    set_result_null_externref(&results[0]);
+    return NULL;
+}
+
+wrap(toString) {
+    print("toString!!");
+    set_result_null_externref(&results[0]);
+    return NULL;
+}
+
+wrap(toReal) {
+    print("toReal!!");
+    set_result_null_externref(&results[0]);
+    return NULL;
+}
+
 wrap(getElementById) {
+    print("getElementById!!");
+    // Return a null externref for now; ensure both kind and value are set.
+    fprintf(stderr, "[DBG] before set: results[0].kind=%u (I32=%d, EXTERNREF=%d)\n", (unsigned)results[0].kind, (int)WASMTIME_I32, (int)WASMTIME_EXTERNREF);
+    fflush(stderr);
+    set_result_null_externref(&results[0]);
+    fprintf(stderr, "[DBG] after set: results[0].kind=%u (EXTERNREF=%d)\n", (unsigned)results[0].kind, (int)WASMTIME_EXTERNREF);
+    fflush(stderr);
     return NULL;
 }
 
@@ -390,6 +467,10 @@ wasm_wrap *link_import(String name) {
     if (name == "args_sizes_get")return &wrap_args_sizes_get;
 
     if (name == "todo") return &wrap_todo;
+    if (name == "toNode") return &wrap_toNode;
+    if (name == "toString") return &wrap_toString;
+    if (name == "toLong") return &wrap_toLong;
+    if (name == "toReal") return &wrap_toReal;
     if (name == "memset") return &wrap_memset; // should be provided by wasp!!
     if (name == "calloc") return &wrap_calloc;
     if (name == "_Z5abs_ff") return &wrap_absf; // why??
@@ -513,8 +594,18 @@ wasm_valkind_t mapTypeToWasmtime(Type type) {
             return WASM_F32;
         case float64t:
             return WASM_F64;
+        // case anyref: // old name
         case externref:
-            return WASM_EXTERNREF;
+            return WASM_EXTERNREF; // legacy externref in some wasm.h variants
+// #ifdef WASM_ANYREF
+//             return WASM_ANYREF; // old GC/reference types via wasm-c-api
+// // #elif defined(WASM_EXTERNREF)
+// #else
+//             // error("externref not supported by this wasm.h (no WASM_ANYREF/WASM_EXTERNREF)"s);
+//             return WASMTIME_ANYREF; // unexpected kind: 7
+//             // return WASMTIME_EXTERNREF; // unexpected kind: 6
+//             // return WASM_I32;
+// #endif
         case funcref:
             return WASM_FUNCREF;
         case charp:
@@ -533,7 +624,23 @@ const wasm_functype_t *funcType(Signature &signature) {
     Type returnType = signature.return_types.last(none);
     wasm_valtype_t *return_type = 0;
     if (returnType != nils)
-        return_type = wasm_valtype_new(mapTypeToWasmtime(returnType));
+    {
+        auto rk = mapTypeToWasmtime(returnType);
+        return_type = wasm_valtype_new(rk);
+        fprintf(stderr, "[SIG] return kind mapped to %u (ANYREF=%d, EXTERNREF=%d)\n", (unsigned)rk,
+#ifdef WASM_ANYREF
+                (int)WASM_ANYREF,
+#else
+                -1,
+#endif
+#ifdef WASM_EXTERNREF
+                (int)WASM_EXTERNREF
+#else
+                -1
+#endif
+        );
+        fflush(stderr);
+    }
 
     // Allocate parameter types dynamically
     wasm_valtype_vec_t params, results;
@@ -545,7 +652,9 @@ const wasm_functype_t *funcType(Signature &signature) {
             auto typ = signature.parameters[i].type;
             auto valtype = mapTypeToWasmtime(typ);
             param_types[i] = wasm_valtype_new(valtype);
+            fprintf(stderr, "[SIG] param %d kind mapped to %u\n", i, (unsigned)valtype);
         }
+        fflush(stderr);
     }
 
     wasm_valtype_vec_new(&params, param_count, param_types);
@@ -558,104 +667,6 @@ const wasm_functype_t *funcType(Signature &signature) {
     // delete[] param_types;
 
     return wasm_functype_new(&params, &results);
-}
-
-const wasm_functype_t *funcType2(Signature &signature) {
-    // ⚠️ these CAN NOT BE REUSED! interrupted by signal 11: SIGSEGV or BIZARRE BUGS if you try!
-    //     ⚠ wasm_valtype_t *i = wasm_valtype_new(WASM_I32);  ⚠️
-
-    // todo multi-value
-    Type returnType0 = signature.return_types.last(none);
-    Valtype returnType = mapTypeToWasm(returnType0);
-    int param_count = signature.parameters.size();
-    if (param_count == 0) {
-        switch (returnType) {
-            case none:
-            case voids:
-                return wasm_functype_new_0_0();
-            case int32t:
-                return wasm_functype_new_0_1(wasm_valtype_new(WASM_I32));
-            case i64:
-                return wasm_functype_new_0_1(wasm_valtype_new(WASM_I64));
-            default:
-                break;
-        }
-    }
-    if (param_count == 1) {
-        Type &type = signature.parameters[0].type;
-        Valtype valtype = mapTypeToWasm(type);
-        switch (valtype) {
-            case int32t:
-                switch (returnType) {
-                    case none:
-                        return wasm_functype_new_1_0(wasm_valtype_new(WASM_I32));
-                    case int32t:
-                        return wasm_functype_new_1_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32));
-                    default:
-                        break;
-                }
-            case i64:
-                switch (returnType) {
-                    case none:
-                    case voids:
-                        return wasm_functype_new_1_0(wasm_valtype_new(WASM_I64));
-                    case i64:
-                        return wasm_functype_new_1_1(wasm_valtype_new(WASM_I64), wasm_valtype_new(WASM_I64));
-                    default:
-                        break;
-                }
-            case float32t:
-                switch (returnType) {
-                    case none:
-                    case voids:
-                        return wasm_functype_new_1_0(wasm_valtype_new(WASM_F32));
-                    case float32t:
-                        return wasm_functype_new_1_1(wasm_valtype_new(WASM_F32), wasm_valtype_new(WASM_F32));
-                    default:
-                        break;
-                }
-            case float64t:
-                switch (returnType) {
-                    case none:
-                    case voids:
-                        return wasm_functype_new_1_0(wasm_valtype_new(WASM_F64));
-                    case float64t:
-                        return wasm_functype_new_1_1(wasm_valtype_new(WASM_F64), wasm_valtype_new(WASM_F64));
-                    default:
-                        break;
-                }
-            default:
-                break;
-        }
-    }
-    if (param_count == 2) {
-        switch (returnType) {
-            case int32t:
-                return wasm_functype_new_2_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
-                                             wasm_valtype_new(WASM_I32)); // printf(i32,i32)i32
-            case i64:
-                return wasm_functype_new_2_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
-                                             wasm_valtype_new(WASM_I64));
-            case float32t:
-                return wasm_functype_new_2_1(wasm_valtype_new(WASM_F32), wasm_valtype_new(WASM_F32),
-                                             wasm_valtype_new(WASM_F32));
-            case float64t: // why broken in wasmtime??
-                return wasm_functype_new_2_1(wasm_valtype_new(WASM_F64), wasm_valtype_new(WASM_F64),
-                                             wasm_valtype_new(WASM_F64)); // powd(f64,f64)f64
-            default:
-                break;
-        }
-    }
-    if (param_count == 3)
-        return wasm_functype_new_3_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
-                                     wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32)); //(char*,char*,i32,)i32 ;)
-    if (param_count == 4)
-        return wasm_functype_new_4_1(wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
-                                     wasm_valtype_new(WASM_I32), wasm_valtype_new(WASM_I32),
-                                     wasm_valtype_new(WASM_I32)); //(char*,char*,i32,)i32 ;)
-    print(signature.format());
-    error("missing signature mapping"s + signature.format());
-    return 0;
 }
 
 //#pragma clang diagnostic pop

@@ -1,16 +1,16 @@
-#include "Angle.h" // emit
-#include "Wasp.h"
-#include "wasm_reader.h"
-#include "wasm_helpers.h"
+#include "../source/Angle.h" // emit
+#include "../source/Wasp.h"
+#include "../source/wasm_reader.h"
+#include "../source/wasm_helpers.h"
 
 #if INCLUDE_MERGER
 
-#include "wasm_merger.h"
+#include "../source/wasm_merger.h"
 
 #endif
 
-#include "wasm_emitter.h"
-#import "asserts.h"
+#include "../source/wasm_emitter.h"
+#import "../source/asserts.h"
 
 void testRange() {
     assert_emit("0..3", Node(0, 1, 2));

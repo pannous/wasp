@@ -107,7 +107,6 @@ Test output generates extensive debug information. The only important thing is t
 ### Code Organization
 
 - **source/**: All C++ source code
-  - **source/tests.cpp**: Main test file , todo: move test.cpp etc… from source/ here
   - **source/Node.h/.cpp**: Central AST/data structure
   - **source/String.h/.cpp**: Custom string implementation
   - **source/Wasp.h/.cpp**: Parser
@@ -116,7 +115,12 @@ Test output generates extensive debug information. The only important thing is t
   - **source/wasm_reader.cpp**: WASM binary reader
   - **source/wasm_helpers.h/.cpp**: Runtime abstraction layer
   - **source/own_merge/**: WebAssembly binary linker utilities (forked from WABT)
-- **test/**: Test files and sample programs
+- **tests/**: All test files and test headers
+  - **tests/tests.cpp**: Main test file (includes test_angle.cpp, test_wasm.cpp)
+  - **tests/test_angle.cpp**: Angle language tests
+  - **tests/test_wasm.cpp**: WebAssembly tests
+  - **tests/test_browser.cpp**: Browser/WASM tests
+  - **tests/*_tests.h**: Modular test headers organized by functionality (13 modules)
 - **samples/**: Example Wasp/Angle programs
 - **bin/**: Compiled binaries for different platforms
 - **Frameworks/**: External dependencies and runtime libraries

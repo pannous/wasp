@@ -1,3 +1,5 @@
+rune for char/codepoint
+
 in homebrew-wasp/Formula/wasp.rb
 update tag on each release!
   url "https://github.com/pannous/wasp.git", :using => :git, :tag => "release-2025-07-10"

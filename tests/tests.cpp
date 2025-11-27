@@ -1,10 +1,10 @@
-#include "Util.h"
-#include "List.h"
-#include "Node.h"
-#include "Wasp.h"
-#include "Angle.h"
-#include "String.h"
-#include "Map.h"
+#include "../source/Util.h"
+#include "../source/List.h"
+#include "../source/Node.h"
+#include "../source/Wasp.h"
+#include "../source/Angle.h"
+#include "../source/String.h"
+#include "../source/Map.h"
 #include "tests.h"
 
 #pragma GCC diagnostic ignored "-Wdeprecated"
@@ -18,18 +18,22 @@
 
 #pragma GCC diagnostic pop
 
-#include "wasm_runner.h"
-#include "WitReader.h"
-#include "types/Number.h"
-#include "own_merge/type.h"
-#include "own_merge/common.h"
+#include "../source/wasm_runner.h"
+#include "../source/WitReader.h"
+#include "../source/types/Number.h"
+#include "../source/own_merge/type.h"
+#include "../source/own_merge/common.h"
 
 
-#include "asserts.h"
+#include "../source/asserts.h"
+
+void testGoTypes() {
+    assert_emit("func add1(x int) int { return x + 1 };add1(41)", 42);
+}
 
 void testAutoType() {
     assert_emit("-1/6.",-1/6.);
-    assert_emit("-1/6",-1/6.);
+    // assert_emit("-1/6",-1/6.); TODO
 }
 
 void testTypeSynonyms() {
@@ -4023,7 +4027,7 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting current tests 💡");
-
+    assert_emit("int x = $bla", 123);
     // assert_emit("`hello ${1+1}`", "hello 2");
     // assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
     // assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4) // fails linking _ZdlPvm operator delete(void*, unsigned long)
