@@ -1,19 +1,17 @@
 #pragma once
-extern Node &result;
-extern "C" void testCurrent();
-#if not RUNTIME_ONLY
-void testAllEmit();
 
-void testAllWasm();
+// Master test header - includes all modular test headers
 
-void testAllAngle();
-
-void testWasmGC();
-
-#endif
-
-#if WEBAPP
-
-void console_log(const char *s);
-
-#endif
+#include "sample_tests.h"
+#include "string_tests.h"
+#include "list_tests.h"
+#include "map_tests.h"
+#include "type_tests.h"
+#include "math_tests.h"
+#include "wasm_tests.h"
+#include "angle_tests.h"
+#include "parser_tests.h"
+#include "node_tests.h"
+#include "web_tests.h"
+#include "feature_tests.h"
+#include "implementation_tests.h"
