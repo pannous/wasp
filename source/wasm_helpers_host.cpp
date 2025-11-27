@@ -161,3 +161,8 @@ createHtml(ExternRef parent /*0*/, chars innerHTML); // html{bold{Hello}} => app
 extern "C" ExternRef createElement(ExternRef parent /*0*/, chars tag);
 //extern "C" ExternRef createElement2(ExternRef parent /*0*/,chars tag,chars id,chars className,chars innerHTML);
 #endif
+
+
+// _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void* __p, std::size_t __sz) _NOEXCEPT;
+// void operator delete(void*,int){}
+// _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void* __p, std::size_t __sz, std::align_val_t) _NOEXCEPT{}

@@ -866,6 +866,11 @@ elseif (WASMTIME)
     MESSAGE("USING WASMTIME (dynamic library)")
     MESSAGE("Note: Requires libwasmtime.dylib at runtime - ensure it's in library path")
     ADD_DEFINITIONS(-DWASMTIME)
+    # Enable WASI stdio plumbing by default for Wasmtime builds
+    option(ENABLE_WASI_STDIO "Enable WASI stdio (inherit host stdin/out/err) in Wasmtime runner" ON)
+    if (ENABLE_WASI_STDIO)
+        add_compile_definitions(ENABLE_WASI_STDIO)
+    endif ()
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
 
@@ -875,8 +880,12 @@ elseif (WASMTIME)
     # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Frameworks/wasmtime/crates/c-api ${CMAKE_CURRENT_BINARY_DIR}/wasmtime)
 
     # Prefer the GC/anyref crates/c-api headers first to match the linked library ABI
+    target_include_directories(wasp PUBLIC /opt/homebrew/opt/wasmtime/include)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/include/)
-    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/c-api/wasm-c-api/include/)
+    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/c-api/include/)
+#    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/c-api/wasm-c-api/include/)
+    # WASI C API header lives here (wasmtime/wasi.h)
+#    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/include/)
     # Keep build output include as well
     target_include_directories(wasp PUBLIC wasmtime)
     # Legacy C-API headers kept last to avoid accidental selection over crates/c-api
