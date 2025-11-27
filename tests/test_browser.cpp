@@ -1,9 +1,9 @@
-#include "Angle.h"
-#include "Node.h"
+#include "../source/Angle.h"
+#include "../source/Node.h"
 #include "tests.h"
-#include "asserts.h"
-#include "wasm_reader.h"
-#include "wasm_helpers.h"
+#include "../source/asserts.h"
+#include "../source/wasm_reader.h"
+#include "../source/wasm_helpers.h"
 
 extern "C" Node *testNodeJS(String *s) {
     //        ADD_COMPILE_FLAG("-Wno-address-of-temporary") # ok when there is no stack / GC

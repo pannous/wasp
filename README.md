@@ -86,6 +86,7 @@ container build --tag wasp --file Dockerfile .
 ```bash
 wasp √π²
 wasp test
+wasp samples/
 ```
 
 ## Runtime

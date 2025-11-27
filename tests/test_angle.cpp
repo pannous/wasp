@@ -2,13 +2,13 @@
 // Created by pannous on 12.06.20.
 //
 
-#include "Wasp.h" // parse
-#include "Angle.h" // analyze
-#include "Node.h"
-#include "wasm_emitter.h"
+#include "../source/Wasp.h" // parse
+#include "../source/Angle.h" // analyze
+#include "../source/Node.h"
+#include "../source/wasm_emitter.h"
 
-#import "asserts.cpp" // todo: move to asserts.h
-#include "asserts.h"
+#import "../source/asserts.cpp" // todo: move to asserts.h
+#include "../source/asserts.h"
 
 void testFunctionParams() {
     //	assert_equals(parse("f(x)=x*x").param->first(),"x");
