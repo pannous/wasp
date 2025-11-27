@@ -1,10 +1,14 @@
 #include "wasmtime.h"
+#include "wasi.h"
+// #include "wasmtime/wasi.h"
+// #include "wasmtime/wasi.hh"
 #include "wasm_reader.h"
 
 #include "asserts.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <wasm.h>
+#include <cstdlib>
 #include "Util.h"
 #include <math.h>
 
@@ -108,12 +112,52 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     if (error != NULL) exit_with_error("Failed to compile module", error, NULL);
 
     Module &meta = read_wasm(data, size);
+    wasmtime_instance_t instance;
+    wasm_trap_t *trap = NULL;
+
+// #define ENABLE_WASI_STDIO
+#ifdef ENABLE_WASI_STDIO
+    // Instantiate via linker with WASI providing stdio (fd_write etc.) and our custom env funcs.
+    wasmtime_linker_t *linker = wasmtime_linker_new(engine);
+    if (linker == NULL) exit_with_error("Failed to create linker", NULL, NULL);
+
+    // Set up WASI config to inherit host stdio.
+    wasi_config_t *wasi_cfg = wasi_config_new();
+    if (wasi_cfg == NULL) exit_with_error("Failed to create WASI config", NULL, NULL);
+    wasi_config_inherit_stdin(wasi_cfg);
+    wasi_config_inherit_stdout(wasi_cfg);
+    wasi_config_inherit_stderr(wasi_cfg);
+
+    // Attach WASI configuration to the current context (transfers ownership) and expose it to the linker.
+    wasmtime_error_t *werr = wasmtime_context_set_wasi(context, wasi_cfg);
+    if (werr != NULL) exit_with_error("Failed to set WASI on context", werr, NULL);
+    werr = wasmtime_linker_define_wasi(linker);
+    if (werr != NULL) exit_with_error("Failed to define WASI on linker", werr, NULL);
+
+    // Define our custom host functions into the linker under module "env".
+    for (const String &import_name: meta.import_names) {
+        if (import_name.empty()) break;
+        // Skip WASI-provided imports so our mock versions don't shadow them.
+        if (import_name == "fd_write" || import_name == "args_get" || import_name == "args_sizes_get") continue;
+        Signature &signature = meta.functions[import_name].signature;
+        const wasm_functype_t *type0 = funcType(signature);
+        wasm_functype_t *own_type = (wasm_functype_t*) type0; // API expects non-const
+        wasmtime_func_callback_t cb = (wasmtime_func_callback_t) link_import(import_name);
+        if (cb) {
+            wasmtime_error_t *derr = wasmtime_linker_define_func(
+                linker, "env", 3, import_name, import_name.length, own_type, cb, NULL, NULL);
+            if (derr) exit_with_error("define_func failed", derr, NULL);
+        }
+    }
+
+    // Instantiate module via linker so both WASI and env imports resolve.
+    error = wasmtime_linker_instantiate(linker, context, module0, &instance, &trap);
+    wasmtime_module_delete(module0);
+    if (error != NULL || trap != NULL) exit_with_error("Failed to instantiate module via linker", error, trap);
+#else
+    // Legacy path: manual import array (keeps existing behavior without WASI stdio)
     int import_count = meta.import_count;
     List<wasmtime_extern_t> imports(import_count);
-    // std::vector<wasmtime_extern_t> imports(import_count);
-    // wasmtime_extern_t imports[import_count];
-    // meta.functions["getElementById"].signature.add(charp, "id").returns(externref);
-    // meta.functions["getElementById"].signature.add(i32, "id_ptr").add(i32,"len").returns(externref);
 
     int import_nr = 0;
     for (const String &import_name: meta.import_names) {
@@ -126,15 +170,12 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         wasmtime_func_new(context, type0, link_import(import_name), NULL, NULL, &func);
         wasmtime_extern_t import = {.kind = WASMTIME_EXTERN_FUNC, .of.func = func};
         imports.add(import);
-        // imports[import_nr++] = import;
-        //        wasm_functype_delete(type0);
     }
 
-    wasmtime_instance_t instance;
-    wasm_trap_t *trap = NULL;
     error = wasmtime_instance_new(context, module0, imports.data(), import_count, &instance, &trap);
     wasmtime_module_delete(module0);
     if (error != NULL || trap != NULL) exit_with_error("Failed to instantiate module", error, trap);
+#endif
 
     wasmtime_extern_t run;
     bool ok = wasmtime_instance_export_get(context, &instance, "wasp_main", strlen("wasp_main"), &run);
@@ -357,6 +398,20 @@ wrap(nop) {
     return NULL;
 }
 
+wrap(getenv) {
+    auto env_var = (char *) wasm_memory + args[0].of.i32;
+    const char *value = std::getenv(env_var);
+    if (!value) {
+        results[0].of.i32 = 0; // Return null pointer for non-existent env var
+        return NULL;
+    }
+    // Copy value to wasm memory at next available location
+    uint64 pointer = 0x200000; // Use different offset than download()
+    strcpy2((char *) wasm_memory + pointer, value);
+    results[0].of.i32 = pointer;
+    return NULL;
+}
+
 wrap(todos) {
     print("TODO implement wasmtime func …");
     return NULL;
@@ -366,6 +421,7 @@ wrap(toLong) {
     print("toLong!!");
     // int n = args[0].of.i32;
     // results[0].of.i64 = parseLong((chars) ((char *) wasm_memory) + n);
+    results[0].kind = WASMTIME_I64;
     results[0].of.i64 = 123l; // dummy
     // results[0].of.i32 = 123; //
     return NULL;
@@ -387,7 +443,16 @@ wrap(toString) {
 
 wrap(toReal) {
     print("toReal!!");
-    set_result_null_externref(&results[0]);
+    results[0].kind = WASMTIME_F64;
+    results[0].of.f64 = 123.0; // dummy
+    return NULL;
+}
+
+wrap(fprintf) {
+    print("fprintf!!");
+    int offset=args[0].of.i32;
+    char* arg=(char*)memory+offset;
+    printf("%s",arg);
     return NULL;
 }
 
@@ -399,6 +464,7 @@ wrap(getElementById) {
     set_result_null_externref(&results[0]);
     fprintf(stderr, "[DBG] after set: results[0].kind=%u (EXTERNREF=%d)\n", (unsigned)results[0].kind, (int)WASMTIME_EXTERNREF);
     fflush(stderr);
+    results[0].kind = WASMTIME_EXTERNREF;
     return NULL;
 }
 
@@ -460,6 +526,17 @@ void test_lambda() {
 
 #define wrap_fun(fun) [](void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
 
+
+static void define_func(wasmtime_linker_t *linker, const char *name, wasm_functype_t *func_type, wasmtime_func_callback_t cb) {
+    wasmtime_error_t *error = wasmtime_linker_define_func(
+        linker, "env", 3, name, strlen(name), func_type, cb, NULL, NULL);
+  if (error) {
+    wasm_name_t msg;
+    wasmtime_error_message(error, &msg);
+    fprintf(stderr, "define_func error: %.*s\n", (int)msg.size, msg.data);
+  }
+}
+
 wasm_wrap *link_import(String name) {
     // own WASI mock instead of https://docs.wasmtime.dev/c-api/wasi_8h.html
     if (name == "fd_write") return &wrap_fd_write;
@@ -470,13 +547,24 @@ wasm_wrap *link_import(String name) {
     if (name == "toNode") return &wrap_toNode;
     if (name == "toString") return &wrap_toString;
     if (name == "toLong") return &wrap_toLong;
+  // wasmtime_linker_t *linker = wasmtime_linker_new(engine);
+  // define_func(linker, "getElementById", wasm_functype_new_1_1(wasm_valtype_new_i32(), wasm_valtype_new_externref()), host_get_element);
+  // define_func(linker, "toLong", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i64()), host_to_long);
+  // define_func(linker, "toNode", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i32()), host_to_node);
+  // define_func(linker, "toString", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i32()), host_to_string);
+
+
     if (name == "toReal") return &wrap_toReal;
     if (name == "memset") return &wrap_memset; // should be provided by wasp!!
     if (name == "calloc") return &wrap_calloc;
     if (name == "_Z5abs_ff") return &wrap_absf; // why??
     // todo get rid of these again!
     if (name == "_Z7consolev") return &wrap_nop;
-
+    if (name == "getenv") return &wrap_getenv;
+    // fprintf is variadic and FILE*-based; until proper WASI/stdio plumbing exists,
+    // route it to the simple string printer to avoid unmapped import crashes.
+    if (name == "fprintf") return &wrap_puts; // TODO: implement proper WASI-backed fprintf
+    if (name == "_ZdlPvm") return &wrap_nop; // operator delete(void*, unsigned long) TODO add in  wasm_helpers_host.cpp
     if (name == "__cxa_guard_acquire") return &wrap_nop; // todo!?
     if (name == "__cxa_guard_release") return &wrap_nop; // todo!?
     if (name == "_Z13init_graphicsv") return &wrap_nop;
@@ -504,6 +592,7 @@ wasm_wrap *link_import(String name) {
     if (name == "_Z5raisePKc") return &wrap_exit;
     if (name == "_ZSt9terminatev") return &wrap_exit;
     if (name == "__cxa_atexit") return &wrap_exit;
+    if (name == "exit") return &wrap_exit;
 
     if (name == "__cxa_demangle") return &wrap_nop;
     if (name == "proc_exit") return &wrap_exit;
@@ -515,6 +604,12 @@ wasm_wrap *link_import(String name) {
     if (name == "powd") return &wrap_powd;
     if (name == "pow") return &wrap_pow;
 
+    /*
+     * fgetc is a C libc function, not a WASI syscall.
+     * In a proper WASI build, fgetc is implemented inside wasi-libc
+     */
+    if (name == "fgetc") return &wrap_todo;
+    if (name == "fclose") return &wrap_todo;
     if (name == "printf") return &wrap_puts;
     if (name == "print") return &wrap_puts;
     //	if (name == "logs") return &wrap_puts;
