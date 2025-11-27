@@ -137,3 +137,9 @@ homebrew-wasp/
 settings.local.json
 **/settings.local.json
 homebrew-wasp/.claude/settings.local.json
+Frameworks/wasmtime
+Frameworks/wasmtime/*
+Frameworks/wasmtime/**
+Frameworks
+Frameworks/*
+Frameworks/**
