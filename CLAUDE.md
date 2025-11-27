@@ -120,7 +120,7 @@ Test output generates extensive debug information. The only important thing is t
   - **tests/test_angle.cpp**: Angle language tests
   - **tests/test_wasm.cpp**: WebAssembly tests
   - **tests/test_browser.cpp**: Browser/WASM tests
-  - **tests/*_tests.h**: Modular test headers organized by functionality (13 modules)
+  - **tests/test_*.h**: Modular test headers organized by functionality (13 modules)
 - **samples/**: Example Wasp/Angle programs
 - **bin/**: Compiled binaries for different platforms
 - **Frameworks/**: External dependencies and runtime libraries
