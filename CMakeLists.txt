@@ -108,10 +108,10 @@ if (NOT WASM)
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         # ⚠️ NO engine has (c-api) support for wit / component model as of 2025-03 !!! ⚠️
         # https://github.com/bytecodealliance/wasmtime/issues/6987
-        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+#        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
         #        SET(SPIN 1) WebAssembly Gateway Interface (WAGI) OK: Write to STDOUT, ENV[QUERY_STRING] for input, uploads through STDIN
-        #        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
+        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #  set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
         #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( last release 2021
         #        set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
@@ -860,24 +860,47 @@ elseif (WASMEDGE)
             copy_directory "${CMAKE_SOURCE_DIR}/bin" "${CMAKE_SOURCE_DIR}/wasp-jetbrains-plugin/src/main/resources/bin")
 
 elseif (WASMTIME)
-    MESSAGE("USING WASMTIME")
+    MESSAGE("USING WASMTIME (dynamic library)")
+    MESSAGE("Note: Requires libwasmtime.dylib at runtime - ensure it's in library path")
     ADD_DEFINITIONS(-DWASMTIME)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasmtime_runner.cpp)
     add_executable(wasp ${SOURCE_FILES})
-    #    BUILD_SHARED_LIBS is provided as a define if you would like to build a shared library instead.
-    #    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Frameworks/wasmtime/crates/c-api ${CMAKE_CURRENT_BINARY_DIR}/wasmtime)
+
+    # Use pre-built dynamic library instead of building from source
+    # This reduces binary size from ~38MB to ~2.3MB (94% reduction)
+    # To build wasmtime statically instead, uncomment the line below:
+    # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Frameworks/wasmtime/crates/c-api ${CMAKE_CURRENT_BINARY_DIR}/wasmtime)
+
+    # Prefer the GC/anyref crates/c-api headers first to match the linked library ABI
+    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/include/)
+    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/c-api/wasm-c-api/include/)
+    # Keep build output include as well
     target_include_directories(wasp PUBLIC wasmtime)
+    # Legacy C-API headers kept last to avoid accidental selection over crates/c-api
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/wasm-c-api/include/)
-    if (LINUX)
+
+    # Link against pre-built dynamic library
+    if (APPLE)
+        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/libwasmtime.dylib)
+        # Set rpath so the dylib can be found at runtime
+        set_target_properties(wasp PROPERTIES
+            BUILD_RPATH "/opt/wasm/wasmtime/target/aarch64-apple-darwin/release"
+            INSTALL_RPATH "/opt/wasm/wasmtime/target/aarch64-apple-darwin/release"
+        )
+    elseif (LINUX)
         target_link_libraries(wasp PUBLIC -ldl -lpthread -lm)
+        # Add path to wasmtime.so if on Linux
+        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/release/libwasmtime.so)
+        set_target_properties(wasp PROPERTIES
+            BUILD_RPATH "/opt/wasm/wasmtime/target/release"
+            INSTALL_RPATH "/opt/wasm/wasmtime/target/release"
+        )
     elseif (WINDOWS)
         target_link_libraries(wasp PUBLIC ws2_32.lib advapi32.lib userenv.lib ntdll.lib shell32.lib ole32.lib bcrypt.lib)
     endif ()
     target_link_libraries(wasp PUBLIC -lcurl)
-    #    target_link_libraries(wasp PRIVATE wasm)
-    target_link_libraries(wasp PUBLIC wasmtime)
 elseif (WEBAPP)
     message(WEBAPP)
     ADD_DEFINITIONS(-DWEBAPP)
