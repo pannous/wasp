@@ -13,7 +13,7 @@
 
 // Section markers below indicate where each category's tests are located.
 //==============================================================================
-
+int tests_executed = 0;
 #include "../source/Util.h"
 #include "../source/List.h"
 #include "../source/Node.h"
@@ -42,15 +42,18 @@
 //==============================================================================
 
 void testGoTypes() {
+    tests_executed++;
     assert_emit("func add1(x int) int { return x + 1 };add1(41)", 42);
 }
 
 void testAutoType() {
-    assert_emit("-1/6.",-1/6.);
+    tests_executed++;
+    assert_emit("-1/6.", -1/6.);
     // assert_emit("-1/6",-1/6.); TODO
 }
 
 void testTypeSynonyms() {
+    tests_executed++;
     // check_is(Type("i32"s),Type("int32"s));
     // check_is(Type("i32"s),Type("int"s));
     // check_is(Type("f32"s),Type("float32"s));
@@ -58,23 +61,25 @@ void testTypeSynonyms() {
 }
 
 void testMeta() {
-    Node ok = parse("tee{a:1}");
-    ok["@attrib"] = 42;
-    ok["@attrib2"] = 43;
-    assert_equals(ok.name, "tee");
-    assert_equals(ok.serialize(), "@attrib(42) @attrib2(43) tee{a:1}");
-    check(ok["@attrib"]);
-    check(ok["@attrib2"]);
-    check(ok["a"] == 1);
-    check(ok.length == 1);
-    check(ok["@attrib"].value.longy == 42);
-    check(ok["@attrib2"].value.longy == 43);
+    tests_executed++;
+    Node tee = parse("tee{a:1}");
+    tee["@attrib"] = 42;
+    tee["@attrib2"] = 43;
+    assert_equals(tee.name, "tee");
+    assert_equals(tee.serialize(), "@attrib(42) @attrib2(43) tee{a:1}");
+    check(tee["@attrib"]);
+    check(tee["@attrib2"]);
+    check(tee["a"] == 1);
+    check(tee.length == 1);
+    check(tee["@attrib"].value.longy == 42);
+    check(tee["@attrib2"].value.longy == 43);
 }
 
 void testMetaAt() {
+    tests_executed++;
     assert_equals(parse("tee{a:1}").name, "tee");
     assert_equals(parse("tee{a:1}").serialize(), "tee{a:1}");
-    auto code= "@attrib tee{a:1}";
+    auto code = "@attrib tee{a:1}";
     auto node = parse(code);
     check(node.name == "tee");
     check(node.length == 1);
@@ -84,7 +89,8 @@ void testMetaAt() {
 
 
 void testMetaAt2() {
-    auto code= "@attrib(1) @attrib2(42) tee{a:1}";
+    tests_executed++;
+    auto code = "@attrib(1) @attrib2(42) tee{a:1}";
     auto node = parse(code);
     check(node.name == "tee");
     check(node.length == 1);
@@ -97,10 +103,11 @@ void testMetaAt2() {
 }
 
 void testWGSL() {
+    tests_executed++;
     testMeta();
     testMetaAt();
     testMetaAt2();
-    auto code= R"( wgsl{
+    auto code = R"( wgsl{
 @group(0) @binding(0)
 var<storage, read_write> data: array<u32>;
 
@@ -126,16 +133,19 @@ fn main(@builtin(global_invocation_id) id: vec3<u32>) {
 }
 
 void testPing() {
+    tests_executed++;
     assert_emit("def ping(): 'pong'; ping()", "pong");
 }
 
 void test2Def() {
+    tests_executed++;
     // parse("def test1(x){x+1};def test2(x){x+1};test2(3)");
     assert_emit("def test1(x){x+1};def test2(x){x+1};test2(3)", 4);
     assert_emit("def test1(x){x+3};def test2(x){x+1};test2(3)", 6);
 }
 
 void testReturnTypes() {
+    tests_executed++;
     assert_emit("fun addier(a,b){b+a};addier(42,1)", 43);
     assert_emit("fun addier(a,b){b+a};addier(42,1)+1", 44);
     assert_emit("fun addi(x,y){x+y};addi(2.2,2.2)", 4.4)
@@ -150,13 +160,13 @@ void testReturnTypes() {
         assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
     )
 
-//==============================================================================
-// STRING TESTS (see string_tests.h)
-//==============================================================================
-
+    //==============================================================================
+    // STRING TESTS (see string_tests.h)
+    //==============================================================================
 }
 
 void testRandomParse() {
+    tests_executed++;
     const Node &node = parse("x:40;x+1");
     check(node.length == 2)
     check(node[0]["x"] == 40) // breaks!?
@@ -167,6 +177,7 @@ void testRandomParse() {
 }
 
 void testEmitStringConcatenation() {
+    tests_executed++;
     assert_emit("'say ' + 0.", "say 0.");
     assert_emit("'say ' + (100 + 23)", "say 123");
     assert_emit("'say ' + 123", "say 123");
@@ -177,6 +188,7 @@ void testEmitStringConcatenation() {
 }
 
 void testStringInterpolation() {
+    tests_executed++;
     assert_emit("`hello $test`", "hello hello"); // via externref or params!
     assert_emit("'say ' + $test", "say hello");
     // exit(0);
@@ -207,6 +219,7 @@ void testStringInterpolation() {
 }
 
 void testExternString() {
+    tests_executed++;
     assert_emit("$test as string", "hello");
     assert_emit("toString($test)", "hello");
     assert_emit("string x=$test", "hello");
@@ -225,6 +238,7 @@ void testExternString() {
 }
 
 void testExternReferenceXvalue() {
+    tests_executed++;
     assert_emit("real x = $bla", 123.);
     assert_emit("real x = $bla; x*2", 123*2.);
     assert_emit("int x = $bla", 123);
@@ -236,6 +250,7 @@ void testExternReferenceXvalue() {
 }
 
 void testMinusMinus() {
+    tests_executed++;
 #if not WASM // todo square
     assert_emit("1 - 3 - square 3+4", (int64) -51); // OK!
 #endif
@@ -253,6 +268,7 @@ Node cast_smart(smarty value, Type to_type) {
 }
 
 void testCast() {
+    tests_executed++;
     check_eq("2"s, cast(Node(2), strings).value.string);
     check_eq(cast(Node(2), longs).value.longy, 2); // trivial
     check_eq(cast(Node(2.1), longs).value.longy, 2);
@@ -272,6 +288,7 @@ void testCast() {
 
 
 void testEmitCast() {
+    tests_executed++;
     assert_emit("(2 as float, 4.3 as int)  == 2.0 ,4", 1);
     assert_emit("(2 as float, 4.3 as int)  == 2,4", 1);
     // advanced, needs cast() to be implemented in wasm
@@ -294,6 +311,7 @@ void testEmitCast() {
 }
 
 void testExp() {
+    tests_executed++;
     // todo parsed same:
     assert_is("ℯ^0", 1);
     assert_is("ℯ^1", e);
@@ -311,6 +329,7 @@ void testExp() {
 }
 
 void testConstructorCast() {
+    tests_executed++;
     assert_run("int('123')", 123);
     assert_run("str(123)", "123");
     assert_run("'a'", 'a');
@@ -383,11 +402,12 @@ int test_wasmedge_gc() {
 #endif
 
 void testMatrixOrder() {
+    tests_executed++;
     assert_emit("m=([[1, 2], [3, 4]]);m[0][1]", 2);
 
-//==============================================================================
-// LIST/ARRAY TESTS (see list_tests.h)
-//==============================================================================
+    //==============================================================================
+    // LIST/ARRAY TESTS (see list_tests.h)
+    //==============================================================================
 
     assert_emit("([[1, 2], [3, 4]])[0][1]", 2);
     assert_emit("([[1, 2], [3, 4]])[1][0]", 3);
@@ -399,6 +419,7 @@ void testMatrixOrder() {
 
 template<class S>
 void testListGrowth() {
+    tests_executed++;
     List<S> list; // List<S*> even better!
     for (int i = 0; i < 1000; i++) {
         list.add(*new S());
@@ -412,6 +433,7 @@ void testListGrowth() {
 }
 
 void testListGrowthWithStrings() {
+    tests_executed++;
     List<String> list;
     for (int i = 0; i < 1000; i++) {
         list.add(String(i));
@@ -427,6 +449,7 @@ void testListGrowthWithStrings() {
 
 // test once
 void test_list_growth() {
+    tests_executed++;
     testListGrowth<int>();
     testListGrowth<float>();
     testListGrowth<String>();
@@ -443,6 +466,7 @@ void test_list_growth() {
 }
 
 void testBadType() {
+    tests_executed++;
     skip(
         // TODO strict mode a:b=c => b is type vs data mode a:b => b is data HOW?
         assert_throws("x:yz=1"); // "yz" is not a type
@@ -450,12 +474,14 @@ void testBadType() {
 }
 
 void testDeepType() {
+    tests_executed++;
     parse("a=$canvas.tagName");
     //    check_is(result.kind, smarti64);
     //    check_is(result.kind, Kind::strings);
 }
 
 void testInclude() {
+    tests_executed++;
     //    assert_emit("include test-include.wasp", 42);
     //    assert_emit("use test-include.wasm", 42);
     assert_emit("include test/lib.wasp", 42);
@@ -467,6 +493,7 @@ void testInclude() {
 }
 
 void testExceptions() {
+    tests_executed++;
     //    assert_emit("(unclosed bracket",123);
     assert_throws("x:int=1;x='ok'"); // worked before, cleanup fail!
     assert_throws("x:int=1;x=1.1");
@@ -483,6 +510,7 @@ void testExceptions() {
 }
 
 void testNoBlock() {
+    tests_executed++;
     // fixed
     assert_parses(R"(
 #see math.wasp !
@@ -494,6 +522,7 @@ void testNoBlock() {
 }
 
 void testTypeConfusion() {
+    tests_executed++;
     assert_throws("x=1;x='ok'");
     assert_throws("x=1;x=1.0");
     assert_throws("double:=it*2"); // double is type i64!
@@ -501,17 +530,20 @@ void testTypeConfusion() {
 }
 
 void testVectorShim() {
+    tests_executed++;
     //    unknown function matrix_multiply (matrix_multiply)
     assert_emit("v=[1 2 3];w=[2 3 4];v*w", 2 + 6 + 12);
 }
 
 void testHtmlWasp() {
+    tests_executed++;
     eval("html{bold{Hello}}"); // => <html><body><bold>Hello</bold></body></html> via appendChild bold to body
     eval("html: h1: 'Hello, World!'"); // => <html><h1>Hello, World!</h1></html>
     //	eval("html{bold($myid style=red){Hello}}"); // => <bold id=myid style=red>Hello</bold>
 }
 
 void testJS() {
+    tests_executed++;
     // todo remove (local $getContext i32)  !
     eval("$canvas.getContext('2d')"); // => invokeReference(canvas, getContext, '2d')
     skip(
@@ -521,6 +553,7 @@ void testJS() {
 }
 
 void testInnerHtml() {
+    tests_executed++;
 #if not WEBAPP and not MY_WASM
     return;
 #endif
@@ -535,7 +568,7 @@ void testInnerHtml() {
 #if WEBAPP // todo browser "too"
     // skip(
     eval("<html><bold id=b ok=123>test</bold></html>");
-    assert_is("$b.ok", 123);// TODO emitAttributeSetter
+    assert_is("$b.ok", 123); // TODO emitAttributeSetter
     eval("<script>console.log('ok!')</script>");
     eval("<script>alert('alert ok!')</script>"); // // pop up window NOT supported by WebView, so we use print instead
     // )
@@ -550,6 +583,7 @@ void testInnerHtml() {
 }
 
 void testHtml() {
+    tests_executed++;
     //	testHtmlWasp();
     //	testJS();
     testInnerHtml();
@@ -557,6 +591,7 @@ void testHtml() {
 
 
 void testReplaceAll() {
+    tests_executed++;
     String s = "abaabaa";
     auto replaced = s.replaceAll("a", "ca");
     //	auto replaced = s.replaceAll('a', "ca");
@@ -568,6 +603,7 @@ void testReplaceAll() {
 }
 
 void testFetch() {
+    tests_executed++;
     // todo: use host fetch if available
     auto string1 = fetch("https://pannous.com/files/test");
     auto res = String(string1).trim();
@@ -583,6 +619,7 @@ void testFetch() {
 }
 
 void test_getElementById() {
+    tests_executed++;
     result = analyze(parse("$result"));
     assert_equals(result.kind, externref);
     auto nod = eval("$result");
@@ -590,6 +627,7 @@ void test_getElementById() {
 }
 
 void testCanvas() {
+    tests_executed++;
     result = analyze(parse("$canvas"));
     assert_equals(result.kind, externref);
     auto nod = eval("    ctx = $canvas.getContext('2d');\n"
@@ -600,6 +638,7 @@ void testCanvas() {
 
 // run in APP (or browser?)
 void testDom() {
+    tests_executed++;
     print("testDom");
     preRegisterFunctions();
     result = analyze(parse("getElementById('canvas')"));
@@ -624,6 +663,7 @@ inline void print(Primitive l) {
 }
 
 void testDomProperty() {
+    tests_executed++;
 #ifndef WEBAPP
     return;
 #endif
@@ -649,6 +689,7 @@ void testDomProperty() {
 
 
 void testTypesSimple() {
+    tests_executed++;
     clearAnalyzerContext();
     result = analyze(parse("chars a"));
     assert_equals(result.kind, Kind::reference);
@@ -681,6 +722,7 @@ void testTypesSimple() {
 }
 
 void testTypesSimple2() {
+    tests_executed++;
     result = analyze(parse("a:chars"));
     //    assert_equals(result.kind, Kind::reference);
     assert_equals(result.kind, Kind::key);
@@ -713,6 +755,7 @@ void testTypesSimple2() {
 
 
 void testTypedFunctions() {
+    tests_executed++;
     // todo name 'id' clashes with 'id' in preRegisterFunctions()
     clearAnalyzerContext();
     result = analyze(parse("int tee(float b, string c){b}"));
@@ -734,6 +777,7 @@ void testTypedFunctions() {
 }
 
 void testEmptyTypedFunctions() {
+    tests_executed++;
     // todo int a(){} should be compiler error
     // todo do we really want / need int a(); void a(){} ?
     //	if(ch=='{' and next=='}' and previous==')'){
@@ -761,6 +805,8 @@ void testEmptyTypedFunctions() {
 }
 
 void testTypes() {
+    tests_executed++;
+    tests_executed++;
     testBadType();
     testDeepType();
     testTypedFunctions();
@@ -773,6 +819,7 @@ void testTypes() {
 }
 
 void testPolymorphism() {
+    tests_executed++;
     // debug:
     //	auto debug_node = parse("string aaa(string a){return a};\nfloat bbb(float b){return b+1}");
     //	auto debug_fun = analyze(debug_node);
@@ -790,6 +837,7 @@ void testPolymorphism() {
 }
 
 void testPolymorphism2() {
+    tests_executed++;
     clearAnalyzerContext();
     auto node = parse("fun test(string a){return a};\nfun test(float b){return b+1}");
     auto fun = analyze(node);
@@ -804,12 +852,14 @@ void testPolymorphism2() {
 
 
 void testPolymorphism3() {
+    tests_executed++;
     assert_emit("fun test(string a){return a};\nfun test(float b){return b+1};\ntest('ok')", "ok");
     assert_emit("fun test(string a){return a};\nfun test(int a){return a};\nfun test(float b){return b+1};\ntest(1.0)",
                 2.0);
 }
 
 void testModifiers() {
+    tests_executed++;
     assert_emit("public fun ignore(){3}", 3);
     assert_emit(
         "public static export import extern external C global inline virtual override final abstract private protected internal const constexpr volatile mutable thread_local synchronized transient native fun ignore(){3}",
@@ -818,6 +868,7 @@ void testModifiers() {
 
 //#import "pow.h"
 //void testOwnPowerExponentialLogarithm() {
+// tests_executed++;
 //	check_is(exp(1), 2.718281828459045);
 //	check_is(exp(5.5), 244.69193226422033);
 //	auto x = powerd(1.5, 5.5);
@@ -831,6 +882,7 @@ void testModifiers() {
 //}
 
 void testGenerics() {
+    tests_executed++;
     auto type = Type(Generics{.kind = array, .value_type = int16t});
     //    auto header= type.value & array;
     //    auto header= type.value & 0xFFFF0000; // todo <<
@@ -839,6 +891,7 @@ void testGenerics() {
 }
 
 void testNumbers() {
+    tests_executed++;
     Number n = 1; // as comfortable BigInt Object used inside wasp
     check(n == 1.0);
     check(n / 2 == 0.5);
@@ -847,6 +900,7 @@ void testNumbers() {
 
 
 void testFunctionArgumentCast() {
+    tests_executed++;
     assert_emit("float addi(int x,int y){x+y};'hello'+5", "hello5")
     assert_emit("float addi(int x,int y){x+y};'hello'+5.9", "hello5.9")
     assert_emit("float addi(int x,int y){x+y};'hello'+addi(2.2,2.2)", "hello4.")
@@ -861,6 +915,7 @@ void testFunctionArgumentCast() {
 }
 
 void testFunctionDeclaration() {
+    tests_executed++;
     // THESE NEVER WORKED! should they? YES! partly
     // 'fixing' one broke fib etc :(
     // 💡we already have a working syntax so this has low priority
@@ -884,6 +939,7 @@ void testFunctionDeclaration() {
 }
 
 void testFunctionDeclarationParse() {
+    tests_executed++;
     //    auto node1 = analyze(parse("fn main(){}"));
     //    check(node1.kind==declaration);
     //    check(node1.name=="main");
@@ -903,12 +959,14 @@ void testFunctionDeclarationParse() {
 }
 
 void testRenameWasmFunction() {
+    tests_executed++;
     Module &module1 = loadModule("samples/test.wasm");
     module1.functions.at(0).name = "test";
     module1.save("samples/test2.wasm");
 }
 
 void testPower() {
+    tests_executed++;
     assert_equals(powi(10, 1), 10l);
     assert_equals(powi(10, 2), 100l);
     assert_equals(powi(10, 3), 1000l);
@@ -936,9 +994,9 @@ void testPower() {
         assert_equals(powd(3,2), 9.);
         assert_equals(powd(3,2.1), 10.04510856630514);
 
-//==============================================================================
-// MAP TESTS (see map_tests.h)
-//==============================================================================
+        //==============================================================================
+        // MAP TESTS (see map_tests.h)
+        //==============================================================================
 
         assert_equals(powd(3.1,2.1), 10.761171606099687);
     )
@@ -946,6 +1004,7 @@ void testPower() {
 }
 
 void testMaps0() {
+    tests_executed++;
     Map<int, long> map;
     check(map.values[0] == map[0]);
     check(map.values == &(map[0]));
@@ -966,6 +1025,7 @@ void testMaps0() {
 
 
 void testMapOfStrings() {
+    tests_executed++;
     Map<String, chars> map;
     map["a"] = "1";
     check(map.size() == 1);
@@ -984,6 +1044,7 @@ void testMapOfStrings() {
 }
 
 void testMapOfStringValues() {
+    tests_executed++;
     Map<chars, String> map;
     map["a"] = "1";
     check(map.size() == 1);
@@ -998,6 +1059,7 @@ void testMapOfStringValues() {
 }
 
 void testMaps1() {
+    tests_executed++;
     functions.clear();
     functions.insert_or_assign("abcd", {.name = "abcd"});
     functions.insert_or_assign("efg", {.name = "efg"});
@@ -1007,6 +1069,7 @@ void testMaps1() {
 }
 
 void testMaps2() {
+    tests_executed++;
     functions.clear();
     Function abcd;
     abcd.name = "abcd";
@@ -1022,6 +1085,7 @@ void testMaps2() {
 }
 
 void testMaps() {
+    tests_executed++;
     testMaps0(); // ok
     testMapOfStrings();
     testMapOfStringValues();
@@ -1031,6 +1095,7 @@ void testMaps() {
 
 
 void testHex() {
+    tests_executed++;
     assert_equals(hex(18966001896603L), "0x113fddce4c9b");
     assert_is("42", 42);
     assert_is("0xFF", 255);
@@ -1041,6 +1106,7 @@ void testHex() {
 }
 
 void test_fd_write() {
+    tests_executed++;
     // built-in wasi function
     //    assert_emit("x='hello';fd_write(1,20,1,8)", (int64) 0);// 20 = &x+4 {char*,len}
     //    assert_emit("puts 'ok';proc_exit(1)\nputs 'no'", (int64) 0);
@@ -1060,6 +1126,7 @@ void test_fd_write() {
 }
 
 void testEnumConversion() {
+    tests_executed++;
 #if not TRACE
     Valtype yy = (Valtype) Primitive::charp;
     int i = (int) Primitive::charp;
@@ -1082,6 +1149,7 @@ void bindgen(Node &n) {
 
 // https://github.com/WebAssembly/component-model/blob/main/design/mvp/WIT.md#item-use
 void testUse() {
+    tests_executed++;
     parse("use * from other-file");
     parse("use { a, list, of, names } from another-file");
     parse("use { name as other-name } from yet-another-file");
@@ -1094,6 +1162,7 @@ void testUse() {
 }
 
 void testClass() {
+    tests_executed++;
     analyze(parse("public data class Person(string FirstName, string LastName);"));
     analyze(parse("public data class Student : Person { int ID; }"));
     analyze(parse("var person = new Person('Scott', 'Hunter'); // positional construction"));
@@ -1103,6 +1172,7 @@ void testClass() {
 
 
 void test_c_numbers() {
+    tests_executed++;
     //    check(0x1000000000000000l==powi(2,60))
     unsigned int x = -1;
     unsigned int y = 0xFFFFFFFF;
@@ -1116,6 +1186,7 @@ void test_c_numbers() {
 }
 
 void testArraySize() {
+    tests_executed++;
     // todo!
     // There should be one-- and preferably only one --obvious way to do it.
     // requires struct lookup and aliases
@@ -1138,6 +1209,7 @@ void testArraySize() {
 
 
 void testArrayOperations() {
+    tests_executed++;
     // todo!
     testArraySize();
     // todo 'do' notation to modify versus return different list!
@@ -1190,6 +1262,7 @@ void testArrayOperations() {
 }
 
 void testArrayCreation() {
+    tests_executed++;
     //    skip(
     // todo create empty array
     assert_emit("pixel=[];pixel[1]=15;pixel[1]", 15);
@@ -1201,6 +1274,7 @@ void testArrayCreation() {
 }
 
 void testIndexOffset() {
+    tests_executed++;
     assert_emit("(2 4 3)[1]", 4);
     assert_emit("(2 4 3)#2", 4);
     assert_emit("y=(1 4 3)#2", 4);
@@ -1231,6 +1305,7 @@ void testIndexOffset() {
 }
 
 void testFlagSafety() {
+    tests_executed++;
     auto code = "flags empty_flags{}; empty_flags mine = data_mode | space_brace;";
     assert_throws(code) // "data_mode not a member of empty_flags"s
     assert_throws("enum cant_combine{a;b}; a+b;");
@@ -1239,6 +1314,7 @@ void testFlagSafety() {
 
 
 void testFlags2() {
+    tests_executed++;
     // todo allow just parser-flags{…} in wasp > wit
     auto code = R"(flags parser-flags{
         data_mode
@@ -1279,6 +1355,7 @@ void testFlags2() {
 
 
 void testFlags() {
+    tests_executed++;
     clearAnalyzerContext();
     Node &parsed = parse("flags abc{a b c}");
     backtrace_line();
@@ -1298,24 +1375,26 @@ void testFlags() {
 }
 
 void testPattern() {
+    tests_executed++;
     result = parse("y[1]", ParserOptions{.data_mode = false});
     check(result[0].kind == patterns);
     check(result[0][0].kind == longs);
     check(result[0][0].value.longy == 1);
     //    assert_emit("(2 4 3)[0]", 2);
 
-//==============================================================================
-// WIT/COMPONENT MODEL TESTS (see feature_tests.h)
-//==============================================================================
-
+    //==============================================================================
+    // WIT/COMPONENT MODEL TESTS (see feature_tests.h)
+    //==============================================================================
 }
 
 void testWitInterface() {
+    tests_executed++;
     Node &mod = Node("host-funcs").setKind(modul).add(Node("current-user").setKind(functor).add(StringType));
     assert_emit("interface host-funcs {current-user: func() -> string}", mod)
 }
 
 void testWitExport() {
+    tests_executed++;
     const char *code = "struct point{x:int y:float}";
     Node &node = parse(code);
     bindgen(node);
@@ -1323,6 +1402,7 @@ void testWitExport() {
 
 
 void testWitFunction() {
+    tests_executed++;
     //    funcDeclaration
     // a:b,c vs a:b, c:d
 
@@ -1335,9 +1415,11 @@ void testWitFunction() {
 }
 
 void testWitImport() {
+    tests_executed++;
 }
 
 void testEqualsBinding() {
+    tests_executed++;
     // colon closes with space, not semicolon !
     parse("a = float32, b: float32");
     check(result.length == 1);
@@ -1349,6 +1431,7 @@ void testEqualsBinding() {
 }
 
 void testColonImmediateBinding() {
+    tests_executed++;
     // colon closes with space, not semicolon !
     result = parse("a: float32, b: float32");
     check(result.length == 2);
@@ -1358,6 +1441,7 @@ void testColonImmediateBinding() {
 }
 
 void testWit() {
+    tests_executed++;
     //    testWitFunction();
     //    testWitInterface();
     Node wit;
@@ -1371,6 +1455,7 @@ void testWit() {
 }
 
 void testHyphenUnits() {
+    tests_executed++;
     //     const char *code = "1900 - 2000 AD";// (easy with units)
     //     assert_analyze(code,"{kind=range type=AD value=(1900,2000)}");
     // todo how does Julia represent 10 ± 2 m/s ?
@@ -1380,6 +1465,7 @@ void testHyphenUnits() {
 }
 
 void testHypenVersusMinus() {
+    tests_executed++;
     // Needs variable register in parser.
     const char *code = "a=-1 b=2 b-a";
     assert_emit(code, 3);
@@ -1392,6 +1478,7 @@ void testHypenVersusMinus() {
 }
 
 void testKebabCase() {
+    tests_executed++;
     testHypenVersusMinus();
 }
 
@@ -1419,6 +1506,7 @@ void testKebabCase() {
 
 // only test once, see lebByteSize for result
 void testLebByteSize() {
+    tests_executed++;
     check_eq(lebByteSize((int64) -17179869185 + 1), 5)
     check_eq(lebByteSize((int64) -17179869185), 6)
     check_eq(lebByteSize((int64) -17179869185 - 1), 6)
@@ -1436,6 +1524,7 @@ void testLebByteSize() {
 }
 
 void testListGrow() {
+    tests_executed++;
     // tested once, ok
     return;
     List<int> oh = {0, 1, 2, 3};
@@ -1456,11 +1545,13 @@ void testListGrow() {
 }
 
 void testWasmRunner() {
+    tests_executed++;
     //	int result = run_wasm("test/test42.wasm");
     //	assert_equals(result, 42);
 }
 
 void testLeaks() {
+    tests_executed++;
     int reruns = 0;
     //	int reruns = 100000;
     for (int i = 0; i < reruns; ++i) {
@@ -1472,6 +1563,7 @@ void testLeaks() {
 }
 
 void testWrong0Termination() {
+    tests_executed++;
 #ifndef WASM
     List<String> builtin_constants = {"pi", "π"};
     assert_equals(builtin_constants.size(), 2); // todo
@@ -1479,6 +1571,7 @@ void testWrong0Termination() {
 }
 
 void testDeepColon() {
+    tests_executed++;
     result = parse("current-user: func() -> string");
     check_is(result.kind, key);
     check_is(result.values().name, "func");
@@ -1486,6 +1579,7 @@ void testDeepColon() {
 };
 
 void testDeepColon2() {
+    tests_executed++;
     result = parse("a:b:c:d");
     check_is(result.kind, key);
     check_is(result.values().name, "b");
@@ -1494,6 +1588,7 @@ void testDeepColon2() {
 
 
 void testStupidLongLong() {
+    tests_executed++;
     //	int a;
     //	long b;// 4 byte in wasm/windows grr
     //	long long c;// 8 bytes everywhere (still not guaranteed grr)
@@ -1507,6 +1602,7 @@ void testStupidLongLong() {
 }
 
 void testFloatReturnThroughMain() {
+    tests_executed++;
     double x = 0.0000001; // 3e...
     //	double x=1000000000.1;// 4...
     //	double x=-1000000000.1;// c1…
@@ -1524,6 +1620,7 @@ void testFloatReturnThroughMain() {
 }
 
 void testArrayS() {
+    tests_executed++;
     auto node = analyze(parse("int"));
     //	assert_equals( node.type->kind, classe);
     assert_equals(node.kind, clazz);
@@ -1539,6 +1636,7 @@ void testArrayS() {
 }
 
 void testArrayInitialization() {
+    tests_executed++;
     // via Units
     assert_emit("x : int[100]; x.length", 100)
     assert_emit("x : u8 * 100; x.length", 100) // type times size operation!!
@@ -1556,6 +1654,7 @@ void testArrayInitialization() {
 }
 
 void testArrayInitializationBasics() {
+    tests_executed++;
     // via Units
     auto node = analyze(parse("x : 100 numbers"));
     assert_equals(node.kind, arrays);
@@ -1564,6 +1663,7 @@ void testArrayInitializationBasics() {
 
 
 void test_sinus_wasp_import() {
+    tests_executed++;
     // using sin.wasp, not sin.wasm
     // todo: compile and reuse sin.wasm if unmodified
     assert_emit("use sin;sin π/2", 1);
@@ -1574,6 +1674,7 @@ void test_sinus_wasp_import() {
 }
 
 void testIteration() {
+    tests_executed++;
     List<String> args;
     for (auto x: args)
         error("NO ITEM, should'nt be reached "s + x);
@@ -1600,6 +1701,7 @@ void testIteration() {
 }
 
 //void testLogarithmInRuntime(){
+// tests_executed++;
 //	float ℯ = 2.7182818284590;
 //	//	assert_equals(ln(0),-∞);
 //	assert_equals(log(100000),5.);
@@ -1611,12 +1713,12 @@ void testIteration() {
 //}
 
 
-
 //==============================================================================
 // PARSER/SYNTAX TESTS (see parser_tests.h)
 //==============================================================================
 
 void testUpperLowerCase() {
+    tests_executed++;
     //    assert_emit("lowerCaseUTF('ÂÊÎÔÛ')", "âêîôû")
 
     char string[] = "ABC";
@@ -1638,6 +1740,7 @@ void testUpperLowerCase() {
 }
 
 void testPrimitiveTypes() {
+    tests_executed++;
     assert_emit("double 2", 2);
     assert_emit("float 2", 2);
     assert_emit("int 2", 2);
@@ -1674,24 +1777,26 @@ void testPrimitiveTypes() {
 }
 
 // One of the few tests which can be removed because who will ever change the sin routine?
-//void test_sin() {
-//	assert_equals(sin(0), 0);
-//	assert_equals(sin(pi / 2), 1);
-//	assert_equals(sin(-pi / 2), -1);
-//	assert_equals(sin(pi), 0);
-//	assert_equals(sin(2 * pi), 0);
-//	assert_equals(sin(3 * pi / 2), -1);
-//
-//	assert_equals(cos(-pi / 2 + 0), 0);
-//	assert_equals(cos(0), 1);
-//	assert_equals(cos(-pi / 2 + pi), 0);
-//	assert_equals(cos(-pi / 2 + 2 * pi), 0);
-//	assert_equals(cos(pi), -1);
-//	assert_equals(cos(-pi), -1);
-//}
+void test_sin() {
+    tests_executed++;
+    assert_equals(sin(0), 0.);
+    assert_equals(sin(pi / 2), 1.);
+    assert_equals(sin(-pi / 2), -1.);
+    assert_equals(sin(pi), 0.);
+    assert_equals(sin(2 * pi), 0.);
+    assert_equals(sin(3 * pi / 2), -1.);
+
+    assert_equals(cos(-pi / 2 + 0), 0.);
+    assert_equals(cos(0), 1.);
+    assert_equals(cos(-pi / 2 + pi), 0.);
+    assert_equals(cos(-pi / 2 + 2 * pi), 0.);
+    assert_equals(cos(pi), -1.);
+    assert_equals(cos(-pi), -1.);
+}
 
 
 void testModulo() {
+    tests_executed++;
     //	assert_equals(mod_d(10007.0, 10000.0), 7)
     assert_emit("10007%10000", 7); // breaks here!?!
     assert_emit("10007.0%10000", 7);
@@ -1704,6 +1809,7 @@ void testModulo() {
 }
 
 void testRepresentations() {
+    tests_executed++;
     result = parse("a{x:1}");
     auto result2 = parse("a:{x:1}");
     assert_equals(result.kind, reference);
@@ -1712,6 +1818,7 @@ void testRepresentations() {
 }
 
 void testDataMode() {
+    tests_executed++;
     result = parse("a b=c", ParserOptions{.data_mode = true});
     print(result);
     check(result.length == 2); // a, b:c
@@ -1735,6 +1842,7 @@ void testDataMode() {
 }
 
 void testSignificantWhitespace() {
+    tests_executed++;
     skip(testDataMode())
     result = parse("a b (c)");
     check(result.length == 3);
@@ -1768,6 +1876,7 @@ void testSignificantWhitespace() {
 
 
 void testComments() {
+    tests_executed++;
     let c = "blah a b c # to silence python warnings;)\n y/* yeah! */=0 // really";
     result = parse(c);
     check(result.length == 2);
@@ -1776,6 +1885,7 @@ void testComments() {
 }
 
 void testEmptyLineGrouping() {
+    tests_executed++;
     auto indented = R"(
 a:
   b
@@ -1803,6 +1913,7 @@ int testNodiscard() {
 
 
 void testSerialize() {
+    tests_executed++;
     const char *inprint = "green=256*255";
     //	const char *inprint = "blue=255;green=256*255;maxi=3840*2160/2;init_graphics();surface=(1,2,3);i=10000;while(i<maxi){i++;surface#i=blue;};10";
     assertSerialize(inprint);
@@ -1810,6 +1921,7 @@ void testSerialize() {
 
 
 void testDedent2() {
+    tests_executed++;
     auto indented = R"(
 a:
   b
@@ -1830,6 +1942,7 @@ e
 }
 
 void testDedent() {
+    tests_executed++;
     auto indented = R"(
 a
   b
@@ -1851,6 +1964,7 @@ e
 
 /*
 void testWasmSpeed() {
+ tests_executed++;
 	struct timeval stop, start;
 	gettimeofday(&start, NULL);
 	time_t s, e;
@@ -1879,6 +1993,7 @@ void testWasmSpeed() {
 }*/
 
 void testImport42() {
+    tests_executed++;
     assert_is("import fourty_two", 42);
     assert_is("include fourty_two", 42);
     assert_is("require fourty_two", 42);
@@ -1889,10 +2004,12 @@ void testImport42() {
 
 //
 //void testWaspInitializationIntegrity() {
+// tests_executed++;
 //	check(not contains(operator_list0, "‖"))// it's a grouper!
 //}
 
 void testColonLists() {
+    tests_executed++;
     auto parsed = parse("a: b c d", {.colon_immediate = false});
     check(parsed.length == 3);
     check(parsed[1] == "c");
@@ -1901,11 +2018,13 @@ void testColonLists() {
 
 
 void testModernCpp() {
+    tests_executed++;
     auto aa = 1. * 2;
     printf("%f", aa); // lol
 }
 
 void testDeepCopyBug() {
+    tests_executed++;
     chars source = "{c:{d:123}}";
     assert_parses(source);
     check(result["d"] == 123);
@@ -1913,6 +2032,7 @@ void testDeepCopyBug() {
 
 
 void testDeepCopyDebugBugBug() {
+    tests_executed++;
     testDeepCopyBug();
     chars source = "{deep{a:3,b:4,c:{d:true}}}";
     assert_parses(source);
@@ -1925,6 +2045,7 @@ void testDeepCopyDebugBugBug() {
 }
 
 void testDeepCopyDebugBugBug2() {
+    tests_executed++;
     //	chars source = "{deep{a:3,b:4,c:{d:123}}}";
     chars source = "{deep{c:{d:123}}}";
     assert_parses(source);
@@ -1936,13 +2057,14 @@ void testDeepCopyDebugBugBug2() {
 
 
 void testNetBase() {
+    tests_executed++;
     warn("NETBASE OFFLINE");
     if (1 > 0)return;
     chars url = "http://de.netbase.pannous.com:8080/json/verbose/2";
 
-//==============================================================================
-// NETWORK/WEB TESTS (see web_tests.h)
-//==============================================================================
+    //==============================================================================
+    // NETWORK/WEB TESTS (see web_tests.h)
+    //==============================================================================
 
     //	print(url);
     chars json = fetch(url);
@@ -1968,6 +2090,7 @@ void testNetBase() {
 }
 
 void testDivDeep() {
+    tests_executed++;
     Node div = parse("div{ span{ class:'bold' 'text'} br}");
     Node &node = div["span"];
     node.print();
@@ -1976,6 +2099,7 @@ void testDivDeep() {
 }
 
 void testDivMark() {
+    tests_executed++;
     use_polish_notation = true;
     Node div = parse("{div {span class:'bold' 'text'} {br}}");
     Node &span = div["span"];
@@ -1986,6 +2110,7 @@ void testDivMark() {
 }
 
 void testDiv() {
+    tests_executed++;
     result = parse("div{ class:'bold' 'text'}");
     result.print();
     assert(result.length == 2);
@@ -1997,6 +2122,7 @@ void testDiv() {
 }
 
 void checkNil() {
+    tests_executed++;
     check(NIL.isNil());
     assert_equals(NIL.name.data, nil_name);
     check(nil_name == "nil"s); // WASM
@@ -2012,6 +2138,7 @@ void checkNil() {
 }
 
 void testMarkAsMap() {
+    tests_executed++;
     Node compare = Node();
     //	compare["d"] = Node();
     compare["b"] = 3;
@@ -2042,6 +2169,7 @@ void testMarkAsMap() {
 
 
 void testMarkSimple() {
+    tests_executed++;
     print("testMarkSimple");
     char xx[] = "1";
     Node x = assert_parses(xx);
@@ -2075,6 +2203,7 @@ void testMarkSimple() {
 
 // test only once to understand
 void testUTFinCPP() {
+    tests_executed++;
     char32_t wc[] = U"zß水🍌"; // or
     printf("%s", (char *) wc);
 
@@ -2100,7 +2229,7 @@ void testUTFinCPP() {
     auto smile0 = x[1];
     char16_t smile1 = x[1];
     char32_t smile = x[1];
-//	check(smile == smile1);
+    //	check(smile == smile1);
 #endif
 #endif
     //	wstring_convert<codecvt_utf8<char32_t>, char32_t> wasm_condition;
@@ -2128,6 +2257,7 @@ void testUTFinCPP() {
 }
 
 void testUnicode_UTF16_UTF32() {
+    tests_executed++;
     // constructors/ conversion maybe later
     //	char letter = '牛';// Character too large for enclosing character literal type char ≈ byte
     char16_t character = u'牛';
@@ -2180,6 +2310,7 @@ void testUnicode_UTF16_UTF32() {
 }
 
 void testStringReferenceReuse() {
+    tests_executed++;
     String x = "ab牛c";
     String x2 = String(x.data, false);
     check(x.data == x2.data);
@@ -2195,6 +2326,7 @@ void testStringReferenceReuse() {
 
 //testUTFø  error: stray ‘\303’ in program
 void testUTF() {
+    tests_executed++;
     //    	testUTFinCPP();
     skip(testUnicode_UTF16_UTF32());
     check(utf8_byte_count(U'ç') == 2);
@@ -2240,6 +2372,7 @@ void testUTF() {
 
 
 void testMarkMultiDeep() {
+    tests_executed++;
     // fragile:( problem :  c:{d:'hi'}} becomes c:'hi' because … bug
     chars source = "{deep{a:3,b:4,c:{d:'hi'}}}";
     assert_parses(source);
@@ -2248,15 +2381,16 @@ void testMarkMultiDeep() {
     assert_equals(node, "hi");
     assert(node == "hi"_s);
 
-//==============================================================================
-// MARK DATA NOTATION TESTS (see parser_tests.h)
-//==============================================================================
+    //==============================================================================
+    // MARK DATA NOTATION TESTS (see parser_tests.h)
+    //==============================================================================
 
     assert(node == "hi");
     assert(node == c['d']);
 }
 
 void testMarkMulti() {
+    tests_executed++;
     chars source = "{a:'HIO' b:3}";
     assert_parses(source);
     Node &node = result['b'];
@@ -2267,11 +2401,13 @@ void testMarkMulti() {
 }
 
 void testMarkMulti2() {
+    tests_executed++;
     assert_parses("a:'HIO' b:3  d:{}");
     assert(result["b"] == 3);
 }
 
 void testOverwrite() {
+    tests_executed++;
     chars source = "{a:'HIO' b:3}";
     assert_parses(source);
     result["b"] = 4;
@@ -2280,6 +2416,7 @@ void testOverwrite() {
 }
 
 void testAddField() {
+    tests_executed++;
     //	chars source = "{}";
     result["e"] = 42;
     assert(result["e"] == 42);
@@ -2287,6 +2424,7 @@ void testAddField() {
 }
 
 void testErrors() {
+    tests_executed++;
     // use assert_throws
     throwing = true;
     assert_throws("0/0");
@@ -2309,6 +2447,7 @@ void testErrors() {
 
 
 void testForEach() {
+    tests_executed++;
     int sum = 0;
     for (Node &item: parse("1 2 3"))
         sum += item.value.longy;
@@ -2322,12 +2461,13 @@ void testForEach() {
 using files = std::filesystem::recursive_directory_iterator;
 
 void testAllSamples() {
+    tests_executed++;
     // FILE NOT FOUND :
-//	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-debug/
-// ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/
-//	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/
-// ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/out wtf
-    for (const auto &file : files("samples/")) {
+    //	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-debug/
+    // ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/
+    //	ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/
+    // ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/out/out wtf
+    for (const auto &file: files("samples/")) {
         if (!String(file.path().string().data()).contains("error"))
             Mark::/*Wasp::*/parseFile(file.path().string().data());
     }
@@ -2337,15 +2477,18 @@ void testAllSamples() {
 #endif
 
 void testSample() {
+    tests_executed++;
     result = /*Wasp::*/parseFile("samples/comments.wasp");
 }
 
 void testNewlineLists() {
+    tests_executed++;
     result = parse("  c: \"commas optional\"\n d: \"semicolons optional\"\n e: \"trailing comments\"");
     assert(result['d'] == "semicolons optional");
 }
 
 void testKitchensink() {
+    tests_executed++;
     result = /*Wasp::*/parseFile("samples/kitchensink.wasp");
     result.print();
     assert(result['a'] == "classical json");
@@ -2357,6 +2500,7 @@ void testKitchensink() {
 }
 
 void testEval3() {
+    tests_executed++;
     auto math = "one plus two";
     result = eval(math);
     assert(result == 3);
@@ -2364,6 +2508,7 @@ void testEval3() {
 
 
 void testDeepLists() {
+    tests_executed++;
     assert_parses("{a:1 name:'ok' x:[1,2,3]}");
     assert(result.length == 3);
     assert(result["x"].length == 3);
@@ -2371,6 +2516,7 @@ void testDeepLists() {
 }
 
 void testIterate() {
+    tests_executed++;
     //	parse("(1 2 3)");
     Node empty;
     bool nothing = true;
@@ -2394,12 +2540,14 @@ void testIterate() {
 }
 
 void testListInitializerList() {
+    tests_executed++;
     List<int> oks = {1, 2, 3}; // easy!
     check(oks.size_ == 3)
     check(oks[2] == 3)
 }
 
 void testListVarargs() {
+    tests_executed++;
     testListInitializerList();
     // ^^ OK just use List<int> oks = {1, 2, 3};
     skip(
@@ -2413,6 +2561,7 @@ void testListVarargs() {
 
 
 void testLists() {
+    tests_executed++;
     testListVarargs(); //
     assert_parses("[1,2,3]");
     result.print();
@@ -2442,6 +2591,7 @@ void testLists() {
 }
 
 void testMapsAsLists() {
+    tests_executed++;
     assert_parses("{1,2,3}");
     assert_parses("{'a'\n'b'\n'c'}");
     assert_parses("{add x y}"); // expression?
@@ -2455,6 +2605,7 @@ void testMapsAsLists() {
 
 
 void testLogic() {
+    tests_executed++;
     assert_is("true or false", true);
     assert_is("false or true", true);
 
@@ -2466,9 +2617,9 @@ void testLogic() {
     assert_is("true or true", true);
 
 
-//==============================================================================
-// LOGIC/BOOLEAN TESTS (see angle_tests.h + feature_tests.h)
-//==============================================================================
+    //==============================================================================
+    // LOGIC/BOOLEAN TESTS (see angle_tests.h + feature_tests.h)
+    //==============================================================================
 
     assert_is("true and true", true);
     assert_is("true and false", false);
@@ -2501,6 +2652,7 @@ void testLogic() {
 
 // use the bool() function to determine if a value is truthy or falsy.
 void testTruthiness() {
+    tests_executed++;
     result = parse("true");
     //	print("TRUE:");
     nl();
@@ -2554,6 +2706,7 @@ void testTruthiness() {
 }
 
 void testLogicEmptySet() {
+    tests_executed++;
     if (eval_via_emit) {
         print("todo eval_via_emit testLogicEmptySet …"); // todo
         return;
@@ -2613,6 +2766,7 @@ void testLogicEmptySet() {
 
 
 void testLogicOperators() {
+    tests_executed++;
     assert_is("¬ 0", 1);
     assert_is("¬ 1", 0);
 
@@ -2634,6 +2788,7 @@ void testLogicOperators() {
 
 
 void testLogic01() {
+    tests_executed++;
     assert_is("0 or 0", false);
     assert_is("0 or 1", true);
     assert_is("1 or 0", true);
@@ -2655,6 +2810,7 @@ void testLogic01() {
 }
 
 void testEqualities() {
+    tests_executed++;
     assert_is("1≠2", True);
     assert_is("1==2", False);
     //	assert_is("1=2", False);
@@ -2667,6 +2823,7 @@ void testEqualities() {
 
 // test once: not a test, just documentation
 void testBitField() {
+    tests_executed++;
     union mystruct {
         // bit fields
         struct {
@@ -2686,6 +2843,7 @@ void testBitField() {
 }
 
 void testCpp() {
+    tests_executed++;
     //    testBitField();
     //	esult of comparison of constant 3 with expression of type 'bool' is always true
     //	assert(1 < 2 < 3);// NOT WHAT YOU EXPECT!
@@ -2695,6 +2853,7 @@ void testCpp() {
 }
 
 void testGraphSimple() {
+    tests_executed++;
     assert_parses("{  me {    name  } # Queries can have comments!\n}");
     assert(result.children[0].name == "name"); // result IS me !!
     assert(result["me"].children[0].name == "name"); // me.me = me good idea?
@@ -2702,6 +2861,7 @@ void testGraphSimple() {
 
 
 void testGraphQlQueryBug() {
+    tests_executed++;
     auto graphResult = "{friends: [ {name:x}, {name:y}]}";
     assert_parses(graphResult);
     Node &friends = result["friends"];
@@ -2709,6 +2869,7 @@ void testGraphQlQueryBug() {
 }
 
 void testGraphQlQuery() {
+    tests_executed++;
     auto graphResult = "{\n  \"data\": {\n"
             "    \"hero\": {\n"
             "      \"id\": \"R2-D2\",\n"
@@ -2744,6 +2905,7 @@ void testGraphQlQuery() {
 }
 
 void testGraphQlQuery2() {
+    tests_executed++;
     assert_parses("{\n"
         "  human(id: \"1000\"){\n"
         "    name\n"
@@ -2755,6 +2917,7 @@ void testGraphQlQuery2() {
 }
 
 void testGraphQlQuerySignificantWhitespace() {
+    tests_executed++;
     // human() {} != human(){}
     assert_parses("{\n"
         "  human(id: \"1000\") {\n"
@@ -2767,6 +2930,7 @@ void testGraphQlQuerySignificantWhitespace() {
 }
 
 void testGraphParams() {
+    tests_executed++;
     assert_parses("{\n  empireHero: hero(episode: EMPIRE){\n    name\n  }\n"
         "  jediHero: hero(episode: JEDI){\n    name\n  }\n}");
     Node &hero = result["empireHero"];
@@ -2787,6 +2951,7 @@ void testGraphParams() {
 }
 
 void testRootLists() {
+    tests_executed++;
     // vargs needs to be 0 terminated, otherwise pray!
     assert_is("1 2 3", Node(1, 2, 3, 0))
     assert_is("(1 2 3)", Node(1, 2, 3, 0))
@@ -2822,6 +2987,7 @@ void testRootLists() {
 
 
 void testRoots() {
+    tests_executed++;
     check(NIL.value.longy == 0);
     // assert_is((char *) "'hello'", "hello");
     skip(assert_is("hello", "hello", 0)); // todo reference==string really?
@@ -2847,6 +3013,7 @@ void testRoots() {
 
 
 void testParams() {
+    tests_executed++;
     //	assert_equals(parse("f(x)=x*x").param->first(),"x");
     //    data_mode = true; // todo ?
     Node body = assert_parses("body(style='blue'){a(link)}");
@@ -2875,6 +3042,7 @@ void testParams() {
 
 
 void testDidYouMeanAlias() {
+    tests_executed++;
     skip(
         Node ok1 = assert_parses("printf('hi')");
         assert_equals(ok1[".warnings"], "DYM print"); // THIS CAN NEVER HAVED WORKED! BUG IN TEST PIPELINE!
@@ -2882,17 +3050,20 @@ void testDidYouMeanAlias() {
 }
 
 void testEmpty() {
+    tests_executed++;
     result = assert_parsesx("{  }");
     assert_equals_x(result.length, 0);
 }
 
 void testEval() {
+    tests_executed++;
     skip(
         assert_is("√4", 2);
     )
 }
 
 void testLengthOperator() {
+    tests_executed++;
     assert_run("#'0123'", 4); // todo at compile?
     assert_run("#[0 1 2 3]", 4);
     assert_run("#[a b c d]", 4);
@@ -2904,6 +3075,7 @@ void testLengthOperator() {
 }
 
 void testNodeName() {
+    tests_executed++;
     Node a = Node("xor"); // NOT type string by default!
     bool ok1 = a == "xor";
     check(a == "xor")
@@ -2912,11 +3084,12 @@ void testNodeName() {
 }
 
 void testIndentAsBlock() {
+    tests_executed++;
     todo_emit(
 
-//==============================================================================
-// NODE/DATA STRUCTURE TESTS (see node_tests.h)
-//==============================================================================
+        //==============================================================================
+        // NODE/DATA STRUCTURE TESTS (see node_tests.h)
+        //==============================================================================
 
         assert_is((char *) "a\n\tb", "a{b}")
     )
@@ -2927,6 +3100,7 @@ void testIndentAsBlock() {
 } // 􀖯􀉶𠿜🕻🗠🂿	𝄉
 
 void testParentContext() {
+    tests_executed++;
     chars source = "{a:'HIO' d:{} b:3 c:ø}";
     assert_parses(source);
     result.print();
@@ -2944,6 +3118,7 @@ void testParentContext() {
 }
 
 void testParent() {
+    tests_executed++;
     //	chars source = "{a:'HIO' d:{} b:3 c:ø}";
     chars source = "{a:'HIO'}";
     assert_parses(source);
@@ -2964,6 +3139,7 @@ void testParent() {
 }
 
 void testAsserts() {
+    tests_executed++;
     assert_equals(11, 11);
     assert_equals(11.1f, 11.1f);
     //	assert_equals(11.1l, 11.1);
@@ -2977,6 +3153,7 @@ void testAsserts() {
 }
 
 void testStringConcatenation() {
+    tests_executed++;
     //	assert_equals(Node("✔️"), True);
     //	assert_equals(Node("✔"), True);
     //	assert_equals(Node("✖️"), False);
@@ -3003,6 +3180,7 @@ void testStringConcatenation() {
 }
 
 void testString() {
+    tests_executed++;
     String *a = new String("abc");
     String b = String("abc");
     String c = *a;
@@ -3065,7 +3243,7 @@ void testString() {
     check("hi %s ok"s % "ja" == "hi ja ok");
     assert_equals(atoi1('x'), -1);
     assert_equals(atoi1('3'), 3);
-    assert_equals(parseLong("١٢٣"), 123l);// Arabic numerals are (LTR) too!
+    assert_equals(parseLong("١٢٣"), 123l); // Arabic numerals are (LTR) too!
     check_eq(parseLong("123"), 123l); // can crash!?!
     //	assert_equals( atoi1(u'₃'),3);// op
     assert_equals(parseLong("0"), 0l);
@@ -3096,6 +3274,7 @@ void testString() {
 
 
 void testNilValues() {
+    tests_executed++;
 #if LINUX
     return; // todo: not working on linux, why?
 #endif
@@ -3124,6 +3303,7 @@ void testNilValues() {
 
 
 void testConcatenationBorderCases() {
+    tests_executed++;
     assert_equals(Node(1, 0) + Node(3, 0), Node(1, 3, 0)); // ok
     assert_equals(Node("1", 0, 0) + Node("2", 0, 0), Node("1", "2", 0));
     // Border cases: {1}==1;
@@ -3135,6 +3315,7 @@ void testConcatenationBorderCases() {
 }
 
 void testConcatenation() {
+    tests_executed++;
     Node node1 = Node("1", "2", "3", 0);
     check(node1.length == 3);
     check(node1.last() == "3");
@@ -3203,6 +3384,7 @@ void testConcatenation() {
 
 
 void testParamizedKeys() {
+    tests_executed++;
     //	<label for="pwd">Password</label>
 
     // 0. parameters accessible
@@ -3240,6 +3422,7 @@ void testParamizedKeys() {
 }
 
 void testStackedLambdas() {
+    tests_executed++;
     result = parse("a{x:1}{y:2}{3}");
     result.print();
     check(result.length == 3);
@@ -3253,6 +3436,7 @@ void testStackedLambdas() {
 }
 
 void testIndex() {
+    tests_executed++;
     assert_parses("[a b c]#2");
     result.print();
     check(result.length == 3);
@@ -3272,14 +3456,14 @@ void testIndex() {
         assert_is("{a:1 b:2}[b]", 2)
     )
 
-//==============================================================================
-// ADVANCED TESTS (see various)
-//==============================================================================
-
+    //==============================================================================
+    // ADVANCED TESTS (see various)
+    //==============================================================================
 }
 
 // can be removed because noone touches List.sort algorithm!
 void testSort() {
+    tests_executed++;
 #ifndef WASM
     List<int> list = {3, 1, 2, 5, 4};
     List<int> listb = {1, 2, 3, 4, 5};
@@ -3292,6 +3476,7 @@ void testSort() {
 }
 
 void testSort1() {
+    tests_executed++;
 #ifndef WASM
     List<int> list = {3, 1, 2, 5, 4};
     List<int> listb = {1, 2, 3, 4, 5};
@@ -3301,6 +3486,7 @@ void testSort1() {
 }
 
 void testSort2() {
+    tests_executed++;
 #ifndef WASM
     List<int> list = {3, 1, 2, 5, 4};
     List<int> listb = {1, 2, 3, 4, 5};
@@ -3310,6 +3496,7 @@ void testSort2() {
 }
 
 void testRemove() {
+    tests_executed++;
     result = parse("a b c d");
     result.remove(1, 2);
     Node replaced = parse("a d");
@@ -3317,6 +3504,7 @@ void testRemove() {
 }
 
 void testRemove2() {
+    tests_executed++;
     result = parse("a b c d");
     result.remove(2, 10);
     Node replaced = parse("a b");
@@ -3324,6 +3512,7 @@ void testRemove2() {
 }
 
 void testReplace() {
+    tests_executed++;
     result = parse("a b c d");
     result.replace(1, 2, new Node("x"));
     Node replaced = parse("a x d");
@@ -3332,6 +3521,7 @@ void testReplace() {
 
 
 void testNodeConversions() {
+    tests_executed++;
     Node b = Node(true);
     print("b.kind");
     print(b.kind);
@@ -3361,11 +3551,13 @@ void testNodeConversions() {
 }
 
 void testGroupCascade0() {
+    tests_executed++;
     result = parse("x='abcde';x#4='y';x#4");
     check(result.length == 3);
 }
 
 void testGroupCascade1() {
+    tests_executed++;
     Node result0 = parse("a b; c d");
     check(result0.length == 2);
     check(result0[1].length == 2);
@@ -3387,6 +3579,7 @@ void testGroupCascade1() {
 }
 
 void testGroupCascade2() {
+    tests_executed++;
     result = parse("{ a b , c d ; e f , g h }");
     Node result1 = parse("{ a b , c d \n e f , g h }");
     print(result1.serialize());
@@ -3397,12 +3590,14 @@ void testGroupCascade2() {
 }
 
 void testSuperfluousIndentation() {
+    tests_executed++;
     result = parse("a{\n  b,c}");
     Node result1 = parse("a{b,c}");
     check(result1 == result);
 }
 
 void testGroupCascade() {
+    tests_executed++;
     //	testGroupCascade2();
     //	testGroupCascade0();
     //	testGroupCascade1();
@@ -3440,6 +3635,7 @@ void testGroupCascade() {
 
 
 void testNodeBasics() {
+    tests_executed++;
     Node a1 = Node(1);
     //	check(a1.name == "1");// debug only!
     check(a1 == 1);
@@ -3492,6 +3688,7 @@ void testSourceMap();
 
 
 void testArrayIndices() {
+    tests_executed++;
     skip(
         // fails second time WHY?
         assert_is("[1 2 3]", Node(1, 2, 3, 0).setType(patterns))
@@ -3506,6 +3703,7 @@ void testArrayIndices() {
 
 
 void testNodeEmit() {
+    tests_executed++;
     assert_emit("y:{x:2 z:3};y.x", 2);
     assert_emit("y:{x:'z'};y.x", 'z'); // emitData( node! ) emitNode()
     assert_emit("y{x:1}", true); // emitData( node! ) emitNode()
@@ -3515,6 +3713,7 @@ void testNodeEmit() {
 }
 
 void todo_done() {
+    tests_executed++;
     // moved from todo() back into tests() once they work again
     testWrong0Termination();
     testErrors(); // error: failed to call function   wasm trap: integer divide by zero
@@ -3533,6 +3732,7 @@ void todo_done() {
 
 // todo: ^^ move back into tests() once they work again
 void todos() {
+    tests_executed++;
     testConstructorCast();
     skip( // unskip to test!!
         testKitchensink();
@@ -3590,6 +3790,7 @@ void todos() {
 
 //int dump_nr = 1;
 //void dumpMemory(){
+// tests_executed++;
 //	String file_name="dumps/dump"s+dump_nr++;
 //	FILE* file=fopen(file_name,"wb");
 //	size_t length = 65536*10;
@@ -3598,37 +3799,40 @@ void todos() {
 //}
 
 #ifdef IMPLICIT_NODES
-void testNodeImplicitConversions(){
+void testNodeImplicitConversions() {
+    tests_executed++;
     // looks nice, but only causes trouble and is not necessary for our runtime!
-    Node b=true;
+    Node b = true;
     print(typeName(b.kind));
-    check(b.value.longy==1);
-    check(b.kind==bools);
-    check(b==True);
-    Node a=1;
-    check(a.kind==longs);
-    check(a.value.longy=1);
-    Node a0=10l;
-    check(a0.kind==longs);
-    check(a0.value.longy=1);
-    Node a1=1.1;
-    check_eq(a1.kind,reals);
-    check(a1.kind==reals);
-    check(a1.value.real=1.1);
-    Node a2=1.2f;
-    check(a2.kind==reals);
-    check(a2.value.real=1.2f);
+    check(b.value.longy == 1);
+    check(b.kind == bools);
+    check(b == True);
+    Node a = 1;
+    check(a.kind == longs);
+    check(a.value.longy = 1);
+    Node a0 = 10l;
+    check(a0.kind == longs);
+    check(a0.value.longy = 1);
+    Node a1 = 1.1;
+    check_eq(a1.kind, reals);
+    check(a1.kind == reals);
+    check(a1.value.real = 1.1);
+    Node a2 = 1.2f;
+    check(a2.kind == reals);
+    check(a2.value.real = 1.2f);
     Node as = 'a';
-    check(as.kind==strings);
-    check(as.value.string=='a');
+    check(as.kind == strings);
+    check(as.value.string == 'a');
 }
 #endif
 
 void testUnits() {
+    tests_executed++;
     assert_is("1 m + 1km", Node(1001).setType(types["m"]));
 }
 
 void testPaint() {
+    tests_executed++;
 #ifdef SDL
     init_graphics();
     while (1)paint(-1);
@@ -3636,45 +3840,48 @@ void testPaint() {
 }
 
 void testPaintWasm() {
+    tests_executed++;
 #ifdef GRAFIX
     //	struct timeval stop, start;
     //	gettimeofday(&start, NULL);
-        // todo: let compiler compute constant expressions like 1024*65536/4
-//    	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
+    // todo: let compiler compute constant expressions like 1024*65536/4
+    //    	assert_emit("i=0;k='hi';while(i<1024*65536/4){i++;k#i=65};k[1]", 65)// wow SLOOW!!!
     //out of bounds memory access if only one Memory page!
-        assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0)// still slow, but < 1s
-        // wow, SLOWER in wasm-micro-runtime HOW!?
+    assert_emit("i=0;k='hi';while(i<16777216){i++;k#i=65};paint()", 0) // still slow, but < 1s
+    // wow, SLOWER in wasm-micro-runtime HOW!?
     //	exit(0);
 
     //(√((x-c)^2+(y-c)^2)<r?0:255)
     //(x-c)^2+(y-c)^2
-        assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r",1);
+    assert_emit("h=100;r=10;i=100;c=99;r=99;x=i%w;y=i/h;k=‖(x-c)^2+(y-c)^2‖<r", 1);
     ////char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i*(10-√i);};paint";
-        char *wasm_paint_routine = "w=1920;c=500;r=100;surface=(1,2);i=0;"
-                                   "while(i<1000000){"
-                                   "i++;x=i%w;y=i/w;surface#i=(x-c)^2+(y-c)^2"
-                                   "};paint";
+    char *wasm_paint_routine = "w=1920;c=500;r=100;surface=(1,2);i=0;"
+            "while(i<1000000){"
+            "i++;x=i%w;y=i/w;surface#i=(x-c)^2+(y-c)^2"
+            "};paint";
     //((x-c)^2+(y-c)^2 < r^2)?0x44aa88:0xffeedd
     //char *wasm_paint_routine = "surface=(1,2);i=0;while(i<1000000){i++;surface#i=i;};paint";
     //assert_emit(wasm_paint_routine, 0);
     //	char *wasm_paint_routine = "maxi=3840*2160/4/2;init_graphics();surface=(1,2,3);i=0;while(i<maxi){i++;surface#i=i*(10-√i);};";
-        eval(wasm_paint_routine);
+    eval(wasm_paint_routine);
     //	paint(0);
     //	gettimeofday(&stop, NULL);
     //	printf("took %lu µs\n", (stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec);
     //	printf("took %lu ms\n", ((stop.tv_sec - start.tv_sec) * 100000 + stop.tv_usec - start.tv_usec) / 100);
     //	exit(0);
     //char *wasm_paint_routine = "init_graphics(); while(1){paint()}";// SDL bugs a bit
-//        while (1)paint(0);// help a little
+    //        while (1)paint(0);// help a little
 #endif
 }
 
 void testNodesInWasm() {
+    tests_executed++;
     assert_emit("{b:c}", parse("{b:c}"));
     assert_emit("a{b:c}", parse("a{b:c}"));
 }
 
 void testSubGroupingIndent() {
+    tests_executed++;
     result = parse("x{\ta\n\tb,c,\n\td;\n\te");
     assert_equals(result.length, 3);
     assert_equals(result.first(), "a");
@@ -3682,6 +3889,7 @@ void testSubGroupingIndent() {
 }
 
 void testSubGrouping() {
+    tests_executed++;
     // todo dangling ',' should make '\n' not close
     //	result=parse("a\nb,c,\nd;e");
     result = parse("a\n"
@@ -3694,6 +3902,7 @@ void testSubGrouping() {
 }
 
 void testSubGroupingFlatten() {
+    tests_executed++;
     // ok [a (b,c) d] should be flattened to a (b,c) d
     result = parse("[a\nb,c\nd]");
     //	result=parse("a\nb,c\nd");// still wrapped!
@@ -3703,11 +3912,13 @@ void testSubGroupingFlatten() {
 }
 
 void testBUG() {
+    tests_executed++;
     // move to tests() once done!
     //        testRecentRandomBugs();
 }
 
 void testBadInWasm() {
+    tests_executed++;
     // break immediately
     testStringConcatWasm();
     assert_emit("square(3.0)", 9.); // todo groupFunctionCallPolymorphic
@@ -3739,6 +3950,7 @@ void testBadInWasm() {
 
 
 void assurances() {
+    tests_executed++;
 #if WASM
     //	check(sizeof(Type32) == 4) // todo:
 #else
@@ -3752,6 +3964,7 @@ void assurances() {
 
 // todo: merge with testAllWasm, move ALL of these to test_wasm.cpp
 void testAllEmit() {
+    tests_executed++;
     // WASM emit tests under the hood:
     // assert_emit("√3^2", 3); // basics
     //	assert_emit("42", 42);// basics
@@ -3814,6 +4027,7 @@ void testAllEmit() {
 
 
 void testHostIntegration() {
+    tests_executed++;
 #if WASMTIME or WASMEDGE
     return;
 #endif
@@ -3832,6 +4046,7 @@ void testHostIntegration() {
 }
 
 void tests() {
+    tests_executed++;
     todo_done();
     assurances();
 #if not WASM
@@ -3958,6 +4173,7 @@ void tests() {
 
 
 void test_new() {
+    tests_executed++;
     //    testInclude();
     //    testMatrixOrder();
 #if WASMEDGE and 0
@@ -4039,6 +4255,7 @@ void print(Module &m) {
 }
 
 void testWaspRuntimeModule() {
+    tests_executed++;
     print("sizeof(Module)");
     print(sizeof(Module));
     print("sizeof(Function)");
@@ -4088,6 +4305,7 @@ void testWaspRuntimeModule() {
 // 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1, 45 sec in Chrome (because print?)
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
+    tests_executed++;
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting current tests 💡");
@@ -4172,6 +4390,7 @@ void testCurrent() {
     // ALL tests up to here take only 1 sec !
     //    todos();// those not passing yet (skip)
 #endif
+    print(tests_executed);
     print("CURRENT TESTS PASSED");
 }
 
