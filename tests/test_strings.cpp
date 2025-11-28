@@ -1,12 +1,15 @@
 #include "test_common.h"
+extern int tests_executed;
 
 void test_string_basics() {
+    tests_executed++;
     print("Testing string basics ...");
     assert_emit("'hello'", "hello"); // char comparison for now
     print("✓ String operations tests passed");
 }
 
 void test_string_operations() {
+    tests_executed++;
     print("Testing string operations...");
     assert_emit("'say ' + 0.", "say 0.");
     assert_emit("'hello'", "hello"); // char comparison for now

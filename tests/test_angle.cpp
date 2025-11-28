@@ -1,6 +1,7 @@
 //
 // Created by pannous on 12.06.20.
 //
+extern int tests_executed;
 
 #include "../source/Wasp.h" // parse
 #include "../source/Angle.h" // analyze
@@ -11,12 +12,13 @@
 #include "../source/asserts.h"
 
 void testFunctionParams() {
+    tests_executed++;
     //	assert_equals(parse("f(x)=x*x").param->first(),"x");
     assert_equals("f(x)=x*x;f(3)", "9"); // functions => angle!
 }
 
 //
-//void testOperatorBinding() {
+//void testOperatorBinding() { tests_executed++;
 //	assert_ast("a and b", "and(a,b)");
 //}
 
@@ -28,6 +30,7 @@ void testFunctionParams() {
 
 
 void testCall() {
+    tests_executed++;
     // #if WASMTIME
     // 	warn("square 3  => SIGABRT in WASMTIME! must be bug there!?");
     // 	return ;
@@ -48,6 +51,7 @@ void testCall() {
 }
 
 void testIf() {
+    tests_executed++;
     //    skip( // todo:
     //            assert_emit("if '':3", false);
     //            assert_emit("if ():3", false);
@@ -138,6 +142,7 @@ void testIf() {
 
 
 void testIfMath() {
+    tests_executed++;
     assert_emit("if 0+2:{3*1} else 4+0", 3);
 
     skip( // no colon => no work. ok!
@@ -202,6 +207,7 @@ void testIfMath() {
 
 
 void testIfGt() {
+    tests_executed++;
     assert_emit("if(2<4):{3}", 3);
     assert_emit("1<0 or 3", 3);
     assert_emit("1<0 else 3", 3);
@@ -281,12 +287,14 @@ void testIfGt() {
 
 
 void testSwitchEvaluation() {
+    tests_executed++;
     assert_is("{a:1+1 b:2}(a)", 2)
     assert_is("x=a;{a:1 b:2}(x)", 1)
     // functor switch(x,xs)=xs[x] or xs[default]
 }
 
 void testSwitch() {
+    tests_executed++;
     //	todo if(1>0) ... innocent groups
     todo_emit(assert_is("{a:1 b:2}[a]", 1))
     todo_emit(assert_is("{a:1 b:2}[b]", 2))
@@ -294,7 +302,7 @@ void testSwitch() {
 
 /*
 #include "smart_types.h"
-void testSmartTypes(){
+void testSmartTypes(){ tests_executed++;
 	check(Node(0xC0000020)==' ');
 	char* hi="Hello";
 	strcpy2(&memoryChars[0x1000], hi);
@@ -326,11 +334,13 @@ void testSmartTypes(){
 }
 */
 void nl() {
+    tests_executed++;
     put_char('\n');
 }
 
 //Prescedence type for Precedence
 void testLogicPrecedence() {
+    tests_executed++;
 #if not WASM
     check(precedence("and") > 1);
     check(precedence("and") < precedence("or"));
@@ -354,6 +364,7 @@ void testLogicPrecedence() {
 
 
 void testAllAngle() {
+    tests_executed++;
     // emmitting or not
     testLogicPrecedence();
     //	testSmartTypes();
@@ -366,5 +377,6 @@ void testAllAngle() {
 }
 
 void testAngle() {
+    tests_executed++;
     testAllAngle();
 }
