@@ -3492,7 +3492,7 @@ Code emitTypeSection() {
     // TODO optimise - some of the procs might have the same type signature
     Code type_data;
     //	print(functionIndices);
-    for (String fun: functions) {
+    for (String& fun: functions) {
         if (!fun) {
             //			print(functionIndices);
             //			print(functions);

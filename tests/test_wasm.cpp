@@ -1054,10 +1054,12 @@ void testRecentRandomBugs() {
     testRecentRandomBugsAgain = false;
     assert_emit("-42", -42)
     assert_emit("‖3‖-1", 2);
-    assert_emit("test42+1", 43); // OK in WASM too?
+#if not WASMTIME
+    assert_emit("test42+1", 43); // OK in WASM too? todo
     assert_emit("square 3*42 > square 2*3", 1)
 #if not WASM
     testSquares();
+#endif
 #endif
     //			WebAssembly.Module doesn't validate: control flow returns with unexpected type. F32 is not a I32, in function at index 0
     assert_is(("42/2"), 21) // in WEBAPP

@@ -135,11 +135,13 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     if (werr != NULL) exit_with_error("Failed to define WASI on linker", werr, NULL);
 
     // Define our custom host functions into the linker under module "env".
-    for (const String &import_name: meta.import_names) {
+    for (String &import_name: meta.import_names) {
         if (import_name.empty()) break;
         // Skip WASI-provided imports so our mock versions don't shadow them.
-        if (import_name == "fd_write" || import_name == "args_get" || import_name == "args_sizes_get") continue;
+        if (import_name == "fd_write" || import_name == "args_get" || import_name == "args_sizes_get") continue; // todo ALL wasi imports
         Signature &signature = meta.functions[import_name].signature;
+        if (import_name == "_ZdlPvm")
+            signature.return_types.clear();// todo bug from where?
         const wasm_functype_t *type0 = funcType(signature);
         wasm_functype_t *own_type = (wasm_functype_t*) type0; // API expects non-const
         wasmtime_func_callback_t cb = (wasmtime_func_callback_t) link_import(import_name);
@@ -362,6 +364,18 @@ wrap(args_get) {
     return NULL;
 }
 
+wrap(concat) {
+    int offset1 = args[0].of.i32;
+    int offset2 = args[1].of.i32;
+    int dest_offset = 20000;// todo! get HEAP_END // args[2].of.i32;
+    char *s1 = (char *) wasm_memory + offset1;
+    char *s2 = (char *) wasm_memory + offset2;
+    char* neu=(char*)concat(s1, s2);
+    strcpy2((char *) wasm_memory + dest_offset, neu); // ⚠️ todo MAY DESTROY OTHER DATA!!
+    results[0].of.i32 = dest_offset;
+    return NULL;
+}
+
 wrap(putc) {
     // put_char
     int i = args[0].of.i32;
@@ -430,14 +444,18 @@ wrap(toLong) {
 // Some host helpers expected by modules likely return externref; provide stubs
 // that return null externref for now to satisfy typed signatures.
 wrap(toNode) {
-    print("toNode!!");
+    todow("toNode!!");
     set_result_null_externref(&results[0]);
     return NULL;
 }
 
 wrap(toString) {
-    print("toString!!");
-    set_result_null_externref(&results[0]);
+    todow("toString!!");
+    results[0].kind = WASM_I32; // char*
+    results[0].of.i32 = 2000;
+    char* dest = (char *) wasm_memory + results[0].of.i32;
+    strcpy2(dest, "hello");
+    dest[5] = '\0';  // Add null terminator after "hello"
     return NULL;
 }
 
@@ -445,6 +463,17 @@ wrap(toReal) {
     print("toReal!!");
     results[0].kind = WASMTIME_F64;
     results[0].of.f64 = 123.0; // dummy
+    return NULL;
+}
+
+wrap(formatLong) {
+    print("formatLong!!");
+    int64 i = args[0].of.i64;
+    int32_t offset = 2000;
+    char* dest = (char *) wasm_memory + offset; // todo HEAP_END
+    strcpy2(dest, formatLong(i));
+    results[0].kind = WASMTIME_I32;
+    results[0].of.i32 = offset;
     return NULL;
 }
 
@@ -459,12 +488,8 @@ wrap(fprintf) {
 wrap(getElementById) {
     print("getElementById!!");
     // Return a null externref for now; ensure both kind and value are set.
-    fprintf(stderr, "[DBG] before set: results[0].kind=%u (I32=%d, EXTERNREF=%d)\n", (unsigned)results[0].kind, (int)WASMTIME_I32, (int)WASMTIME_EXTERNREF);
-    fflush(stderr);
-    set_result_null_externref(&results[0]);
-    fprintf(stderr, "[DBG] after set: results[0].kind=%u (EXTERNREF=%d)\n", (unsigned)results[0].kind, (int)WASMTIME_EXTERNREF);
-    fflush(stderr);
     results[0].kind = WASMTIME_EXTERNREF;
+    set_result_null_externref(&results[0]);
     return NULL;
 }
 
@@ -552,9 +577,9 @@ wasm_wrap *link_import(String name) {
   // define_func(linker, "toLong", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i64()), host_to_long);
   // define_func(linker, "toNode", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i32()), host_to_node);
   // define_func(linker, "toString", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i32()), host_to_string);
-
-
     if (name == "toReal") return &wrap_toReal;
+    if (name == "formatLong") return &wrap_formatLong;
+
     if (name == "memset") return &wrap_memset; // should be provided by wasp!!
     if (name == "calloc") return &wrap_calloc;
     if (name == "_Z5abs_ff") return &wrap_absf; // why??
@@ -564,6 +589,7 @@ wasm_wrap *link_import(String name) {
     // fprintf is variadic and FILE*-based; until proper WASI/stdio plumbing exists,
     // route it to the simple string printer to avoid unmapped import crashes.
     if (name == "fprintf") return &wrap_puts; // TODO: implement proper WASI-backed fprintf
+    // if (name == "_ZdlPvm") return &wrap_delete; // operator delete(void*, unsigned long) TODO add in  wasm_helpers_host.cpp
     if (name == "_ZdlPvm") return &wrap_nop; // operator delete(void*, unsigned long) TODO add in  wasm_helpers_host.cpp
     if (name == "__cxa_guard_acquire") return &wrap_nop; // todo!?
     if (name == "__cxa_guard_release") return &wrap_nop; // todo!?
@@ -627,6 +653,7 @@ wasm_wrap *link_import(String name) {
     if (name == "log") return &wrap_logd; // logd
     if (name == "logd") return &wrap_logd; // logd
     if (name == "putc") return &wrap_putc;
+    if (name == "concat") return &wrap_concat;
     //    if (name == "putchar") return &wrap_putc;// todo: remove duplicates!
     if (name == "put_char") return &wrap_putc; // todo: remove duplicates!
     if (name == "download") return &wrap_download;
@@ -715,6 +742,11 @@ wasm_valkind_t mapTypeToWasmtime(Type type) {
 const wasm_functype_t *funcType(Signature &signature) {
     int param_count = signature.parameters.size();
 
+    if(signature.functions.size()>1) {
+        auto n=signature.functions.first()->name;
+        print(n);
+    }
+
     // Map return type
     Type returnType = signature.return_types.last(none);
     wasm_valtype_t *return_type = 0;
@@ -722,19 +754,6 @@ const wasm_functype_t *funcType(Signature &signature) {
     {
         auto rk = mapTypeToWasmtime(returnType);
         return_type = wasm_valtype_new(rk);
-        fprintf(stderr, "[SIG] return kind mapped to %u (ANYREF=%d, EXTERNREF=%d)\n", (unsigned)rk,
-#ifdef WASM_ANYREF
-                (int)WASM_ANYREF,
-#else
-                -1,
-#endif
-#ifdef WASM_EXTERNREF
-                (int)WASM_EXTERNREF
-#else
-                -1
-#endif
-        );
-        fflush(stderr);
     }
 
     // Allocate parameter types dynamically
@@ -747,9 +766,8 @@ const wasm_functype_t *funcType(Signature &signature) {
             auto typ = signature.parameters[i].type;
             auto valtype = mapTypeToWasmtime(typ);
             param_types[i] = wasm_valtype_new(valtype);
-            fprintf(stderr, "[SIG] param %d kind mapped to %u\n", i, (unsigned)valtype);
+            // fprintf(stderr, "[SIG] param %d kind mapped to %u\n", i, (unsigned)valtype);
         }
-        fflush(stderr);
     }
 
     wasm_valtype_vec_new(&params, param_count, param_types);
