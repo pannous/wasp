@@ -2,7 +2,7 @@
 #include "../source/Wasp.h"
 #include "../source/wasm_reader.h"
 #include "../source/wasm_helpers.h"
-
+extern int tests_executed;
 #if INCLUDE_MERGER
 
 #include "../source/wasm_merger.h"
@@ -13,6 +13,7 @@
 #import "../source/asserts.h"
 
 void testRange() {
+    tests_executed++;
     assert_emit("0..3", Node(0, 1, 2));
     assert_emit("0...3", Node(0, 1, 2, 3));
     assert_emit("0 to 3", Node(0, 1, 2, 3));
@@ -22,6 +23,7 @@ void testRange() {
 }
 
 void testMergeGlobal() {
+    tests_executed++;
 #if MICRO
     return;
 #endif
@@ -35,6 +37,7 @@ void testMergeGlobal() {
 }
 
 void testMergeMemory() {
+    tests_executed++;
 #if WAMR
     return;
 #endif
@@ -49,6 +52,7 @@ void testMergeMemory() {
 
 
 void testMergeRuntime() {
+    tests_executed++;
 #if INCLUDE_MERGER
     Module &runtime = loadModule("wasp-runtime.wasm");
     Module &main = loadModule("test/merge/main_memory.wasm");
@@ -62,6 +66,7 @@ void testMergeRuntime() {
 
 
 void testMergeOwn() {
+    tests_executed++;
     testMergeMemory();
     testMergeGlobal();
 #if MICRO
@@ -81,6 +86,7 @@ void testWasmStuff();
 
 
 void testEmitter() {
+    tests_executed++;
 #if not RUNTIME_ONLY
     clearAnalyzerContext();
     clearEmitterContext();
@@ -92,6 +98,7 @@ void testEmitter() {
 }
 
 void testImplicitMultiplication() {
+    tests_executed++;
     assert_emit("x=3;2x", 6);
     assert_emit("2π", 2 * pi);
     skip(
@@ -101,6 +108,7 @@ void testImplicitMultiplication() {
 }
 
 void testGlobals() {
+    tests_executed++;
     assert_emit("2*π", 2 * pi);
     assert_emit("dub:=it*2;dub(π)", 2 * pi);
 
@@ -127,6 +135,7 @@ void testGlobals() {
 }
 
 void test_get_local() {
+    tests_executed++;
     assert_emit("add1 x:=it+1;add1 3", (int64) 4);
     skip(
         assert_emit("add1 x:=$0+1;add1 3", (int64) 4); // $0 specially parsed now
@@ -134,6 +143,7 @@ void test_get_local() {
 }
 
 void testWasmFunctionDefiniton() {
+    tests_executed++;
     //	assert_is("add1 x:=x+1;add1 3", (int64) 4);
     assert_emit("fib:=if it<2 then it else fib(it-1)+fib(it-2);fib(7)", 13)
     assert_emit("fac:= if it<=0 : 1 else it * fac it-1; fac(5)", 5 * 4 * 3 * 2 * 1);
@@ -164,6 +174,7 @@ void testWasmFunctionDefiniton() {
 
 
 void testWasmTernary() {
+    tests_executed++;
     assert_emit("2>1?3:4", 3);
     assert_emit("1>0?3:4", 3);
     assert_emit("2<1?3:4", 4);
@@ -178,6 +189,7 @@ void testWasmTernary() {
 
 
 void testLazyEvaluation() {
+    tests_executed++;
     //	if lazy_operators.has(op) and … not numeric? …
     //	if op==or emitIf(not lhs,then:rhs)
     //	if op==or emitIf(lhs,else:rhs)
@@ -186,6 +198,7 @@ void testLazyEvaluation() {
 }
 
 void testWasmFunctionCalls() {
+    tests_executed++;
     // todo put square puti putf back here when it works!!
     skip(
         assert_emit("puts 'ok'", (int64) 0);
@@ -201,10 +214,12 @@ void testWasmFunctionCalls() {
 }
 
 void testConstReturn() {
+    tests_executed++;
     assert_emit(("42"), 42)
 }
 
 void testPrint() {
+    tests_executed++;
     // does wasm print? (visual control!!)
     assert_emit(("print 42"), 42)
     print("OK");
@@ -219,6 +234,7 @@ void testPrint() {
 }
 
 void testMathPrimitives() {
+    tests_executed++;
     skip(
         assert_emit(("42.1"), 42.1) // todo: return &Node(42.1) or print value to stdout
         assert_emit(("-42.1"), 42.1)
@@ -251,6 +267,7 @@ void testMathPrimitives() {
 }
 
 void testFloatOperators() {
+    tests_executed++;
     assert_is(("42.0/2.0"), 21)
     assert_emit(("3.0+3.0*3.0"), 12)
     assert_emit(("42.0/2.0"), 21)
@@ -283,6 +300,7 @@ void testFloatOperators() {
 }
 
 void testNorm2() {
+    tests_executed++;
     assert_emit("1-‖3‖/-3", 2);
     assert_emit("1-‖-3‖/3", 0);
     assert_emit("1-‖-3‖/-3", 2);
@@ -304,6 +322,7 @@ void testNorm2() {
 }
 
 void testNorm() {
+    tests_executed++;
     testNorm2();
     assert_emit("‖-3‖", 3);
     //    assert_emit("‖3‖-1", 2);
@@ -320,6 +339,7 @@ void testNorm() {
 }
 
 void testMathOperators() {
+    tests_executed++;
     //	assert_emit(("42 2 *"), 84)
     assert_emit("- -3", 3);
     assert_emit("1- -3", 4);
@@ -389,14 +409,15 @@ void testMathOperators() {
 }
 
 void testMathOperatorsRuntime() {
+    tests_executed++;
     assert_emit("3^2", 9);
     assert_emit("3^1", 3);
     assert_emit("42^2", 1764); // NO SUCH PRIMITIVE
     assert_emit("√3^0", 1);
     assert_emit("√3^0", 1.0);
 #if WASM
-    assert_emit("√3^2", 2.9999999999999996);// bad sqrt!?
-	assert_is("π**2", (double) 9.869604401089358);
+    assert_emit("√3^2", 2.9999999999999996); // bad sqrt!?
+    assert_is("π**2", (double) 9.869604401089358);
 #else
     assert_emit("√3^2", 3);
     assert_is("π**2", (double) 9.869604401089358);
@@ -404,6 +425,7 @@ void testMathOperatorsRuntime() {
 }
 
 void testComparisonMath() {
+    tests_executed++;
     // may be evaluated by compiler!
     assert_emit(("3*42>2*3"), 1)
     assert_emit(("3*1<2*3"), 1)
@@ -430,6 +452,7 @@ void testComparisonMath() {
 
 
 void testComparisonId() {
+    tests_executed++;
     // may be evaluated by compiler!
     assert_emit("id(3*42 )> id 2*3", 1)
     assert_emit("id(3*1)< id 2*3", 1)
@@ -462,6 +485,7 @@ void testComparisonId() {
 }
 
 void testComparisonIdPrecedence() {
+    tests_executed++;
     // may be evaluated by compiler!
     skip(
         assert_emit("id 3*452==452*3", 1) // forces runtime
@@ -495,6 +519,7 @@ void testComparisonIdPrecedence() {
 }
 
 void testComparisonPrimitives() {
+    tests_executed++;
     assert_emit(("42>2"), 1)
     assert_emit(("1<2"), 1)
     assert_emit(("42≥2"), 1)
@@ -520,6 +545,7 @@ void testComparisonPrimitives() {
 }
 
 void testWasmLogicPrimitives() {
+    tests_executed++;
     skip( // todo: if emit returns Node:
         assert_emit(("false").name, False.name); // NO LOL emit only returns number
         assert_emit(("false"), False);
@@ -543,6 +569,7 @@ void testWasmLogicPrimitives() {
 
 
 void testWasmVariables0() {
+    tests_executed++;
     //	  (func $i (type 0) (result i32)  i32.const 123 return)  NO LOL
     assert_emit("i=123;i", 123);
     assert_emit("i:=123;i+1", 124);
@@ -575,6 +602,7 @@ void testWasmVariables0() {
 }
 
 void testWasmIncrement() {
+    tests_executed++;
     assert_emit("i=2;i++", 3);
     skip(
         assert_emit("i=0;w=800;h=800;pixel=(1 2 3);while(i++ < w*h){pixel[i]=i%2 };i ", 800 * 800);
@@ -583,6 +611,7 @@ void testWasmIncrement() {
 }
 
 void testWasmLogicUnaryVariables() {
+    tests_executed++;
     assert_emit("i=0.0; not i", true);
     assert_emit("i=false; not i", true);
     assert_emit("i=0; not i", true);
@@ -596,6 +625,7 @@ void testWasmLogicUnaryVariables() {
 }
 
 void testSelfModifying() {
+    tests_executed++;
     assert_emit("i=3;i*=3", (int64) 9);
     assert_emit("i=3;i+=3", (int64) 6);
     assert_emit("i=3;i-=3", (int64) 0);
@@ -609,6 +639,7 @@ void testSelfModifying() {
 }
 
 void testWasmLogicUnary() {
+    tests_executed++;
     assert_emit("not 0.0", true);
     assert_emit("not ø", true);
     assert_emit("not false", true);
@@ -620,6 +651,7 @@ void testWasmLogicUnary() {
 }
 
 void testWasmLogicOnObjects() {
+    tests_executed++;
     assert_emit("not 'a'", false);
     assert_emit("not {a:2}", false);
     skip(
@@ -633,6 +665,7 @@ void testWasmLogicOnObjects() {
 }
 
 void testWasmLogic() {
+    tests_executed++;
     skip(
         // should be easy to do, but do we really want this?
         assert_emit("true true and", true);
@@ -683,6 +716,7 @@ void testWasmLogic() {
 }
 
 void testWasmLogicNegated() {
+    tests_executed++;
     assert_emit("not true and not true", not true);
     assert_emit("not true and not false", not true);
     assert_emit("not false and not true", not true);
@@ -700,6 +734,7 @@ void testWasmLogicNegated() {
 }
 
 void testWasmLogicCombined() {
+    tests_executed++;
     assert_emit("3<1 and 3<1", 3 < 1);
     assert_emit("3<1 and 9>8", 3 < 1);
     assert_emit("9>8 and 3<1", 3 < 1);
@@ -717,6 +752,7 @@ void testWasmLogicCombined() {
 }
 
 void testWasmIf() {
+    tests_executed++;
     assert_emit("if 2 : 3 else 4", 3);
     assert_emit("if 2 then 3 else 4", 3);
     skip(
@@ -733,6 +769,7 @@ void testWasmIf() {
 }
 
 void testWasmWhile() {
+    tests_executed++;
     assert_emit("i=1;while i<9:i++;i+1", 10);
     assert_emit("i=1;while(i<9){i++};i+1", 10);
     assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
@@ -745,6 +782,7 @@ void testWasmWhile() {
 
 
 void testWasmMemoryIntegrity() {
+    tests_executed++;
     return;
 #if not WASM
 #endif
@@ -774,12 +812,14 @@ void testWasmMemoryIntegrity() {
 }
 
 void testSquarePrecedence() {
+    tests_executed++;
     // todo!
     assert_emit("π/2^2", pi / 4);
     assert_emit("(π/2)^2", pi * pi / 4);
 }
 
 void testSquares() {
+    tests_executed++;
     // occasionally breaks in browser! even though right code is emitted HOW??
     assert_emit("square 3", 9);
     assert_emit("1+2 + square 1+2", (int64) 12);
@@ -795,6 +835,7 @@ void testSquares() {
 
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via testRun()
 void testOldRandomBugs() {
+    tests_executed++;
     // ≈ testRecentRandomBugs()
     // some might break due some testBadInWasm() BEFORE!
     assert_emit("-42", -42) // OK!?!
@@ -823,7 +864,7 @@ void testOldRandomBugs() {
     //	exit(1);
 }
 
-//void testRefactor(){
+//void testRefactor(){ tests_executed++;
 //	wabt::Module *module = readWasm("t.wasm");
 //	refactor_wasm(module, "__original_main", "_start");
 //	module = readWasm("out.wasm");
@@ -837,6 +878,7 @@ void testOldRandomBugs() {
 #endif
 
 void testMergeWabt() {
+    tests_executed++;
 #ifdef WABT_MERGE
     merge_files({"test/merge/main.wasm", "test/merge/lib.wasm"});
 #endif
@@ -844,22 +886,24 @@ void testMergeWabt() {
 
 
 void testMergeWabtByHand() {
+    tests_executed++;
 #if WABT_MERGE // ?? ;)
-  merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
-  wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
-  wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
-  refactor_wasm(module, "b", "neu");
-  remove_function(module, "f");
-  Module *merged = merge_wasm2(main, module);
-  save_wasm(merged);
-  int ok=run_wasm(merged);
-  int ok=run_wasm("a.wasm");
-  check(ok==42);
+    merge_files({"./playground/test-lld-wasm/main.wasm", "./playground/test-lld-wasm/lib.wasm"});
+    wabt::Module *main = readWasm("test-lld-wasm/main.wasm");
+    wabt::Module *module = readWasm("test-lld-wasm/lib.wasm");
+    refactor_wasm(module, "b", "neu");
+    remove_function(module, "f");
+    Module *merged = merge_wasm2(main, module);
+    save_wasm(merged);
+    int ok = run_wasm(merged);
+    int ok = run_wasm("a.wasm");
+    check(ok == 42);
 #endif
 }
 
 
 void testWasmRuntimeExtension() {
+    tests_executed++;
 #if TRACE
     printf("TRACE mode currently SIGTRAP's in testWasmRuntimeExtension. OK, Switch to Debug mode. WHY though?");
 #endif
@@ -933,10 +977,12 @@ void testWasmRuntimeExtension() {
 }
 
 void testStringConcatWasm() {
+    tests_executed++;
     assert_emit("'Hello, ' + 'World!'", "Hello, World!");
 }
 
 void testStringIndicesWasm() {
+    tests_executed++;
     assert_emit("'abcde'#4", 'd'); //
     assert_emit("x='abcde';x#4", 'd'); //
     assert_emit("x='abcde';x#4='x';x#4", 'x');
@@ -974,6 +1020,7 @@ void testStringIndicesWasm() {
 }
 
 void testObjectPropertiesWasm() {
+    tests_executed++;
     assert_emit("x={a:3,b:4,c:{d:true}};x.a", 3);
     assert_emit("x={a:3,b:true};x.b", 1);
     assert_emit("x={a:3,b:4,c:{d:true}};x.c.d", 1);
@@ -982,6 +1029,7 @@ void testObjectPropertiesWasm() {
 }
 
 void testArrayIndicesWasm() {
+    tests_executed++;
 #if not WEBAPP
     assert_throws("surface=(1,2,3);i=1;k#i=4;k#i") // no such k!
     //	caught in wrong place?
@@ -1030,6 +1078,7 @@ void testArrayIndicesWasm() {
 
 // random stuff todo: put in proper tests
 void testWasmStuff() {
+    tests_executed++;
     //	assert_emit("grows := it * 2 ; grows(4)", 8)
     assert_emit("-42", -42)
     assert_emit("x=41;x+1", 42)
@@ -1049,6 +1098,7 @@ bool testRecentRandomBugsAgain = true;
 
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testRecentRandomBugs() {
+    tests_executed++;
     // fixed now thank god
     if (!testRecentRandomBugsAgain)return;
     testRecentRandomBugsAgain = false;
@@ -1109,6 +1159,7 @@ void testRecentRandomBugs() {
 
 
 void testSquareExpWasm() {
+    tests_executed++;
     let π = pi; //3.141592653589793;
     // todo smart pointer return from main for floats!
     assert_emit("3²", 9);
@@ -1136,14 +1187,15 @@ void testSquareExpWasm() {
 #if not WASMTIME
     skip(
         assert_emit("i=-9;√-i", 3);
-        assert_emit("n=3;2ⁿ", 8);
-        assert_emit("n=3.0;2.0ⁿ", 8);
-        //	function attempted to return an incompatible value WHAT DO YOU MEAN!?
+    assert_emit("n=3;2ⁿ", 8);
+    assert_emit("n=3.0;2.0ⁿ", 8);
+    //	function attempted to return an incompatible value WHAT DO YOU MEAN!?
     )
 #endif
 }
 
 void testRoundFloorCeiling() {
+    tests_executed++;
     assert_emit("ceil 3.7", 4);
     assert_emit("floor 3.7", 3); // todo: only if «use math» namespace
     //	assert_emit("ceiling 3.7", 4);// todo: only if «use math» namespace
@@ -1161,6 +1213,7 @@ void testRoundFloorCeiling() {
 
 
 void testWasmTypedGlobals() {
+    tests_executed++;
     //    assert_emit("global int k", 7);//   empty global initializer for int
     assert_emit("global long k=7", 7);
     //    assert_emit("global int k=7", 7); // type mismatch
@@ -1170,6 +1223,7 @@ void testWasmTypedGlobals() {
 }
 
 void testWasmMutableGlobal() {
+    tests_executed++;
     //	assert_emit("$k=7",7);// ruby style, conflicts with templates `hi $name`
     //    assert_emit("k::=7", 7);// global variable not visually marked as global, not as good as:
     assert_emit("global k=7", 7); // python style, as always the best
@@ -1182,6 +1236,7 @@ void testWasmMutableGlobal() {
 }
 
 void testWasmMutableGlobal2() {
+    tests_executed++;
     assert_emit("export k=7", 7); //  all exports are globals, naturally.
     assert_emit("export k=7", 7); //  all exports are globals, naturally.
     assert_emit("export f:=7", 7); //  exports can be functions too.
@@ -1196,6 +1251,7 @@ void testWasmMutableGlobal2() {
 }
 
 void testWasmMutableGlobalImports() {
+    tests_executed++;
     assert_emit("import int k", 7); //  all imports are globals, naturally.
     assert_emit("import const int k", 7); //  all imports are globals, naturally.
     assert_emit("import mutable int k", 7); //  all imports are globals, naturally.
@@ -1216,6 +1272,7 @@ void testWasmMutableGlobalImports() {
 }
 
 void testCustomOperators() {
+    tests_executed++;
     assert_emit(("suffix operator ⁰ := 1; 3⁰"), 1); // get UNITY of set (1->e auto cast ok?)
     assert_emit(("suffix ⁰ := 1; 3⁰"), 1); // get UNITY of set (1->e auto cast ok?)
     assert_emit(("suffix operator ³ := it*it*it; 3³"), 27); // define inside wasp!
@@ -1227,6 +1284,7 @@ void testCustomOperators() {
 }
 
 void testIndexWasm() {
+    tests_executed++;
     assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
     assert_emit("i=1;k='hi';k[i]", 'i')
     //	assert_throws("i=0;k='hi';k#i")// todo internal boundary checks? nah, later ;) done by VM:
@@ -1244,6 +1302,7 @@ void testIndexWasm() {
 
 
 void testImportWasm() {
+    tests_executed++;
     //	Code fourty_two=emit(analyze(parse("ft=42")));
     //	fourty_two.save("fourty_two.wasm");
     assert_emit("import fourty_two;ft*2", 42 * 2);
@@ -1255,6 +1314,7 @@ void testImportWasm() {
 }
 
 void testMathLibrary() {
+    tests_executed++;
     // todo generic power i as builtin
 #if not WASMTIME
     skip(
@@ -1268,6 +1328,7 @@ void testMathLibrary() {
 }
 
 void testSmartReturnHarder() {
+    tests_executed++;
     assert_emit("'a'", Node('a'));
     assert_emit("'a'", Node(u'a'));
     assert_emit("'a'", Node(U'a'));
@@ -1289,6 +1350,7 @@ void testSmartReturnHarder() {
 
 
 void testSmartReturn() {
+    tests_executed++;
 #if not WASM
     testSmartReturnHarder(); // todo
 #endif
@@ -1311,6 +1373,7 @@ void testSmartReturn() {
 }
 
 void testStruct() {
+    tests_executed++;
     // builtin with struct/record
     assert_emit("struct a{x:int y:int z:int};a{1 3 4}.y", 3);
     return;
@@ -1329,6 +1392,7 @@ record person {
 }
 
 void testStruct2() {
+    tests_executed++;
     const char *code0 = "struct point{a:int b:int c:string}";
     Node &node = parse(code0);
     //    assert_equals(node.kind, Kind::structs);
@@ -1341,6 +1405,7 @@ void testStruct2() {
 }
 
 void testWasmGC() {
+    tests_executed++;
     //    assert_emit("y=(1 4 3)[1]", 4);
     //    assert_is("x=(1 4 3);x#2", 4);
     //assert_emit("42",42);
@@ -1398,6 +1463,7 @@ void testWasmGC() {
 }
 
 void testMultiValue() {
+    tests_executed++;
 #ifdef MULTI_VALUE
     assert_emit("1,2,3", Node(1, 2, 3, 0));
     assert_emit("1;2;3", 3);
@@ -1406,6 +1472,7 @@ void testMultiValue() {
 }
 
 void testAssertRun() {
+    tests_executed++;
     // all these have been tested with assert_emit before. now check that it works with runtime
     testWasmRuntimeExtension();
 
@@ -1422,12 +1489,14 @@ void testAssertRun() {
 
 
 void testLogarithm() {
+    tests_executed++;
     skip(
         assert_emit("use log; log10(100)", 2.);
     )
 }
 
 void testLogarithm2() {
+    tests_executed++;
     //	float ℯ = 2.7182818284590;
     Function &function = functions["log10"];
     check(function.is_import);
@@ -1457,11 +1526,13 @@ void testLogarithm2() {
 }
 
 void testForLoopClassic() {
+    tests_executed++;
     assert_emit("for(i=0;i<10;i++){puti i};i", 10);
     assert_emit("sum = 0; for(i=0;i<10;i++){sum+=i};sum", 45);
 }
 
 void testForLoops() {
+    tests_executed++;
 #if not WASM // todo: fix for wasm
     testForLoopClassic();
 #endif
@@ -1502,6 +1573,7 @@ void testForLoops() {
 //void testDwarf();
 //void testSourceMap();
 void testAssert() {
+    tests_executed++;
     assert_emit("assert 1", 1);
     assert_throws("assert 0"); // todo make wasm throw, not compile error?
 }
@@ -1509,11 +1581,13 @@ void testAssert() {
 
 // test once by looking at the output wasm/wat
 void testNamedDataSections() {
+    tests_executed++;
     assert_emit("fest='def';test='abc'", "abc");
     exit(0);
 }
 
 void testAutoSmarty() {
+    tests_executed++;
     assert_emit("11", 11);
     assert_emit("'c'", 'c');
     assert_emit("'cc'", "cc");
@@ -1522,11 +1596,13 @@ void testAutoSmarty() {
 }
 
 void testArguments() {
+    tests_executed++;
     assert_emit("#params", 0); // no args, but create empty List anyway
     // todo add context to wasp variable $params
 }
 
 void testFibonacci() {
+    tests_executed++;
     assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
     assert_emit("int fib(int n){n < 2 ? n : fib(n - 1) + fib(n - 2)}\nfib(10)", 55);
     skip( // TODO!!!
@@ -1543,6 +1619,7 @@ void testFibonacci() {
 }
 
 void testHostDownload() {
+    tests_executed++;
 #if not WASMEDGE
     assert_emit("download http://pannous.com/files/test", "test 2 5 3 7");
 #endif
@@ -1550,6 +1627,7 @@ void testHostDownload() {
 
 
 void testSinus2() {
+    tests_executed++;
     assert_emit(R"(double sin(double x){
     x = modulo_double(x,tau)
     double z = x*x
@@ -1567,6 +1645,7 @@ void testSinus2() {
 }
 
 void testSinus() {
+    tests_executed++;
     //k=78; fucks it up!!
     assert_emit("double sin(double x){\n"
                 "\tx = modulo_double(x,tau)\n"
@@ -1588,6 +1667,7 @@ void testSinus() {
 
 
 void testEmitBasics() {
+    tests_executed++;
     assert_emit("true", true);
     assert_emit("false", false)
     assert_emit("8.33333333332248946124e-03", 8.33333333332248946124e-03);
@@ -1608,6 +1688,7 @@ void testEmitBasics() {
 
 
 void testMathExtra() {
+    tests_executed++;
     assert_is("15÷5", 3);
     assert_emit("15÷5", 3);
     assert_emit("3⋅5", 15);
@@ -1622,6 +1703,7 @@ void testMathExtra() {
 }
 
 void testRoot() {
+    tests_executed++;
     skip(
         assert_is("40+√4", 42, 0)
         assert_is("√4", 2);
@@ -1631,6 +1713,7 @@ void testRoot() {
 }
 
 void testRootFloat() {
+    tests_executed++;
     //	skip(  // include <cmath> causes problems, so skip
     assert_is("√42.0 * √42.0", 42.);
     assert_is("√42 * √42.0", 42.);
@@ -1640,14 +1723,16 @@ void testRootFloat() {
 
 
 void testNodeDataBinaryReconstruction() {
+    tests_executed++;
     check_is(parse("y:{x:2 z:3}").serialize(), "y{x:2 z:3}"); // todo y:{} vs y{}
     assert_emit("y:{x:2 z:3}", parse("y:{x:2 z:3}")); // looks trivial but is epitome of binary (de)serialization!
 }
 
 
 void testWasmString() {
+    tests_executed++;
 #if WASM
-return; // todo!
+    return; // todo!
 #endif
     assert_emit("“c”", 'c');
     assert_emit("“a”", "a");
@@ -1675,6 +1760,7 @@ return; // todo!
 
 
 void testFixedInBrowser() {
+    tests_executed++;
     testMathOperatorsRuntime(); // 3^2
     testIndexWasm();
     testStringIndicesWasm();
@@ -1704,6 +1790,7 @@ void testBadInWasm();
 
 // SIMILAR AS:
 void testTodoBrowser() {
+    tests_executed++;
     testFixedInBrowser();
     testOldRandomBugs(); // currently ok
 
@@ -1716,6 +1803,7 @@ void testTodoBrowser() {
 
 // ⚠️ ALL tests containing assert_emit must go here! testCurrent() only for basics
 void testAllWasm() {
+    tests_executed++;
     // called by testRun() OR synchronously!
     assert_emit("42", 42);
     assert_emit("42+1", 43);
