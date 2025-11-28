@@ -650,6 +650,8 @@ chars typeName(Primitive p) {
 
 chars typeName(Valtype t, bool fail) {
     switch (t) {
+        // case 2:
+        //     return "object";
         case Valtype::i32t:
             return "i32";
         case Valtype::i64:
@@ -679,6 +681,8 @@ chars typeName(Valtype t, bool fail) {
             s = typeName((Kind) t);
             if (s)return s;
             s = typeName((Valtype) t);
+            if (s)return s;
+            s = typeName((Type) t);
             if (s)return s;
             //			if (t==30)return "BUG!";// hide bug lol
             if (fail)

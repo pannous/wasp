@@ -985,6 +985,10 @@ public:
         return eq(data, s->data, length);
     }
 
+    bool operator==(char *c) const {
+        return eq(data, c, length);
+    }
+
     bool operator!=(char *c) {
         return !eq(data, c);
     }

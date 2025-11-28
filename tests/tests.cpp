@@ -1,14 +1,16 @@
 //==============================================================================
 // Main test file for Wasp/Angle language
 //==============================================================================
-// This file contains ~200+ test functions organized into logical categories.
+// This file contains ~200+ test functions not yet organized into logical categories.
 // Test headers are modularized in *_tests.h files for better organization.
 //
 // TODO: Gradually split this monolithic file into category-specific files:
-//   - string_tests.cpp, list_tests.cpp, map_tests.cpp, type_tests.cpp
-//   - math_tests.cpp, node_tests.cpp, parser_tests.cpp, web_tests.cpp
-//   - feature_tests.cpp, implementation_tests.cpp, etc.
+//   - test_string.cpp, test_list.cpp, test_map.cpp, test_type.cpp
+//   - test_math.cpp, test_node.cpp, test_parser.cpp, test_web.cpp
+//   - test_feature.cpp, test_implementation.cpp, etc.
 //
+// todo: test_functions.cpp
+
 // Section markers below indicate where each category's tests are located.
 //==============================================================================
 
@@ -56,7 +58,7 @@ void testTypeSynonyms() {
 }
 
 void testMeta() {
-    Node ok= parse("tee{a:1}");
+    Node ok = parse("tee{a:1}");
     ok["@attrib"] = 42;
     ok["@attrib2"] = 43;
     assert_equals(ok.name, "tee");
@@ -4103,11 +4105,15 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
+    assert_emit("n=3;2ⁿ", 8);
+    testMapOfStrings();
+    testMapOfStringValues();
+    testMaps();
+
     testAutoType();
     testTypeSynonyms();
     testFetch();
     testWGSL();
-    assert_emit("n=3;2ⁿ", 8);
     testFunctionDeclaration();
     testReturnTypes();
     testRecentRandomBugs();

@@ -2929,7 +2929,7 @@ Code cast(Valtype from, Valtype to) {
 
 Function no_context = Function(); // todo: use context in cast, so we can use it in emit_cast
 [[nodiscard]]
-Code cast(Type from, Type to) {
+Code cast(const Type from, const Type to) {
     Code nop;
     // if two arguments are the same, commontype is 'none' and we return empty code (not even a nop, technically)
     if (from == to)return nop; // nop
@@ -3501,7 +3501,8 @@ Code emitTypeSection() {
             if (start.empty())
                 warn("empty functions[ø] because context=start=''");
             else
-                error("empty context creep functions[ø]");
+                warn("empty context creep functions[ø]");
+                // error("empty context creep functions[ø]");
             continue;
         }
         if (operator_list.has(fun)) {
@@ -3650,8 +3651,11 @@ Code emitCodeSection(Node &root) {
         Function &function = functions[declared]; // todo use more often;)
         if (not function.is_declared)continue;
         function.is_import = false;
-        if (declared.empty())
-            error("Bug: empty context name (how?)");
+        if (declared.empty()) {
+            warn("Bug: empty context name (how?)");
+            // error("Bug: empty context name (how?)");
+            continue;
+        }
         if (declared != "wasp_main") println("declared context: "s + declared);
         if (not call_indices.has(declared)) {
             // used or not!
@@ -3772,6 +3776,8 @@ Code emitCodeSection(Node &root) {
     if (functions["quit"].is_used)
         code_blocks += encodeVector(Code(code_quit, sizeof(code_quit)));
 
+    if( not functions.has("wasp_main")) error("wasp_main not found");
+    if( functions["wasp_main"].signature.return_types.size()==0) error("wasp_main not good");
     Code main_block = emitBlock(root, functions["wasp_main"]); // after imports and builtins
 
     if (main_block.length == 0)

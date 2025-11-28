@@ -2,6 +2,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(wasp)
 
+#set(LINUX 1) # REMOVE after linux!
+
 set(CMAKE_VERBOSE_MAKEFILE OFF) # DEBUG CMAKE
 
 #set(CROSSCOMPILE x86) # needs more work / just use different docker images
@@ -983,7 +985,9 @@ else () # NORMAL:
 endif ()
 
 if (NOT WASM)
-    add_dependencies(wasp run_version_script)
+    if (NOT LINUX)
+        add_dependencies(wasp run_version_script)
+    endif ()
     if (WABT_MERGE)
         target_include_directories(wasp PUBLIC Frameworks/wabt)
         target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt/src)

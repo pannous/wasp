@@ -2346,6 +2346,8 @@ void preRegisterFunctions() {
     //    functions["wasp_main"].signature.returns(i64);
     functions["wasp_main"].signature.returns(smarti64);
 #endif
+    // check(functions["wasp_main"].name == "wasp_main");
+    // check(functions["wasp_main"].signature.return_types.size() >= 1);
     //    functions["paint"].import().signature.returns(voids);// paint surface
     //    functions["init_graphics"].import().signature.returns(pointer);// surface
 
