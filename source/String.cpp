@@ -74,6 +74,7 @@ void strcpy2(char *dest, chars src, int length) {
         dest[i] = c;
         i++;
     }
+    dest[i]=0;
 }
 
 void strcpy2(char *dest, chars src) {
