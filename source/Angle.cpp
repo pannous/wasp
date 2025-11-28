@@ -2257,7 +2257,7 @@ void preRegisterFunctions() {
     functions["fd_write"].signature.add(pointer, "nwritten"); // size_t *  out !
     functions["fd_write"].signature.returns(int32t);
     //    functions["fd_write"].module=new Module{.name="wasi"};
-#if WASMEDGE
+#if WASMEDGE or WASMTIME
     functions["fd_write"].module = new Module{.name = "wasi_snapshot_preview1"};
 #else
     functions["fd_write"].module = new Module{.name="wasi_unstable"};
