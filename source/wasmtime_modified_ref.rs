@@ -1,3 +1,4 @@
+TODO merge this file into /opt/wasm/wasmtime/crates/c-api/src/ref.rs for wasmtime_anyref_is_struct
 use crate::{WasmtimeStoreContextMut, abort};
 use std::mem::{ManuallyDrop, MaybeUninit};
 use std::{num::NonZeroU64, os::raw::c_void, ptr};

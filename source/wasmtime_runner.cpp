@@ -1,9 +1,11 @@
-#include "wasmtime.h"
 #include "wasi.h"
+#include "wasmtime.h"
+#include "wasmtime_extension.h" // wasmtime_anyref_is_struct via modified wasmtime/crates/c-api/src/ref.rs see wasmtime_modified_ref.rs
+
 // #include "wasmtime/wasi.h"
 // #include "wasmtime/wasi.hh"
-#include "wasm_reader.h"
 
+#include "wasm_reader.h"
 #include "asserts.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -103,6 +105,46 @@ const wasm_functype_t *funcType(Signature &signature);
 
 wasm_wrap *link_import(String name);
 
+#include "wasmtime/val.h"
+#if WASMTIME_PATCH
+int64 read_struct_field(const wasmtime_anyref_t &anyref, int field) {
+    // Get field (e.g. the 'num' field with value 42)
+    wasmtime_val_t field_val;
+    if (wasmtime_anyref_struct_get_field(context, &anyref, field, &field_val)) {
+        if (field_val.kind == WASMTIME_I32) {
+            printf("Field %d value: %d\n", field, field_val.of.i32);
+            return field_val.of.i32;
+        }
+        if (field_val.kind == WASMTIME_I64) {
+            printf("Field %d value: %lld\n", field, field_val.of.i64);
+            return field_val.of.i64;
+        }
+        if (field_val.kind == WASMTIME_F64) {
+            printf("Field %d value: %f\n", field, field_val.of.f64);
+            return (int64) field_val.of.f64;
+        }
+        printf("Field %d has unexpected type %u\n", field, field_val.kind);
+        todo("General Field struct excess");
+        wasmtime_val_unroot(&field_val);
+    }
+    printf("Failed to get field %d\n", field);
+    error("Failed to get field\n");
+}
+
+int64 read_ref(const wasmtime_val_t &results) {
+    if (results.kind == WASMTIME_ANYREF or results.kind == WASMTIME_EXTERNREF) {
+        wasmtime_anyref_t anyref = results.of.anyref;
+        // Check if it's a struct
+        if (wasmtime_anyref_is_struct(context, &anyref)) {
+            printf("new_object returned a structref\n");
+            return read_struct_field(anyref, 0);
+        }
+        printf("new_object returned an anyref but not a structref\n");
+    }
+    return 0;
+}
+#endif
+
 extern "C" int64_t run_wasm(unsigned char *data, int size) {
     if (!initialized) init_wasmtime();
 
@@ -115,7 +157,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     wasmtime_instance_t instance;
     wasm_trap_t *trap = NULL;
 
-// #define ENABLE_WASI_STDIO
+    // #define ENABLE_WASI_STDIO
 #ifdef ENABLE_WASI_STDIO
     // Instantiate via linker with WASI providing stdio (fd_write etc.) and our custom env funcs.
     wasmtime_linker_t *linker = wasmtime_linker_new(engine);
@@ -138,12 +180,13 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     for (String &import_name: meta.import_names) {
         if (import_name.empty()) break;
         // Skip WASI-provided imports so our mock versions don't shadow them.
-        if (import_name == "fd_write" || import_name == "args_get" || import_name == "args_sizes_get") continue; // todo ALL wasi imports
+        if (import_name == "fd_write" || import_name == "args_get" || import_name == "args_sizes_get") continue;
+        // todo ALL wasi imports
         Signature &signature = meta.functions[import_name].signature;
         if (import_name == "_ZdlPvm")
-            signature.return_types.clear();// todo bug from where?
+            signature.return_types.clear(); // todo bug from where?
         const wasm_functype_t *type0 = funcType(signature);
-        wasm_functype_t *own_type = (wasm_functype_t*) type0; // API expects non-const
+        wasm_functype_t *own_type = (wasm_functype_t *) type0; // API expects non-const
         wasmtime_func_callback_t cb = (wasmtime_func_callback_t) link_import(import_name);
         if (cb) {
             wasmtime_error_t *derr = wasmtime_linker_define_func(
@@ -212,7 +255,13 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         case WASMTIME_FUNCREF:
             return 0; // not representable here
         case WASMTIME_EXTERNREF:
-            return 0; // not representable; could log/debug if needed
+        case WASMTIME_ANYREF:
+#if WASMTIME_PATCH
+            return read_ref(results);
+#else
+            warn("#if WASMTIME_PATCH not active for WASMTIME_ANYREF/WASMTIME_EXTERNREF");
+            return 0; // not representable here
+#endif
         case WASMTIME_V128:
             return 0; // not representable
         default:
@@ -367,10 +416,10 @@ wrap(args_get) {
 wrap(concat) {
     int offset1 = args[0].of.i32;
     int offset2 = args[1].of.i32;
-    int dest_offset = 20000;// todo! get HEAP_END // args[2].of.i32;
+    int dest_offset = 20000; // todo! get HEAP_END // args[2].of.i32;
     char *s1 = (char *) wasm_memory + offset1;
     char *s2 = (char *) wasm_memory + offset2;
-    char* neu=(char*)concat(s1, s2);
+    char *neu = (char *) concat(s1, s2);
     strcpy2((char *) wasm_memory + dest_offset, neu); // ⚠️ todo MAY DESTROY OTHER DATA!!
     results[0].of.i32 = dest_offset;
     return NULL;
@@ -453,9 +502,9 @@ wrap(toString) {
     todow("toString!!");
     results[0].kind = WASM_I32; // char*
     results[0].of.i32 = 2000;
-    char* dest = (char *) wasm_memory + results[0].of.i32;
+    char *dest = (char *) wasm_memory + results[0].of.i32;
     strcpy2(dest, "hello");
-    dest[5] = '\0';  // Add null terminator after "hello"
+    dest[5] = '\0'; // Add null terminator after "hello"
     return NULL;
 }
 
@@ -470,7 +519,7 @@ wrap(formatLong) {
     print("formatLong!!");
     int64 i = args[0].of.i64;
     int32_t offset = 2000;
-    char* dest = (char *) wasm_memory + offset; // todo HEAP_END
+    char *dest = (char *) wasm_memory + offset; // todo HEAP_END
     strcpy2(dest, formatLong(i));
     results[0].kind = WASMTIME_I32;
     results[0].of.i32 = offset;
@@ -479,9 +528,9 @@ wrap(formatLong) {
 
 wrap(fprintf) {
     print("fprintf!!");
-    int offset=args[0].of.i32;
-    char* arg=(char*)memory+offset;
-    printf("%s",arg);
+    int offset = args[0].of.i32;
+    char *arg = (char *) memory + offset;
+    printf("%s", arg);
     return NULL;
 }
 
@@ -552,14 +601,15 @@ void test_lambda() {
 #define wrap_fun(fun) [](void *, wasmtime_caller_t *, const wasmtime_val_t *, size_t, wasmtime_val_t *, size_t)->wasm_trap_t*{fun();return NULL;};
 
 
-static void define_func(wasmtime_linker_t *linker, const char *name, wasm_functype_t *func_type, wasmtime_func_callback_t cb) {
+static void define_func(wasmtime_linker_t *linker, const char *name, wasm_functype_t *func_type,
+                        wasmtime_func_callback_t cb) {
     wasmtime_error_t *error = wasmtime_linker_define_func(
         linker, "env", 3, name, strlen(name), func_type, cb, NULL, NULL);
-  if (error) {
-    wasm_name_t msg;
-    wasmtime_error_message(error, &msg);
-    fprintf(stderr, "define_func error: %.*s\n", (int)msg.size, msg.data);
-  }
+    if (error) {
+        wasm_name_t msg;
+        wasmtime_error_message(error, &msg);
+        fprintf(stderr, "define_func error: %.*s\n", (int) msg.size, msg.data);
+    }
 }
 
 wasm_wrap *link_import(String name) {
@@ -572,11 +622,11 @@ wasm_wrap *link_import(String name) {
     if (name == "toNode") return &wrap_toNode;
     if (name == "toString") return &wrap_toString;
     if (name == "toLong") return &wrap_toLong;
-  // wasmtime_linker_t *linker = wasmtime_linker_new(engine);
-  // define_func(linker, "getElementById", wasm_functype_new_1_1(wasm_valtype_new_i32(), wasm_valtype_new_externref()), host_get_element);
-  // define_func(linker, "toLong", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i64()), host_to_long);
-  // define_func(linker, "toNode", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i32()), host_to_node);
-  // define_func(linker, "toString", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i32()), host_to_string);
+    // wasmtime_linker_t *linker = wasmtime_linker_new(engine);
+    // define_func(linker, "getElementById", wasm_functype_new_1_1(wasm_valtype_new_i32(), wasm_valtype_new_externref()), host_get_element);
+    // define_func(linker, "toLong", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i64()), host_to_long);
+    // define_func(linker, "toNode", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i32()), host_to_node);
+    // define_func(linker, "toString", wasm_functype_new_1_1(wasm_valtype_new_externref(), wasm_valtype_new_i32()), host_to_string);
     if (name == "toReal") return &wrap_toReal;
     if (name == "formatLong") return &wrap_formatLong;
 

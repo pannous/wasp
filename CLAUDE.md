@@ -43,15 +43,19 @@ Key CMake variables (set via `-D` flags):
 
 ### Testing
 
-The project includes extensive tests in `source/tests.cpp`. Tests are enabled by default but can be disabled with `-DNO_TESTS=1`.
+Never mock, always test on real data with real functions and functionality.
+
+The project includes extensive tests in `tests/tests.cpp`. Tests are enabled by default but can be disabled with `-DNO_TESTS=1`.
 
 ```bash
 # Run tests (after each change and building)
 ./wasp test
 ```
 
-Test output generates extensive debug information. The only important thing is that the final line shows:
+Test output generates extensive debug information. The only important thing is that the final 2 lines shows:
+`251`
 `CURRENT TESTS PASSED`
+The number of TESTS PASSED must not go down!
 
 ## Architecture Overview
 
