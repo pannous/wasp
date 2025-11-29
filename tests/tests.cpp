@@ -22,6 +22,8 @@ int tests_executed = 0;
 #include "../source/String.h"
 #include "../source/Map.h"
 #include "tests.h"
+#include "test_struct_types.h"
+#include "test_dynlib_import.h"
 
 #pragma GCC diagnostic ignored "-Wdeprecated"
 
@@ -4305,7 +4307,6 @@ void testWaspRuntimeModule() {
 // 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1, 45 sec in Chrome (because print?)
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
 void testCurrent() {
-    tests_executed++;
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting current tests 💡");
@@ -4323,6 +4324,9 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
+    test_dynlib_import();
+    test_wasm_structs();
+
     assert_emit("n=3;2ⁿ", 8);
     testMapOfStrings();
     testMapOfStringValues();
