@@ -195,3 +195,4 @@ lldb -- ./build/wasp test
 - Cross-compilation differences between native and WASM builds
 - Stack size issues in WASM can cause "memory access out of bounds" errors
 - String corruption if stack size is too low or too high
+- in @source/wasmtime_runner.cpp we used a patched wasmtime wasm-c-api to read struct properties
