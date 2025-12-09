@@ -614,11 +614,11 @@ public:
     }
 
 
-    String& operator%(String &c) {
+    String operator%(String &c) {
         if (!contains("%s"))
-            return *this + c;
-        String& b = this->clone();
-        String& d = b.replace("%s", c);
+            return this->clone() + c;
+        String b = this->clone();
+        String d = b.replace("%s", c);
         return d;
     }
 
@@ -812,9 +812,12 @@ public:
 
     [[nodiscard]]
     String &operator+(String c) {
+        if( length < 0)
+            error("length < 0");
         if (c.length <= 0)
             return *this;
         auto *neu = (char *) alloc(sizeof(char), length + c.length + 1);
+        if(not neu)error("alloc failed");
 #ifdef cstring
 		if (data)strcpy(neu, data);
 		if (c.data)strcpy(neu + length, c.data);

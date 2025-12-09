@@ -93,6 +93,7 @@ static bool tracing = true;
 #define tracef(x, ...)
 #else
 #define trace(x) if(tracing)print(x);
+// #define trace(x) ; // don't trace TODO
 #define tracef(x, ...) if(tracing)printf(x,__VA_ARGS__)
 #endif
 

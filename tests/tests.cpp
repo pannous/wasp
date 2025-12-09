@@ -1781,6 +1781,9 @@ void testPrimitiveTypes() {
 // One of the few tests which can be removed because who will ever change the sin routine?
 void test_sin() {
     tests_executed++;
+#if LINUX
+    return; // only for internal sinus implementation testing
+#else
     assert_equals(sin(0), 0.);
     assert_equals(sin(pi / 2), 1.);
     assert_equals(sin(-pi / 2), -1.);
@@ -1794,6 +1797,7 @@ void test_sin() {
     assert_equals(cos(-pi / 2 + 2 * pi), 0.);
     assert_equals(cos(pi), -1.);
     assert_equals(cos(-pi), -1.);
+#endif
 }
 
 

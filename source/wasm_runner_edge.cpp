@@ -183,11 +183,48 @@ WasmEdge_Result download(void *Data, const FrameContext *CallFrameCxt, const Was
 WasmEdge_Result getExternRefPropertyValue(void *Data,
                                           const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
                                           WasmEdge_Value *Out) {
-    // just a dummy! todo print the id anyways
-    // Function type: {externref, i32} -> {i32}
-    //	uint32_t (*Func)(uint32_t) = WasmEdge_ValueGetExternRef(In[0]);
-    //	uint32_t C = Func(WasmEdge_ValueGetI32(In[1]));
-    //	Out[0] = WasmEdge_ValueGenI32(C);
+    // Function type: {externref/anyref, i32} -> {i64}
+    // Get struct reference and field index from parameters
+    WasmEdge_Value structVal = In[0];
+    uint32_t fieldIdx = WasmEdge_ValueGetI32(In[1]);
+
+    // Check if it's a struct reference
+#if not LINUX
+    if (!WasmEdge_ValueIsStructRef(structVal)) {
+        warn("getExternRefPropertyValue: value is not a struct reference");
+        Out[0] = WasmEdge_ValueGenI64(0);
+        return WasmEdge_Result_Success;
+    }
+
+    // Get the field value
+    WasmEdge_Value fieldVal;
+    WasmEdge_Result result = WasmEdge_ValueGetStructField(structVal, fieldIdx, &fieldVal);
+
+    if (result.Code != WasmEdge_Result_Success.Code) {
+        warn("getExternRefPropertyValue: failed to get struct field");
+        Out[0] = WasmEdge_ValueGenI64(0);
+        return WasmEdge_Result_Success;
+    }
+
+    // Convert field value to i64 based on its type
+    // Check the type and extract the appropriate value
+    if (WasmEdge_ValTypeIsI32(fieldVal.Type)) {
+        int32_t val = WasmEdge_ValueGetI32(fieldVal);
+        Out[0] = WasmEdge_ValueGenI64(val);
+    } else if (WasmEdge_ValTypeIsI64(fieldVal.Type)) {
+        int64_t val = WasmEdge_ValueGetI64(fieldVal);
+        Out[0] = WasmEdge_ValueGenI64(val);
+    } else if (WasmEdge_ValTypeIsF32(fieldVal.Type)) {
+        float val = WasmEdge_ValueGetF32(fieldVal);
+        Out[0] = WasmEdge_ValueGenI64((int64_t)val);
+    } else if (WasmEdge_ValTypeIsF64(fieldVal.Type)) {
+        double val = WasmEdge_ValueGetF64(fieldVal);
+        Out[0] = WasmEdge_ValueGenI64((int64_t)val);
+    } else {
+        warn("getExternRefPropertyValue: unsupported field type");
+        Out[0] = WasmEdge_ValueGenI64(0);
+    }
+#endif
     return WasmEdge_Result_Success;
 }
 
