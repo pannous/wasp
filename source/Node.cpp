@@ -93,6 +93,20 @@ Node &Node::operator=(int i) {
     return *this;
 }
 
+
+// Node &Node::operator=(Node* new_value) {
+// ⚠️ DON'T MESS WITH builtin assignment operator!!
+//     if(this->kind!=key)error("Node.operator= Node only for keys");
+//     *this->value.node = new_value;
+//     return *this;
+// }
+//
+// Node &Node::operator=(Node& new_value) {
+//     if(this->kind!=key)error("Node.operator= Node only for keys");
+//     *this->value.node = new_value;
+//     return *this;
+// }
+
 Node &Node::operator=(chars c) {
     value.string = new String(c);
     kind = strings;
@@ -168,7 +182,7 @@ Node *Node::begin() const {
 
 Node *Node::end() const {
     if (length <= 0 or !children) return 0;
-    if (length < capacity);
+    if (length <= capacity);
     else {
         puti(length);
         puti(capacity);
@@ -948,7 +962,7 @@ String Node::serialize() const {
         const String &serializedValue = *new String(serializeValue());
         if (kind == longs or kind == reals)
             if (not parseLong(name) and name and name.data and name.data[0] != '0')
-                return ""s + name + ":" + serializedValue;
+                return wasp + ":" + serializedValue;
         if (kind == strings and name and (name.empty() or name == value.string))
             return serializedValue; // not text:"text", just "text"
         if (kind == longs and name and (name.empty() or name == formatLong(value.longy)))
@@ -992,12 +1006,8 @@ String Node::serialize() const {
             if (length == 0)
                 break; // how on earth is that possible??
             if (i++ > 0) wasp += separator ? separator : ' ';
-            //            auto chil = "";// ok FOR NOW?? THIS 'fixes' it
-            const String &chil = new String(
-                child.serialize()); // <<< HERE is the BUG! still makes it fail soon or LATER!
-            wasp += chil; // THIS results in test fail later!
-            //            println(chil);// THIS results in MISSING Type LATER!! WTF C++
-            //            wasp += *new String(chil);// ok FOR NOW??
+            const String &chil = new String( child.serialize());
+            wasp += chil;
         }
 
         if (length > 0 or kind == patterns or kind == objects) {

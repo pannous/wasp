@@ -911,14 +911,15 @@ Node &classDeclaration(Node &node, Function &function) {
             type = &field;
             continue;
         } else
-            type = &field.values();
-        if (not type or not isType(*type) or not types.has(type->name))
-            error("class field needs type");
-        else
-            field.type = types[type->name]; // int => IntegerType
+            type = &field.values().first();
+        if (not type and not isType(*type) and not types.has(type->name))
+            error("class field needs type %s %s"s % type->name % node.serialize());
+        field.type = types[type->name]; // int => IntegerType
         field.kind = fields;
         field.value.longy = pos;
-        field["position"] = pos++;
+        // field.setMeta("position", (Node)pos++);
+        // field.metas()["position"] = pos++;
+        field["@position"] = pos++;
     }
     if (types.has(name)) {
         if (types[name] == dec)
@@ -2090,6 +2091,9 @@ Node &groupTemplate(Node &node, Function &function) {
     return node;
 }
 
+Node &analyze(String code) {
+    return analyze(parse(code));
+}
 /*
  * ☢️ ⚛ Nuclear Core ⚠️ 🚧
  * turning some knobs might yield some great powers

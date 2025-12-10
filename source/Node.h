@@ -142,6 +142,7 @@ public:
     String name = EMPTY; // nil_name;
     Node *type = 0; // variable/reference type or object class?
     Node *meta = 0; //  LINK, not list. attributes meta modifiers decorators annotations
+    // use meta via node["@x"]=y or node.metas()["x"]=y or node.setMeta("x",y)
 
     // todo rename and alias:
     // lets lads lats lates: lets because a=b;c=d …; lads children; lats laterals; lates delayed evaluation
@@ -618,8 +619,9 @@ public:
     //	Node &operator[](String s) const;
 
     Node &operator=(int i);
-
     Node &operator=(chars s);
+    // Node &operator=(Node* value); // for keys ⚠️ DON'T MESS WITH builtin assignment operator!!
+    // Node &operator=(Node& value); // for keys
 
 
     Node &set(String string, Node *node);
@@ -789,6 +791,17 @@ public:
         if (!meta)meta = new Node(Kind::meta);
         return *meta;
     }
+
+    // use metas()[property]=node
+    // void setMeta(String property, Node *node) {
+    //     Node &m = metas();
+    //     m[property] = *node;
+    // }
+    //
+    // void setMeta(String property, Node node) {
+    //     metas()[property] = *node.clone();
+    //     // metas().set(property, node.clone());
+    // }
 
     // can't rename to setKind WTH !?
     Node &setKind(Kind kin, bool check = true);
