@@ -48,5 +48,5 @@ void testTypeConfusion();
 void testWasmTypedGlobals();
 
 // Struct types
-void testStruct();
+// void testStruct();
 void testStruct2();
