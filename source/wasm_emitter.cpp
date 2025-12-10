@@ -1690,21 +1690,32 @@ Code emitGetter(Node &node, Node &field, Function &context) {
     // Handle struct field access for wasm structs
     if(use_wasm_structs) {
         if (debug) {
-            printf("emitGetter: node.name=%s, node.kind=%d, has_type=%p\n",
-                   node.name.data, node.kind, (void*)types.has(node.name));
-            if (types.has(node.name)) {
-                Node &typ = *types[node.name];
-                printf("  type.kind=%d (clazz=%d)\n", typ.kind, clazz);
-            }
+            printf("emitGetter: node.name=%s, node.kind=%d, has_type=%p, last_type=%d\n",
+                   node.name.data, node.kind, (void*)types.has(node.name), (int)last_type);
         }
+
+        // Case 1: Direct struct constructor call like a{1,2,3}.field
         if (node.kind == call and types.has(node.name)) {
             Node &typ = *types[node.name];
             if (typ.kind == clazz) {
-                // Emit the struct constructor and then access the field
                 Code ref = emitReferenceTypeConstructor(node, context);
                 return ref + emitReferenceAttribute(typ, field, context);
             }
         }
+
+        // Case 2: Reference to a struct instance (local variable)
+        if (node.kind == reference and last_type == Valtype::wasm_struct) {
+            // The struct instance is already on the stack from emitValue
+            // We need to determine which struct type it is from last_object
+            if (last_object and types.has(last_object->name)) {
+                Node &typ = *types[last_object->name];
+                if (typ.kind == clazz) {
+                    // No need to emit the value again, it's already on stack
+                    return emitReferenceAttribute(typ, field, context);
+                }
+            }
+        }
+
         todo("use correct struct field getter path (should be implemented somewhere else here)");
     }
     else todo("get pointer of node on stack");
@@ -1751,9 +1762,25 @@ Code emitAttribute(Node &node, Function &context) {
         }
     }
 
+    if (debug) {
+        printf("emitAttribute: object.name=%s, object.kind=%d, object.type=%p\n",
+               object.name.data, object.kind, (void*)object.type);
+    }
+
     Type element_type = unknown;
     if (!object.type and types.has(object.name))
         object.type = types[object.name];
+
+    // For references, try to get type from the local variable
+    if (!object.type and object.kind == reference and context.locals.has(object.name)) {
+        Local &local = context.locals[object.name];
+        if (local.type == Valtype::wasm_struct and referenceMap.has(object.name)) {
+            Node &ref_value = referenceMap[object.name];
+            if (types.has(ref_value.name)) {
+                object.type = types[ref_value.name];
+            }
+        }
+    }
 
     if (object.type) {
         Node type = *object.type;
@@ -1778,7 +1805,24 @@ Code emitAttribute(Node &node, Function &context) {
             return code + emitReferenceAttribute(type, field, context);
         }
     } else {
-        // No type information available, use generic getter
+        // No type information available
+        // For wasm structs, try emitting the value first to determine type from last_type/last_object
+        if (use_wasm_structs and object.kind == reference) {
+            Code code = emitValue(object, context);
+            // After emitting, check if it's a struct via last_type and last_object
+            if (debug) {
+                printf("emitAttribute: after emitValue, last_type=%s (%d), last_object=%p\n",
+                       typeName(last_type), (int)last_type, (void*)last_object);
+                if (last_object) printf("  last_object->name=%s\n", last_object->name.data);
+            }
+            if (last_type == Valtype::wasm_struct and last_object and types.has(last_object->name)) {
+                Node &typ = *types[last_object->name];
+                if (typ.kind == clazz) {
+                    return code + emitReferenceAttribute(typ, field, context);
+                }
+            }
+        }
+        // Fall back to generic getter
         return emitGetter(object, field, context);
     }
 
