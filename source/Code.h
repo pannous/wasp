@@ -1310,6 +1310,7 @@ struct Local {
     Node *ref; // why still needed?
     int data_pointer = 0; // compile time handling of reference data, e.g. after emitData()
 };
+typedef Local Variable;
 
 // void print(Local l) ;
 static void print(Local l) {

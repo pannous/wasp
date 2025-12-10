@@ -114,6 +114,7 @@ if (NOT WASM)
         # ⚠️ NO engine has (c-api) support for wit / component model as of 2025-03 !!! ⚠️
         # https://github.com/bytecodealliance/wasmtime/issues/6987
         SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        set(WEBAPP 0)
 #        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
         #        SET(SPIN 1) WebAssembly Gateway Interface (WAGI) OK: Write to STDOUT, ENV[QUERY_STRING] for input, uploads through STDIN

@@ -1585,6 +1585,10 @@ Code emitValue(Node &node, Function &context) {
                 code.addByte(get_local); // todo skip repeats
                 code.addByte(local.position); // base location stored in variable!
                 last_type = local.type;
+                // Preserve the original object reference for struct field access
+                if (local.ref) {
+                    last_object = local.ref;
+                }
                 if (node.length > 0) {
                     if (use_wasm_arrays)
                         return emitWasmArrayGetter(node, context, local);
@@ -1762,22 +1766,64 @@ Code emitAttribute(Node &node, Function &context) {
         }
     }
 
+    // Handle case where parser transformed struct constructor into empty objects node {}
+    // This happens for inline expressions like a{1 3 4}.y
+    if (use_wasm_structs and object.kind == objects and object.name.empty() and object.length == 0) {
+        // The constructor info is lost, so we need to look at the parent expression
+        // The full expression node should still have information we can use
+        // For now, error with helpful message
+        error("FIXME: struct constructor lost during parsing for expression: "s + node.serialize().data +
+              "\nThis is a parser bug - the struct type information was not preserved.");
+    }
+
     if (debug) {
         printf("emitAttribute: object.name=%s, object.kind=%d, object.type=%p\n",
                object.name.data, object.kind, (void*)object.type);
+        printf("  object.length=%d\n", object.length);
+        if (object.length > 0) {
+            printf("  object[0].serialize()=%s\n", object[0].serialize().data);
+            printf("  object[0].name=%s\n", object[0].name.data);
+        }
+        printf("  object.serialize()=%s\n", object.serialize().data);
+        printf("  object.value.node=%p\n", (void*)object.value.node);
+        if (object.value.node) {
+            printf("  object.value.node->serialize()=%s\n", object.value.node->serialize().data);
+            printf("  object.value.node->name=%s\n", object.value.node->name.data);
+        }
+        printf("  node.serialize()=%s\n", node.serialize().data);
+        printf("  node.length=%d\n", node.length);
+        if (node.length > 0) {
+            printf("  node[0].serialize()=%s, name=%s\n", node[0].serialize().data, node[0].name.data);
+        }
+        printf("  context.locals.size=%d\n", context.locals.size());
+        for (int i = 0; i < context.locals._size; i++) {
+            String &key = context.locals.keys[i];
+            if (key.empty()) continue;
+            Local &loc = context.locals.values[i];
+            printf("    local[%s]: type=%d, ref=%p\n", key.data, (int)loc.type, (void*)loc.ref);
+        }
     }
 
     Type element_type = unknown;
     if (!object.type and types.has(object.name))
         object.type = types[object.name];
 
-    // For references, try to get type from the local variable
+    // For references, try to get type from the local variable or referenceMap
     if (!object.type and object.kind == reference and context.locals.has(object.name)) {
         Local &local = context.locals[object.name];
-        if (local.type == Valtype::wasm_struct and referenceMap.has(object.name)) {
+        // Check if the referenceMap has type information for this variable
+        if (debug) printf("Checking referenceMap for %s: has=%p\n", object.name.data, (void*)referenceMap.has(object.name));
+        if (referenceMap.has(object.name)) {
             Node &ref_value = referenceMap[object.name];
-            if (types.has(ref_value.name)) {
+            if (debug) printf("  ref_value.kind=%d, ref_value.name=%s, ref_value.type=%p\n",
+                              ref_value.kind, ref_value.name.data, (void*)ref_value.type);
+            // If the referenced value is a constructor or has a type name in our types map
+            if (ref_value.kind == constructor and ref_value.type) {
+                object.type = ref_value.type;
+                if (debug) printf("  Set object.type from constructor\n");
+            } else if (types.has(ref_value.name)) {
                 object.type = types[ref_value.name];
+                if (debug) printf("  Set object.type from types[%s]\n", ref_value.name.data);
             }
         }
     }
@@ -1868,7 +1914,21 @@ Code emitOperator(Node &node, Function &context) {
     //    if (name == ":=")return emitDeclaration(node, first); todo!
     if (name == ":=")return emitSetter(node, first, context);
     if (name == "=")return emitSetter(node, first, context); // todo node.first dodgy
-    if (name == ".") return emitAttribute(node, context);
+    if (name == ".") {
+        if (debug) {
+            printf("About to call emitAttribute for: %s\n", node.serialize().data);
+            if (node.length > 0) {
+                Node &first_child = node.first();
+                printf("  node.first().serialize()=%s, kind=%d, name=%s\n",
+                       first_child.serialize().data, first_child.kind, first_child.name.data);
+                printf("  node.first().parent=%p\n", (void*)first_child.parent);
+                if (first_child.parent) {
+                    printf("    parent.serialize()=%s\n", first_child.parent->serialize().data);
+                }
+            }
+        }
+        return emitAttribute(node, context);
+    }
     //    if (name=="#" and node.length==1)return emitLength(node, context);
     //    if (name=="#" and node.length==2 and use_wasm_arrays  return emitWasmArrayGetter(node, context);
     //	if (name=="#" and node.length==2)return emitIndexPattern(node[0], node[1], context, false, unknown); elsewhere
@@ -3155,6 +3215,20 @@ Code emitSetter(Node &node, Node &value, Function &context) {
         referenceIndices.insert_or_assign(variable, data_index_end); // WILL be last_data !
         referenceDataIndices[variable] = data_index_end + headerOffset(value);
         referenceMap[variable] = value; // node; // lookup types, array length …
+    }
+    // Also store struct constructors in referenceMap for type lookup
+    if (debug) printf("emitSetter: variable=%s, value.kind=%d (%s), value.type=%p\n",
+                      variable.data, value.kind, typeName(value.kind), (void*)value.type);
+    if (use_wasm_structs and value.kind == constructor) {
+        if (debug) printf("Storing constructor in referenceMap: %s\n", variable.data);
+        referenceMap[variable] = value;
+    } else if (use_wasm_structs and value.type and types.has(value.name)) {
+        // Value might have type information even if not marked as constructor
+        Node *type_node = types[value.name];
+        if (type_node and type_node->kind == clazz) {
+            if (debug) printf("Storing typed value in referenceMap: %s (type=%s)\n", variable.data, value.name.data);
+            referenceMap[variable] = value;
+        }
     }
     Code setter;
     //	auto values = value.values();
