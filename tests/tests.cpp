@@ -4348,7 +4348,7 @@ void testCurrent() {
     // testPing();
     // testFunctionArgumentCast();
     // test_dynlib_import();
-    // test_wasm_node_struct();
+    test_wasm_node_struct();
     // test_wasm_structs();
 
     assert_emit("n=3;2ⁿ", 8);
