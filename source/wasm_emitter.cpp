@@ -98,6 +98,10 @@ Code emitConstruct(Node &node, Function &context);
 
 Code emitGetter(Node &node, Node &field, Function &context);
 
+Code emitReferenceTypeConstructor(Node &node, Function &context);
+
+Code emitReferenceAttribute(Node &object, Node field_name, Function &function);
+
 Code emitForClassic(Node &node, Function &context);
 
 void discard(Code code) {
@@ -1682,7 +1686,27 @@ Code emitGetter(Node &node, Node &field, Function &context) {
         return emitReferenceProperty(node, field, context);
     if (node.kind == reference and node.length > 0) // else loop!
         return emitIndexPattern(node, field, context, false, unknown);
-    //        code.add(emitValue(node, context));
+
+    // Handle struct field access for wasm structs
+    if(use_wasm_structs) {
+        if (debug) {
+            printf("emitGetter: node.name=%s, node.kind=%d, has_type=%p\n",
+                   node.name.data, node.kind, (void*)types.has(node.name));
+            if (types.has(node.name)) {
+                Node &typ = *types[node.name];
+                printf("  type.kind=%d (clazz=%d)\n", typ.kind, clazz);
+            }
+        }
+        if (node.kind == call and types.has(node.name)) {
+            Node &typ = *types[node.name];
+            if (typ.kind == clazz) {
+                // Emit the struct constructor and then access the field
+                Code ref = emitReferenceTypeConstructor(node, context);
+                return ref + emitReferenceAttribute(typ, field, context);
+            }
+        }
+        todo("use correct struct field getter path (should be implemented somewhere else here)");
+    }
     else todo("get pointer of node on stack");
     if (field.kind == strings)
         code.add(emitStringData(field, context));
@@ -1695,11 +1719,7 @@ Code emitGetter(Node &node, Node &field, Function &context) {
     return code;
 }
 
-Code emitReferenceAttribute(Node &node, Node &field, Function &function) {
-    todo("emitReferenceAttribute");
-    return Code();
-}
-
+// emitReferenceAttribute moved to line 1788
 
 Code emitReferenceTypeConstructor(Node &node, Function &context);
 
@@ -1722,6 +1742,15 @@ Code emitAttribute(Node &node, Function &context) {
         return ref + emitReferenceAttribute(object, field, context);
     }
 
+    // Handle struct field access when object is an inline constructor expression (a{...})
+    if (use_wasm_structs and object.kind == call and types.has(object.name)) {
+        Node &typ = *types[object.name];
+        if (typ.kind == clazz) {
+            Code ref = emitReferenceTypeConstructor(object, context);
+            return ref + emitReferenceAttribute(typ, field, context);
+        }
+    }
+
     Type element_type = unknown;
     if (!object.type and types.has(object.name))
         object.type = types[object.name];
@@ -1741,8 +1770,17 @@ Code emitAttribute(Node &node, Function &context) {
             error("invalid field index %d of %s in element_type %s of %s "s % index % field.name % type.name %
             node.serialize());
         field = Node(index);
-    } else
-        emitGetter(object, field, context);
+
+        // For wasm structs, use struct.get instead of memory-based access
+        if (use_wasm_structs and type.kind == clazz) {
+            // Emit the struct instance (will use struct.new if it's a constructor)
+            Code code = emitValue(object, context);
+            return code + emitReferenceAttribute(type, field, context);
+        }
+    } else {
+        // No type information available, use generic getter
+        return emitGetter(object, field, context);
+    }
 
     Code code = emitData(object, context);
     // base pointer on stack
@@ -2784,6 +2822,14 @@ Function &findMatchingPolymorphicDispatch(Function &function, Node &params, Type
 Code emitCall(Node &fun, Function &context) {
     Code code;
     auto name = fun.name;
+    // Check if this is a struct constructor when use_wasm_structs is enabled
+    if (use_wasm_structs and types.has(name)) {
+        Node &typ = *types[name];
+        if (typ.kind == clazz) {
+            // This is a struct constructor, not a function call
+            return emitReferenceTypeConstructor(fun, context);
+        }
+    }
     if (not functions.has(name)) {
         auto normed = normOperator(name);
         if (not functions.has(normed))
