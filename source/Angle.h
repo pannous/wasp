@@ -101,6 +101,8 @@ bool isType(Node &node);
 Node &
 analyze(Node &node, Function &function = *new Function{.name = "wasp_main"});
 
+Node &analyze(String code); // wasp -> node  parse ast
+
 // wasp -> node  // build ast via operators
 //Node eval(String code);// interpret OR emit :
 Node interpret(String code); // wasp -> code -> data   // interpreter mode vs:

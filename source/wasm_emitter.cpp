@@ -4109,7 +4109,12 @@ Code emitNameSection() {
     int usedTypes = 0;
     int usedFields = 0;
     for (auto &type_name: types) {
-        auto typ = *types[type_name];
+        auto typ0 = types[type_name];
+        if(not typ0) { // e.g. builtin int ...
+            warn("missing type %s"s % type_name);
+            continue;
+        }
+        auto& typ = *typ0;
         if (typ.kind != structs) // wasmtype_struct
             continue;
         usedTypes++;

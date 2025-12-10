@@ -62,6 +62,24 @@ void testTypeSynonyms() {
     // check_is(Type("f32"s),Type("float"s));
 }
 
+
+void testMetaField() {
+    tests_executed++;
+    Node tee = parse("tee{a:1}");
+    tee["a"]["@attrib"] = 42;
+    tee["a"]["@attrib2"] = 43;
+    // tee["a"].setMeta("attrib2",(Node) 43);
+    // tee["a"].metas()["attrib2"]=(Node) 43;
+    assert_equals(tee.name, "tee");
+    check(tee["a"]["@attrib"]);
+    check(tee["a"]["@attrib2"]);
+    check(tee["a"] == 1);
+    check(tee.length == 1);
+    check(tee["a"]["@attrib"].value.longy == 42);
+    check(tee["a"]["@attrib2"].value.longy == 43);
+    assert_equals(tee.serialize(), "tee{@attrib(42) @attrib2(43) a:1}");
+}
+
 void testMeta() {
     tests_executed++;
     Node tee = parse("tee{a:1}");
@@ -109,6 +127,7 @@ void testWGSL() {
     testMeta();
     testMetaAt();
     testMetaAt2();
+    testMetaField();
     auto code = R"( wgsl{
 @group(0) @binding(0)
 var<storage, read_write> data: array<u32>;
@@ -4328,8 +4347,9 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
-    test_dynlib_import();
-    test_wasm_structs();
+    // test_dynlib_import();
+    // test_wasm_node_struct();
+    // test_wasm_structs();
 
     assert_emit("n=3;2ⁿ", 8);
     testMapOfStrings();
