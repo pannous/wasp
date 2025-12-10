@@ -699,6 +699,7 @@ void initTypes() {
 
 
 Node &constructInstance(Node &node, Function &function);
+Node &classDeclaration(Node &node, Function &function);
 
 Node &groupTypes(Node &expression, Function &context , bool as_param) {
     // todo delete type declarations double x, but not double x=7
@@ -778,22 +779,23 @@ Node &constructInstance(Node &node, Function &function) {
 Node &groupStructConstructors(Node &node, Function &context) {
     String &name = node.name;
 
-    if (debug and !name.empty() and name == "a") {
-        printf("groupStructConstructors: name=%s, kind=%d, length=%d\n",
-               name.data, node.kind, node.length);
-        printf("  types.has('a')=%p\n", (void*)types.has("a"));
-        if (types.has("a")) {
-            Node *type = types["a"];
-            printf("  types['a'].kind=%d\n", type->kind);
-        }
+    if (debug && name == "a") {
+        printf("groupStructConstructors: name=a, kind=%d, length=%d, types.has(a)=%p\n",
+               node.kind, node.length, (void*)types.has("a"));
+    }
+
+    // Skip struct declarations - they're already processed by analyze()
+    if (node.length >= 2 && node.first().name == "struct") {
+        // Don't recurse into struct declaration itself
+        return node;
     }
 
     // Check if this node itself is a struct constructor: a{...} where 'a' is a struct type
     if (types.has(name) && node.length > 0 && node.kind != constructor) {
         Node &type = *types[name];
-        if (type.kind == clazz) {
+        if (type.kind == clazz || type.kind == structs) {
             // This is a struct constructor call
-            if (debug) printf("  Converting %s to constructor!\n", name.data);
+            if (debug) printf("Converting %s{...} to constructor\n", name.data);
             return constructInstance(node, context);
         }
     }
@@ -922,10 +924,12 @@ Node extractReturnTypes(Node decl, Node body);
 Node &classDeclaration(Node &node, Function &function);
 
 Node &classDeclaration(Node &node, Function &function) {
+    if (debug) printf("classDeclaration called\n");
     if (node.length < 2)
         error("wrong class declaration format; should be: class name{…}");
     Node &dec = node[1];
     String &kind_name = node.first().name;
+    if (debug) printf("  kind_name=%s, dec.name=%s\n", kind_name.data, dec.name.data);
     if (kind_name == "struct") {
         //        if (use_wasm_structs) distinguish implementation later!
         dec.kind = structs;
@@ -958,7 +962,9 @@ Node &classDeclaration(Node &node, Function &function) {
         else
             error("incompatible structure %s already declared:\n"s % name + types[name]->serialize() /*+ node.line*/);
     } else {
+        if (debug) printf("  Adding type '%s' to types map\n", name.data);
         types.add(name, dec.clone());
+        if (debug) printf("  After add: types.has('%s')=%p\n", name.data, (void*)types.has(name));
     }
     return dec;
 }
@@ -2192,11 +2198,9 @@ Node &analyze(Node &node, Function &function) {
         module->name = node.string(); // todo: use?
         return NUL;
     }
-#if not WASM // todo why not??
-    // class declaration!
+    // class/struct declaration!
     if (not firstName.empty() and class_keywords.contains(firstName))
         return classDeclaration(node, function);
-#endif
 
 
     // add: func(a: float32, b: float32) -> float32
