@@ -774,6 +774,37 @@ Node &constructInstance(Node &node, Function &function) {
     return node;
 }
 
+// Recursively find and convert struct constructor calls to constructor nodes
+Node &groupStructConstructors(Node &node, Function &context) {
+    String &name = node.name;
+
+    if (debug and !name.empty() and name == "a") {
+        printf("groupStructConstructors: name=%s, kind=%d, length=%d\n",
+               name.data, node.kind, node.length);
+        printf("  types.has('a')=%p\n", (void*)types.has("a"));
+        if (types.has("a")) {
+            Node *type = types["a"];
+            printf("  types['a'].kind=%d\n", type->kind);
+        }
+    }
+
+    // Check if this node itself is a struct constructor: a{...} where 'a' is a struct type
+    if (types.has(name) && node.length > 0 && node.kind != constructor) {
+        Node &type = *types[name];
+        if (type.kind == clazz) {
+            // This is a struct constructor call
+            if (debug) printf("  Converting %s to constructor!\n", name.data);
+            return constructInstance(node, context);
+        }
+    }
+
+    // Recursively process children
+    for (int i = 0; i < node.length; ++i) {
+        node.children[i] = groupStructConstructors(node.children[i], context);
+    }
+
+    return node;
+}
 
 void updateLocal(Function &context, String name, Type type) {
     //#if DEBUG
@@ -1564,6 +1595,13 @@ void addLibraryFunctionAsImport(Function &func);
 
 // todo merge with groupOperatorCall
 Node &groupFunctionCalls(Node &expressiona, Function &context) {
+    if (debug) {
+        printf("groupFunctionCalls: expressiona.name=%s, kind=%d, length=%d, serialize=%s\n",
+               expressiona.name.data, expressiona.kind, expressiona.length, expressiona.serialize().data);
+        if (expressiona.value.node) {
+            printf("  has value.node: %s\n", expressiona.value.node->serialize().data);
+        }
+    }
     if (expressiona.kind == declaration)return expressiona; // handled before
     Function *import = findLibraryFunction(expressiona.name, false);
     if (import or isFunction(expressiona)) {
@@ -1577,6 +1615,11 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
     for (int i = 0; i < expressiona.length; ++i) {
         Node &node = expressiona.children[i];
         String &name = node.name;
+
+        if (debug) {
+            printf("  child[%d]: name=%s, kind=%s (%d), length=%d, serialize=%s\n",
+                   i, name.data, typeName(node.kind), node.kind, node.length, node.serialize().data);
+        }
 
         // todo: MOVE!
         if (name == "if") // kinda functor
@@ -1620,8 +1663,20 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
                 if (j > i)expressiona.replace(i, j, iff);
             }
         }
+        // Check if this is a struct constructor (before checking isFunction)
+        if (types.has(name) and node.length > 0) {
+            Node &type = *types[name];
+            if (type.kind == clazz) {
+                // This is a struct constructor, not a function call
+                if (debug) printf("Detected struct constructor: %s\n", name.data);
+                node = constructInstance(node, context);
+                continue; // Skip function processing for constructors
+            }
+        }
+
         if (isFunction(node)) // needs preparsing of declarations!
             node.kind = call;
+
         if (node.kind != call)
             continue;
 
@@ -2190,7 +2245,8 @@ Node &analyze(Node &node, Function &function) {
         return groupOperatorCall(node, function); // call, NOT definition
 
     Node &groupedTypes = groupTypes(node, function);
-    Node &groupedDeclarations = groupDeclarations(groupedTypes, function);
+    Node &groupedConstructors = groupStructConstructors(groupedTypes, function);
+    Node &groupedDeclarations = groupDeclarations(groupedConstructors, function);
     Node &groupedFunctions = groupFunctionCalls(groupedDeclarations, function);
     Node &grouped = groupOperators(groupedFunctions, function);
     if (analyzed[grouped.hash()])return grouped; // done!
