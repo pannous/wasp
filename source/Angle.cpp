@@ -1616,14 +1616,12 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         Node &node = expressiona.children[i];
         String &name = node.name;
 
-        if (debug) {
-            printf("  child[%d]: name=%s, kind=%s (%d), length=%d, serialize=%s\n",
-                   i, name.data, typeName(node.kind), node.kind, node.length, node.serialize().data);
-        }
+        // if (debug) printf("  child[%d]: name=%s, kind=%s (%d), length=%d, serialize=%s\n", i, name.data, typeName(node.kind), node.kind, node.length, node.serialize().data);
 
         // todo: MOVE!
         if (name == "if") // kinda functor
         {
+            // error("if should be treated earlier");
             auto &args = expressiona.from("if");
             Node &iff = groupIf(node.length > 0 ? node.add(args) : args, context);
             int j = expressiona.lastIndex(iff.last().next) - 1;
@@ -1642,6 +1640,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         //            continue;
         //        }
         if (name == "while") {
+            // error("while' should be treated earlier");
             // todo: move into groupWhile !!
             if (node.length == 2) {
                 node[0] = analyze(node[0], context);

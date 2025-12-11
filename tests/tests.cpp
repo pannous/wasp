@@ -50,10 +50,11 @@ void testGoTypes() {
 
 void testAutoType() {
     tests_executed++;
-    // check_is(smartNode(0xa000000bef001680), &Nan);
-    assert_emit("0/0", Nan); // Auto-promote int/int division to float NaN!
+    assert_emit("0/0", Nan);
+    assert_emit("0÷0", Nan);
     assert_emit("-1/6.", -1/6.);
     assert_emit("-1/6",-1/6.); // Auto-promote int/int division to float
+    assert_emit("-1÷6",-1/6.); // Auto-promote int/int division to float
 }
 
 void testTypeSynonyms() {
