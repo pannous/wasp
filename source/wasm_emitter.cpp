@@ -2188,7 +2188,8 @@ Type commonType(Type lhs, Type rhs, String op) {
     if (lhs == long32 and rhs == float64t)return float64t;
     if (lhs == longs and rhs == float32t)return float32t;
     if (lhs == long32 and rhs == float32t)return float32t;
-    return lhs; // todo!
+    // Default: use left-hand type (could be extended for more operators like *, -, +)
+    return lhs;
     //    return none;
 }
 
