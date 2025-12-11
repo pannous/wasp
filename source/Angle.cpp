@@ -759,7 +759,7 @@ Node &groupTypes(Node &expression, Function &context , bool as_param) {
 Node &constructInstance(Node &node, Function &function) {
     Node &type = *types[node.name];
     if (node.values().name == "func") return node;
-    //        /* todo what is this??  test-tuple: func(other: list<u8>, test-struct: test-struct, other-enum: test-enum) -> tuple<string, s64>
+    /* todo what is this??  test-tuple: func(other: list<u8>, test-struct: test-struct, other-enum: test-enum) -> tuple<string, s64> */
 
     node.type = &type; // point{1 2} => Point(1,2)
     check_eq_or(node.length, type.length, "field count mismatch");
@@ -779,16 +779,8 @@ Node &constructInstance(Node &node, Function &function) {
 Node &groupStructConstructors(Node &node, Function &context) {
     String &name = node.name;
 
-    if (debug && name == "a") {
-        printf("groupStructConstructors: name=a, kind=%d, length=%d, types.has(a)=%p\n",
-               node.kind, node.length, (void*)types.has("a"));
-    }
-
-    // Skip struct declarations - they're already processed by analyze()
-    if (node.length >= 2 && node.first().name == "struct") {
-        // Don't recurse into struct declaration itself
-        return node;
-    }
+    if (node.length >= 2 && node.first().name == "struct")
+        return node; // Don't recurse into struct declaration itself
 
     // Check if this node itself is a struct constructor: a{...} where 'a' is a struct type
     if (types.has(name) && node.length > 0 && node.kind != constructor) {
@@ -796,7 +788,10 @@ Node &groupStructConstructors(Node &node, Function &context) {
         if (type.kind == clazz || type.kind == structs) {
             // This is a struct constructor call
             if (debug) printf("Converting %s{...} to constructor\n", name.data);
-            return constructInstance(node, context);
+            Node &insta = constructInstance(node, context);
+            if (debug)
+                printf("After constructInstance: result.kind=%d, result.serialize()=%s\n", insta.kind, insta.serialize().data);
+            return insta;
         }
     }
 
@@ -924,20 +919,27 @@ Node extractReturnTypes(Node decl, Node body);
 Node &classDeclaration(Node &node, Function &function);
 
 Node &classDeclaration(Node &node, Function &function) {
+    // including class type interface struct record keywords !
     if (debug) printf("classDeclaration called\n");
     if (node.length < 2)
         error("wrong class declaration format; should be: class name{…}");
     Node &dec = node[1];
     String &kind_name = node.first().name;
     if (debug) printf("  kind_name=%s, dec.name=%s\n", kind_name.data, dec.name.data);
+
+    String &name = dec.name;
+    // If type already exists (from collectStructDeclarations), just return the existing one
+    if (types.has(name)) {
+        if (debug) printf("  Type '%s' already in types map (from collectStructDeclarations), returning existing\n", name.data);
+        return *types[name];
+    }
+
     if (kind_name == "struct") {
         //        if (use_wasm_structs) distinguish implementation later!
         dec.kind = structs;
     } else if (kind_name == "class" or kind_name == "type")
         dec.kind = clazz;
     else todo(kind_name);
-
-    String &name = dec.name;
     int pos = 0;
     Node *type;
     // todo other layouts and default values and class constructors, functions, getters … … …
@@ -1471,7 +1473,7 @@ Type preEvaluateType(Node &node, Function &context) {
     // todo: combine with compile time eval! <<<<<
     if (node.kind == expression) {
         if (node.name == "if") // if … then (type 1) else (type 2)
-            return commonType(preEvaluateType(node["then"], context), preEvaluateType(node["else"], context));
+            return commonType(preEvaluateType(node["then"], context), preEvaluateType(node["else"], context), "if");
         if (node.length == 1)return preEvaluateType(node.first(), context);
         node = groupOperators(node, context);
         return mapType(node.name);
@@ -1484,7 +1486,7 @@ Type preEvaluateType(Node &node, Function &context) {
             return lhs_type;
         Node &rhs = node[1];
         auto rhs_type = preEvaluateType(rhs, context); // todo lol
-        auto type = commonType(lhs_type, rhs_type);
+        auto type = commonType(lhs_type, rhs_type, node.name);
         // todo: operators which are not endofunctions
         return type;
         //        if(lhs.kind==arrays)
@@ -1601,13 +1603,6 @@ void addLibraryFunctionAsImport(Function &func);
 
 // todo merge with groupOperatorCall
 Node &groupFunctionCalls(Node &expressiona, Function &context) {
-    if (debug) {
-        printf("groupFunctionCalls: expressiona.name=%s, kind=%d, length=%d, serialize=%s\n",
-               expressiona.name.data, expressiona.kind, expressiona.length, expressiona.serialize().data);
-        if (expressiona.value.node) {
-            printf("  has value.node: %s\n", expressiona.value.node->serialize().data);
-        }
-    }
     if (expressiona.kind == declaration)return expressiona; // handled before
     Function *import = findLibraryFunction(expressiona.name, false);
     if (import or isFunction(expressiona)) {
@@ -1617,7 +1612,6 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         //		if (not expressiona.value.node and arity>0)error("missing args");
         functions[expressiona.name].is_used = true;
     }
-
     for (int i = 0; i < expressiona.length; ++i) {
         Node &node = expressiona.children[i];
         String &name = node.name;
@@ -2211,8 +2205,16 @@ Node &analyze(Node &node, Function &function) {
     if ((type == expression and not name.empty() and not name.contains("-")))
         addLocal(function, name, int32t, false); //  todo deep type analysis x = π * fun() % 4
     if (type == key) {
-        if (node.value.node /* i=ø has no node */)
-            node.value.node = analyze(*node.value.node, function).clone();
+        if (node.value.node /* i=ø has no node */) {
+            Node &analyzed = analyze(*node.value.node, function);
+            // Preserve struct constructor type information through cloning
+            Node *cloned = analyzed.clone();
+            if (debug && cloned->type != analyzed.type) {
+                printf("WARNING: clone lost type! analyzed.type=%p, cloned->type=%p\n",
+                       (void*)analyzed.type, (void*)cloned->type);
+            }
+            node.value.node = cloned;
+        }
         if (node.length > 0) {
             // (double x, y)  (while x) : y
             auto first = node.first().first();
@@ -2249,8 +2251,7 @@ Node &analyze(Node &node, Function &function) {
         return groupOperatorCall(node, function); // call, NOT definition
 
     Node &groupedTypes = groupTypes(node, function);
-    Node &groupedConstructors = groupStructConstructors(groupedTypes, function);
-    Node &groupedDeclarations = groupDeclarations(groupedConstructors, function);
+    Node &groupedDeclarations = groupDeclarations(groupedTypes, function);
     Node &groupedFunctions = groupFunctionCalls(groupedDeclarations, function);
     Node &grouped = groupOperators(groupedFunctions, function);
     if (analyzed[grouped.hash()])return grouped; // done!

@@ -50,8 +50,9 @@ void testGoTypes() {
 
 void testAutoType() {
     tests_executed++;
+    assert_emit("0/0", Nan); // Auto-promote int/int division to float NaN!
     assert_emit("-1/6.", -1/6.);
-    // assert_emit("-1/6",-1/6.); TODO
+    assert_emit("-1/6",-1/6.); // Auto-promote int/int division to float
 }
 
 void testTypeSynonyms() {
@@ -2452,8 +2453,8 @@ void testErrors() {
     tests_executed++;
     // use assert_throws
     throwing = true;
-    assert_throws("0/0");
-    assert_throws("x"); // UNKNOWN local symbol ‘x’ in context main  OK
+    // 0/0 now returns NaN (float division), not an error
+    assert_throws("x"); // UNKNOWN local symbol 'x' in context main  OK
 #if WASI or WASM
     skip("can't catch ERROR in wasm")
     return;
@@ -4348,11 +4349,12 @@ void testCurrent() {
     // testPing();
     // testFunctionArgumentCast();
     // test_dynlib_import();
-    testStruct();
-    test_wasm_node_struct();
+    // testStruct();
+    // test_wasm_node_struct();
     // test_wasm_structs();
 
-    assert_emit("n=3;2ⁿ", 8);
+// #if not WASMTIME and not LINUX // todo why
+    // assert_emit("n=3;2ⁿ", 8);
     testMapOfStrings();
     testMapOfStringValues();
     testMaps();

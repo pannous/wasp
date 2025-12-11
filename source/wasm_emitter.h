@@ -100,7 +100,7 @@ Valtype fixValtype(Valtype valtype);
 
 Valtype needsUpgrade(Valtype lhs, Valtype rhs, String string);
 
-Type commonType(Type lhs, Type rhs);
+Type commonType(Type lhs, Type rhs, String op);
 
 //Code emit(String code);//  wasp -> code -> wasm -> data
 Code &emit(Node &root_ast, String program);
