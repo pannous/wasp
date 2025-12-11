@@ -197,3 +197,4 @@ lldb -- ./build/wasp test
 - String corruption if stack size is too low or too high
 - in @source/wasmtime_runner.cpp we used a patched wasmtime wasm-c-api to read struct properties
 - After each modification run ./wasp test And commit if it works
+- If you feel bored check for a simple todo but always check running ./wasp test before and after
