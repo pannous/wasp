@@ -243,6 +243,7 @@ unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
         if (eq(s, "-"))return f64_sub; // f64.sub
         if (eq(s, "*"))return f64_mul; // f64.mul
         if (eq(s, "/"))return f64_div; // f64.div
+        if (eq(s, "÷"))return f64_div; // f64.div
         if (eq(s, "=="))return f64_eq; // f64.eq
         if (eq(s, "~"))return f64_eq; // f32.eq Todo
         if (eq(s, "≈"))return f64_eq; // f32.eq Todo
@@ -277,6 +278,7 @@ unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
         if (eq(s, "-"))return f32_sub; // f32.sub
         if (eq(s, "*"))return f32_mul; // f32.mul
         if (eq(s, "/"))return f32_div; // f32.div
+        if (eq(s, "÷"))return f32_div; // f32.div
         if (eq(s, "="))return f32_eq; // f32.eq
         if (eq(s, "=="))return f32_eq; // f32.eq
         if (eq(s, "~"))return f32_eq; // f32.eq Todo
@@ -1577,6 +1579,8 @@ Code emitValue(Node &node, Function &context) {
                 if (name == node.value.string)
                     goto emit_getter_block;
                 Node &value = *node.value.node;
+                if (debug) printf("emitCode: About to call emitSetter via node.value.node path, value.kind=%d, value.type=%p\n",
+                                 value.kind, (void*)value.type);
                 warn("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!"); // todo FIX!!
                 code.add(emitSetter(node, value, context));
             } else {
@@ -1719,7 +1723,6 @@ Code emitGetter(Node &node, Node &field, Function &context) {
                 }
             }
         }
-
         todo("use correct struct field getter path (should be implemented somewhere else here)");
     }
     else todo("get pointer of node on stack");
@@ -1808,22 +1811,33 @@ Code emitAttribute(Node &node, Function &context) {
     if (!object.type and types.has(object.name))
         object.type = types[object.name];
 
-    // For references, try to get type from the local variable or referenceMap
+    // For references, try to get type from the local variable
     if (!object.type and object.kind == reference and context.locals.has(object.name)) {
         Local &local = context.locals[object.name];
-        // Check if the referenceMap has type information for this variable
-        if (debug) printf("Checking referenceMap for %s: has=%p\n", object.name.data, (void*)referenceMap.has(object.name));
-        if (referenceMap.has(object.name)) {
+        if (debug) printf("Checking local %s: typeXX=%p, ref=%p\n",
+                          object.name.data, (void*)local.typeXX, (void*)local.ref);
+
+        // First check Local.typeXX which should have the struct type
+        if (local.typeXX) {
+            object.type = local.typeXX;
+            if (debug) printf("  Set object.type from local.typeXX\n");
+        }
+        // Then check Local.ref which points to the constructor node
+        else if (local.ref and local.ref->type) {
+            object.type = local.ref->type;
+            if (debug) printf("  Set object.type from local.ref->type\n");
+        }
+        // Finally check referenceMap
+        else if (referenceMap.has(object.name)) {
             Node &ref_value = referenceMap[object.name];
-            if (debug) printf("  ref_value.kind=%d, ref_value.name=%s, ref_value.type=%p\n",
-                              ref_value.kind, ref_value.name.data, (void*)ref_value.type);
-            // If the referenced value is a constructor or has a type name in our types map
+            if (debug) printf("  ref_value.kind=%d, ref_value.type=%p\n",
+                              ref_value.kind, (void*)ref_value.type);
             if (ref_value.kind == constructor and ref_value.type) {
                 object.type = ref_value.type;
-                if (debug) printf("  Set object.type from constructor\n");
-            } else if (types.has(ref_value.name)) {
-                object.type = types[ref_value.name];
-                if (debug) printf("  Set object.type from types[%s]\n", ref_value.name.data);
+                if (debug) printf("  Set object.type from referenceMap constructor\n");
+            } else if (ref_value.type) {
+                object.type = ref_value.type;
+                if (debug) printf("  Set object.type from referenceMap value.type\n");
             }
         }
     }
@@ -1913,7 +1927,18 @@ Code emitOperator(Node &node, Function &context) {
     auto first = node.first();
     //    if (name == ":=")return emitDeclaration(node, first); todo!
     if (name == ":=")return emitSetter(node, first, context);
-    if (name == "=")return emitSetter(node, first, context); // todo node.first dodgy
+    if (name == "=") {
+        if (debug) {
+            printf("emitOperator: name==, node.length=%d\n", node.length);
+            printf("  first (node[0]): kind=%d, type=%p, serialize()=%s\n",
+                   first.kind, (void*)first.type, first.serialize().data);
+            if (node.length > 1) {
+                printf("  second (node[1]): kind=%d, type=%p, serialize()=%s\n",
+                       node[1].kind, (void*)node[1].type, node[1].serialize().data);
+            }
+        }
+        return emitSetter(node, first, context); // todo node.first dodgy
+    }
     if (name == ".") {
         if (debug) {
             printf("About to call emitAttribute for: %s\n", node.serialize().data);
@@ -1951,7 +1976,7 @@ Code emitOperator(Node &node, Function &context) {
             arg_type = last_type.generics.value_type;
         const Code &rhs_code = emitExpression(rhs, context);
         Type rhs_type = last_type;
-        Type common_type = commonType(lhs_type, rhs_type); // 3.1 + 3 => 6.1 etc
+        Type common_type = commonType(lhs_type, rhs_type, name); // 3.1 + 3 => 6.1 etc, -1/6 => float
         bool same_domain = common_type != none; // todo: only some operators * / + - only sometimes autocast!
         code.push(lhs_code); // might be empty ok
         if (same_domain)
@@ -2143,8 +2168,15 @@ Code emitOperator(Node &node, Function &context) {
     return code;
 }
 
-Type commonType(Type lhs, Type rhs) {
-    // todo: per function / operator!
+Type commonType(Type lhs, Type rhs, String op) {
+    // Auto-promote integers to float64 for division operator
+    if (op == "/" or op == "÷") {
+        bool lhs_is_int = (lhs == int32t or lhs == i64 or lhs == longs or lhs == long32);
+        bool rhs_is_int = (rhs == int32t or rhs == i64 or rhs == longs or rhs == long32);
+        if (lhs_is_int and rhs_is_int)
+            return float64t;
+    }
+
     if (lhs == rhs)return lhs;
     if (lhs == i64 and rhs == int32t) return i64;
     if (lhs == int32t and rhs == i64) return i64;
@@ -2310,6 +2342,8 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
         case declaration:
             return emitDeclaration(node, first);
         case assignment:
+            if (debug) printf("emitCode: assignment, node.serialize()=%s, first.kind=%d, first.type=%p\n",
+                             node.serialize().data, first.kind, (void*)first.type);
             return emitSetter(node, first, context);
         case nils:
         case longs:
@@ -2926,14 +2960,6 @@ Function &findMatchingPolymorphicDispatch(Function &function, Node &params, Type
 Code emitCall(Node &fun, Function &context) {
     Code code;
     auto name = fun.name;
-    // Check if this is a struct constructor when use_wasm_structs is enabled
-    if (use_wasm_structs and types.has(name)) {
-        Node &typ = *types[name];
-        if (typ.kind == clazz) {
-            // This is a struct constructor, not a function call
-            return emitReferenceTypeConstructor(fun, context);
-        }
-    }
     if (not functions.has(name)) {
         auto normed = normOperator(name);
         if (not functions.has(normed))
@@ -3216,18 +3242,22 @@ Code emitSetter(Node &node, Node &value, Function &context) {
         referenceDataIndices[variable] = data_index_end + headerOffset(value);
         referenceMap[variable] = value; // node; // lookup types, array length …
     }
-    // Also store struct constructors in referenceMap for type lookup
+    // Store struct constructor information for later field access
     if (debug) printf("emitSetter: variable=%s, value.kind=%d (%s), value.type=%p\n",
                       variable.data, value.kind, typeName(value.kind), (void*)value.type);
-    if (use_wasm_structs and value.kind == constructor) {
-        if (debug) printf("Storing constructor in referenceMap: %s\n", variable.data);
+
+    // Store in referenceMap and in Local.ref/typeXX for type lookup during field access
+    if (use_wasm_structs and (value.kind == constructor or value.type)) {
+        if (debug) printf("Storing struct info in referenceMap and Local: %s\n", variable.data);
         referenceMap[variable] = value;
-    } else if (use_wasm_structs and value.type and types.has(value.name)) {
-        // Value might have type information even if not marked as constructor
-        Node *type_node = types[value.name];
-        if (type_node and type_node->kind == clazz) {
-            if (debug) printf("Storing typed value in referenceMap: %s (type=%s)\n", variable.data, value.name.data);
-            referenceMap[variable] = value;
+
+        // Also store in the local variable's ref and typeXX fields
+        if (context.locals.has(variable)) {
+            Local &local = context.locals[variable];
+            local.ref = &value;
+            if (value.type) {
+                local.typeXX = value.type;
+            }
         }
     }
     Code setter;
