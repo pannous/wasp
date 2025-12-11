@@ -143,3 +143,5 @@ Frameworks/wasmtime/**
 Frameworks
 Frameworks/*
 Frameworks/**
+a.out
+build.make
