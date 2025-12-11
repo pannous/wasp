@@ -2189,7 +2189,7 @@ Type commonType(Type lhs, Type rhs, String op) {
     if (lhs == longs and rhs == float32t)return float32t;
     if (lhs == long32 and rhs == float32t)return float32t;
     // Default: use left-hand type (could be extended for more operators like *, -, +)
-    return lhs;
+    return lhs; // todo
     //    return none;
 }
 
