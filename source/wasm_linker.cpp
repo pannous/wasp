@@ -414,6 +414,7 @@ LinkerInputBinary::LinkerInputBinary(const char *filename, List<uint8_t> &data)
       table_index_offset(0),
       memory_page_count(0),
       memory_page_offset(0),
+      memory_data_start(0),
       table_elem_count(0) {
 }
 
