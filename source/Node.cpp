@@ -68,7 +68,7 @@ Node False = Node("False").setKind(bools).setValue(false);
 Node Ignore = Node("Ignore");
 Node Infinity = Node("Infinity");
 Node NegInfinity = Node("-Infinity");
-Node Nan = Node("NaN");
+Node Nan = Node("NaN");// .setKind(errors);
 
 
 Node *reconstructArray(int *array_struct);
@@ -1393,6 +1393,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
     //    tracef("smartNode(smartPointer64 : %llx\n", (int64) smartPointer64);
     if (smartPointer64 == 0)return &False; //const_cast<Node *>(&NIL);
     if (smartPointer64 == 0x8000000000000000)return new Node(0);
+    if (smartPointer64 == 0x7ff8000000000000)return &Nan;
     //    if (!isSmartPointer(smartPointer64))
     //        return Node(smartPointer64);
     if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
