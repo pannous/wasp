@@ -396,6 +396,21 @@ public:
     }
 
 private:
+    // Control flow return codes for parse handlers
+    enum ParseAction { PARSE_CONTINUE, PARSE_BREAK, PARSE_HANDLED };
+
+    // Switch case handlers for valueNode() - extracted for better readability
+    ParseAction parseDollarAt(Node &actual);
+    ParseAction parseHtmlTag(Node &actual);
+    ParseAction parseAngleBracket(Node &actual);
+    ParseAction parseBracketGroup(Node &actual, codepoint close, Node *parent);
+    ParseAction parseString(Node &actual, int start, codepoint close);
+    ParseAction parseAssignment(Node &actual);
+    ParseAction parseIndent(Node &actual);
+    ParseAction parseListSeparator(Node &actual, codepoint close, Node *parent);
+    ParseAction parseMinusDot(Node &actual);
+    void addDefaultExpression(Node &actual, codepoint close);
+
     // escapee() and renderChar() moved to LiteralParser.cpp (LiteralUtils namespace)
 
     [[nodiscard]]
@@ -1575,6 +1590,9 @@ private:
         return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
     }
 };
+
+// Implementation of parse handler methods (extracted from valueNode switch statement)
+#include "WaspParsers.cpp"
 
 
 float group_precedence(char group) {
