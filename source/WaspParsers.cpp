@@ -32,7 +32,7 @@ bool Wasp::parseDollarAt(Node &actual) {
         return true;
     }
 
-    actual.add(operatorr());
+    actual.add(parseOperator());
     return true;
 }
 
@@ -69,7 +69,7 @@ bool Wasp::parseHtmlTag(Node &actual) {
 // < > angle brackets for tags/generics or comparison operators
 bool Wasp::parseAngleBracket(Node &actual) {
     if (not(parserOptions.use_tags or parserOptions.use_generics) or (previous == ' ' and next == ' ')) {
-        Node &op = operatorr();
+        Node &op = parseOperator();
         actual.add(op);
         actual.kind = expression;
         return true;
@@ -195,7 +195,7 @@ bool Wasp::parseAssignment(Node &actual) {
         add_raw= true;
     }
 
-    Node op = operatorr();
+    Node op = parseOperator();
     if (next == '>' and parserOptions.arrow)
         proceed();
     if (not(op.name == ":" or (parserOptions.data_mode and op.name == "=")))
@@ -324,7 +324,7 @@ bool Wasp::parseMinusDot(Node &actual) {
     else if (ch == '-' and next == '.')
         actual.addSmart(numbero());
     else {
-        Node *op = operatorr().clone();
+        Node *op = parseOperator().clone();
         actual.add(op);
         actual.kind = expression;
     }
