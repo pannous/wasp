@@ -362,7 +362,7 @@ endif ()
 
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/String.cpp ${SOURCE}/Node.cpp ${SOURCE}/Map.cpp ${SOURCE}/Util.cpp ${SOURCE}/List.cpp
-        ${SOURCE}/CharUtils.cpp ${SOURCE}/LiteralParser.cpp ${SOURCE}/AngleKeywords.cpp
+        ${SOURCE}/CharUtils.cpp ${SOURCE}/LiteralParser.cpp ${SOURCE}/Keywords.cpp
         ${SOURCE}/Wasp.cpp ${SOURCE}/wasm_helpers.cpp ${SOURCE}/Code.cpp ${SOURCE}/NodeTypes.cpp ${SOURCE}/smart_types.cpp
         ${SOURCE}/Runtime.cpp
 )

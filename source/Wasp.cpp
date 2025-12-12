@@ -399,15 +399,24 @@ private:
     // Switch case handlers for valueNode() - extracted for better readability
     // Return true if handled (break from switch), false if not handled (continue loop)
     bool parseDollarAt(Node &actual);
+
     bool parseHtmlTag(Node &actual);
+
     bool parseAngleBracket(Node &actual);
+
     bool parseBracketGroup(Node &actual, codepoint close, Node *parent);
+
     bool parseString(Node &actual, int start, codepoint &close);
+
     bool parseAssignment(Node &actual);
+
     bool parseIndent(Node &actual);
+
     bool parseListSeparator(Node &actual, codepoint close, Node *parent);
+
     bool parseMinusDot(Node &actual);
-    void addDefaultExpression(Node &actual, codepoint close);
+
+    void parseExpression(Node &actual, codepoint close);
 
     // escapee() and renderChar() moved to LiteralParser.cpp (LiteralUtils namespace)
 
@@ -495,7 +504,7 @@ private:
     };
 
     // Parse an identifier.
-    String identifier() {
+    String parseIdentifier() {
         // identifiers must start with a letter, _ or $.
         if (!is_identifier(ch))
             parserError("Unexpected identifier character "s + LiteralUtils::renderChar(ch));
@@ -606,7 +615,7 @@ private:
             Node &mult = *new Node("*");
             mult.kind = operators; // binops;
             mult.add(number_node);
-            mult.add(Node(identifier()).setKind(reference).clone());
+            mult.add(Node(parseIdentifier()).setKind(reference).clone());
             return mult;
         }
     };
@@ -633,7 +642,7 @@ private:
                     auto nodes = valueNode('}');
                     chunks.add(nodes); //.setKind(expression)); // ${1+2}
                 } else {
-                    chunks.add(Node(identifier().clone()).setKind(referencex)); // $test
+                    chunks.add(Node(parseIdentifier().clone()).setKind(referencex)); // $test
                 }
             } else {
                 int start = at;
@@ -917,12 +926,12 @@ private:
         }
         if (ch == '$' and parserOptions.dollar_names and is_identifier(next)) {
             proceed(); // $name
-            return *resolve(Node(identifier()).setKind(referencex)).clone(); // or op
+            return *resolve(Node(parseIdentifier()).setKind(referencex)).clone(); // or op
         }
         if (is_operator(ch))
             return parseOperator();
         if (is_identifier(ch))
-            return *resolve(Node(identifier(), true)).clone(); // or op
+            return *resolve(Node(parseIdentifier(), true)).clone(); // or op
         parserError("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
             String((char) text[at + 2]));
         return (Node &) NIL;
@@ -1100,11 +1109,10 @@ private:
         else if (node.empty()) {
             white();
             if (ch == '"' or ch == '\'' or ch == '<')proceed(); // include "c-style" // include <cpp-style>
-            lib = (identifier());
+            lib = (parseIdentifier());
             if (ch == '"' or ch == '\'' or ch == '>')proceed();
         } else
             lib = (node.last().name);
-        //		node.values(). first().name
         if (lib == "memory")
             return node; // todo ignore memory includes???
         if (not file.empty() and file.endsWith(".wit")) // todo file from where ??
@@ -1114,27 +1122,31 @@ private:
         return node;
     }
 
+    void parseGrouping(Node &actual) {
+        // overloadable grouping operators, but not builtin (){}[]
+        let grouper = ch;
+        proceed();
+        auto &body = valueNode(closingBracket(grouper));
+        Node group(grouper);
+        group.setKind(operators, false); // name==« (without »)
+        group.add(body);
+        //				group.type = type("group")["field"]=grouper;
+        actual.add(group);
+        return;
+    }
+
     // ":" is short binding a b:c d == a (b:c) d
-    // "=" is int64-binding a b=c d == (a b)=(c d)   todo a=b c=d
+    // "=" is long binding a b=c d == (a b)=(c d)   todo a=b c=d
     // "-" is post binding operator (analyzed in angle) OR short-binding in kebab-case
     // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
     // special : close=';' : single expression a = 1 + 2
     // significant whitespace a {} == a,{}{}
-    // typedef Node& (*NodeHandler)(); dispatch functions cleaner than big switch? I don't think so
-    // Map<codepoint, NodeHandler> handlers; TODO OR just give each switch branch a function!
-      // handlers['@'] = &Wasp::parseMetaAttribute;
-      // handlers['<'] = &Wasp::parseTag;
-      // handlers['{'] = &Wasp::parseObject;
     // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
     // reason for strange name is better IDE findability, todo rename to readNode() or parseNode()?
     Node &valueNode(codepoint close = 0, Node *parent = 0) {
-        // A JSON value could be an object, an array, a string, a number, or a word.
         Node &actual = *new Node(); // current already used in super context
         actual.parent = parent;
-        // if(close=='}') actual.setKind(objects);
-        // else if(close==']') actual.setKind(patterns);
-        // else
-            actual.setKind(groups);
+        actual.setKind(groups);
 #if DEBUG
         if (line != "}") // why?
             actual.line = &line;
@@ -1154,31 +1166,19 @@ private:
                 continue;
             }
             if (ch == close) {
-                // (…) {…} «…» ... “‘ part of string
+                // (…) {…} «…» ... “‘ part of string keep ';' ',' ' ' for further analysis (?)
                 if (ch == 0 or /*ch == 0x0E or*/ ch == ' ' or ch == '\n' or ch == '\t' or ch == ';' or ch == ',');
-                    // keep ';' ',' ' ' for further analysis (?)
                 else // drop brackets
                     proceed(); // what else??
                 close = 0; // ok, we are done
                 break;
             } // todo: merge <>
-            if (closing(ch, close)) {
-                // 1,2,3;  «;» closes «,» list
+            if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
                 close = 0; // ok, we are done
                 break;
             } // inner match ok
-
-
             if (contains(opening_special_brackets, ch)) {
-                // overloadable grouping operators, but not builtin (){}[]
-                let grouper = ch;
-                proceed();
-                auto &body = valueNode(closingBracket(grouper));
-                Node group(grouper);
-                group.setKind(operators, false); // name==« (without »)
-                group.add(body);
-                //				group.type = type("group")["field"]=grouper;
-                actual.add(group);
+                parseGrouping(actual);
                 continue;
             }
             switch (ch) {
@@ -1188,7 +1188,7 @@ private:
                     continue;
                 case '<':
                     if (parseHtmlTag(actual)) break;
-                    // Fall through to angle bracket handling
+                // else Fall through to angle bracket handling
                 case '>':
                     if (ch == '>' and (parserOptions.use_tags or parserOptions.use_generics)) return actual;
                     if (parseAngleBracket(actual)) break;
@@ -1209,7 +1209,7 @@ private:
                 case ')':
                 case ']':
                     parserError("wrong closing bracket");
-                // case '+': // todo WHO writes +1 ?
+                // case '+': // todo WHO writes +1 ? ;)
                 case '-':
                 case '.':
                     if (parseMinusDot(actual)) break;
@@ -1258,30 +1258,27 @@ private:
                         continue;
                     } // else fall through to default … expressione
                 case '%': // escape keywords for names in wit
-                    if (parserOptions.percent_names) {
-                        // and…
+                    if (parserOptions.percent_names) { // and…
                         proceed();
-                        actual.add(Node(identifier())); // todo make sure not to mark as operator …
+                        actual.add(Node(parseIdentifier())); // todo make sure not to mark as operator …
                         continue;
                     }
                 default:
-                    addDefaultExpression(actual, close);
+                    parseExpression(actual, close);
                     break;
             }
         }
-        if (close and not isWhite(close) and close != ';' and close != ',') {
-            // todo remember opening pair line
-            parserError("unclosed pair "s + close);
-        }
+        if (close and not isWhite(close) and close != ';' and close != ',')
+            parserError("unclosed pair "s + close); // todo remember opening pair line
         return actual.flat();
     };
 
     bool isKebabBridge() {
-    // isHyphen(Bridge) e.g. a-b in special ids like in component model
-    if (not is_identifier(next))return false; // i-- i-1
-    if (parserOptions.kebab_case_plus and ch == '-')return true;
-    return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
-}
+        // isHyphen(Bridge) e.g. a-b in special ids like in component model
+        if (not is_identifier(next))return false; // i-- i-1
+        if (parserOptions.kebab_case_plus and ch == '-')return true;
+        return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
+    }
 };
 
 // Implementation of parse handler methods (extracted from valueNode switch statement)
@@ -1320,32 +1317,15 @@ void handler(int sig) {
     fprintf(stderr, "Error: signal %d:", sig);
     backtrace_symbols_fd(array, size, STDERR_FILENO);
     proc_exit(0);
-*/
+    *
+    /
 }
 #endif
 
-
-//void assert_is(char *wasp, Node result);
-
-//void init() {
-//	NIL.kind = nils;
-//	NIL.value.number = 0;
-//	False.kind = bools;
-//	False.value.number = 0;
-//	True.kind = bools;
-//	True.value.number = 1;
-//}
-
-// todo WE HAVE A GENERAL PROBLEM:
-// 1. top level objects are not constructed
-// 2. even explicit construction seems to be PER object scope (.cpp file) HOW!
 void load_parser_initialization() {
     // todo: remove thx to __wasm_call_ctors
     if (operator_list.size() == 0)
-        //		warn("operator_list should have been constructed in __wasm_call_ctors @ _start");
         error("operator_list should have been constructed in __wasm_call_ctors @ _start");
-    //	operator_list = List<chars>(operator_list0);// wasm hack
-    //	load_aliases();
 }
 
 
@@ -1358,24 +1338,8 @@ void load_parser_initialization() {
 //struct Exception {};
 //wasm-ld: error: wasp.o: undefined symbol: vtable for __cxxabiv1::__class_type_info
 
-// 2020: WASI does not yet support C++ exceptions. C++ code is supported only with -fno-exceptions for now.
-// https://github.com/WebAssembly/wasi-sdk
-//struct ERR{
-//public:
-//	ERR() = default;
-//	virtual ~ERR() = default;
-//};
-//char newline = '\n';
-//#ifndef _main_
-#define __MAIN__
 
-// called AFTER __wasm_call_ctors() !!!
-//#ifndef RUNTIME_ONLY
-//Undefined symbols for architecture arm64:
-//"_main", referenced from:
-//implicit entry/start for main executable
 
-//static
 Node parseFile(String filename, ParserOptions options) {
     String found = findFile(filename, options.current_dir);
     if (not found)
@@ -1443,6 +1407,8 @@ void usage() {
 //extern "C"
 // Code &compile(String code, bool clean = true); // exposed to wasp.js
 
+#define __MAIN__
+
 #if not CTESTS
 int main(int argc, char **argv) {
     if (getenv("SERVER_SOFTWARE"))
@@ -1495,14 +1461,14 @@ int main(int argc, char **argv) {
                 run_wasm_file(args);
         } else if (args == "test" or args == "tests")
 #if NO_TESTS
-            print("wasp release compiled without tests");
+        print("wasp release compiled without tests");
 #else
             testCurrent();
 #endif
         else if (args == "home" or args == "wiki" or args == "docs" or args == "documentation") {
             print("Wasp documentation can be found at https://github.com/pannous/wasp/wiki");
             system("open https://github.com/pannous/wasp/");
-        }else if (args.startsWith("eval")) {
+        } else if (args.startsWith("eval")) {
             Node results = eval(args.from(" "));
             print("» "s + results.serialize());
         } else if (args == "repl" or args == "console" or args == "start" or args == "run") {
@@ -1526,7 +1492,7 @@ int main(int argc, char **argv) {
         } else if (args.startsWith("serv") or args == "server") {
 #if SERVER
             std::thread go(start_server, 9999);
-//				start_server(9999);
+            //				start_server(9999);
 #else
             printf("Content-Type: text/plain\n\n");
             String prog = args.from(" ");
@@ -1543,8 +1509,7 @@ int main(int argc, char **argv) {
             Node results = eval(args.from(" ")); // todo: dont run, just compile!
             // Code &binary = compile(args.from(" "), true);
             // binary.save(); // to debug
-        }
-        else {
+        } else {
             // run(args);
             Node results = eval(args);
             // print("» "s + results.serialize()); // todo: (?) ( already in eval )

@@ -9,13 +9,13 @@
 // @, $ - dollar names and meta attributes
 bool Wasp::parseDollarAt(Node &actual) {
     if ((ch == '$' and parserOptions.dollar_names) or (ch == '@' and parserOptions.at_names)) {
-        actual.add(Node(identifier()).setKind(referencex));
+        actual.add(Node(parseIdentifier()).setKind(referencex));
         return true;
     }
 
     if (ch == '@' and parserOptions.meta_attributes) {
         proceed(); // skip @
-        auto meta = identifier();
+        auto meta = parseIdentifier();
         Node* value = 0;
         if(ch=='(') {
             proceed();
@@ -333,7 +333,7 @@ bool Wasp::parseMinusDot(Node &actual) {
 }
 
 // Default: expressions, identifiers, imports
-void Wasp::addDefaultExpression(Node &actual, codepoint close) {
+void Wasp::parseExpression(Node &actual, codepoint close) {
     bool addFlat = lastNonWhite != ';' and previous != '\n';
     Node &node = expressione(close);
 
