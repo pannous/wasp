@@ -404,7 +404,7 @@ private:
     ParseAction parseHtmlTag(Node &actual);
     ParseAction parseAngleBracket(Node &actual);
     ParseAction parseBracketGroup(Node &actual, codepoint close, Node *parent);
-    ParseAction parseString(Node &actual, int start, codepoint close);
+    ParseAction parseString(Node &actual, int start, codepoint &close);
     ParseAction parseAssignment(Node &actual);
     ParseAction parseIndent(Node &actual);
     ParseAction parseListSeparator(Node &actual, codepoint close, Node *parent);
@@ -1184,70 +1184,19 @@ private:
                 continue;
             }
             switch (ch) {
-                //				https://en.wikipedia.org/wiki/ASCII#Control_code_chart
-                //				https://en.wikipedia.org/wiki/ASCII#Character_set
-                //                case 'Ü':
-                //                    print("Ü");
                 case '@':
                 case '$':
-                    if ((ch == '$' and parserOptions.dollar_names) or (ch == '@' and parserOptions.at_names))
-                        actual.add(Node(identifier()).setKind(referencex));
-                    else if (ch == '@' and parserOptions.meta_attributes) {
-                        proceed(); // skip @
-                        auto meta = identifier();
-                        Node* value = 0;
-                        if(ch=='(') {
-                            proceed();
-                            value = &valueNode(')');
-                        }
-                        auto node = valueNode();
-                        auto key = new Node(meta);
-                        if(value) {
-                            key->setKind(::key);
-                            key->value.node = value; // todo: clone?
-                        }
-                        node.addMeta(key); // todo: setKind
-                        actual.add(node);
-                    }
-                    else
-                        actual.add(operatorr());
+                    parseDollarAt(actual);
                     break;
                 case '<':
-                    if (text.substring(at, at + 5) == "<html") {
-                        int to = text.find("</html>", at);
-                        if (to < 0) to = text.length; // warn("unclosed html tag");
-                        auto html = Node("html", strings);
-                        html.value.string = &text.substring(text.find('>', at + 5) + 1, to).clone();
-                        actual.add(html);
-                        at = to + 7;
-                        previous = '>';
-                        proceed();
-                        break;
-                    }
-                    if (text.startsWith("<script", at)) {
-                        int to = text.find("</script>", at);
-                        if (to < 0) to = text.length; // warn("unclosed script tag");
-                        auto html = Node("script", strings);
-                        html.value.string = &text.substring(text.find('>', at + 5) + 1, to).clone();
-                        actual.add(html);
-                        at = to + 9;
-                        previous = '>';
-                        proceed();
-                        break;
-                    }
-                case '>':
-                    if (not(parserOptions.use_tags or parserOptions.use_generics) or
-                        (previous == ' ' and next == ' ')) {
-                        Node &op = operatorr();
-                        actual.add(op);
-                        actual.kind = expression;
-                        continue;
-                    } else if (ch == '>') {
-                        //                        actual.setType(parserOptions.use_generics ? generics : tags, false); NOT ON ELEMENT!
-                        return actual;
-                    } else {
-                        if (next == '/') todo("closing </tags>");
-                    } //fall through:
+                    if (parseHtmlTag(actual) == PARSE_HANDLED) break;
+                    // Fall through to angle bracket handling
+                case '>': {
+                    ParseAction action = parseAngleBracket(actual);
+                    if (action == PARSE_BREAK) return actual;
+                    if (action == PARSE_CONTINUE) continue;
+                    // Fall through to bracket group
+                }
                 case u'﹝': // ﹞
                 case u'〔': // 〕
                 case U'［': // ］ FULLWIDTH
@@ -1257,137 +1206,31 @@ private:
                 case '\x0E': // Shift Out close='\x0F' Shift In
                 case u'﹛': // ﹜
                 case u'｛': // ｝
-                case '{': {
-                    codepoint bracket = ch;
-                    auto type = getType(bracket);
-#if not RUNTIME_ONLY
-                    bool flatten = not isFunction(actual.last());
-#else
-                    bool flatten = true;
-#endif
-                    bool addToLast = false;
-                    bool asListItem =
-                            lastNonWhite == ',' or lastNonWhite == ';' or (previous == ' ' and lastNonWhite != ':');
-                    if (checkAmbiguousBlock(actual, parent)) {
-                        if (parserOptions.space_brace) {
-                            addToLast = true; // a b {c}; => a b{c}
-                            asListItem = false;
-                        } else
-                            warn("Ambiguous reading could mean a{x} or a:{x} or a , {x}"s + position());
-                    }
-                    bool specialDeclaration = false;
-                    if (type == patterns) {
-                        asListItem = false;
-                        flatten = false;
-                    }
-                    if ((lastNonWhite == ')' and bracket == '{')) {
-                        // declare (){} as special syntax in wiki!
-                        // careful! using (1,2) {2,3} may yield hidden bug!
-                        asListItem = false;
-                        flatten = false;
-                        specialDeclaration = true; // (){}
-                        auto name = actual.first().name;
-                        if (name == "while" or name == "if") // todo cleaner!
-                            specialDeclaration = false; // if (){} is not a declaration!
-                    }
-                    proceed();
-                    // wrap {x} … or todo: just don't flatten before?
-                    Node &object = *new Node();
-                    Node &objectValue = valueNode(closingBracket(bracket), parent ? parent : &actual.last());
-                    object.addSmart(objectValue);
-                    //						object.add(objectValue);
-                    if (flatten) object = object.flat();
-                    object.setKind(type, false);
-                    object.separator = objectValue.separator;
-#if DEBUG
-                    if (line != "}")
-                        object.line = &line;
-#endif
-                    if (asListItem)
-                        actual.add(object);
-                    else if (addToLast)
-                        actual.last().last().addSmart(object);
-                        //                    else if (actual.last().kind == operators)
-                        //                        actual.last().add(object);
-                    else
-                        actual.addSmart(object);
-                    //					current.addSmart(&object,flatten);
-                    if(bracket == '{')
-                        actual.last().setKind(objects, false);
-                    if (specialDeclaration)
-                        actual.kind = declaration;
+                case '{':
+                    parseBracketGroup(actual, close, parent);
                     break;
-                }
-                //			}// lists handled by ' '!
                 case '}':
                 case ')':
-                case ']': // ..
-                    //					break loop;// not in c++
+                case ']':
                     parserError("wrong closing bracket");
                 // case '+': // todo WHO writes +1 ?
                 case '-':
-                    if (parserOptions.arrow and next == '>') {
-                        // a->b immediate key:value
-                        proceed();
-                        proceed();
-                        white();
-                        Node &node = valueNode(' '); // f: func() -> tuple<int,int>
-                        //                        Node &node = *new Node(identifier()); // ok for now
-                        Node *last = &actual.last(); // don't ref here, else actual.last gets overwritten!
-                        while (last->value.node and last->kind == key)
-                            last = last->value.node; // a:b:c:d
-                        last->setValue({.node = &node}).setKind(key, false);
-                        break; //
-                        continue;
-                    }
-                    if (isKebabBridge())
-                        parserError("kebab case should be handled in identifier");
-                    if (next == '>') {
-                        // -> => ⇨
-                        next = u'⇨';
-                        proceed();
-                    }
-                case '.':
-                    if (isDigit(next) and
-                        (previous == 0 or contains(separator_list, previous) or is_operator(previous)))
-                        actual.addSmart(numbero()); // (2+2) != (2 +2) !!!
-                    else if (ch == '-' and next == '.') // todo bad criterion 1-.9 is BINOP!
-                        actual.addSmart(numbero()); // -.9 -0.9 border case :(
-                    else {
-                        Node *op = operatorr().clone();
-                        actual.add(op);
-                        actual.kind = expression;
-                    }
-                    break;
+                case '.': {
+                    ParseAction action = parseMinusDot(actual);
+                    if (action == PARSE_BREAK) break;
+                    if (action == PARSE_HANDLED) break;
+                    continue;
+                }
                 case '"':
                 case '\'': /* don't use modifiers ` ˋ ˎ */
                 case u'«': // «…»
-                case u'‘': // ‘𝚗𝚊𝚖𝚎’
-                case u'“': // “…” Character too large for enclosing character literal type
+                case u'\u2018': // '𝚗𝚊𝚖𝚎'
+                case u'\u201C': // "…" Character too large for enclosing character literal type
                 case '`': {
-                    // strings and templates
-                    if (previous == '\\')continue; // escape
-                    bool matches = close == ch;
-                    codepoint closer = closingBracket(ch);
-                    matches = matches or (close == u'‘' and ch == u'’');
-                    matches = matches or (close == u'’' and ch == u'‘');
-                    matches = matches or (close == u'“' and ch == u'”');
-                    matches = matches or (close == u'”' and ch == u'“');
-                    if (!matches) {
-                        // open string
-                        if (actual.last().kind == expression)
-                            actual.last().addSmart(quote(closer));
-                        else
-                            actual.add(quote(closer).clone());
-                        break;
-                    } else {
-                        close = 0; // ok, we are done
-                    }
-                    Node id = Node(text.substring(start, at));
-                    id.setKind(Kind::strings); // todo "3" could have be resolved as number? DONT do js magifuckery
-                    id.setType(&TemplateType);
-                    actual.add(id);
-                    break;
+                    ParseAction action = parseString(actual, start, close);
+                    if (action == PARSE_BREAK) break;
+                    if (action == PARSE_HANDLED) break;
+                    continue;
                 }
                 case ':':
                 case U'：':
@@ -1398,121 +1241,26 @@ private:
                 case u'←': // in apl assignment is a left arrow
                 case u'⇨': // ??
                 case '=': {
-                    // assignments, declarations and map key-value-pairs
-                    // todo {a b c:d} vs {a:b c:d}
-                    Node &key = actual.last();
-
-                    if (ch == ':' and next == '/' and key.name.in(validUrlSchemes)) {
-                        key.name = key.name + url();
-                        key.setKind(Kind::urls, false); // todo: Kind::urls ?
-                        continue;
-                        //                        break;
-                    }
-                    bool add_raw = actual.kind == expression or key.kind == expression or
-                                   (actual.last().kind == groups and actual.length > 1);
-                    bool add_to_whole_expression = false;
-                    if (previous == ' ' and (next == ' ' or next == '\n') and not parserOptions.colon_immediate)
-                        add_to_whole_expression = true; // a b : c => (a b):c  // todo: symbol :a as in ruby?
-                    if (is_operator(previous))
-                        add_raw = true; // == *=
-                    if(previous==')' and function_keywords.has(actual.first().name)) {
-                        actual.setKind(declaration, false);
-                        add_raw= true; // fun():body
-                    }
-                    //					char prev = previous;// preserve
-                    Node op = operatorr(); // extend *= ...
-                    if (next == '>' and parserOptions.arrow)
-                        proceed(); // =>
-                    if (not(op.name == ":" or (parserOptions.data_mode and op.name == "=")))
-                        add_raw = true;
-                    if (op.name.length > 1)
-                        add_raw = true;
-                    if (actual.kind == expression)
-                        add_raw = true;
-                    if (add_raw) {
-                        actual.add(op.setKind(operators)).setKind(expression);
-                    }
-                    char closer; // significant whitespace:
-                    if (ch == '\n') closer = ';'; // a: b c == a:(b c) newline or whatever!
-                    else if (op == ":" and parserOptions.colon_immediate)
-                        closer = ' '; // immediate a:b c == (a:b),c
-                    else if (ch == INDENT) {
-                        closer = DEDENT;
-                        if (not actual.separator)
-                            actual.separator = '\n'; // because!
-                        proceed();
-                        white();
-                    } else if (ch == ' ') closer = ';'; // a: b c == a:(b c) newline or whatever!
-                    else closer = ' ';
-                    Node &val = valueNode(closer, &key); // applies to WHOLE expression
-                    if (add_to_whole_expression and actual.length > 1 and not add_raw) {
-                        if (actual.value.node) todo("multi-body a:{b}{c}");
-                        actual.setKind(Kind::key, false); // lose type group/expression etc ! ok?
-                        // todo: might still be expression!
-                        //						object.setType(Type::valueExpression);
-                        actual.value.node = &val;
-                    } else if (add_raw) {
-                        // complex expression are not simple maps
-                        actual.add(val);
-                    } else {
-                        setField(key, val);
-                    }
-                    break;
+                    ParseAction action = parseAssignment(actual);
+                    if (action == PARSE_BREAK) break;
+                    if (action == PARSE_HANDLED) break;
+                    continue;
                 }
                 case INDENT: {
-                    proceed();
-                    if (actual.separator == ',') {
-                        warn("indent block within list");
-                        ch = '\n'; // we assume it was not desired;)
-                    } else {
-                        Node element = valueNode(DEDENT); // todo stop copying!
-                        actual.addSmart(element.flat());
-                        if (not actual.separator)
-                            actual.separator = '\n'; // because
-                        continue;
-                    }
+                    ParseAction action = parseIndent(actual);
+                    if (action == PARSE_BREAK) break;
+                    if (action == PARSE_HANDLED) break;
+                    continue;
                 }
                 case '\n': // groupCascade
                 case '\t': // only in tables
                 case ';': //
-                case ',': {
-                    if (skipBorders(ch)) {
-                        proceed();
-                        continue;
-                    }
-                    // ambiguity? 1+2;3  => list (1+2);3 => list  ok!
-                    if (actual.separator != ch) {
-                        // and current.length > 1
-                        // x;1+2 needs to be grouped (x (1 + 2)) not (x 1 + 2))!
-                        if (actual.length > 1 or actual.kind == expression) {
-                            Node neu; // wrap x,y => ( (x y) ; … )
-                            //							neu.kind = current.kind;// or groups;
-                            neu.kind = groups;
-                            neu.parent = parent;
-                            neu.separator = ch;
-                            neu.add(actual);
-                            actual = neu;
-                        } else
-                            actual.separator = ch;
-                        char sep = ch; // need to keep troughout loop!
-                        while (ch == sep and not closing(ch, close)) {
-                            // same separator a , b , c
-                            proceed();
-                            Node &element = valueNode(sep);
-                            actual.add(element.flat());
-                        }
-                        break;
-                    }
-                    // else fallthough!
-                    actual.separator = ch;
-                }
-                case ' ': // possibly significant whitespace not consumed by white()
-                {
-                    if (not actual.separator)
-                        actual.separator = ch;
-                    proceed();
-                    white();
-                    break;
+                case ',':
+                case ' ': {
+                    ParseAction action = parseListSeparator(actual, close, parent);
+                    if (action == PARSE_BREAK) break;
+                    if (action == PARSE_HANDLED) break;
+                    continue;
                 }
                 case '#':
                     if (next == ' ') {
@@ -1535,41 +1283,9 @@ private:
                         actual.add(Node(identifier())); // todo make sure not to mark as operator …
                         continue;
                     }
-                default: {
-                    // a:b c != a:(b c)
-                    // {a} ; b c vs {a} b c vs {a} + c
-                    // todo: what a flimsy criterion:
-                    bool addFlat = lastNonWhite != ';' and previous != '\n';
-                    Node &node = expressione(close); //word();
-#if DEBUG
-                    node.line = &line; // else via text offset ok
-#endif
-                    if (contains(import_keywords, (chars) node.first().name.data)) {
-                        //  use, include, require …
-                        node = direct_include(actual, node);
-                    }
-#ifndef RUNTIME_ONLY // precedence??
-                    if (precedence(node) or operator_list.has(node.name)) {
-                        node.kind = operators;
-                        //						if(not isPrefixOperation(node))
-                        //						if(not contains(prefixOperators,node))
-                    }
-#endif
-                    if (node.kind == operators and ch != ':') {
-                        if (isFunctor(node))
-                            node.kind = functor; // todo: earlier
-                        else actual.kind = expression;
-                    }
-                    if (node.length > 1 and addFlat) {
-                        for (Node arg: node)actual.add(arg);
-                        actual.kind = node.kind; // was: expression
-                    } else {
-                        if (actual.last().kind == operators)
-                            actual.addSmart(&node.flat());
-                        else
-                            actual.add(&node.flat());
-                    }
-                }
+                default:
+                    addDefaultExpression(actual, close);
+                    break;
             }
         }
         if (close and not isWhite(close) and close != ';' and close != ',') {

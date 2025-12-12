@@ -147,7 +147,7 @@ Wasp::ParseAction Wasp::parseBracketGroup(Node &actual, codepoint close, Node *p
 }
 
 // ", ', `, « - string literals
-Wasp::ParseAction Wasp::parseString(Node &actual, int start, codepoint close) {
+Wasp::ParseAction Wasp::parseString(Node &actual, int start, codepoint &close) {
     if (previous == '\\') return PARSE_CONTINUE; // escape
 
     bool matches = close == ch;
@@ -166,7 +166,8 @@ Wasp::ParseAction Wasp::parseString(Node &actual, int start, codepoint close) {
         return PARSE_HANDLED;
     }
 
-    // Closing string delimiter - but we're already at closing, just mark it
+    // Closing string delimiter
+    close = 0; // ok, we are done
     Node id = Node(text.substring(start, at));
     id.setKind(Kind::strings);
     id.setType(&TemplateType);
@@ -257,36 +258,45 @@ Wasp::ParseAction Wasp::parseIndent(Node &actual) {
     return PARSE_CONTINUE;
 }
 
-// \n, \t, ;, , - list separators
+// \n, \t, ;, , - list separators (and space)
 Wasp::ParseAction Wasp::parseListSeparator(Node &actual, codepoint close, Node *parent) {
-    if (skipBorders(ch)) {
-        proceed();
-        return PARSE_CONTINUE;
-    }
-
-    if (actual.separator != ch) {
-        if (actual.length > 1 or actual.kind == expression) {
-            Node neu;
-            neu.kind = groups;
-            neu.parent = parent;
-            neu.separator = ch;
-            neu.add(actual);
-            actual = neu;
-        } else
-            actual.separator = ch;
-
-        char sep = ch;
-        while (ch == sep and not closing(ch, close)) {
+    // Handle separators first
+    if (ch != ' ') {
+        if (skipBorders(ch)) {
             proceed();
-            Node &element = valueNode(sep);
-            actual.add(element.flat());
+            return PARSE_CONTINUE;
         }
-        return PARSE_HANDLED;
+
+        if (actual.separator != ch) {
+            if (actual.length > 1 or actual.kind == expression) {
+                Node neu;
+                neu.kind = groups;
+                neu.parent = parent;
+                neu.separator = ch;
+                neu.add(actual);
+                actual = neu;
+            } else
+                actual.separator = ch;
+
+            char sep = ch;
+            while (ch == sep and not closing(ch, close)) {
+                proceed();
+                Node &element = valueNode(sep);
+                actual.add(element.flat());
+            }
+            return PARSE_HANDLED;
+        }
+
+        // Same separator continues - fall through to space handling below
+        actual.separator = ch;
     }
 
-    // Same separator continues
-    actual.separator = ch;
-    return PARSE_CONTINUE; // Fall through
+    // Space handling (or fall-through from separator cases)
+    if (not actual.separator)
+        actual.separator = ch;
+    proceed();
+    white();
+    return PARSE_HANDLED;
 }
 
 // - and . for negative numbers, arrows, or operators
