@@ -3,6 +3,8 @@
 #include "List.h"
 #include "String.h"
 
+extern List<chars> operator_list;
+
 // Operator and keyword definitions for the Angle language
 
 // https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
@@ -54,5 +56,3 @@ extern chars control_flows[];
 // Extra reserved keywords
 extern List<String> extra_reserved_keywords;
 
-// Initialize all keyword and operator lists
-void initAngleKeywords();
