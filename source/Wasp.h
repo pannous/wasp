@@ -8,10 +8,6 @@ extern bool eval_via_emit;
 
 extern "C" void testCurrent();
 
-//static
-extern chars function_list[];
-extern chars functor_list[];// takes blocks … parse differently?
-
 extern codepoint grouper_list[];
 extern codepoint opening_special_brackets[];// circumfixOperators «…»
 extern chars import_keywords[];

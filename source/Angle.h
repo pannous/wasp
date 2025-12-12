@@ -12,42 +12,6 @@ static bool hosted = true; // special functions for wasm
 static bool hosted = false;
 #endif
 
-static float function_precedence = 1000;
-
-// todo!
-// moved here so that valueNode() works even without Angle.cpp component for micro wasm module
-// pre-registered builtin/runtime functions working without any import / include / require / use
-static chars function_list[] = {
-    /*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
-    "getChar", "eq", "concat",
-    "test42", "test42i", "test42f",
-    "println", "puts", "putf", "putd", "puti", "putl", "len",
-    "quit", "parseLong",
-    "parseDouble", "strlen",
-    "concat_chars", "concat_strings", "concat_bytes",
-    "formatLong","formatReal","ftoa","ltoa", "itoa","itoa0", "atol", "atoi", "parseInt",
-    "log", "ln", "log10", "log2", "similar",
-    "putx", "putc", "get", "set", "peek", "poke", "read",
-    "write",
-    "$" /* getElementById */,
-    //                                                               FUNCLETS via runtime for now:
-    //                                                               "pow", "powi", "pow_long", "log", "log10", "log2",
-    "lowerCaseUTF",
-    0, 0, 0
-}; // MUST END WITH 0, else BUG
-
-//chars runtime_function_list[]={};
-static chars wasi_function_list[] = {"proc_exit", "fd_write", "args_sizes_get", "args_get","fclose","fgetc","exit","fprintf","fopen","getenv", 0};
-
-// a funclet is a (tiny) wasm function stored in its own little file, e.g. pow.wasm for Math.power
-// they get automatically linked when used without requiring the wasp runtime
-// see aliases for discoverability
-// todo: pre-fill list from current directory(s) / funclet registry / wapm
-static chars funclet_list[] = {"pow", "powi", "pow_long", "log", "log10", "log2", "lowerCaseUTF", "print"/*node*/, 0};
-//static chars funclet_list[] = {};//  LINK WITH RUNTIME!
-
-static chars functor_list[] = {"if", "while", "for", "go", "do", "until", 0}; // MUST END WITH 0, else BUG
-
 //extern
 extern List<Module *> libraries; // merged:
 //extern Map<String, Signature> functionSignatures;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
