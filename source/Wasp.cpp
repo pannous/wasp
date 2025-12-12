@@ -772,7 +772,7 @@ private:
     };
 
     // Parse a comment
-    bool comment() {
+    bool parseComment() {
         // Skip a comment, whether inline or block-level, assuming this is one.
         char preserveLast = lastNonWhite;
         //		if (ch == ';' and next == ';') { // and mode = stupid wast comments   or columnStart==0
@@ -824,7 +824,7 @@ private:
         // break if there are other valid values that begin with a / character!
         while (ch) {
             if (ch == '/' or ch == '#') {
-                if (not comment()) return; // else loop on
+                if (not parseComment()) return; // else loop on
                 // NEWLINE IS NOT A WHITE , it has semantics
             } else if (ch == ' ' or ch == '\t' or (skip_whitespace and (ch == '\r' or ch == '\n'))) {
                 proceed();
@@ -859,7 +859,7 @@ private:
     };
 
 
-    Node &operatorr() {
+    Node &parseOperator() {
         Node &node = *new Node(ch);
         node.value.longy = 0;
         node.setKind(operators); // todo ++
@@ -920,7 +920,7 @@ private:
             return *resolve(Node(identifier()).setKind(referencex)).clone(); // or op
         }
         if (is_operator(ch))
-            return operatorr();
+            return parseOperator();
         if (is_identifier(ch))
             return *resolve(Node(identifier(), true)).clone(); // or op
         parserError("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
@@ -1245,15 +1245,15 @@ private:
                     continue;
                 case '#':
                     if (next == ' ') {
-                        comment();
+                        parseComment();
                         continue;
                     } else {
-                        actual.add(operatorr());
+                        actual.add(parseOperator());
                         continue;
                     }
                 case '/':
                     if (ch == '/' and (next == '/' or next == '*')) {
-                        comment();
+                        parseComment();
                         warn("comment should have been handled before!?");
                         continue;
                     } // else fall through to default … expressione
@@ -1276,16 +1276,12 @@ private:
         return actual.flat();
     };
 
-    bool isWhite(codepoint c) {
-        return c == ' ' or c == '\t' or c == '\n' or c == '\r' or c == u''; // shift out
-    }
-
     bool isKebabBridge() {
-        // isHyphen(Bridge) e.g. a-b in special ids like in component model
-        if (not is_identifier(next))return false; // i-- i-1
-        if (parserOptions.kebab_case_plus and ch == '-')return true;
-        return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
-    }
+    // isHyphen(Bridge) e.g. a-b in special ids like in component model
+    if (not is_identifier(next))return false; // i-- i-1
+    if (parserOptions.kebab_case_plus and ch == '-')return true;
+    return parserOptions.kebab_case and ch == '-' and isalpha0(previous) and not isnumber(next) and next != '=';
+}
 };
 
 // Implementation of parse handler methods (extracted from valueNode switch statement)

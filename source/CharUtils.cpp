@@ -124,3 +124,10 @@ bool contains(chars list[], chars match) {
     } while (*elem++);
     return false;
 }
+
+
+
+bool isWhite(codepoint c) {
+    return c == ' ' or c == '\t' or c == '\n' or c == '\r' or c == u''; // shift out
+}
+

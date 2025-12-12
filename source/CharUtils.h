@@ -25,6 +25,9 @@ bool contains(S list[], S match) {
 
 bool contains(chars list[], chars match);
 
+bool isKebabBridge();
+bool isWhite(codepoint c);
+
 // External character/operator lists referenced by these functions
 extern List<chars> operator_list;
 extern codepoint opening_special_brackets[];
