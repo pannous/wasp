@@ -52,3 +52,4 @@ typedef unsigned long long SmartPointer64;
 typedef unsigned long long smart_pointer_64;
 //typedef uint64 smart_type_64;
 typedef smart_pointer_64 smarty;
+
