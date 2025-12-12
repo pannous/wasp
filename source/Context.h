@@ -74,8 +74,9 @@ public:
 
 void addLibrary(Module *modul);
 void useFunction(String name);
-bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
 bool addGlobal(Function &context, String name, Type type, bool is_param, Node *value);
+bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
+void updateLocal(Function &context, String name, Type type);
 
 Signature &groupFunctionArgs(Function &function, Node &params); // todo move elsewhere!
 void clearAnalyzerContext();
@@ -83,3 +84,4 @@ void clearAnalyzerContext();
 Function *use_required_import(Function *function);
 void addLibraryFunctionAsImport(Function &func);
 Function getWaspFunction(String name);
+static bool eq(Module *x, Module *y) { return x->name == y->name; } // for List: libraries.has(library)

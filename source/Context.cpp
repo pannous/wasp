@@ -332,3 +332,81 @@ void addLibraryFunctionAsImport(Function &func) {
         functions.add(func.name, import);
 #endif
 }
+
+
+// return: done?
+// todo return clear enum known, added, ignore ?
+bool addLocal(Function &context, String name, Type type, bool is_param) {
+    if (not name)
+        error("addLocal: empty name");
+    if (isKeyword(name))
+        error("keyword as local name: "s + name);
+    // todo: kotlin style context sensitive symbols!
+    if (builtin_constants.has(name))
+        return true;
+    if (types.has(name))
+        // error("type as local name: "s + name);
+        return true; // already declared as type, e.g. Point
+    if (context.signature.has(name)) {
+        return false; // known parameter!
+    }
+    if (globals.has(name))
+        error(name + " already declared as global"s);
+    if (isFunction(name, true))
+        error(name + " already declared as function"s);
+    if (not context.locals.has(name)) {
+        int position = context.locals.size();
+        context.locals.add(name, Local{.is_param = is_param, .position = position, .name = name, .type = type});
+        return true; // added
+    } else {
+        updateLocal(context, name, type);
+        return false; // already there
+    }
+    //#endif
+}
+void addWasmArrayType(Type value_type) {
+    if (isGeneric(value_type)) {
+        addWasmArrayType(value_type.generics.value_type);
+        return;
+    }
+    auto array_type_name = String(typeName(value_type)) + "s"; // int-array -> “ints”
+    Node array_type;
+    array_type.kind = arrays;
+    array_type.type = types[typeName(value_type)]; // todo more robust
+    types.add(array_type_name, array_type.clone());
+    // link to type index later
+}
+
+void updateLocal(Function &context, String name, Type type) {
+    //#if DEBUG
+    if (type == undefined)return; // no type given, ok
+    Local &local = context.locals[name];
+    auto type_name = typeName(type);
+    auto oldType = local.type;
+    if (oldType == none or oldType == unknown_type) {
+        local.type = type;
+    } else if (oldType != type and type != void_block and type != voids and type != unknown_type) {
+        if (use_wasm_arrays) {
+            // TODO: CLEANUP
+            if (oldType == node) {
+                addWasmArrayType(type);
+                local.type = type; // make more specific!
+            } else if (isGeneric(oldType)) {
+                auto kind = oldType.generics.kind;
+                auto valueType1 = oldType.generics.value_type;
+                if (valueType1 != type) todow(
+                    "generic type mismatch "s + typeName(oldType) + " vs " + type_name);
+            } else if (oldType == wasmtype_array or oldType == array) {
+                addWasmArrayType(type);
+                local.type = genericType(array, type);
+            }
+        } else {
+            if (!compatibleTypes(oldType, type)) {
+                compatibleTypes(oldType, type);
+                error("local "s + name + " in context %s already known "s % context.name + " with type " +
+                    typeName(oldType) + ", ignoring new type " + type_name);
+            }
+        }
+    }
+    // ok, could be cast'able!
+}
