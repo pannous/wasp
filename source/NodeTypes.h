@@ -637,4 +637,21 @@ class Function;
 
 Type preEvaluateType(Node &node, Function *context0);
 
+static bool compatibleTypes(Type type1, Type type2) {
+    if (type1 == type2)return true;
+    if (type1 == longs and type2 == strings)return false; // upcast
+    if (type1 == string_struct and type2 == strings)return true;
+    if (type1 == stringp and type2 == strings)return true;
+    if (type1 == wasm_int32 and type2 == wasm_int64)return true; // upcast
+    if (type1 == externref and type2 == stringp)return true; // only via toString(externref) !!!
+    if (type1 == ints and type2 == externref)return true; // via toLong(externref)
+    if (type1 == reals and type2 == externref)return true; // via toReal(externref)
+    if (type1 == stringp and type2 == externref)return true; // assume everything is castable from toString(externref)
+    // if (type1 == strings and type2 == externref)return true; // assume everything is castable from toString(externref)
+    // if (type1 == string_struct /*strings*/ and type2 == externref)return true; // assume everything is castable from externref
+    // if (type2 == externref)return true; // assume everything is castable from externref
+    return false;
+}
+
 #endif
+

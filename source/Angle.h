@@ -185,9 +185,6 @@ bool knownSymbol(String name, Function &context);
 
 int findBestVariant(const Function &function, const Node &node, Function *context);
 
-bool compatibleTypes(Type type1, Type type2);
-
-
 Node smartNode32(int smartPointer32);
 
 short arrayElementSize(Node &node);
