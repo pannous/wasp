@@ -396,19 +396,17 @@ public:
     }
 
 private:
-    // Control flow return codes for parse handlers
-    enum ParseAction { PARSE_CONTINUE, PARSE_BREAK, PARSE_HANDLED };
-
     // Switch case handlers for valueNode() - extracted for better readability
-    ParseAction parseDollarAt(Node &actual);
-    ParseAction parseHtmlTag(Node &actual);
-    ParseAction parseAngleBracket(Node &actual);
-    ParseAction parseBracketGroup(Node &actual, codepoint close, Node *parent);
-    ParseAction parseString(Node &actual, int start, codepoint &close);
-    ParseAction parseAssignment(Node &actual);
-    ParseAction parseIndent(Node &actual);
-    ParseAction parseListSeparator(Node &actual, codepoint close, Node *parent);
-    ParseAction parseMinusDot(Node &actual);
+    // Return true if handled (break from switch), false if not handled (continue loop)
+    bool parseDollarAt(Node &actual);
+    bool parseHtmlTag(Node &actual);
+    bool parseAngleBracket(Node &actual);
+    bool parseBracketGroup(Node &actual, codepoint close, Node *parent);
+    bool parseString(Node &actual, int start, codepoint &close);
+    bool parseAssignment(Node &actual);
+    bool parseIndent(Node &actual);
+    bool parseListSeparator(Node &actual, codepoint close, Node *parent);
+    bool parseMinusDot(Node &actual);
     void addDefaultExpression(Node &actual, codepoint close);
 
     // escapee() and renderChar() moved to LiteralParser.cpp (LiteralUtils namespace)
@@ -1186,17 +1184,15 @@ private:
             switch (ch) {
                 case '@':
                 case '$':
-                    parseDollarAt(actual);
-                    break;
+                    if (parseDollarAt(actual)) break;
+                    continue;
                 case '<':
-                    if (parseHtmlTag(actual) == PARSE_HANDLED) break;
+                    if (parseHtmlTag(actual)) break;
                     // Fall through to angle bracket handling
-                case '>': {
-                    ParseAction action = parseAngleBracket(actual);
-                    if (action == PARSE_BREAK) return actual;
-                    if (action == PARSE_CONTINUE) continue;
-                    // Fall through to bracket group
-                }
+                case '>':
+                    if (ch == '>' and (parserOptions.use_tags or parserOptions.use_generics)) return actual;
+                    if (parseAngleBracket(actual)) break;
+                    continue;
                 case u'﹝': // ﹞
                 case u'〔': // 〕
                 case U'［': // ］ FULLWIDTH
@@ -1207,31 +1203,25 @@ private:
                 case u'﹛': // ﹜
                 case u'｛': // ｝
                 case '{':
-                    parseBracketGroup(actual, close, parent);
-                    break;
+                    if (parseBracketGroup(actual, close, parent)) break;
+                    continue;
                 case '}':
                 case ')':
                 case ']':
                     parserError("wrong closing bracket");
                 // case '+': // todo WHO writes +1 ?
                 case '-':
-                case '.': {
-                    ParseAction action = parseMinusDot(actual);
-                    if (action == PARSE_BREAK) break;
-                    if (action == PARSE_HANDLED) break;
+                case '.':
+                    if (parseMinusDot(actual)) break;
                     continue;
-                }
                 case '"':
                 case '\'': /* don't use modifiers ` ˋ ˎ */
                 case u'«': // «…»
                 case u'\u2018': // '𝚗𝚊𝚖𝚎'
                 case u'\u201C': // "…" Character too large for enclosing character literal type
-                case '`': {
-                    ParseAction action = parseString(actual, start, close);
-                    if (action == PARSE_BREAK) break;
-                    if (action == PARSE_HANDLED) break;
+                case '`':
+                    if (parseString(actual, start, close)) break;
                     continue;
-                }
                 case ':':
                 case U'：':
                 case U'≝':
@@ -1240,28 +1230,19 @@ private:
                 case U'﹦':
                 case u'←': // in apl assignment is a left arrow
                 case u'⇨': // ??
-                case '=': {
-                    ParseAction action = parseAssignment(actual);
-                    if (action == PARSE_BREAK) break;
-                    if (action == PARSE_HANDLED) break;
+                case '=':
+                    if (parseAssignment(actual)) break;
                     continue;
-                }
-                case INDENT: {
-                    ParseAction action = parseIndent(actual);
-                    if (action == PARSE_BREAK) break;
-                    if (action == PARSE_HANDLED) break;
+                case INDENT:
+                    if (parseIndent(actual)) break;
                     continue;
-                }
                 case '\n': // groupCascade
                 case '\t': // only in tables
                 case ';': //
                 case ',':
-                case ' ': {
-                    ParseAction action = parseListSeparator(actual, close, parent);
-                    if (action == PARSE_BREAK) break;
-                    if (action == PARSE_HANDLED) break;
+                case ' ':
+                    if (parseListSeparator(actual, close, parent)) break;
                     continue;
-                }
                 case '#':
                     if (next == ' ') {
                         comment();

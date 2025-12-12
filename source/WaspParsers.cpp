@@ -7,10 +7,10 @@
 #include "LiteralParser.h"
 
 // @, $ - dollar names and meta attributes
-Wasp::ParseAction Wasp::parseDollarAt(Node &actual) {
+bool Wasp::parseDollarAt(Node &actual) {
     if ((ch == '$' and parserOptions.dollar_names) or (ch == '@' and parserOptions.at_names)) {
         actual.add(Node(identifier()).setKind(referencex));
-        return PARSE_HANDLED;
+        return true;
     }
 
     if (ch == '@' and parserOptions.meta_attributes) {
@@ -29,15 +29,15 @@ Wasp::ParseAction Wasp::parseDollarAt(Node &actual) {
         }
         node.addMeta(key);
         actual.add(node);
-        return PARSE_HANDLED;
+        return true;
     }
 
     actual.add(operatorr());
-    return PARSE_HANDLED;
+    return true;
 }
 
 // <html> and <script> tags
-Wasp::ParseAction Wasp::parseHtmlTag(Node &actual) {
+bool Wasp::parseHtmlTag(Node &actual) {
     if (text.substring(at, at + 5) == "<html") {
         int to = text.find("</html>", at);
         if (to < 0) to = text.length;
@@ -47,7 +47,7 @@ Wasp::ParseAction Wasp::parseHtmlTag(Node &actual) {
         at = to + 7;
         previous = '>';
         proceed();
-        return PARSE_HANDLED;
+        return true;
     }
 
     if (text.startsWith("<script", at)) {
@@ -59,32 +59,28 @@ Wasp::ParseAction Wasp::parseHtmlTag(Node &actual) {
         at = to + 9;
         previous = '>';
         proceed();
-        return PARSE_HANDLED;
+        return true;
     }
 
     // Not an HTML tag, continue with angle bracket handling
-    return PARSE_CONTINUE;
+    return false;
 }
 
 // < > angle brackets for tags/generics or comparison operators
-Wasp::ParseAction Wasp::parseAngleBracket(Node &actual) {
+bool Wasp::parseAngleBracket(Node &actual) {
     if (not(parserOptions.use_tags or parserOptions.use_generics) or (previous == ' ' and next == ' ')) {
         Node &op = operatorr();
         actual.add(op);
         actual.kind = expression;
-        return PARSE_CONTINUE;
-    }
-
-    if (ch == '>') {
-        return PARSE_BREAK; // Return from valueNode
+        return true;
     }
 
     if (next == '/') todo("closing </tags>");
-    return PARSE_CONTINUE; // Fall through to bracket group
+    return false; // Fall through to bracket group
 }
 
 // {, [, ( - brackets for objects, patterns, groups
-Wasp::ParseAction Wasp::parseBracketGroup(Node &actual, codepoint close, Node *parent) {
+bool Wasp::parseBracketGroup(Node &actual, codepoint close, Node *parent) {
     codepoint bracket = ch;
     auto type = getType(bracket);
 #if not RUNTIME_ONLY
@@ -143,12 +139,12 @@ Wasp::ParseAction Wasp::parseBracketGroup(Node &actual, codepoint close, Node *p
     if (specialDeclaration)
         actual.kind = declaration;
 
-    return PARSE_HANDLED;
+    return true;
 }
 
 // ", ', `, « - string literals
-Wasp::ParseAction Wasp::parseString(Node &actual, int start, codepoint &close) {
-    if (previous == '\\') return PARSE_CONTINUE; // escape
+bool Wasp::parseString(Node &actual, int start, codepoint &close) {
+    if (previous == '\\') return false; // escape
 
     bool matches = close == ch;
     codepoint closer = closingBracket(ch);
@@ -163,7 +159,7 @@ Wasp::ParseAction Wasp::parseString(Node &actual, int start, codepoint &close) {
             actual.last().addSmart(quote(closer));
         else
             actual.add(quote(closer).clone());
-        return PARSE_HANDLED;
+        return true;
     }
 
     // Closing string delimiter
@@ -172,18 +168,18 @@ Wasp::ParseAction Wasp::parseString(Node &actual, int start, codepoint &close) {
     id.setKind(Kind::strings);
     id.setType(&TemplateType);
     actual.add(id);
-    return PARSE_HANDLED;
+    return true;
 }
 
 // :, =, ←, ⇨ - assignments and key:value pairs
-Wasp::ParseAction Wasp::parseAssignment(Node &actual) {
+bool Wasp::parseAssignment(Node &actual) {
     Node &key = actual.last();
 
     // URL detection
     if (ch == ':' and next == '/' and key.name.in(validUrlSchemes)) {
         key.name = key.name + url();
         key.setKind(Kind::urls, false);
-        return PARSE_CONTINUE;
+        return false;
     }
 
     bool add_raw = actual.kind == expression or key.kind == expression or
@@ -211,7 +207,7 @@ Wasp::ParseAction Wasp::parseAssignment(Node &actual) {
 
     if (add_raw) {
         actual.add(op.setKind(operators)).setKind(expression);
-        return PARSE_HANDLED;
+        return true;
     }
 
     char closer;
@@ -239,32 +235,32 @@ Wasp::ParseAction Wasp::parseAssignment(Node &actual) {
         setField(key, val);
     }
 
-    return PARSE_HANDLED;
+    return true;
 }
 
 // INDENT token
-Wasp::ParseAction Wasp::parseIndent(Node &actual) {
+bool Wasp::parseIndent(Node &actual) {
     proceed();
     if (actual.separator == ',') {
         warn("indent block within list");
         ch = '\n';
-        return PARSE_HANDLED;
+        return true;
     }
 
     Node element = valueNode(DEDENT);
     actual.addSmart(element.flat());
     if (not actual.separator)
         actual.separator = '\n';
-    return PARSE_CONTINUE;
+    return false;
 }
 
 // \n, \t, ;, , - list separators (and space)
-Wasp::ParseAction Wasp::parseListSeparator(Node &actual, codepoint close, Node *parent) {
+bool Wasp::parseListSeparator(Node &actual, codepoint close, Node *parent) {
     // Handle separators first
     if (ch != ' ') {
         if (skipBorders(ch)) {
             proceed();
-            return PARSE_CONTINUE;
+            return false;
         }
 
         if (actual.separator != ch) {
@@ -284,7 +280,7 @@ Wasp::ParseAction Wasp::parseListSeparator(Node &actual, codepoint close, Node *
                 Node &element = valueNode(sep);
                 actual.add(element.flat());
             }
-            return PARSE_HANDLED;
+            return true;
         }
 
         // Same separator continues - fall through to space handling below
@@ -296,11 +292,11 @@ Wasp::ParseAction Wasp::parseListSeparator(Node &actual, codepoint close, Node *
         actual.separator = ch;
     proceed();
     white();
-    return PARSE_HANDLED;
+    return true;
 }
 
 // - and . for negative numbers, arrows, or operators
-Wasp::ParseAction Wasp::parseMinusDot(Node &actual) {
+bool Wasp::parseMinusDot(Node &actual) {
     // Handle -> arrow operator
     if (ch == '-' and parserOptions.arrow and next == '>') {
         proceed();
@@ -311,7 +307,7 @@ Wasp::ParseAction Wasp::parseMinusDot(Node &actual) {
         while (last->value.node and last->kind == key)
             last = last->value.node;
         last->setValue({.node = &node}).setKind(key, false);
-        return PARSE_CONTINUE; // Then break after continue label
+        return false; // Continue
     }
 
     if (ch == '-' and isKebabBridge())
@@ -333,7 +329,7 @@ Wasp::ParseAction Wasp::parseMinusDot(Node &actual) {
         actual.kind = expression;
     }
 
-    return PARSE_HANDLED;
+    return true;
 }
 
 // Default: expressions, identifiers, imports
