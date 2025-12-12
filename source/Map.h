@@ -1,7 +1,3 @@
-//
-// Created by pannous on 13.10.20.
-//
-
 #ifndef WASP_MAP_H
 #define WASP_MAP_H
 

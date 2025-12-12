@@ -1,8 +1,4 @@
 #pragma once
-//
-// Created by pannous on 15.07.20.
-//
-
 // YOU NEED extern "C" to keep the name for UNIMPLEMENTED functions only
 
 #include <cstddef> // size_t  FINE with wasm!

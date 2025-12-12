@@ -1,8 +1,4 @@
 //#pragma once
-//
-// Created by pannous on 15.07.20.
-//
-
 // ALL FUNCTIONS IN THIS FILE WILL BE COMPILED IN WASM CONTEXT: the wasp.wasm runtime.
 // ASSUME everything is MY_WASI from now on!
 

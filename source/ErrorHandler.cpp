@@ -1,7 +1,3 @@
-//
-// Created by pannous on 17.11.19.
-//
-
 #define ErrorHandler
 
 #include "ErrorHandler.h"

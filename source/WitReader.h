@@ -1,7 +1,3 @@
-//
-// Created by me on 19.11.22.
-//
-
 #ifndef WASP_WITREADER_H
 #define WASP_WITREADER_H
 

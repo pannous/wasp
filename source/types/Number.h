@@ -1,7 +1,3 @@
-//
-// Created by me on 18.09.21.
-//
-
 // types should inherit from node!
 
 //typedef enum number_type {

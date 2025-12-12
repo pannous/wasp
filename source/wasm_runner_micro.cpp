@@ -1,7 +1,3 @@
-//
-// Created by me on 23.10.20.
-//
-
 // https://pengowray.github.io/wasm-ops/
 
 #include <include/wasm_c_api.h>

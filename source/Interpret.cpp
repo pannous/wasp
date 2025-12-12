@@ -1,6 +1,3 @@
-//
-// Created by pannous on 18.05.20.
-//
 #define _main_
 
 #include "Wasp.h"

@@ -2,9 +2,6 @@
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wwritable-strings"
 #pragma once
-//
-// Created by pannous on 19.12.19.
-//
 #include "wasm_helpers.h"
 #include "Util.h"
 #include "NodeTypes.h"

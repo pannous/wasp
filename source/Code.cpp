@@ -1,6 +1,3 @@
-//
-// Created by me on 08.12.20.
-//
 #include "Code.h"
 #include "Interpret.h"
 

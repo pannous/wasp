@@ -1,7 +1,3 @@
-//
-// Created by me on 27.11.20.
-//
-
 #ifndef WASP_WASM_READER_WABT_H
 #define WASP_WASM_READER_WABT_H
 

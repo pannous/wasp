@@ -1,7 +1,3 @@
-//
-// Created by me on 06.05.22.
-//
-
 #ifndef WASP_LIST_H
 #define WASP_LIST_H
 

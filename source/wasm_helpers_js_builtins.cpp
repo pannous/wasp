@@ -1,8 +1,4 @@
 //#pragma once
-//
-// Created by pannous on 15.07.20.
-//
-
 #include <cstdlib> // OK in WASM!
 
 #include "wasm_helpers.h"

@@ -1,8 +1,4 @@
 //#pragma once
-//
-// Created by pannous on 24.10.18.
-//
-
 #include "String.h"
 #include "wasm_helpers.h"
 #include "List.h"

@@ -1,8 +1,4 @@
 #pragma once
-//
-// Created by pannous on 30.09.19.
-//
-
 #include "String.h"
 #include "smart_types.h"
 #include "NodeTypes.h"

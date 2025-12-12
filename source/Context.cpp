@@ -1,0 +1,334 @@
+// AST Analysis Context (in Angle.cpp after Wasp.cpp parser, before wasm_emitter.cpp)
+
+#include "Context.h"
+
+#include "Angle.h"
+#include "Map.h"
+#include "Code.h"
+#include "Keywords.h"
+#include "wasm_reader.h"
+String &normOperator(String &alias);
+
+Module *module; // todo: use?
+bool use_interpreter = false;
+Node &result = *new Node();
+
+List<String> aliases(String name);
+
+Map<String, Node *> types = {100}; // builtin and defined Types
+Map<String, int> call_indices; // todo keep in Function
+
+
+// todo Maps don't free memory
+Map<String, Function> functions = {1000};
+// todo ONLY emit of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
+//Map<String, Function> library_functions; see:
+List<Module *> libraries; // used modules from (automatic) import statements e.g. import math; use log; …  ≠
+// functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
+
+Map<int64, bool> analyzed = {1000};
+// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
+
+
+// todo : use proper context ^^ instead of:
+//Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
+//Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
+
+Map<String, Global> globals;
+//List<Global> globalVariables;
+
+
+
+// todo: clarify registerAsImport side effect
+// todo: return the import, not the library function
+Function *findLibraryFunction(String name, bool searchAliases) {
+    if (name.empty())return 0;
+    if (functions.has(name))
+        return use_required_import(&functions[name]); // prevents read_wasm("lib")
+#if WASM // todo: why only in wasm?
+    Module &wasp = loadRuntime();
+    if (wasp.functions.has(name)) {
+        if (!libraries.has(&wasp)) // on demand per test/app!
+            libraries.add(&wasp);
+        return use_required_import(&wasp.functions[name]);
+    }
+#endif
+    if (contains(funclet_list, name)) {
+#if WASM and not MY_WASM
+        //				todo("getWaspFunclet get library function signature from wasp");
+        warn("WASP function "s + name + " getWaspFunclet todo");
+        auto pFunction = getWaspFunction(name).clone();
+        pFunction->import();
+        return use_required_import(pFunction);
+#endif
+        print("loading funclet "s + name);
+        Module &funclet_module = read_wasm(findFile(name, "lib"));
+        check(funclet_module.functions.has(name));
+        module_cache.insert_or_assign(funclet_module.name.hash(), &funclet_module);
+        Function &funclet = funclet_module.functions[name];
+        print("GOT funclet "s + name);
+        print(funclet.signature);
+        addLibrary(&funclet_module);
+        return use_required_import(&funclet);
+    }
+    if (name.in(function_list) and libraries.size() == 0)
+        libraries.add(&loadRuntime());
+    // libraries.add(&loadModule("wasp-runtime.wasm")); // on demand
+
+
+    //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
+    // todo in WASM
+    for (Module *library: libraries) {
+        //} module_cache.valueList()) {
+        // todo : multiple signatures! concat(bytes, chars, …) eq(…)
+        int position = library->functions.position(name);
+        if (position >= 0) {
+            Function &func = library->functions.values[position];
+            return use_required_import(&func);
+        }
+    }
+    Function *function = 0;
+    if (searchAliases) {
+        for (String alias: aliases(name)) {
+            function = findLibraryFunction(alias, false);
+            //			use_required(function); // no, NOT required yet
+        }
+    }
+    auto normed = normOperator(name);
+    if (normed == name)
+        return use_required_import(function);
+    else
+        return findLibraryFunction(normed, false);
+}
+
+void addLibrary(Module *modul) {
+    if (not modul)return;
+    for (auto &lib: libraries)
+        if (lib->name == modul->name)return;
+    libraries.add(modul); // link it later via import or use its code directly?
+}
+
+// todo merge with similar functions and aliases()
+Function *use_required_import(Function *function) {
+    if (!function or not function->name or function->name.empty())
+        return 0; // todo how?
+    addLibraryFunctionAsImport(*function);
+    if (function->name == "quit")
+        useFunction("proc_exit");
+    if (function->name == "puts")
+        useFunction("fd_write");
+    // for (Function *variant: function->variants) {
+    //     addLibraryFunctionAsImport(*variant);
+    // }
+    for (String &alias: aliases(function->name)) {
+        if (alias == function->name)continue;
+        auto ali = findLibraryFunction(alias, false);
+        if (ali)addLibraryFunctionAsImport(*ali);
+    }
+    for (auto &vari: function->variants) {
+        vari->is_used = true;
+    }
+    //    for(Function& dep:function.required)
+    //        dep.is_used = true;
+    return function;
+}
+
+void useFunction(String name) {
+    if (not functions.has(name)) {
+        auto fun = findLibraryFunction(name, true); // search aliases
+        if (not fun)
+            error("function "s + name + " not found"s);
+    }
+    trace("useFunction: "s + name);
+    functions[name].is_used = true;
+}
+
+// todo: merge ^^
+bool addGlobal(Function &context, String name, Type type, bool is_param, Node *value) {
+    if (isKeyword(name))
+        error("keyword as global name: "s + name);
+    if (name.empty()) {
+        warn("empty reference in "s + context);
+        return true; // 'done' ;)
+    }
+    if (builtin_constants.has(name))
+        error(name + " is already a builtin constant"s);
+    if (context.signature.has(name))
+        error(name + " already declared as parameter for function "s + context.name);
+    if (globals.has(name)) // ok ?
+        error(name + " already declared as global"s);
+    //        return true;// already declared
+    if (context.locals.has(name))
+        error(name + " already declared as local variable"s);
+    if (isFunction(name, true))
+        error(name + " already declared as function"s);
+    //    if(type == int32)
+    //        type = int64t; // can't grow later after global init
+    if (value and value->kind == expression) {
+        warn("only the most primitive expressions are allowed in global initializers => move to wasp_main!");
+        //        value = new Node(0); // todo reals, strings, arrays, structs, …
+    } else if (not value) {
+        //        value = new Node(0);
+    } else {
+        //        if(type==int64t)type=int32t;// todo: dirty hack for global x=1+2 because we can't cast
+    }
+    Global global{.index = globals.count(), .name = name, .type = type, .value = value, .is_mutable = true};
+    globals[name] = global;
+    return true;
+}
+
+
+// currently only used for WitReader. todo: merge with addGlobal
+void addGlobal(Node &node) {
+    String &name = node.name;
+    if (isKeyword(name))
+        error("Can't add reserved keyword "s + name);
+    if (globals.has(name)) {
+        warn("global %s already a registered symbol: %o "s % name % globals[name].value);
+    } else {
+        Type type = mapType(node.type);
+        globals.add(name, Global{
+                        /*id*/globals.count(), name, type, node.clone(), /*mutable=*/ true
+                    });
+    }
+}
+
+
+Signature &groupFunctionArgs(Function &function, Node &params) {
+    //			left = analyze(left, name) NO, we don't want args to become variables!
+    List<Arg> args;
+
+    Node *nextType = &DoubleType;
+    //    Node *nextType = 0;//types preEvaluateType(params, &function);
+    // todo: dynamic type in square / add1 x:=x+1;add1 3
+    if (params.length == 0) {
+        params = groupTypes(params, function);
+        if (params.name != function.name and not params.name.empty())
+            args.add({function.name, params.name, params.type ? params.type : nextType});
+    } //else
+    for (Node &arg: params) {
+        if (arg.kind == groups) {
+            arg = groupTypes(arg, function,true);
+            args.add({function.name, arg.name, arg.type ? arg.type : mapType(nextType), params});
+            continue;
+        }
+        if (isType(arg)) {
+            if (args.size() > 0 and args.last().type != unknown_type)
+                args.last().type = types[arg.name];
+            else nextType = &arg;
+        } else {
+            if (arg.name != function.name)
+                args.add({function.name, arg.name, arg.type ? arg.type : mapType(nextType), params});
+        }
+    }
+
+    Signature signature = function.signature;
+    auto already_defined = function.signature.size() > 0;
+    if (function.is_polymorphic or already_defined) {
+        signature = *new Signature();
+    }
+    for (Arg arg: args) {
+        auto name = arg.name;
+        if (empty(name))
+            name = String("$"s + signature.size());
+        //            error("empty argument name");
+        if (function.locals.has(name)) {
+            // TODO
+            warn("Already declared as local OR duplicate argument name: "s + name);
+            //			error("duplicate argument name: "s + name);
+        }
+        signature.add(arg.type, name); // todo: arg type, or pointer
+        addLocal(function, name, arg.type, true);
+    }
+
+    Function *variant = &function;
+    if (already_defined /*but not yet polymorphic*/) {
+        if (signature == function.signature)
+            return function.signature; // function.signature; // ok compatible
+        // else split two variants
+        Function new_variant = function;
+        Function old_variant = function; // clone by value!
+        check_is(old_variant.name, function.name);
+        old_variant.signature = function.signature;
+        new_variant.signature = signature; // ^^ different
+        function.is_polymorphic = true;
+        //			function.is_used … todo copy other attributes?
+        function.signature = *new Signature(); // empty
+        function.variants.add(old_variant.clone());
+        function.variants.add(new_variant.clone());
+    } else if (function.is_polymorphic) {
+        // third … variant
+        variant = new Function();
+        for (Function *fun: function.variants)
+            if (fun->signature == signature)
+                return fun->signature; // signature;
+        variant->name = function.name;
+        variant->signature = signature;
+        function.variants.add(variant);
+    } else if (!already_defined) {
+        function.signature = signature;
+    }
+    for (auto arg: args) {
+        auto name = arg.name;
+        if (empty(name)) {
+            warn("empty argument name, using $n"s);
+            name = String("$"s + variant->locals.size());
+        }
+        addLocal(*variant, name, arg.type, true);
+    }
+    // NOW add locals to function context:
+    //	for (auto arg: variant->signature.parameters)
+    //		addLocal(*variant, arg.name, arg.type, true);
+    return variant->signature;
+    //	return signature;
+}
+
+
+void clearAnalyzerContext() {
+    //    clearEmitterContext()
+    //	needs to be outside analyze, because analyze is recursive
+#ifndef RUNTIME_ONLY
+    libraries.clear(); // todo: keep runtime or keep as INACTIVE to save reparsing
+    //    module_cache.clear(); NOO not the cache lol
+    types.clear();
+    globals.clear();
+    call_indices.clear();
+    call_indices.setDefault(-1);
+    analyzed.clear(); // todo move much into outer analyze function!
+    functions.clear(); // always needs to be followed by
+    preRegisterFunctions(); // BUG Signature wrong cpp file
+#endif
+}
+
+void addLibraryFunctionAsImport(Function &func) {
+    func.is_used = true;
+    if (func.is_declared)return;
+    if (func.is_builtin)return;
+    //	auto function_known = functions.has(func.name);
+
+    // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
+    bool function_known = functions.has(func.name);
+#if WASM
+    Function &import = *new Function();
+    if (function_known)
+        import = functions[func.name];
+#else
+    Function &import = functions[func.name]; // copy function info from library/runtime to main module
+#endif
+    if (import.is_declared)return;
+    if (func.is_polymorphic) {
+        import.is_polymorphic = func.is_polymorphic; //
+        import.variants = func.variants;
+    } else {
+        import.signature = func.signature;
+        import.signature.parameters = func.signature.parameters; // even if polymorph?
+    }
+    import.signature.type_index = -1;
+    import.is_runtime = false; // because here it is an import!
+    import.is_import = true; // todo also for polymorph?
+    import.is_used = true; // todo also for polymorph?
+#if WASM
+    if (not function_known)
+        functions.add(func.name, import);
+#endif
+}

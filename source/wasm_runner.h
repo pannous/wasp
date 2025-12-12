@@ -1,8 +1,4 @@
 #pragma once
-//
-// Created by me on 23.10.20.
-//
-
 typedef unsigned char *bytes;
 typedef const char *chars;
 typedef long long int64;

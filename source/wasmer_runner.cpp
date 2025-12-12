@@ -1,7 +1,3 @@
-//
-// Created by me on 29.09.21.
-//
-
 #include <stdio.h>
 #include <cmath>
 #include "wasmer.h"

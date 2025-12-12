@@ -364,7 +364,7 @@ endif ()
 set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/String.cpp ${SOURCE}/Node.cpp ${SOURCE}/Map.cpp ${SOURCE}/Util.cpp ${SOURCE}/List.cpp
         ${SOURCE}/CharUtils.cpp ${SOURCE}/LiteralParser.cpp ${SOURCE}/Keywords.cpp
         ${SOURCE}/Wasp.cpp ${SOURCE}/wasm_helpers.cpp ${SOURCE}/Code.cpp ${SOURCE}/NodeTypes.cpp ${SOURCE}/smart_types.cpp
-        ${SOURCE}/Runtime.cpp
+        ${SOURCE}/Runtime.cpp ${SOURCE}/Context.cpp
 )
 # NOTE: WaspParsers.cpp is #included in Wasp.cpp, not compiled separately
 
@@ -963,7 +963,8 @@ elseif (WASMX)
 elseif (V8)
     MESSAGE("USING V8")
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
-    set(SOURCE_FILES ${SOURCE}/wasm_runner_v8.cpp ${SOURCE_FILES})
+    set(SOURCE_FILES ${SOURCE}/wasm_runner_v8.cpp ${SOURCE_FILES}
+            source/Context.h)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/v8/include/)

@@ -1,7 +1,3 @@
-//
-// Created by me on 07.12.20.
-//
-
 #include "wasm_linker.h"
 
 #include "own_merge/binary.h"
