@@ -1,4 +1,6 @@
 // AST Analysis Context (in Angle.cpp after Wasp.cpp parser, before wasm_emitter.cpp)
+// clearAnalyzerContext(); ≠
+// clearEmitterContext();
 
 #include "Context.h"
 
