@@ -112,30 +112,12 @@ Node runtime_emit(String prog); // wasp -> code + runtime -> wasm (via emit)
 
 Node constants(Node n);
 
-void preRegisterFunctions();
-
-bool isFunction(Node &op);
-
-bool isFunction(String op, bool deep_search = true);
 
 // int is not a true angle type, just an alias for int64.
 // todo: but what about interactions with other APIs? add explicit i32 !
 // todo: in fact hide most of this under 'number' magic umbrella
 // todo: ALL types need to be emitted in type section to keep type indices valid? (wasm struct/arrays?)
 extern Map<String, Node *> types; // by name
-void initTypes();
-
-extern "C" int64 run_wasm_file(chars file);
-
-bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
-
-String &checkCanonicalName(String &name);
-
-void refineSignatures(Map<String, Function> &map);
-
-Module &loadModule(String name);
-
-Function *findLibraryFunction(String name, bool searchAliases);
 
 
 // register locals in analyze! must NOT be accessible from Emitter!

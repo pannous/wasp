@@ -61,3 +61,5 @@ extern "C" void registerWasmFunction(chars name, chars mangled);
 List<String> aliases(String name);
 
 float precedence(String name);
+
+void initTypes();

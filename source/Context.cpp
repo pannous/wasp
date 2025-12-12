@@ -410,3 +410,39 @@ void updateLocal(Function &context, String name, Type type) {
     }
     // ok, could be cast'able!
 }
+
+bool isGlobal(Node &node, Function &function) {
+    if (not node.name.empty()) {
+        if (globals.has(node.name))
+            return true;
+        if (builtin_constants.contains(node.name))
+            return true;
+    }
+    if (node.first().name == "global")
+        return true;
+    return false;
+}
+
+
+// bad : we don't know which
+void use_runtime(const char *function) {
+    findLibraryFunction(function, false);
+    //    Function &function = functions[function];
+    //    if (not function.is_import and not function.is_runtime)
+    //        error("can only use import or runtime "s + function);
+    //    function.is_used = true;
+    //    function.is_import = true;// only in this module, not in original !
+}
+
+
+Module &loadModule(String name) {
+    if (name == "wasp-runtime.wasm")
+        return loadRuntime();
+#if WASM and not MY_WASM
+    todow("loadModule in WASM: "s + name);
+    return *new Module();
+#else // getWasmFunclet
+    return read_wasm(name); // we need to read signatures!
+#endif
+}
+

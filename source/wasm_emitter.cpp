@@ -4513,7 +4513,9 @@ Code emitMemorySection() {
     return code;
 }
 
-// todo: merge with
+void initTypes();
+
+// todo: merge with cle...
 void clearEmitterContext() {
     //	clearAnalyzerContext(); NO keep it at times!
     referenceMap.clear();
