@@ -8,6 +8,8 @@
 #include "wasm_emitter.h"
 #include "wasm_runner.h"
 #include "console.h"
+#include "CharUtils.h"
+#include "LiteralParser.h"
 //#include "tests.h"
 #if WASM or LINUX
 bool isnumber(char c) { return c >= '0' and c <= '9'; }
@@ -79,22 +81,11 @@ bool use_wasm_arrays = false; // array in wat
 #define err(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
 #define parserError(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
 
-bool isalpha0(codepoint c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
+// isalpha0 moved to CharUtils.cpp
 
 
 bool data_mode = true;
 // todo ! // tread '=' as ':' instead of keeping as expression operator  WHY would we keep it again??
-
-Node &wrapPattern(Node &n) {
-    // y[1] => y:[1]
-    if (n.kind == patterns)return n;
-    if (n.kind == groups or n.kind == objects)return n.setKind(patterns, false);
-    Node &wrap = *new Node(patterns);
-    wrap.add(n);
-    return wrap;
-}
 
 List<String> falseKeywords = {"false", "False", "no", "No", "⊥", "✖", "✖\uFE0F", "wrong", "Wrong"};
 // 𐄂 vs times! ƒ is function
@@ -199,149 +190,21 @@ String &normOperator(String &alias) {
     return *normed;
 }
 
-//	bool is_identifier(char ch) {
-bool is_identifier(codepoint ch) {
-    if (ch == '_' or ch == '$' or ch == '@')return true;
-    if (ch == '-' or ch == u'‖' or ch == L'‖' or ch == '/')return false;
-    if (is_operator(ch, false))
-        return false;
-    if (ch < 0 or ch > 128)return true; // all UTF identifier todo ;)
-    return ('a' <= ch and ch <= 'z') or ('A' <= ch and ch <= 'Z'); // ch<0: UNICODE
-    //		not((ch != '_' and ch != '$') and (ch < 'a' or ch > 'z') and (ch < 'A' or ch > 'Z'));
-};
+// is_identifier() moved to CharUtils.cpp
 
 
-bool is_bracket(char ch) {
-    return ch == '(' or ch == ')' or ch == '[' or ch == ']' or ch == '{' or ch == '}';
-}
+// is_bracket() moved to CharUtils.cpp
 
 
-// ︷
-// ︸﹛﹜｛｝﹝﹞〔〕〘〙〚〛〖〗【】『』「」｢｣《》〈〉〈〉⁅⁆ «»
-// ︵  ﴾ ﴿ ﹙ ﹚ （ ） ⁽ ⁾  ⸨⸩ see grouper_list
-// ︶
-codepoint closingBracket(codepoint bracket) {
-    switch (bracket) {
-        case '<':
-            return '>'; // tags / generics
-        case '\x0E':
-            return '\x0F'; // Shift In closes Shift Out??
-        case '\x0F':
-            return '\x0E'; // Shift Out closes '\x0F' Shift In
-        case u'⟨':
-            return u'⟩';
-        case u'‖':
-            return u'‖';
-        case u'⸨':
-            return u'⸩';
-        case u'﹛':
-            return u'﹜';
-        case u'｛':
-            return u'｝'; //  ︷
-        case u'﹝':
-            return u'﹞'; // ︸
-        case u'〔':
-            return u'〕';
-        case u'〘':
-            return u'〙';
-        case u'〚':
-            return u'〛';
-        case u'〖':
-            return u'〗';
-        case u'【':
-            return u'】';
-        case u'『':
-            return u'』';
-        case u'「':
-            return u'」';
-        case u'｢':
-            return u'｣';
-        case u'《':
-            return u'》';
-        case u'〈':
-            return u'〉';
-        case u'⁅':
-            return u'⁆';
-        case '{':
-            return u'}';
-        case '(':
-            return u')';
-        case '[':
-            return u']';
-        case u'‘':
-            return u'’';
-        case u'«':
-            return u'»';
-        case u'“':
-            return u'”';
-        case u'"':
-            return u'"';
-        case u'`':
-            return u'`';
-        case u'\'':
-            return u'\'';
-        default:
-            error("unknown bracket "s + bracket);
-    }
-
-    return 0;
-}
+// closingBracket() moved to CharUtils.cpp
 
 
-//	List<String> operators; // reuse functions!
-//	if(is_grapheme_modifier(ch))parseError("multi codepoint graphemes not");
-// everything that is not an is_identifier is treated as operator/symbol/identifier?
-// NEEDs complete codepoint, not just leading char because	☺ == e2 98 ba  √ == e2 88 9a
-bool is_operator(codepoint ch, bool check_identifiers /*= true*/) {
-    // todo is_KNOWN_operator todo Julia
-    if (ch == '-')return true; // ⚠️ minus vs hyphen!
-    if (check_identifiers && is_identifier(ch))
-        return false;
-    //	0x0086	134	<control>: START OF SELECTED AREA	†
-    //    if (ch == '_' or ch == '$' or ch == '@')return false; // part of identifier in VARIABLEs
-    if (ch == U'∞')return false; // or can it be made as operator!?
-    if (ch == U'⅓')return false; // numbers are implicit operators 3y = 3*y
-    if (ch == U'∅')return false; // Explicitly because it is part of the operator range 0x2200 - 0x2319
-    //		0x20D0	8400	COMBINING LEFT HARPOON ABOVE	⃐
-    //		0x2300	8960	DIAMETER SIGN	⌀
-    if (0x207C < ch and ch <= 0x208C) return true; // ⁰ … ₌
-    if (0x2190 < ch and ch <= 0x21F3) return true; // ← … ⇳
-    if (0x2200 < ch and ch <= 0x2319) return true; // ∀ … ⌙
-    if (ch == u'¬')return true;
-    if (ch == u'＝')return true;
-    //    if (ch == u'#' and prev=='\n' or next == ' ')return false;
-    if (ch == u'#') return true; // todo: # is NOT an operator, but a special symbol for size/count/length
-    if (operator_list.has(String(ch)))
-        return true;
-
-    //		if(ch=='=') return false;// internal treatment
-    if (ch > 0x80)
-        return false; // utf NOT enough: ç. can still be a reference!
-    if (isalnum0(ch)) return false; // ANY UTF 8
-    return ch > ' ' and ch != ';' and !is_bracket(ch) and ch != '\'' and ch != '"';
-}
+// is_operator() moved to CharUtils.cpp
 
 
-// list HAS TO BE 0 terminated! Dangerous C!! ;)
-template<class S>
-bool contains(S list[], S match) {
-    S *elem = list;
-    do {
-        if (match == *elem)
-            return true;
-    } while (*elem++);
-    return false;
-}
+// contains() template moved to CharUtils.h
 
-bool contains(chars list[], chars match) {
-    chars *elem = list;
-    if (not elem)return false;
-    do {
-        if (eq(match, *elem))
-            return true;
-    } while (*elem++);
-    return false;
-}
+// contains() moved to CharUtils.cpp
 
 
 class Wasp {
@@ -533,34 +396,7 @@ public:
     }
 
 private:
-    char escapee(char c) {
-        switch (c) {
-            case '"':
-                return '"'; // this is needed as we allows single quote
-            case '\\':
-                return '\\';
-            case '/':
-                return '/';
-            case '\n':
-                return '\n'; // Replace escaped newlines in strings w/ empty string
-            case 'b':
-                return '\b';
-            case 'f':
-                return '\f';
-            case 'n':
-                return '\n';
-            case 'r':
-                return '\r';
-            case 't':
-                return '\t';
-            default:
-                return 0;
-        }
-    };
-
-    String renderChar(char chr) {
-        return chr == '\n' ? s("\\n") : String('\'') + chr + '\'';
-    };
+    // escapee() and renderChar() moved to LiteralParser.cpp (LiteralUtils namespace)
 
     [[nodiscard]]
     String position() {
@@ -576,11 +412,8 @@ private:
 
     String err1(String m) {
         // Call error when something is wrong.
-        // todo: Still to read can scan to end of line
         String msg = m;
         msg += position();
-        //		msg = msg + s(" of the Mark data. \nStill to read: ") + text.substring(at - 1, at + 30) + "^^ ...";
-        //		msg = msg + backtrace2();
         auto error = new SyntaxError(msg);
         error->at = at;
         error->lineNumber = lineNumber;
@@ -613,7 +446,7 @@ private:
         // If a c parameter is provided, verify that it matches the current character.
         if (c and c != ch) {
             // todo: debug only / who cares?
-            err(s("Expected '") + c + "' instead of " + renderChar(ch));
+            err(s("Expected '") + c + "' instead of " + LiteralUtils::renderChar(ch));
         }
         // Get the next character. When there are no more characters, return the empty string.
         previous = ch;
@@ -623,14 +456,12 @@ private:
         at = at + step;
         if (at >= text.length) {
             ch = 0;
-            //			point = 0;
             return -1;
         }
-        ch = decode_unicode_character(text.data + at); // charAt(at);
+        ch = decode_unicode_character(text.data + at);
         short width = utf8_byte_count(ch);
         if (at + width >= text.length)next = 0;
         else next = decode_unicode_character(text.data + at + width);
-        //		point = text.data + at;
         if (ch == '\n' or (ch == '\r' and next != '\n')) {
             lineNumber++;
             columnStart = at; // including indent
@@ -654,7 +485,7 @@ private:
     String identifier() {
         // identifiers must start with a letter, _ or $.
         if (!is_identifier(ch))
-            parserError("Unexpected identifier character "s + renderChar(ch));
+            parserError("Unexpected identifier character "s + LiteralUtils::renderChar(ch));
         int start = at;
         // subsequent characters can contain ANYTHING except operators
         while ((proceed() and is_identifier(ch)) or isDigit(ch) or isKebabBridge())
@@ -666,22 +497,11 @@ private:
         return key;
     };
 
-    // Helper: Check if character is valid in a URL.
-    bool isValidUrlChar(char ch) {
-        return is_identifier(ch) || isDigit(ch) || ch == '-' || ch == '_' || ch == '~' || ch == '/' || ch == ':' ||
-               ch == '?' ||
-               ch == '&' || ch == '=' || ch == '%' || ch == '#' || ch == '.';
-    }
-
     // Parse a URL.
     String url() {
-        // URLs should start with a valid scheme (e.g., http, https).
-        //        if (!starts_with_scheme(ch))
-        //            parserError("Unexpected start of URL: "s + renderChar(ch));
         int start = at;
-
         // Process characters valid in a URL (letters, digits, -, _, ~, /, :, ?, &, =, %, #).
-        while (proceed() && (isValidUrlChar(ch)))
+        while (proceed() && (LiteralUtils::isValidUrlChar(ch)))
             if (isWhite(ch))
                 break;
 
@@ -778,14 +598,7 @@ private:
         }
     };
 
-    int parseInt(char next_digit, int base) {
-        return next_digit - '0';
-    }
-
-    String fromCharCode(int64 uffff) {
-        // todo UTF
-        return String((char) (uffff)); // itoa0(uffff);
-    }
+    // parseInt() and fromCharCode() moved to LiteralParser.cpp
 
     bool end_of_text() {
         return at >= text.length;
@@ -1157,9 +970,7 @@ private:
         else return node;
     }
 
-    bool isDigit(codepoint c) {
-        return (c >= '0' and c <= '9') or atoi1(c) != -1;
-    }
+    // isDigit() moved to CharUtils.cpp
 
     Node &setField(Node &key, Node &val) {
         // a:{b}
@@ -1296,6 +1107,11 @@ private:
     // special : close=' ' : single value in a list {a:1 b:2} ≠ {a:(1 b:2)} BUT a=1,2,3 == a=(1 2 3)
     // special : close=';' : single expression a = 1 + 2
     // significant whitespace a {} == a,{}{}
+    // typedef Node& (*NodeHandler)(); dispatch functions cleaner than big switch? I don't think so
+    // Map<codepoint, NodeHandler> handlers; TODO OR just give each switch branch a function!
+      // handlers['@'] = &Wasp::parseMetaAttribute;
+      // handlers['<'] = &Wasp::parseTag;
+      // handlers['{'] = &Wasp::parseObject;
     // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
     // reason for strange name is better IDE findability, todo rename to readNode() or parseNode()?
     Node &valueNode(codepoint close = 0, Node *parent = 0) {
@@ -1463,8 +1279,6 @@ private:
                     // wrap {x} … or todo: just don't flatten before?
                     Node &object = *new Node();
                     Node &objectValue = valueNode(closingBracket(bracket), parent ? parent : &actual.last());
-                    //                    if(bracket=='[' and not data_mode )
-                    //                        objectValue = wrapPattern(objectValue);
                     object.addSmart(objectValue);
                     //						object.add(objectValue);
                     if (flatten) object = object.flat();
