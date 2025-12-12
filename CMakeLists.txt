@@ -365,6 +365,7 @@ set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/String.cpp ${SOURCE}/Node.cpp ${SOURC
         ${SOURCE}/CharUtils.cpp ${SOURCE}/LiteralParser.cpp ${SOURCE}/Keywords.cpp
         ${SOURCE}/Wasp.cpp ${SOURCE}/wasm_helpers.cpp ${SOURCE}/Code.cpp ${SOURCE}/NodeTypes.cpp ${SOURCE}/smart_types.cpp
         ${SOURCE}/Runtime.cpp ${SOURCE}/Context.cpp
+        ${SOURCE}/FunctionAnalyzer.cpp ${SOURCE}/OperatorAnalyzer.cpp
 )
 # NOTE: WaspParsers.cpp is #included in Wasp.cpp, not compiled separately
 

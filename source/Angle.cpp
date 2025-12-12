@@ -15,6 +15,8 @@
 #include "Context.h" // AST Analysis Context (shared with wasm_emitter.cpp)
 #include "wasm_emitter.h" // to do put all dependencies into the context
 #include "WitReader.h"
+#include "FunctionAnalyzer.h"
+#include "OperatorAnalyzer.h"
 
 #if INCLUDE_MERGER and not RUNTIME_ONLY
 #include "wasm_merger.h"
@@ -25,12 +27,10 @@ extern int __force_link_parser_globals;
 int *__force_link_parser_globals_ptr = &__force_link_parser_globals;
 
 
-
 Node interpret(String code) {
     Node parsed = parse(code);
     return parsed.interpret();
 }
-
 
 #ifndef RUNTIME_ONLY
 
@@ -100,14 +100,6 @@ Node eval(String code) {
 }
 
 
-String extractFunctionName(Node &node) {
-    if (not node.name.empty() and node.name != ":=")
-        return node.name;
-    if (node.length > 1)
-        return node.first().name;
-    // todo: public go home to family => go_home
-    return node.name;
-}
 
 // if a then b else c == a and b or c
 // (a op c) => op(a c)
@@ -189,37 +181,6 @@ Node &groupIf(Node n, Function &context) {
     return ef;
 }
 
-List<String> collectOperators(Node &expression) {
-    List<String> operators;
-    String previous;
-    for (Node &op: expression) {
-        String &name = op.name;
-        if (not name)continue;
-        //		name = normOperator(name);// times => * aliases
-        if (name.endsWith("=")) // += etc
-            operators.add(name);
-        else if (prefixOperators.has(name)) {
-            if (name == "-" and is_operator(previous.codepointAt(0)))
-                operators.add(name + "…"); //  -2*7 ≠ 1-(2*7)!
-            else
-                operators.add(name);
-        }
-        //		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
-        //		else if (prefixOperators.has(op.name+"…"))// and IS_PREFIX
-        //			operators.add(op.name+"…");
-        else if (suffixOperators.has(name))
-            operators.add(name);
-        else if (operator_list.has(name))
-            //			if (op.name.in(operator_list))
-            operators.add(name);
-        else if (op.kind == Kind::operators)
-            operators.add(op.name);
-        previous = name;
-    }
-    auto by_precedence = [](String &a, String &b) { return precedence(a) > precedence(b); };
-    operators.sort(by_precedence);
-    return operators;
-}
 
 
 bool maybeVariable(Node &node) {
@@ -370,7 +331,6 @@ Node &groupGlobal(Node &node, Function &function) {
 }
 
 
-Node extractReturnTypes(Node decl, Node body);
 
 Node &classDeclaration(Node &node, Function &function);
 
@@ -429,463 +389,22 @@ Node &classDeclaration(Node &node, Function &function) {
 }
 
 
-Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module *mod) {
-    //    if(functions.has(name)) polymorph
-    // is_used to fake test wit signatures
-    Function function = {
-        .name = name, .module = mod, .is_import = true, .is_declared = not body.empty(), .is_used = true,
-    }; // todo: clone!
-    function.body = &body;
-    function.signature = groupFunctionArgs(function, node);
-    if (returns and function.signature.return_types.size() == 0)
-        function.signature.returns(mapType(returns->name));
-    functions.insert_or_assign(name, function);
-    return Node().setKind(functor).setValue(Value{.data = &function}); // todo: clone!  todo functor => Function* !?!?
-}
 
-
-void discard(Node &node) {
-    // nop to explicitly ignore unused-variable (for debugging) or no-discard (e.g. in emitData of emitArray )
-}
-
-Node &
-groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body,
-                         Function &context) {
-    // Type return_type;
-    // if(return_type0)
-    //     return_type = mapType(return_type0);
-    // else
-    //     return_type = preEvaluateType(body, context);
-    //	String &name = fun.name;
-    //	silent_assert(not is_operator(name[0]));
-    //	trace_assert(not is_operator(name[0]));
-    if (is_operator(name[0]) and name != ":=") // todo ^^
-        todo("is_operator!"s + name); // remove if it doesn't happen
-
-    if (name and not function_operators.has(name)) {
-        if (context.name != "wasp_main") {
-            print("broken context");
-            print(context.name);
-        }
-        if (not functions.has(name)) {
-            Function fun{.name = name};
-            functions.add(name, fun);
-        }
-    }
-    Function &function = functions[name]; // different from context!
-    function.name = name;
-    function.is_declared = true;
-    function.is_import = false;
-
-
-    Signature &signature = groupFunctionArgs(function, arguments);
-    if (signature.size() == 0 and function.locals.size() == 0 and body.has("it", false, 100)) {
-        addLocal(function, "it", float64t, true);
-        signature.add(float64t, "it"); // todo: any / smarti! <<<
-    }
-    body = analyze(body, function); // has to come after arg analysis!
-    if (!return_type)
-        return_type = extractReturnTypes(arguments, body).clone();
-    if (return_type)
-        signature.returns(mapType(return_type)); // explicit double sin(){} // todo other syntaxes+ multi
-    Node &decl = *new Node(name); //node.name+":={…}");
-    decl.setKind(declaration);
-    decl.add(body.clone());
-    function.body = body.clone(); //.flat(); // debug or use?
-    //	decl["signature"]=*new Node("signature");
-    if (signature.functions.size() == 0)
-        signature.functions.add(&function);
-    decl["@signature"].value.data = &signature;
-    //    function.body= &body;
-    return decl;
-}
-
-Node extractModifiers(Node &expression) {
-    Node modifieres;
-    for (auto &child: expression) {
-        if (function_modifiers.contains(child.name)) {
-            modifieres.add(child);
-            expression.remove(child);
-        }
-    }
-    return modifieres;
-}
 
 
 // def foo(x,y) => x+y  vs  groupFunctionDeclaration foo := x+y
-Node &groupFunctionDefinition(Node &expression, Function &context) {
-    auto first = expression.first();
-    Node modifieres = extractModifiers(expression);
-    auto kw = expression.containsAny(function_keywords, false); // todo fest='def' QUOTED!!
-    if (expression.index(kw) != 0)
-        error("function keywords must be first");
-    expression.children++; // get rid of first 'function' keyword
-    expression.length--; // get rid of first 'function' keyword
-    auto &fun = expression.first();
-    Node *return_type = 0;
-    Node arguments = groupTypes(fun.childs(), context); // children f(x,y)
-    Node body;
-    auto ret = expression.containsAny(return_keywords);
-    if (ret) {
-        return_type = &expression.from(ret);
-        expression = expression.to(ret);
-        body = return_type->values(); // f(x,y) -> int { x+y }
-    } else if (expression.length == 3) {
-        // f(x,y) int { x+y }
-        return_type = &expression[1];
-        body = expression.last();
-    } else if (expression.length == 2) {
-        body = expression.last();
-    } else body = fun.values();
-
-    auto opa = expression.containsAny(function_operators); // fun x := x+1
-    if (opa)
-        body = expression.from(opa);
-    return groupFunctionDeclaration(fun.name, return_type, NIL, arguments, body, context);
-}
 
 // f x:=x*x  vs groupFunctionDefinition fun x := x*x
-Node &groupFunctionDeclaration(Node &expression, Function &context) {
-    Node modifieres = extractModifiers(expression);
-    auto op = expression.containsAny(function_operators);
-    auto &left = expression.to(op);
-    auto &rest = expression.from(op);
-    auto fun = left.first();
-    return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
-}
-
-Node &groupDeclarations(Node &expression, Function &context) {
-    if (expression.kind == groups) // handle later!
-        return expression;
-    //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
-    if (expression.contains(":=")) {
-        // add_raw
-        return groupFunctionDeclaration(expression, context);
-    }
-
-    auto &first = expression.first();
-    //	if (contains(functor_list, first.name))
-    //		return expression;
-    if (expression.kind == declaration) {
-        if (isType(first)) {
-            auto &fun = expression[1];
-            String name = fun.name;
-            Node *typ = first.clone();
-            Node modifieres = NIL;
-            Node &arguments = fun.values();
-            Node &body = expression.last();
-            return groupFunctionDeclaration(name, typ, NIL, arguments, body, context);
-        } else if (isType(first.first())) {
-            auto &fun = first[1];
-            String name = fun.name;
-            Node &typ = first.first();
-            Node modifieres = NIL;
-            Node &arguments = expression[1];
-            Node &body = expression.last();
-            return groupFunctionDeclaration(name, &typ, NIL, arguments, body, context);
-        } else {
-            warn("declaration"s + expression.serialize());
-            return expression;
-        }
-    }
-    for (Node &node: expression) {
-        String &op = node.name;
-        if (isKeyword(op))
-            continue;
-        if (isPrimitive(node) and node.isSetter()) {
-            addLocal(context, op, preEvaluateType(node, context), false);
-            continue;
-        }
-        if ((node.kind == reference and not node.length) or
-            (node.kind == key and maybeVariable(node))) {
-            // only constructors here!
-            if (not globals.has(op) and not isFunction(node) and not builtin_constants.contains(op)) {
-                Type evaluatedType = unknown_type;
-                if (use_wasm_arrays)
-                    evaluatedType = preEvaluateType(node, context); // todo turns sin π/2 into 1.5707963267948966 ;)
-                addLocal(context, op, evaluatedType, false);
-            }
-            continue;
-        } // todo danger, referenceIndices i=1 … could fall through to here:
-        if (node.kind != declaration and not declaration_operators.has(op))
-            continue;
-        if (op.empty())continue;
-        if (op == "=" or op == ":=") continue; // handle assignment via groupOperators !
-        if (op == "::=") continue; // handle globals assignment via groupOperators !
-        // todo: public export function jaja (a:num …) := …
-
-        // BEGINNING OF Declaration ANALYSIS
-        Node left = expression.to(node); // including public… + ARGS! :(
-        Node rest = expression.from(node); // body
-        String name = extractFunctionName(left);
-        if (left.length == 0 and not declaration_operators.has(node.name))
-            name = node.name; // todo: get rid of strange heuristics!
-        if (node.length > 1) {
-            // C style double sin(x) {…} todo: fragile criterion!! also why is body not child of sin??
-            name = node.first().name;
-            left = node.first().first(); // ARGS
-            rest = node.last();
-            if (rest.kind == declaration)rest = rest.values();
-            context.locals.remove(name); // not a variable!
-        }
-        ////			todo i=1 vs i:=it*2  ok ?
-
-        if (name.empty())
-            continue;
-        if (isFunction(name, true)) {
-            node.kind = call;
-            continue;
-        }
-        //			error("Symbol already declared as function: "s + name);
-        // if (function.locals.has(name)) // todo double := it * 2 ; double(4)
-        //				error("Symbol already declared as variable: "s + name);
-        //			if (isImmutable(name))
-        //				error("Symbol declared as constant or immutable: "s + name);
-        return groupFunctionDeclaration(name, 0, left, left, rest, context);
-    }
-    return expression;
-}
 
 
 
-Node extractReturnTypes(Node decl, Node body) {
-    return DoubleType; // LongType;// todo
-}
 
-void checkRequiredCasts(String &op, const Node &lhs, Node &rhs, Function &context) {
-    // todo maybe add cast node here instead of in emit?
-    Type left_kind = lhs.kind;
-    Type right_kind = rhs.kind;
-    if (right_kind == operators or right_kind == expression or right_kind == reference or right_kind == call)
-        right_kind = preEvaluateType(rhs, context); // todo: use preEvaluateType for all rhs?
 
-    if (op == "+" and left_kind == strings)
-        useFunction("toString"); // todo ALL polymorphic variants! => get rid of these:
-    if (op == "+" and left_kind == strings and right_kind == longs)
-        useFunction("formatLong");
-    if (op == "+" and left_kind == strings and (right_kind == reals or right_kind == realsF))
-        useFunction("formatReal");
-}
 
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
 // maybe todo: normOperators step (in angle, not wasp!)  3**2 => 3^2
-Node &groupOperators(Node &expression, Function &context) {
-    if (analyzed.has(expression.hash()))
-        return expression;
-
-    //    if ("a-b" and (expression.kind == reference or expression.kind == Kind::expression) and expression.name.contains('-'))
-    //        return groupKebabMinus(expression, context); // extra logic for a-b kebab-case vs minus
-
-    Function &function = context;
-    List<String> operators = collectOperators(expression);
-    String last = "";
-    int last_position = 0;
-
-    if (expression.kind == Kind::operators) {
-        if (expression.name == "include") {
-            warn(expression.serialize());
-            Node &file = expression.values();
-            addLibrary(&loadModule(file.name));
-            return NUL; // no code, just meta
-        }
-        //		else todo("ungrouped dangling operator");
-    }
-    // inner ops get grouped first: 3*42≥2*3 => 1. group '*' : (3*42)≥(2*3)
-    for (String &op: operators) {
-        //        trace("operator");
-        //        trace(op);
-        if (op.empty())
-            error("empty operator BUG");
-        if (op == "else")continue; // handled in groupIf
-        if (op == "module") {
-            warn("todo modules");
-            if (module)
-                module->name = expression.last().name;
-            return NUL;
-        }
-        if (op == "-")
-            debug = true;
-        if (op == "-…") op = "-"; // precedence hack
-
-        //        todo op=use_import();continue ?
-        if (op == "%")
-            useFunction("modulo_float"); // no wasm i32_rem_s i64_rem_s for float/double
-        if (op == "%")
-            useFunction("modulo_double");
-        if (op == "==" or op == "is" or op == "equals")use_runtime("eq");
-        if (op == "include")
-            return NUL; // todo("include again!?");
-        if (op != last) last_position = 0;
-        bool fromRight = rightAssociatives.has(op);
-        fromRight = fromRight || isFunction(op, true);
-        fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
-        int i = expression.index(op, last_position, fromRight);
-        if (i < 0) {
-            if (op == "-" or op == "‖") //  or op=="?"
-                continue; // ok -1 part of number, ‖3‖ closing ?=>if
-            i = expression.index(op, last_position, fromRight); // try again for debug
-            expression.print();
-            error("operator missing: "s + op + " in " + expression.serialize());
-        }
-        op = checkCanonicalName(op);
-
-        // we can't keep references here because expression.children will get mutated later via replace(…)
-        Node &node = expression.children[i];
-        if (node.length)continue; // already processed
-        Node &next = expression.children[i + 1];
-        next = analyze(next, context);
-        Node prev;
-        if (i > 0) {
-            prev = expression.children[i - 1];
-            // if(prev.kind == Kind::groups) prev.setType(Kind::expression);
-            prev = analyze(prev, context);
-        }
-        checkRequiredCasts(op, prev, next, context); // todo: move to analyze?
-
-        //            prev = expression.to(op);
-        //        else error("binop?");
-        if (op == ".") {
-            if (prev.kind == referencex) {
-                useFunction("invokeExternRef"); // a.b() => invokeExternRef(a, "b")
-                useFunction("getExternRefPropertyValue");
-                useFunction("setExternRefPropertyValue");
-            }
-            if (prev.kind == (Kind) Primitive::node)
-                useFunction("get");
-        }
-
-
-        // todo move "#" case here:
-        if (isPrefixOperation(node, prev, next)) {
-            // ++x -i
-            // PREFIX Operators
-            isPrefixOperation(node, prev, next);
-            node.kind = Kind::operators; // todo should have been parsed as such!
-            if (op == "-") //  -i => -(0 i)
-                node.add(new Node(0)); // todo: use f64.neg
-            node.add(next);
-            expression.replace(i, i + 1, node);
-        } else {
-            if (op == "#" and not use_wasm_strings)
-                findLibraryFunction("getChar", false);
-
-            prev = analyze(prev, context);
-            auto lhs_type = preEvaluateType(prev, context);
-            if (op == "+" and (lhs_type == Primitive::charp or lhs_type == Primitive::stringp or lhs_type == strings)) {
-                findLibraryFunction("concat", true);
-                // findLibraryFunction("_Z6concatPKcS0_", true);
-            }
-            if (op == "^" or op == "^^" or op == "**" or op == "exp" or op == "ℇ") {
-                // todo NORM operators earlier
-                findLibraryFunction("pow", false); // old rough!
-                // findLibraryFunction("powd", false); // via pow
-                findLibraryFunction("powi", false);
-            }
-            if (suffixOperators.has(op)) {
-                // x²
-                // SUFFIX Operators
-                if (op == "ⁿ") {
-                    findLibraryFunction("pow", false);
-                    useFunction("pow"); // redirects to
-                    // useFunction("powd");
-                }
-                if (i < 1)
-                    error("suffix operator misses left side");
-                node.add(prev);
-                if (op == "²") {
-                    node.add(prev);
-                    node.name = "*"; // x² => x*x
-                }
-                //				analyzed.insert_or_assign(node.hash(), true);
-                expression.replace(i - 1, i, node);
-                i--;
-                //                continue;
-            } else if (op.in(function_list)) {
-                // handled above!
-                while (i++ < node.length)
-                    node.add(expression.children[i]);
-                expression.replace(i, node.length, node);
-            } else if (isFunction(next)) {
-                // 3 + double 8
-                Node &rest = expression.from(i + 1);
-                Node &args = analyze(rest, context);
-                node.add(prev);
-                node.add(args);
-                expression.replace(i - 1, i + 1, node); // replace ALL REST
-                expression.remove(i, -1);
-            } else {
-                auto var = prev.name;
-                if ((op == "=" or op == ":=") and (prev.kind == reference or prev.kind == global)) {
-                    // ONLY ASSIGNMENT! self modification handled later
-                    Type inferred_type = preEvaluateType(next, context);
-                    if (prev.kind == global) {
-                        if (globals.has(var)) {
-                            Global &global = globals[var];
-                            global.type = inferred_type; // todo upgrade?
-                            if (not global.value)
-                                global.value = next.clone();
-                        } else {
-                            // later
-                            //                            addGlobal(context, var, inferred_type, false, *next.clone());
-                        }
-                    } else if (addLocal(context, var, inferred_type, false)) {
-                        // ok
-                    } else {
-                        // variable is known but not typed yet, or type again?
-                        Local &local = function.locals[var];
-                        if (local.type == unknown_type)
-                            local.type = inferred_type; // mapType(next);
-                    }
-                } // end of '=' assignment logic
-                if (not(op == "#" and prev.empty() and prev.kind != reference)) // ok for #(1,2,3) == len
-                    node.add(prev);
-
-                node.add(next);
-
-                if (op.length > 1 and op.endsWith("=") and op[0] != ':')
-                    // express *= += -= … self assignments
-                    if (op[0] != '=' and op[0] != '!' and op[0] != '?' and op[0] != '<' and op[0] != '>') {
-                        // *= += etc
-                        node.name = String(op.data[0]);
-                        Node *setter = prev.clone();
-                        //					setter->setType(assignment);
-                        setter->value.node = node.clone();
-                        node = *setter;
-                    }
-                if (node.name == "?")
-                    node = groupIf(node, context); // consumes prev and next
-                if (i > 0)
-                    expression.replace(i - 1, i + 1, node);
-                else {
-                    expression.replace(i, i + 1, node);
-                    warn("operator missing argument");
-                }
-                if (expression.length == 1 and expression.kind == Kind::groups) {
-                    return expression.first(); //.setType(operators);
-                }
-            }
-        }
-        last_position = i;
-        last = op;
-    }
-    return expression;
-}
 
 // extra logic for a-b kebab-case vs minus operator
-Node &groupKebabMinus(Node &node, Function &context) {
-    auto name = node.name;
-    auto re = name.substring(0, name.indexOf('-'));
-    auto lhs = Node(re, true);
-    if (context.locals.has(re) or globals.has(re)) {
-        Node op = Node("-").setKind(operators, true);
-        auto right = name.substring(name.indexOf('-') + 1);
-        auto &rhs = analyze(*new Node(right, true), context); // todo expression!
-        op.add(lhs);
-        op.add(rhs);
-        return *op.clone();
-    }
-    return node;
-}
 
 Module &loadRuntime() {
 #if WASM // and not MY_WASM
@@ -961,182 +480,9 @@ Type preEvaluateType(Node &node, Function *context0) {
 
 
 // todo merge with groupFunctionCalls
-Node &groupOperatorCall(Node &node, Function &function) {
-    {
-        bool is_function = isFunction(node);
-        findLibraryFunction(node.name, true); // sets functions[name].is_import = true;
-        if (is_function and node.kind != operators) {
-            node.kind = call;
-        }
-        Node &grouped = groupOperators(node, function); // outer analysis id(3+3) => id(+(3,3))
-        if (grouped.length > 0)
-            for (Node &child: grouped) {
-                // inner analysis while(i<3){i++}
-                child = analyze(child, function); // REPLACE with their ast
-            }
-        if (is_function)
-            functions[node.name].is_used = true;
-        return grouped;
-    }
-}
 
 
 // todo merge with groupOperatorCall
-Node &groupFunctionCalls(Node &expressiona, Function &context) {
-    if (expressiona.kind == declaration)return expressiona; // handled before
-    Function *import = findLibraryFunction(expressiona.name, false);
-    if (import or isFunction(expressiona)) {
-        expressiona.setKind(call, false);
-        if (not functions.has(expressiona.name))
-            error("! missing import for function "s + expressiona.name);
-        //		if (not expressiona.value.node and arity>0)error("missing args");
-        functions[expressiona.name].is_used = true;
-    }
-    for (int i = 0; i < expressiona.length; ++i) {
-        Node &node = expressiona.children[i];
-        String &name = node.name;
-
-        // if (debug) printf("  child[%d]: name=%s, kind=%s (%d), length=%d, serialize=%s\n", i, name.data, typeName(node.kind), node.kind, node.length, node.serialize().data);
-
-        // todo: MOVE!
-        if (name == "if") // kinda functor
-        {
-            // error("if should be treated earlier");
-            auto &args = expressiona.from("if");
-            Node &iff = groupIf(node.length > 0 ? node.add(args) : args, context);
-            int j = expressiona.lastIndex(iff.last().next) - 1;
-            if (i == 0 and j == expressiona.length - 1)return iff;
-            if (j > i)
-                expressiona.replace(i, j, iff); // todo figure out if a>b c d e == if(a>b)then c else d; e boundary
-            if (i == 0)
-                return expressiona;
-            continue;
-        }
-        //        if (name == "for") {
-        //            Node &forr = groupFor(node, context);
-        //            int j = expressiona.lastIndex(forr.last().next) - 1;
-        //            if (j > i)
-        //                expressiona.replace(i, j, forr);
-        //            continue;
-        //        }
-        if (name == "while") {
-            // error("while' should be treated earlier");
-            // todo: move into groupWhile !!
-            if (node.length == 2) {
-                node[0] = analyze(node[0], context);
-                node[1] = analyze(node[1], context);
-                continue; // all good
-            }
-            if (node.length == 1) {
-                // while()… or …while()
-                node[0] = analyze(node[0], context);
-                Node then = expressiona.from("while"); // todo: to closer!?
-                int remaining = then.length;
-                node.add(analyze(then, context).clone());
-                expressiona.remove(i + 1, i + remaining);
-                continue;
-            } else {
-                Node n = expressiona.from("while");
-                Node &iff = groupWhile(n, context); // todo: sketchy!
-                int j = expressiona.lastIndex(iff.last().next) - 1; // huh?
-                if (j > i)expressiona.replace(i, j, iff);
-            }
-        }
-        // Check if this is a struct constructor (before checking isFunction)
-        if (types.has(name) and node.length > 0) {
-            Node &type = *types[name];
-            if (type.kind == clazz) {
-                // This is a struct constructor, not a function call
-                if (debug) printf("Detected struct constructor: %s\n", name.data);
-                node = constructInstance(node, context);
-                continue; // Skip function processing for constructors
-            }
-        }
-
-        if (isFunction(node)) // needs preparsing of declarations!
-            node.kind = call;
-
-        if (node.kind != call)
-            continue;
-
-        Function *ok = findLibraryFunction(name, true);
-        if (not ok and not functions.has(name)) // todo load lib!
-            error("missing import for function "s + name);
-        Function &function = functions[name];
-        function.name = name; // hack shut've Never Been Lost
-        Signature &signature = function.signature;
-        if (function.is_polymorphic) {
-            auto &params0 = expressiona.from(i + 1);
-            auto &params = analyze(params0, context);
-            int variantNr = findBestVariant(function, *wrap(params), &context);
-            Function *variant = function.variants[variantNr];
-            signature = variant->signature; // todo hack
-            variant->is_used = true;
-            if (function.is_runtime and not variant->fullname.empty() and variant->fullname != function.name)
-                functions.add(variant->fullname, *variant); // needs extra call index!
-            addLibraryFunctionAsImport(*variant);
-            print("matching function variant "s + variantNr + " of " + function.name + " with "s + signature.
-                  serialize());
-            node.add(params); // todo: this is all duplication of code below:
-            expressiona.remove(i + 1, -1); // todo
-            // expressiona.replace(i+1, -1, params);// todo
-            // expressiona.replace(i+1, i + params.length, params);// todo
-        }
-        // return groupFunctionCallPolymorphic(node, function, expressiona, context);
-        function.is_used = true;
-
-
-        int minArity = signature.size(); // todo: default args!
-        int maxArity = signature.size();
-
-        if (node.length > 0) {
-            //			if minArity == …
-            node = analyze(node.flat(), context); //  f(1,2,3) vs f([1,2,3]) ?
-            continue; // already done how
-        }
-        if (minArity == 0)continue;
-        if (maxArity < 0)continue; // todo
-        Node rest;
-        if (i < expressiona.length - 1 and expressiona[i + 1].kind == groups) {
-            // f(x)
-            // todo f (x) (y) (z)
-            // todo expressiona[i+1].length>=minArity
-            rest = expressiona[i + 1];
-            if (rest.length > 1)
-                rest.setKind(expression);
-            Node args = analyze(rest, context);
-            node.add(args);
-            expressiona.remove(i + 1, i + 1);
-            continue;
-        }
-        rest = expressiona.from(i + 1);
-        int arg_length = rest.length;
-        if (not arg_length and rest.kind == urls) arg_length = 1;
-        if (not arg_length and rest.kind == reference) arg_length = 1;
-        if (not arg_length and rest.value.data) arg_length = 1;
-        if (arg_length > 1)
-            rest.setKind(expression); // SUUURE?
-        if (rest.kind == groups or rest.kind == objects) // and rest.has(operator))
-            rest.setKind(expression); // todo f(1,2) vs f(1+2)
-        //		if (hasFunction(rest) and rest.first().kind != groups)
-        //				warn("Ambiguous mixing of functions `ƒ 1 + ƒ 1 ` can be read as `ƒ(1 + ƒ 1)` or `ƒ(1) + ƒ 1` ");
-        // per-function precedence does NOT really increase readability or bug safety
-        if (rest.value.data) {
-            maxArity--; // ?
-            minArity--;
-        }
-        if (arg_length < minArity) {
-            print(function.name + (String) signature);
-            error("missing arguments for function %s, given %d < expected %d. "
-                "defaults and currying not yet supported"s % name % arg_length % minArity);
-        } else if (arg_length == 0 and minArity > 0)
-            error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
-        Node &args = analyze(rest, context); // todo: could contain another call!
-        node.add(args);
-        expressiona.remove(i + 1, i + arg_length);
-    }
-    return expressiona;
-}
 
 
 
@@ -1305,7 +651,6 @@ Node &groupWhile(Node &n, Function &context) {
     return ef;
 }
 
-Node &groupOperatorCall(Node &node, Function &function);
 
 Type guessType(Node &node, Function &function) {
     return preEvaluateType(node, function); // todo: use function context?

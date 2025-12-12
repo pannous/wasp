@@ -89,6 +89,12 @@ extern Map<String, Node *> types; // by name
 
 Node &groupFunctionCalls(Node &expressiona, Function &context);
 
+Node &groupIf(Node n, Function &context);
+
+bool maybeVariable(Node &node);
+
+Node &constructInstance(Node &node, Function &function);
+
 struct ParserOptions {
     // not just for parser but also for serialize!!
 
