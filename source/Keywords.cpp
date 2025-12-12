@@ -1,4 +1,6 @@
 
+#include "Keywords.h"
+
 #include "Angle.h"
 #include "List.h"
 #include "Node.h"
@@ -20,6 +22,31 @@ Node TemplateType("TemplateType", clazz); // `strings with $values`
 
 //const Node DoubleType{.name="DoubleType", .kind=classe};//.setType(type);
 //const Node DoubleType{name:"DoubleType", kind:classe};//.setType(type);
+
+
+static float function_precedence = 1000;
+
+// todo!
+// moved here so that valueNode() works even without Angle.cpp component for micro wasm module
+// pre-registered builtin/runtime functions working without any import / include / require / use
+chars function_list[] = {
+    /*"abs"  f64.abs operator! ,*/ "norm", "square", "root", "put", "print", "printf",
+    "getChar", "eq", "concat",
+    "test42", "test42i", "test42f",
+    "println", "puts", "putf", "putd", "puti", "putl", "len",
+    "quit", "parseLong",
+    "parseDouble", "strlen",
+    "concat_chars", "concat_strings", "concat_bytes",
+    "formatLong","formatReal","ftoa","ltoa", "itoa","itoa0", "atol", "atoi", "parseInt",
+    "log", "ln", "log10", "log2", "similar",
+    "putx", "putc", "get", "set", "peek", "poke", "read",
+    "write",
+    "$" /* getElementById */,
+    //                                                               FUNCLETS via runtime for now:
+    //                                                               "pow", "powi", "pow_long", "log", "log10", "log2",
+    "lowerCaseUTF",
+    0, 0, 0
+}; // MUST END WITH 0, else BUG
 
 
 //https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B#Operator_precedence
@@ -467,8 +494,9 @@ bool knownSymbol(String name, Function &context) {
 
 
 // todo see load_aliases(); -> aliases.wasp
-List<String> aliases(String name) {
+List<String> findAliases(String name) {
     List<String> found;
+    // found+=aliases[name] todo !
 #if MY_WASM
     return found;
 #endif

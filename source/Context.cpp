@@ -13,7 +13,7 @@ Module *module; // todo: use?
 bool use_interpreter = false;
 Node &result = *new Node();
 
-List<String> aliases(String name);
+List<String> findAliases(String name);
 
 Map<String, Node *> types = {100}; // builtin and defined Types
 Map<String, int> call_indices; // todo keep in Function
@@ -89,7 +89,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     }
     Function *function = 0;
     if (searchAliases) {
-        for (String alias: aliases(name)) {
+        for (String alias: findAliases(name)) {
             function = findLibraryFunction(alias, false);
             //			use_required(function); // no, NOT required yet
         }
@@ -120,7 +120,7 @@ Function *use_required_import(Function *function) {
     // for (Function *variant: function->variants) {
     //     addLibraryFunctionAsImport(*variant);
     // }
-    for (String &alias: aliases(function->name)) {
+    for (String &alias: findAliases(function->name)) {
         if (alias == function->name)continue;
         auto ali = findLibraryFunction(alias, false);
         if (ali)addLibraryFunctionAsImport(*ali);

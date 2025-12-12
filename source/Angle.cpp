@@ -20,10 +20,6 @@
 #include "wasm_merger.h"
 #endif
 
-extern Map<int64, bool> analyzed;
-void addLibrary(Module *modul);
-void useFunction(String name);
-
 
 extern int __force_link_parser_globals;
 int *__force_link_parser_globals_ptr = &__force_link_parser_globals;
@@ -982,32 +978,6 @@ Node &groupOperatorCall(Node &node, Function &function) {
             functions[node.name].is_used = true;
         return grouped;
     }
-}
-
-
-int findBestVariant(const Function &function, const Node &node, Function *context) {
-    if (function.variants.size() == 1) return 0;
-    if (function.variants.size() == 0) return -1;
-    int best = -1;
-    for (Function *variant: function.variants) {
-        best++;
-        auto &signature = variant->signature;
-        if (signature.size() == node.length) {
-            bool ok = true;
-            for (int i = 0; i < signature.size(); ++i) {
-                auto &sig = signature.parameters[i];
-                Type aType = sig.type;
-                Type pType = preEvaluateType(*node[i].clone(), context);
-                if (not compatibleTypes(aType, pType)) {
-                    ok = false;
-                    break;
-                }
-            }
-            if (ok)
-                return best;
-        }
-    }
-    error("no matching function variant for "s + function.name + " with "s + node.serialize());
 }
 
 

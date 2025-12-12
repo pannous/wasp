@@ -56,10 +56,32 @@ extern chars control_flows[];
 // Extra reserved keywords
 extern List<String> extra_reserved_keywords;
 
+extern chars function_list[];
+
+// extern chars functor_list[];// takes blocks … parse differently?
+
+//chars runtime_function_list[]={};
+static chars wasi_function_list[] = {"proc_exit", "fd_write", "args_sizes_get", "args_get","fclose","fgetc","exit","fprintf","fopen","getenv", 0};
+
+// a funclet is a (tiny) wasm function stored in its own little file, e.g. pow.wasm for Math.power
+// they get automatically linked when used without requiring the wasp runtime
+// see aliases for discoverability
+// todo: pre-fill list from current directory(s) / funclet registry / wapm
+static chars funclet_list[] = {"pow", "powi", "pow_long", "log", "log10", "log2", "lowerCaseUTF", "print"/*node*/, 0};
+//static chars funclet_list[] = {};//  LINK WITH RUNTIME!
+
+static chars functor_list[] = {"if", "while", "for", "go", "do", "until", 0}; // MUST END WITH 0, else BUG
+
+
+extern chars wasi_function_list[];
+
 extern "C" void registerWasmFunction(chars name, chars mangled);
 
-List<String> aliases(String name);
+List<String> findAliases(String name);
 
 float precedence(String name);
 
 void initTypes();
+
+
+//static

@@ -3,6 +3,8 @@
 #include "String.h"
 #include "Code.h"
 
+extern Map<int64, bool> analyzed;
+
 class Module {
     //public:
     //	virtual ~Module() {
@@ -73,19 +75,27 @@ public:
 
 
 void addLibrary(Module *modul);
+
 void useFunction(String name);
+
 bool addGlobal(Function &context, String name, Type type, bool is_param, Node *value);
+
 bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
 void updateLocal(Function &context, String name, Type type);
+
 bool isGlobal(Node &node, Function &function);
 
 Signature &groupFunctionArgs(Function &function, Node &params); // todo move elsewhere!
 void clearAnalyzerContext();
 
 Function *use_required_import(Function *function);
+
 void addLibraryFunctionAsImport(Function &func);
+
 Function getWaspFunction(String name);
+
 void use_runtime(const char *function);
+
 void preRegisterFunctions();
 
 bool isFunction(Node &op);
@@ -106,3 +116,7 @@ Module &loadModule(String name);
 Function *findLibraryFunction(String name, bool searchAliases);
 
 static bool eq(Module *x, Module *y) { return x->name == y->name; } // for List: libraries.has(library)
+
+void addLibrary(Module *modul);
+
+void useFunction(String name);
