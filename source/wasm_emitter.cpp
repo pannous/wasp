@@ -13,6 +13,7 @@
 #include "Code.h"
 #include "wasm_emitter.h"
 #include "wasm_helpers.h"
+#include "CharUtils.h"
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
 #include "wasm_merger.h"

@@ -21,6 +21,7 @@ int tests_executed = 0;
 #include "../source/Angle.h"
 #include "../source/String.h"
 #include "../source/Map.h"
+#include "../source/CharUtils.h"
 #include "tests.h"
 #include "test_struct_types.h"
 #include "test_dynlib_import.h"

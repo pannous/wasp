@@ -47,6 +47,11 @@ public: // todo careful Map<char*,…> eq
         }
     }
 
+    // ~Map() { todo or not? ;)
+    //     if(keys)free(keys);
+    //     if(values)free(values);
+    // }
+
     [[maybe_unused]] T defaulty;
     bool dont_use_constructor = false; // blank/copy makes sense for List of references but NOT for list of Objects
     bool use_default = false; // no, this would copy fields (e.g. pointers to same list)  todo what is the point? remove

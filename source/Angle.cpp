@@ -14,6 +14,7 @@
 #include "wasm_helpers.h" // IMPORT so that they don't get mangled! huh?
 #include "wasm_emitter.h"
 #include "WitReader.h"
+#include "CharUtils.h"
 
 #ifndef RUNTIME_ONLY
 #if INCLUDE_MERGER
@@ -124,7 +125,7 @@ List<String> extra_reserved_keywords = {"func"}; // EXTRA!  // use bool isKeywor
 
 //List<Kind> class_kinds = {clazz, prototype, interface, structs};// record see wit
 
-//Map<String, Function> functions; // todo Maps don't free memory and cause SIGKILL after some time <<<
+// todo Maps don't free memory
 Map<String, Function> functions = {1000};
 // todo ONLY emit of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
 //Map<String, Function> library_functions; see:
