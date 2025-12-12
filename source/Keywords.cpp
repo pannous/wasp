@@ -654,3 +654,97 @@ float precedence(String name) {
     return 0; // no precedence
 }
 
+
+
+// todo: see NodeTypes.h for overlap with numerical returntype integer …
+// these are all boxed class types, for primitive types see Type and Kind
+void initTypes() {
+    if (types.size() > 3)return;
+    types.add("i8", &ByteType); // use in u8.load etc
+    types.add("u8", &ByteType); // use in u8.load etc
+    types.add("int8", &ByteType); // use in u8.load etc
+    types.add("uint8", &ByteType); // use in u8.load etc
+    types.add("byte", &ByteType); // use in u8.load etc
+    //    types.add("sint8", &IntegerType); NOT MAPPED until required
+    //    types.add("sint", &IntegerType);
+
+    //    types.add("char", &Byte);
+    types.add("chars", &ByteCharType);
+
+    types.add("char", &CodepointType); // todo : warn about abi conflict? CAN'T USE IN STRUCT
+    types.add("character", &CodepointType);
+    types.add("charpoint", &CodepointType);
+    types.add("codepoint", &CodepointType);
+    types.add("i32", &IntegerType);
+    types.add("int", &IntegerType);
+    types.add("int32", &IntegerType);
+    types.add("integer", &IntegerType);
+    types.add("long", &LongType);
+    types.add("double", &DoubleType);
+    types.add("float", &DoubleType);
+    types.add("real", &DoubleType); // number
+    types.add("number", &DoubleType); // todo!
+    types.add("string", &StringType);
+    for (int i = 0; i < types.size(); ++i) {
+        auto typ = types.values[i];
+        if (int64(typ) < 0 or int64(typ) > 10000000l)
+            continue; // todo: this type reflection is bad anyways?
+        //            error("bad wasm type initialization");
+        //        if(typ)typ->setType(clazz);
+    }
+}
+
+bool isPrimitive(Node &node) {
+    // should never be cloned so always compare by reference ok?
+    if (&node == NULL)return false;
+    if (&node == &IntegerType)return true;
+    if (&node == &BoolType)return true;
+    if (&node == &LongType)return true;
+    if (&node == &DoubleType)return true;
+    if (&node == &ByteType)return true;
+    if (&node == &ByteCharType)return true;
+    if (&node == &CodepointType)return true;
+    if (&node == &ShortType)return true;
+    if (&node == &ByteCharType)return true;
+    if (&node == &StringType)return true; // todo uh not really primitive!?
+    Kind type = node.kind;
+    if (type == longs or type == strings or type == reals or type == bools or type == arrays or type == buffers)
+        return true;
+    if (type == codepoint1) // todo ...?
+        return true;
+    return false;
+}
+
+bool isKeyword(String &op) {
+    if (operator_list.has(op))return true;
+    if (function_operators.has(op))return true;
+    if (prefixOperators.has(op))return true;
+    if (suffixOperators.has(op))return true;
+    if (extra_reserved_keywords.contains(op))return true;
+    if (contains(functor_list, op))return true;
+    if (contains(control_flows, op))return true;
+    return false;
+}
+
+
+// √π -i ++j !true … not delete(x)
+bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
+    if (prefixOperators.has(node.name)) {
+        //		if (infixOperators.has(node.name) or suffixOperators.has(node.name)) {
+        if (lhs.kind == reference)return false; // i++
+        if (isPrimitive(lhs))return false; // 3 -1
+        if (lhs.kind == operators) return lhs.length == 0;
+        if ((lhs.isEmpty() or lhs.kind == operators) and lhs.name != "‖")
+            return true;
+        return false;
+    }
+    return false;
+}
+
+String &checkCanonicalName(String &name) {
+    if (name == "**")info("The power operator in angle is simply '^' : 3^2=9."); // todo: alias infoing mechanism
+    if (name == "^^")info("The power operator in angle is simply '^' : 3^2=9. Also note that 1 xor 1 = 0");
+    if (name == "||")info("The disjunction operator in angle is simply 'or' : 1 or 0 = 1");
+    if (name == "&&")info("The conjunction operator in angle is simply 'and' : 1 and 1 = 1");
+    return name;
+}

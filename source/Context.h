@@ -77,6 +77,7 @@ void useFunction(String name);
 bool addGlobal(Function &context, String name, Type type, bool is_param, Node *value);
 bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
 void updateLocal(Function &context, String name, Type type);
+bool isGlobal(Node &node, Function &function);
 
 Signature &groupFunctionArgs(Function &function, Node &params); // todo move elsewhere!
 void clearAnalyzerContext();
@@ -84,4 +85,24 @@ void clearAnalyzerContext();
 Function *use_required_import(Function *function);
 void addLibraryFunctionAsImport(Function &func);
 Function getWaspFunction(String name);
+void use_runtime(const char *function);
+void preRegisterFunctions();
+
+bool isFunction(Node &op);
+
+bool isFunction(String op, bool deep_search = true);
+
+
+extern "C" int64 run_wasm_file(chars file);
+
+bool isPrefixOperation(Node &node, Node &lhs, Node &rhs);
+
+String &checkCanonicalName(String &name);
+
+void refineSignatures(Map<String, Function> &map);
+
+Module &loadModule(String name);
+
+Function *findLibraryFunction(String name, bool searchAliases);
+
 static bool eq(Module *x, Module *y) { return x->name == y->name; } // for List: libraries.has(library)
