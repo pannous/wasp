@@ -765,22 +765,42 @@ enum struct_opcodes {
     //    struct_narrow = 0x0?,
     //    struct_widen = 0x0?,
 };
+//
+// enum array_opcodes_OLD {
+//     // on Valtype wasm_array = 0x…,
+//     arrayGet = 0xfb13, // array.get
+//     arrayGetS = 0xfb14, // array.get_s
+//     arrayGetU = 0xfb15, // array.get_u
+//     arraySet = 0xfb16, // array.set
+//     arrayLenDeprecated = 0xfb17, // array.len
+//     arrayCopy = 0xfb18, // array.copy /* not standardized - V8 experimental */
+//     arrayLen = 0xfb19, // array.len
+//     arrayNewFixed = 0xfb1a, // array.new_fixed  array.new_static in V8!
+//     arrayInitStatic = arrayNewFixed, // ^^ array.init_static in V8!
+//     arrayNew = 0xfb1b, // array.new renamed to array.new_canon_data
+//     arrayNewDefault = 0xfb1c, // array.new_default
+//     arrayNewData = 0xfb1d, // array.new_data (opcode 0xfb 0x09) from data section e.g. (array.new_data $string $hello (i32.const 5))
+//     arrayNewElem = 0xfb1f, // array.new_elem
+// };
+
+// https://chromium.googlesource.com/v8/v8/+/refs/heads/main/src/wasm/wasm-opcodes.h
+// ⚠️ THESE ARE DIFFERENT! Obviously not standardized or still in flux.
 
 enum array_opcodes {
-    // on Valtype wasm_array = 0x…,
-    arrayGet = 0xfb13, // array.get
-    arrayGetS = 0xfb14, // array.get_s
-    arrayGetU = 0xfb15, // array.get_u
-    arraySet = 0xfb16, // array.set
-    arrayLenDeprecated = 0xfb17, // array.len
-    arrayCopy = 0xfb18, // array.copy /* not standardized - V8 experimental */
-    arrayLen = 0xfb19, // array.len
-    arrayNewFixed = 0xfb1a, // array.new_fixed  array.new_static in V8!
-    arrayInitStatic = arrayNewFixed, // ^^ array.init_static in V8!
-    arrayNew = 0xfb1b, // array.new
-    arrayNewDefault = 0xfb1c, // array.new_default
-    arrayNewData = 0xfb1d, // array.new_data
-    arrayNewElem = 0xfb1f, // array.new_elem
+//     // on Valtype wasm_array = 0x…,
+    arrayNewCanon            = 0xfb11, // array.new_canon
+    arrayNewCanonDefault     = 0xfb12, // array.new_canon_default
+    arrayGet                 = 0xfb13, // array.get
+    arrayGetS                = 0xfb14, // array.get_s
+    arrayGetU                = 0xfb15, // array.get_u
+    arraySet                 = 0xfb16, // array.set
+    arrayLen                 = 0xfb17, // array.len
+    /* 0xfb18 unused */
+    arrayNewCanonFixed       = 0xfb19, // array.new_canon_fixed
+    arrayInitStatic = arrayNewCanonFixed,
+    /* 0xfb1a unused */
+    arrayNewCanonData        = 0xfb1b, // array.new_canon_data
+    arrayNewCanonElem        = 0xfb1c, // array.new_canon_elem
 };
 
 enum reference_opcodes {
@@ -974,6 +994,7 @@ enum VectorOpcodes {
     vector_widen_high_s = 0xA6,
 };
 
+// 🧵 Threads: Multibyte instructions beginning with 0xFE see https://pengowray.github.io/wasm-ops/ todo later
 
 typedef VectorOpcodes vecop;
 

@@ -756,7 +756,7 @@ Code emitWasmArray(Node &node, Function &context) {
         //        code.emitValue(child, context);
     }
     auto length = node.size();
-    code.addOpcode(arrayInitStatic);
+    code.addOpcode(arrayInitStatic);// todo OLD!
     code.addInt(type_index);
     code.addInt(node.size());
 
