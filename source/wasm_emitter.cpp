@@ -56,7 +56,6 @@ Map<String, int64> referenceIndices; // wasm pointers to objects (currently: arr
 Map<String, int64> referenceDataIndices; // wasm pointers directly to object data, redundant ^^ TODO REMOVE
 Map<String, Node> referenceMap; // lookup types… todo: Node pointer? or copy ok?
 Map<String, int> typeMap; // wasm type index for funcTypeSection. todo keep in Function
-Map<String, int> call_indices; // todo keep in Function
 Map<String, Code> functionCodes; // EXCLUDING MAIN todo keep in Function
 //Map<String, Signature> functions;// for funcs AND imports, serialized differently (inline for imports and extra functype section)
 

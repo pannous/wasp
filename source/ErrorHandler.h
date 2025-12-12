@@ -1,7 +1,3 @@
-//
-// Created by pannous on 17.11.19.
-//
-
 #ifndef MARK_ERRORHANDLER_H
 #define MARK_ERRORHANDLER_H
 

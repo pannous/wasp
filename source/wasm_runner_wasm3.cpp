@@ -1,7 +1,3 @@
-//
-// Created by me on 17.11.20.
-//
-
 #include "wasm_runner.h"
 #include "wasm3.h"
 #include <cstdio>

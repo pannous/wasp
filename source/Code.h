@@ -1,12 +1,11 @@
 #pragma once
-//
-// Created by me on 08.12.20.
-//
 
 #include "String.h"
 #include "Map.h"
 #include "Node.h"
 #include "List.h"
+// #include "Angle.h"
+
 
 //#ifndef PURE_WASM
 #include <cstdio>
@@ -14,8 +13,6 @@
 //#endif
 //size_t strlen(const char *__s);
 
-#ifndef WASP_CODE_H
-#define WASP_CODE_H
 typedef unsigned char byte;
 typedef const char *chars;
 typedef byte *bytes;
@@ -1446,7 +1443,6 @@ Code &signedLEB128(int64 value);
 
 #endif
 
-#endif //WASP_CODE_H
 
 /*
 0 0 1
@@ -1490,3 +1486,4 @@ Function getWaspFunction(String name);
 #endif
 
 void print(Signature &signature);
+

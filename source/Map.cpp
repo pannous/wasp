@@ -1,7 +1,3 @@
-//
-// Created by pannous on 13.10.20.
-//
-
 #include "Map.h"
 //template<class S,class T>
 //void put(Map<S,T> map){

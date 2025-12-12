@@ -1,6 +1,3 @@
-//
-// Created by me on 27.11.20.
-//
 #include "Code.h"
 #include <cstdio>
 #include <stdlib.h>

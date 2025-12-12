@@ -2,7 +2,6 @@
 
 #include "Node.h"
 #include "Code.h"
-#include "wasm_reader.h"
 
 extern List<String> falseKeywords;
 extern List<String> nilKeywords;
@@ -187,3 +186,15 @@ bool knownSymbol(String name, Function &context);
 int findBestVariant(const Function &function, const Node &node, Function *context);
 
 bool compatibleTypes(Type type1, Type type2);
+
+
+Node smartNode32(int smartPointer32);
+
+short arrayElementSize(Node &node);
+
+Node &groupOperators(Node &expression, Function &context);
+
+Node &groupKebabMinus(Node &node, Function &function);
+
+Node extractModifiers(Node &node);
+

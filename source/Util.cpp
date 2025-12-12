@@ -1,6 +1,3 @@
-//
-// Created by me on 07.10.21.
-//
 // #include <cmath>
 #include <stdlib.h> // abs(int)
 // #include "String.h"

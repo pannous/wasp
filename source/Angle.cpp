@@ -1,6 +1,3 @@
-//
-// Created by pannous on 18.05.20.
-//
 #define _main_
 
 #include <functional>
@@ -12,126 +9,24 @@
 #include "Interpret.h"
 //#import "wasm_helpers.h" // IMPORT so that they don't get mangled!
 #include "wasm_helpers.h" // IMPORT so that they don't get mangled! huh?
-#include "wasm_emitter.h"
 #include "WitReader.h"
 #include "CharUtils.h"
 #include "Keywords.h"
+#include "Context.h" // AST Analysis Context (shared with wasm_emitter.cpp)
+#include "wasm_emitter.h" // to do put all dependencies into the context
+#include "WitReader.h"
 
-#ifndef RUNTIME_ONLY
-#if INCLUDE_MERGER
-
+#if INCLUDE_MERGER and not RUNTIME_ONLY
 #include "wasm_merger.h"
-
-#endif
 #endif
 
-Node smartNode32(int smartPointer32);
+extern Map<int64, bool> analyzed;
+void addLibrary(Module *modul);
+void useFunction(String name);
+
 
 extern int __force_link_parser_globals;
-int* __force_link_parser_globals_ptr = &__force_link_parser_globals;
-
-Module *module; // todo: use?
-bool use_interpreter = false;
-Node &result = *new Node();
-WitReader witReader;
-
-List<String> aliases(String name);
-
-Map<String, Node *> types = {100}; // builtin and defined Types
-
-
-// todo Maps don't free memory
-Map<String, Function> functions = {1000};
-// todo ONLY emit of main module! for funcs AND imports, serialized differently (inline for imports and extra functype section)
-//Map<String, Function> library_functions; see:
-List<Module *> libraries; // used modules from (automatic) import statements e.g. import math; use log; …  ≠
-// functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
-
-Map<int64, bool> analyzed = {1000};
-// avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
-
-
-// todo : use proper context ^^ instead of:
-//Map<String /*function*/, List<String> /* implicit indices 0,1,2,… */> locals;
-//Map<String /*function*/, List<Valtype> /* implicit indices 0,1,2,… */> localTypes;
-
-Map<String, Global> globals;
-//List<Global> globalVariables;
-
-short arrayElementSize(Node &node);
-
-Function *use_required_import(Function *function);
-
-void addLibrary(Module *modul);
-
-// 'private header'
-bool addLocal(Function &context, String name, Type Type, bool is_param); // must NOT be accessible from Emitter!
-
-Node &groupOperators(Node &expression, Function &context);
-
-Node &groupKebabMinus(Node &node, Function &function);
-
-Node extractModifiers(Node &node);
-
-void useFunction(String name) {
-    if (not functions.has(name)) {
-        auto fun = findLibraryFunction(name, true); // search aliases
-        if (not fun)
-            error("function "s + name + " not found"s);
-    }
-    trace("useFunction: "s + name);
-    functions[name].is_used = true;
-}
-
-// todo: merge ^^
-bool addGlobal(Function &context, String name, Type type, bool is_param, Node *value) {
-    if (isKeyword(name))
-        error("keyword as global name: "s + name);
-    if (name.empty()) {
-        warn("empty reference in "s + context);
-        return true; // 'done' ;)
-    }
-    if (builtin_constants.has(name))
-        error(name + " is already a builtin constant"s);
-    if (context.signature.has(name))
-        error(name + " already declared as parameter for function "s + context.name);
-    if (globals.has(name)) // ok ?
-        error(name + " already declared as global"s);
-    //        return true;// already declared
-    if (context.locals.has(name))
-        error(name + " already declared as local variable"s);
-    if (isFunction(name, true))
-        error(name + " already declared as function"s);
-    //    if(type == int32)
-    //        type = int64t; // can't grow later after global init
-    if (value and value->kind == expression) {
-        warn("only the most primitive expressions are allowed in global initializers => move to wasp_main!");
-        //        value = new Node(0); // todo reals, strings, arrays, structs, …
-    } else if (not value) {
-        //        value = new Node(0);
-    } else {
-        //        if(type==int64t)type=int32t;// todo: dirty hack for global x=1+2 because we can't cast
-    }
-    Global global{.index = globals.count(), .name = name, .type = type, .value = value, .is_mutable = true};
-    globals[name] = global;
-    return true;
-}
-
-
-// currently only used for WitReader. todo: merge with addGlobal
-void addGlobal(Node &node) {
-    String &name = node.name;
-    if (isKeyword(name))
-        error("Can't add reserved keyword "s + name);
-    if (globals.has(name)) {
-        warn("global %s already a registered symbol: %o "s % name % globals[name].value);
-    } else {
-        Type type = mapType(node.type);
-        globals.add(name, Global{
-                        /*id*/globals.count(), name, type, node.clone(), /*mutable=*/ true
-                    });
-    }
-}
+int *__force_link_parser_globals_ptr = &__force_link_parser_globals;
 
 void addWasmArrayType(Type value_type) {
     if (isGeneric(value_type)) {
@@ -145,111 +40,6 @@ void addWasmArrayType(Type value_type) {
     types.add(array_type_name, array_type.clone());
     // link to type index later
 }
-
-
-Node &getType(Node &node) {
-    String name = node.name;
-    bool vector = false;
-    if (name.endsWith("es")) {
-        // addresses
-        // todo: cities …
-        name = name.substring(0, -3);
-        vector = true;
-    } else if (name.endsWith("s") and not(name == "chars")) {
-        // ints …
-        name = name.substring(0, -2);
-        vector = true;
-    }
-    if (types.has(name)) {
-        auto &pNode = types[name];
-        if (not pNode)
-            error1("getType: types corruption: type %s not found (NULL)", name);
-        return *pNode;
-        //        typ.kind = clazz;
-    }
-    Node &typ = *new Node(name);
-    typ.kind = clazz;
-    types[name] = &typ;
-    if (vector) {
-        // holup typ.kind = arrays needs to be applied to the typed object!
-        typ.kind = arrays;
-        typ.type = typ.clone();
-        //		typ.kind=vectors; // ok, copy value
-    }
-    return typ;
-}
-
-bool isPlural(Node &word) {
-    auto &name = word.name;
-    static List<String> plural_exceptions = {
-        "flags", "puts", "plus", "minus", "times", "is", "has", "was", "does",
-        "equals"
-    }; // chars?
-    if (plural_exceptions.contains(name)) return false;
-    if (name.endsWith("s"))return true;
-    return false;
-}
-
-bool isType(Node &expression) {
-    auto &name = expression.name;
-    if (expression.kind == functor) //todo ...
-        return false;
-    if (expression.kind == operators)
-        return false;
-    if (isPrimitive(expression))
-        return false;
-
-    if (name.empty())return false;
-    //    if (isPlural(expression))// very week criterion: houses=[1,2,3]
-    //        return true;
-    Type type = mapType(name, false);
-    if (type == none || type == unknown_type)
-        return types.has(name);
-    else {
-        tracef("typeName %s\n", typeName(type));
-        return true;
-    }
-    //	if (not types.has(name))
-    //		error1("isType: type %s not found"s% name);
-    return types.has(name);
-    //		types.add(name, &expression);
-    //	return true;
-}
-
-
-Node constants(Node n) {
-    if (eq(n.name, "not"))return True; // not () == True; hack for missing param todo: careful!
-    if (eq(n.name, "one"))return Node(1);
-    if (eq(n.name, "two"))return Node(2);
-    if (eq(n.name, "three"))return Node(3);
-    return n;
-}
-
-
-//Map<int64, int> _isFunction; INEFFICIENT! // true not a 'type'
-// Hashmap _isFunction; // todo
-bool isFunction(String op, bool deep_search) {
-    //	if(_isFunction[op.hash()])return true;
-    if (op.empty())return false;
-    if (op == "‖")return false;
-    if (functions.has(op))return true;
-    if (functions.has(op))return true; // pre registered signatures
-    if (op.in(function_list))
-        return true;
-    if (deep_search and findLibraryFunction(op, true))
-        return true; // linear lookup ok as long as #functions < 1000 ? nah getting SLOW QUICKLY!!
-    //	if(op.in(functor_list))
-    //		return true;
-    return false;
-}
-
-bool isFunction(Node &op) {
-    if (op.name.empty())return false;
-    if (op.kind == strings)return false;
-    if (op.kind == declaration)return false;
-    return isFunction(op.name);
-}
-
 
 Node interpret(String code) {
     Node parsed = parse(code);
@@ -309,10 +99,10 @@ Node eval(String code) {
         } catch (chars err) {
             print("eval FAILED WITH internal ERROR\n");
             printf("%s\n", err);
-        } catch (String &err) {
+        } catch (String & err) {
             print("eval FAILED WITH ERRORs\n");
             printf("%s\n", err.data);
-        } catch (SyntaxError &err) {
+        } catch (SyntaxError & err) {
             print("eval FAILED WITH SyntaxError\n");
             printf("%s\n", err.data);
         } catch (...) {
@@ -324,94 +114,6 @@ Node eval(String code) {
 #endif
 }
 
-Signature &groupFunctionArgs(Function &function, Node &params) {
-    //			left = analyze(left, name) NO, we don't want args to become variables!
-    List<Arg> args;
-
-    Node *nextType = &DoubleType;
-    //    Node *nextType = 0;//types preEvaluateType(params, &function);
-    // todo: dynamic type in square / add1 x:=x+1;add1 3
-    if (params.length == 0) {
-        params = groupTypes(params, function);
-        if (params.name != function.name and not params.name.empty())
-            args.add({function.name, params.name, params.type ? params.type : nextType});
-    } //else
-    for (Node &arg: params) {
-        if (arg.kind == groups) {
-            arg = groupTypes(arg, function,true);
-            args.add({function.name, arg.name, arg.type ? arg.type : mapType(nextType), params});
-            continue;
-        }
-        if (isType(arg)) {
-            if (args.size() > 0 and args.last().type != unknown_type)
-                args.last().type = types[arg.name];
-            else nextType = &arg;
-        } else {
-            if (arg.name != function.name)
-                args.add({function.name, arg.name, arg.type ? arg.type : mapType(nextType), params});
-        }
-    }
-
-    Signature signature = function.signature;
-    auto already_defined = function.signature.size() > 0;
-    if (function.is_polymorphic or already_defined) {
-        signature = *new Signature();
-    }
-    for (Arg arg: args) {
-        auto name = arg.name;
-        if (empty(name))
-            name = String("$"s + signature.size());
-        //            error("empty argument name");
-        if (function.locals.has(name)) {
-            // TODO
-            warn("Already declared as local OR duplicate argument name: "s + name);
-            //			error("duplicate argument name: "s + name);
-        }
-        signature.add(arg.type, name); // todo: arg type, or pointer
-        addLocal(function, name, arg.type, true);
-    }
-
-    Function *variant = &function;
-    if (already_defined /*but not yet polymorphic*/) {
-        if (signature == function.signature)
-            return function.signature; // function.signature; // ok compatible
-        // else split two variants
-        Function new_variant = function;
-        Function old_variant = function; // clone by value!
-        check_is(old_variant.name, function.name);
-        old_variant.signature = function.signature;
-        new_variant.signature = signature; // ^^ different
-        function.is_polymorphic = true;
-        //			function.is_used … todo copy other attributes?
-        function.signature = *new Signature(); // empty
-        function.variants.add(old_variant.clone());
-        function.variants.add(new_variant.clone());
-    } else if (function.is_polymorphic) {
-        // third … variant
-        variant = new Function();
-        for (Function *fun: function.variants)
-            if (fun->signature == signature)
-                return fun->signature; // signature;
-        variant->name = function.name;
-        variant->signature = signature;
-        function.variants.add(variant);
-    } else if (!already_defined) {
-        function.signature = signature;
-    }
-    for (auto arg: args) {
-        auto name = arg.name;
-        if (empty(name)) {
-            warn("empty argument name, using $n"s);
-            name = String("$"s + variant->locals.size());
-        }
-        addLocal(*variant, name, arg.type, true);
-    }
-    // NOW add locals to function context:
-    //	for (auto arg: variant->signature.parameters)
-    //		addLocal(*variant, arg.name, arg.type, true);
-    return variant->signature;
-    //	return signature;
-}
 
 String extractFunctionName(Node &node) {
     if (not node.name.empty() and node.name != ":=")
@@ -615,9 +317,10 @@ void initTypes() {
 
 
 Node &constructInstance(Node &node, Function &function);
+
 Node &classDeclaration(Node &node, Function &function);
 
-Node &groupTypes(Node &expression, Function &context , bool as_param) {
+Node &groupTypes(Node &expression, Function &context, bool as_param) {
     // todo delete type declarations double x, but not double x=7
     // todo if expression.length = 0 and first.length=0 and not next is operator return ø
     // ways to set type:
@@ -706,7 +409,8 @@ Node &groupStructConstructors(Node &node, Function &context) {
             if (debug) printf("Converting %s{...} to constructor\n", name.data);
             Node &insta = constructInstance(node, context);
             if (debug)
-                printf("After constructInstance: result.kind=%d, result.serialize()=%s\n", insta.kind, insta.serialize().data);
+                printf("After constructInstance: result.kind=%d, result.serialize()=%s\n", insta.kind,
+                       insta.serialize().data);
             return insta;
         }
     }
@@ -802,7 +506,7 @@ Node &groupGlobal(Node &node, Function &function) {
 // return: done?
 // todo return clear enum known, added, ignore ?
 bool addLocal(Function &context, String name, Type type, bool is_param) {
-    if(not name)
+    if (not name)
         error("addLocal: empty name");
     if (isKeyword(name))
         error("keyword as local name: "s + name);
@@ -846,7 +550,8 @@ Node &classDeclaration(Node &node, Function &function) {
     String &name = dec.name;
     // If type already exists (from collectStructDeclarations), just return the existing one
     if (types.has(name)) {
-        if (debug) printf("  Type '%s' already in types map (from collectStructDeclarations), returning existing\n", name.data);
+        if (debug) printf("  Type '%s' already in types map (from collectStructDeclarations), returning existing\n",
+                          name.data);
         return *types[name];
     }
 
@@ -882,7 +587,7 @@ Node &classDeclaration(Node &node, Function &function) {
     } else {
         if (debug) printf("  Adding type '%s' to types map\n", name.data);
         types.add(name, dec.clone());
-        if (debug) printf("  After add: types.has('%s')=%p\n", name.data, (void*)types.has(name));
+        if (debug) printf("  After add: types.has('%s')=%p\n", name.data, (void *) types.has(name));
     }
     return dec;
 }
@@ -971,7 +676,7 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 
 Node extractModifiers(Node &expression) {
     Node modifieres;
-    for (auto& child: expression) {
+    for (auto &child: expression) {
         if (function_modifiers.contains(child.name)) {
             modifieres.add(child);
             expression.remove(child);
@@ -988,8 +693,8 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
     auto kw = expression.containsAny(function_keywords, false); // todo fest='def' QUOTED!!
     if (expression.index(kw) != 0)
         error("function keywords must be first");
-    expression.children++;// get rid of first 'function' keyword
-    expression.length--;// get rid of first 'function' keyword
+    expression.children++; // get rid of first 'function' keyword
+    expression.length--; // get rid of first 'function' keyword
     auto &fun = expression.first();
     Node *return_type = 0;
     Node arguments = groupTypes(fun.childs(), context); // children f(x,y)
@@ -1027,7 +732,8 @@ Node &groupDeclarations(Node &expression, Function &context) {
     if (expression.kind == groups) // handle later!
         return expression;
     //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
-    if (expression.contains(":=") ) { // add_raw
+    if (expression.contains(":=")) {
+        // add_raw
         return groupFunctionDeclaration(expression, context);
     }
 
@@ -1133,11 +839,11 @@ void checkRequiredCasts(String &op, const Node &lhs, Node &rhs, Function &contex
     // todo maybe add cast node here instead of in emit?
     Type left_kind = lhs.kind;
     Type right_kind = rhs.kind;
-    if(right_kind == operators or right_kind == expression or right_kind == reference or right_kind == call)
+    if (right_kind == operators or right_kind == expression or right_kind == reference or right_kind == call)
         right_kind = preEvaluateType(rhs, context); // todo: use preEvaluateType for all rhs?
 
     if (op == "+" and left_kind == strings)
-        useFunction("toString");// todo ALL polymorphic variants! => get rid of these:
+        useFunction("toString"); // todo ALL polymorphic variants! => get rid of these:
     if (op == "+" and left_kind == strings and right_kind == longs)
         useFunction("formatLong");
     if (op == "+" and left_kind == strings and (right_kind == reals or right_kind == realsF))
@@ -1366,10 +1072,10 @@ Node &groupKebabMinus(Node &node, Function &context) {
 
 Module &loadRuntime() {
 #if WASM // and not MY_WASM
-    if(not module_cache.has("wasp"s.hash()))
-      error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
-    Module &wasp=*module_cache["wasp"s.hash()];
-//    wasp.functions["powi"].signature.returns(int32);
+    if (not module_cache.has("wasp"s.hash()))
+        error("module 'wasp' should already be loaded through js load_runtime_bytes => parseRuntime");
+    Module &wasp = *module_cache["wasp"s.hash()];
+    //    wasp.functions["powi"].signature.returns(int32);
     // if(!libraries.has(&wasp))// on demand per test/app!
     return wasp;
 #else
@@ -1440,7 +1146,7 @@ Module &loadModule(String name) {
     if (name == "wasp-runtime.wasm")
         return loadRuntime();
 #if WASM and not MY_WASM
-    todow("loadModule in WASM: "s+name);
+    todow("loadModule in WASM: "s + name);
     return *new Module();
 #else // getWasmFunclet
     return read_wasm(name); // we need to read signatures!
@@ -1515,7 +1221,6 @@ int findBestVariant(const Function &function, const Node &node, Function *contex
     error("no matching function variant for "s + function.name + " with "s + node.serialize());
 }
 
-void addLibraryFunctionAsImport(Function &func);
 
 // todo merge with groupOperatorCall
 Node &groupFunctionCalls(Node &expressiona, Function &context) {
@@ -1675,193 +1380,10 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
 }
 
 
-void addLibraryFunctionAsImport(Function &func) {
-    func.is_used = true;
-    if (func.is_declared)return;
-    if (func.is_builtin)return;
-    //	auto function_known = functions.has(func.name);
 
-    // ⚠️ this function now lives inside Module AND as import inside "wasp_main" functions list, with different wasm_index!
-    bool function_known = functions.has(func.name);
-#if WASM
-    Function& import=*new Function();
-    if(function_known)
-        import = functions[func.name];
-#else
-    Function &import = functions[func.name]; // copy function info from library/runtime to main module
-#endif
-    if (import.is_declared)return;
-    if (func.is_polymorphic) {
-        import.is_polymorphic = func.is_polymorphic; //
-        import.variants = func.variants;
-    } else {
-        import.signature = func.signature;
-        import.signature.parameters = func.signature.parameters; // even if polymorph?
-    }
-    import.signature.type_index = -1;
-    import.is_runtime = false; // because here it is an import!
-    import.is_import = true; // todo also for polymorph?
-    import.is_used = true; // todo also for polymorph?
-#if WASM
-    if(not function_known)
-        functions.add(func.name, import);
-#endif
-}
-
-Function getWaspFunction(String name);
 
 bool eq(Module *x, Module *y) { return x->name == y->name; } // for List: libraries.has(library)
 
-// todo: clarify registerAsImport side effect
-// todo: return the import, not the library function
-Function *findLibraryFunction(String name, bool searchAliases) {
-    if (name.empty())return 0;
-    if (functions.has(name))
-        return use_required_import(&functions[name]); // prevents read_wasm("lib")
-#if WASM // todo: why only in wasm?
-    Module& wasp = loadRuntime();
-    if (wasp.functions.has(name)){
-        if(!libraries.has(&wasp))// on demand per test/app!
-            libraries.add(&wasp);
-        return use_required_import(&wasp.functions[name]);
-    }
-#endif
-    if (contains(funclet_list, name)) {
-#if WASM and not MY_WASM
-        //				todo("getWaspFunclet get library function signature from wasp");
-                warn("WASP function "s + name + " getWaspFunclet todo");
-                auto pFunction = getWaspFunction(name).clone();
-                pFunction->import();
-                return use_required_import(pFunction);
-#endif
-        print("loading funclet "s + name);
-        Module &funclet_module = read_wasm(findFile(name, "lib"));
-        check(funclet_module.functions.has(name));
-        module_cache.insert_or_assign(funclet_module.name.hash(), &funclet_module);
-        Function& funclet = funclet_module.functions[name];
-        print("GOT funclet "s + name);
-        print(funclet.signature);
-        addLibrary(&funclet_module);
-        return use_required_import(&funclet);
-    }
-    if (name.in(function_list) and libraries.size() == 0)
-        libraries.add(&loadRuntime());
-    // libraries.add(&loadModule("wasp-runtime.wasm")); // on demand
-
-
-    //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
-    // todo in WASM
-    for (Module *library: libraries) {
-        //} module_cache.valueList()) {
-        // todo : multiple signatures! concat(bytes, chars, …) eq(…)
-        int position = library->functions.position(name);
-        if (position >= 0) {
-            Function &func = library->functions.values[position];
-            return use_required_import(&func);
-        }
-    }
-    Function *function = 0;
-    if (searchAliases) {
-        for (String alias: aliases(name)) {
-            function = findLibraryFunction(alias, false);
-            //			use_required(function); // no, NOT required yet
-        }
-    }
-    auto normed = normOperator(name);
-    if (normed == name)
-        return use_required_import(function);
-    else
-        return findLibraryFunction(normed, false);
-}
-
-void addLibrary(Module *modul) {
-    if (not modul)return;
-    for (auto &lib: libraries)
-        if (lib->name == modul->name)return;
-    libraries.add(modul); // link it later via import or use its code directly?
-}
-
-// todo merge with similar functions and aliases()
-Function *use_required_import(Function *function) {
-    if (!function or not function->name or function->name.empty())
-        return 0; // todo how?
-    addLibraryFunctionAsImport(*function);
-    if (function->name == "quit")
-        useFunction("proc_exit");
-    if (function->name == "puts")
-        useFunction("fd_write");
-    // for (Function *variant: function->variants) {
-    //     addLibraryFunctionAsImport(*variant);
-    // }
-    for (String &alias: aliases(function->name)) {
-        if (alias == function->name)continue;
-        auto ali = findLibraryFunction(alias, false);
-        if (ali)addLibraryFunctionAsImport(*ali);
-    }
-    for (auto &vari: function->variants) {
-        vari->is_used = true;
-    }
-    //    for(Function& dep:function.required)
-    //        dep.is_used = true;
-    return function;
-}
-
-// todo see load_aliases(); -> aliases.wasp
-List<String> aliases(String name) {
-    List<String> found;
-#if MY_WASM
-    return found;
-#endif
-    //	switch (name) // statement requires expression of integer type
-    if (name == "pow") {
-        found.add("pow");
-        // found.add("powd"); via pow
-        found.add("powf");
-        found.add("powi");
-        found.add("pow_long");
-    }
-    if (name == "puti")
-        found.add("_Z5printl");
-    if (name == "len")
-        found.add("strlen");
-    if (name == "int" or name == "atoi" or name == "atol" or name == "parseInt")
-        found.add("parseLong");
-    //        found.add("_Z7strlen0PKc");
-    if (name == "atoi" or name == "int") {
-        // todo type vs fun!
-        found.add("_Z5atoi0PKc");
-    }
-    if (name == "concat_chars")
-        found.add("_Z12concat_charsPKcS0_"); // todo by parsing!!
-    if (name == "concat") {
-        // todo: programmatic!
-        if (not use_wasm_strings)
-            found.add("concat"); // OK _Z6concatPKcS0_ via linker:
-        // LINKED main.wasm:concat import #1 concat to export #31 _Z6concatPKcS0_ relocated_function_index 23
-            // found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
-    }
-    //	if (name == "+") {
-    //		found.add("add");
-    //		found.add("plus");
-    //		found.add("concat");
-    //		if (not use_wasm_strings)
-    //			found.add("_Z6concatPKcS0_"); // this is the signature we call for concat(char*,char*) … todo : use String.+
-    //	}
-    if (name == "eq") {
-        if (not use_wasm_strings)
-            found.add("_Z2eqPKcS0_i"); // eq(char const*, char const*, int)
-        //        found.add("_Z2eqR6StringPKc"); // eq(String&, char const*)
-    }
-    if (name == "=") {
-        //        found.add("is");
-        //        found.add("be");
-    }
-    if (name == "#") {
-        // todo
-        //        found.add("getChar");
-    }
-    return found;
-}
 
 Node &groupForClassic2(Node &node, Function &context) {
     // for(…){}
@@ -2036,7 +1558,7 @@ Type guessType(Node &node, Function &function) {
 
 // todo move to parseTemplate
 Node &groupTemplate(Node &node, Function &function) {
-    for (Node& child: node) {
+    for (Node &child: node) {
         Type kind = child.kind;
         if (kind != strings) {
             child = analyze(child, function); // analyze each child node
@@ -2064,6 +1586,7 @@ Node &groupTemplate(Node &node, Function &function) {
 Node &analyze(String code) {
     return analyze(parse(code));
 }
+
 /*
  * ☢️ ⚛ Nuclear Core ⚠️ 🚧
  * turning some knobs might yield some great powers
@@ -2126,7 +1649,7 @@ Node &analyze(Node &node, Function &function) {
             Node *cloned = analyzed.clone();
             if (debug && cloned->type != analyzed.type) {
                 printf("WARNING: clone lost type! analyzed.type=%p, cloned->type=%p\n",
-                       (void*)analyzed.type, (void*)cloned->type);
+                       (void *) analyzed.type, (void *) cloned->type);
             }
             node.value.node = cloned;
         }
@@ -2187,8 +1710,10 @@ Node &analyze(Node &node, Function &function) {
         if (grouped.length > 0)
             for (Node &child: grouped) {
                 // children of lists analyzed individually
-                if (!child.name.empty() and wit_keywords.contains(child.name) and child.kind != strings /* TODO … */)
+                if (!child.name.empty() and wit_keywords.contains(child.name) and child.kind != strings /* TODO … */) {
+                    WitReader witReader;
                     return witReader.analyzeWit(node); // can't MOVE there:
+                }
                 child = analyze(child, function); // REPLACE ref with their ast ok?
                 //                last.next = child;
             }
@@ -2208,22 +1733,6 @@ extern "C" int64 run_wasm_file(chars file) {
 }
 
 
-void clearAnalyzerContext() {
-    //    clearEmitterContext()
-    //	needs to be outside analyze, because analyze is recursive
-#ifndef RUNTIME_ONLY
-    libraries.clear(); // todo: keep runtime or keep as INACTIVE to save reparsing
-    //    module_cache.clear(); NOO not the cache lol
-    types.clear();
-    globals.clear();
-    call_indices.clear();
-    call_indices.setDefault(-1);
-    analyzed.clear(); // todo move much into outer analyze function!
-    functions.clear(); // always needs to be followed by
-    preRegisterFunctions(); // BUG Signature wrong cpp file
-#endif
-}
-
 
 // emit via library merge
 Node runtime_emit(String prog) {
@@ -2241,149 +1750,4 @@ Node runtime_emit(String prog) {
     code.save("merged.wasm");
     int64 result_val = code.run(); // todo parse stdout string as node and merge with emit() !
     return *smartNode(result_val);
-}
-
-float precedence(Node &operater) {
-    String &name = operater.name;
-    //	if (operater == NIL)return 0; error prone
-    if (operater.kind == reals)return 0; //;1000;// implicit multiplication HAS to be done elsewhere!
-    if (operater.kind == longs)return 0; //;1000;// implicit multiplication HAS to be done elsewhere!
-    if (operater.kind == strings)return 0; // and empty(name)
-
-    // todo: make live easier by making patterns only operators if data on the left
-    if (operater.kind == patterns and operater.parent) return 98; // precedence("if") * 0.98
-    //	todo why do groups have precedence again?
-    //	if (operater.kind == groups) return 99;// needs to be smaller than functor/function calls
-    if (operater.name.in(function_list))return 999; // function call todo: remove here
-    if (empty(name))return 0; // no precedence
-    return precedence(name);
-}
-
-Function getWaspFunction(String name) {
-    // signature only, code must be loaded from wasm or imported and linked
-    if ("floor"s == name)error1("use builtin floor!");
-
-    auto &runtime = loadRuntime();
-    if (runtime.functions.has(name)) {
-        print("runtime has function "s + name);
-        return runtime.functions[name];
-    }
-    Function f{.name = name, .is_import = true, .is_runtime = true};
-    if (name.contains("(")) {
-        String brace = name.substring(name.indexOf('(') + 1, name.indexOf(')'));
-        f.name = name.substring(0, name.indexOf('('));
-        auto args = brace.split(", ");
-        for (auto arg: args)
-            f.signature.add(mapType(arg));
-        if (f.name == "square")f.signature.returns(int32t);
-        if (f.name == "pow")f.signature.returns(float64t);
-        //        auto returnType = getReturnType(name);
-        //        f.signature.returns(returnType);
-    } else {
-        if (name == "_start");
-        else if (name == "__wasm_call_ctors");
-        else if (name == "__cxa_allocate_exception");
-        else if (name == "__cxa_throw");
-        else if (name == "__cxa_end_catch");
-        else if (name == "__cxa_find_matching_catch");
-        else if (name == "__cxa_begin_catch");
-        else if (name == "__cxa_atexit");
-        else if (name == "__main_argc_argv")
-            f.signature.add(int32t, name = "argc").add(i32, name = "argv").
-                    returns(int32t);
-        else if (name == "getField")f.signature.add(node_pointer).add(smarti64).returns(node); // wth
-        else if (name == "smartNode")f.signature.add(int64s).returns(node);
-        else if (name == "pow")f.signature.add(float64t).add(float64t).returns(float64t);
-        else if (name == "kindName")f.signature.add(type32).returns(charp);
-        else if (name == "formatReal")f.signature.add(float64t).returns(charp);
-        else if (name == "strlen")f.signature.add(charp).returns(int32t);
-        else if (name == "free")f.signature.add(pointer);
-        else if (name == "square")f.signature.add(int32t).returns(int32t);
-        else if (name == "malloc")f.signature.add(size32).returns(pointer); // todo 64
-        else if (name == "aligned_alloc")f.signature.add(size32, name = "alignment").add(size32).returns(pointer);
-        else if (name == "realloc")f.signature.add(pointer).add(size32).returns(pointer);
-        else if (name == "calloc")f.signature.add(size32).add(size32).returns(pointer);
-        else if (name == "memcpy")f.signature.add(pointer).add(pointer).add(size32);
-        else if (name == "memset")f.signature.add(pointer).add(int32t).add(size32);
-        else if (name == "memcmp")f.signature.add(pointer).add(pointer).add(size32).returns(int32t);
-        else if (name == "memmove")f.signature.add(pointer).add(pointer).add(size32);
-        else if (name == "memchr")f.signature.add(pointer).add(int32t).add(size32).returns(pointer);
-        else if (name == "strchr")f.signature.add(charp).add(int32t).returns(charp);
-        else if (name == "strrchr")f.signature.add(charp).add(int32t).returns(charp);
-        else if (name == "strcat")f.signature.add(charp).add(charp).returns(charp);
-        else if (name == "strncat")f.signature.add(charp).add(charp).add(size32).returns(charp);
-        else if (name == "strcmp")f.signature.add(charp).add(charp).returns(int32t);
-        else if (name == "strncmp")f.signature.add(charp).add(charp).add(size32).returns(int32t);
-        else if (name == "strcpy")f.signature.add(charp).add(charp).returns(charp);
-        else if (name == "strncpy")f.signature.add(charp).add(charp).add(size32).returns(charp);
-        else if (name == "strdup")f.signature.add(charp).returns(charp);
-        else if (name == "strndup")f.signature.add(charp).add(size32).returns(charp);
-        else if (name == "strpbrk")f.signature.add(charp).add(charp).returns(charp);
-        else if (name == "strspn")f.signature.add(charp).add(charp).returns(size32);
-        else if (name == "strcspn")f.signature.add(charp).add(charp).returns(size32);
-        else if (name == "strstr")f.signature.add(charp).add(charp).returns(charp);
-        else if (name == "strtok")f.signature.add(charp).add(charp).returns(charp);
-        else if (name == "getchar")f.signature.returns(int32t);
-        else if (name == "get_char")f.signature.returns(int32t);
-        else if (name == "get_int")f.signature.returns(int32t);
-        else if (name == "get_float")f.signature.returns(float32t);
-        else if (name == "get_double")f.signature.returns(float64t);
-        else if (name == "str")f.signature.add(charp).returns(strings);
-        else if (name == "puts")f.signature.add(charp);
-        else if (name == "putx")f.signature.add(int32t);
-        else if (name == "putf")f.signature.add(float32t);
-        else if (name == "putd")f.signature.add(float64t);
-        else if (name == "putp")f.signature.add(pointer);
-        else if (name == "putl")f.signature.add(longs);
-        else if (name == "puti")f.signature.add(int32t);
-        else if (name == "printf")f.signature.add(charp); // todo …
-        else if (name == "printNode")f.signature.add(node_pointer);
-        else if (name == "put_chars")f.signature.add(charp);
-        else if (name == "putchar")f.signature.add(int32t);
-        else if (name == "put_char")f.signature.add(int32t);
-        else if (name == "put_string")f.signature.add(charp);
-        else if (name == "put_int")f.signature.add(int32t);
-        else if (name == "put_float")f.signature.add(float32t);
-        else if (name == "put_double")f.signature.add(float64t);
-        else if (name == "size_of_node")f.signature.returns(size32);
-        else if (name == "size_of_string")f.signature.returns(size32);
-        else if (name == "serialize")f.signature.add(node_pointer); // also Node::serialize
-        else if (name == "raise")f.signature.add(charp);
-        else if (name == "Parse")f.signature.add(charp).returns(node_pointer);
-        else if (name == "run")f.signature.add(charp).returns(charp);
-        else if (name == "system")f.signature.add(charp).returns(int32t);
-        else if (name == "testCurrent");
-        else if (name == "run_wasm_file")f.signature.add(charp).returns(smarti64);
-        else if (name == "run_wasm")f.signature.add(charp).add(int32t).returns(smarti64);
-        else if (name == "panic");
-            // IGNORE js bridges :
-        else if (name == "registerWasmFunction");
-        else if (name.startsWith("test"));
-        else if (name == "powi")f.signature.add(int64s).add(int64s).returns(int64s); // as import?
-        else if (name == "pow")f.signature.add(float64t).add(float64t).returns(float64t); // as import?
-        else todo("getWaspFunction "s + name);
-    }
-    if (!runtime.functions.has(f.name)) {
-        print("manually adding runtime function "s + f.name);
-        runtime.functions.add(f.name, f);
-    }
-    //    else todo("getWaspFunction "s + name);
-    //    else if(name=="powi")f.signature.add(int32).add(int32).returns(int64s);
-    return f;
-}
-
-// called by js why? if we parse runtime all module functions should be there?
-// add Synonyms to mangled?
-extern "C" void registerWasmFunction(chars name, chars mangled) {
-    if ("floor"s == name)return; // use builtin!
-    if ("loor"s == name)return; // BUG!
-    return;
-    getWaspFunction(name);
-    if (!functions.has(name))functions.add(name, getWaspFunction(name));
-    //    if (!loadRuntime().functions.has(mangled))
-    //	    loadRuntime().functions.add(mangled, getWaspFunction(name));
-}
-
-bool knownSymbol(String name, Function &context) {
-    return context.locals.has(name) || globals.has(name) || builtin_constants.has(name);
 }

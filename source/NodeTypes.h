@@ -1,8 +1,4 @@
 #pragma once
-//
-// Created by pannous on 19.12.19.
-//
-
 #include "smart_types.h" // todo merge
 //#include "Code.h"
 //#include "String.h"

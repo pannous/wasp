@@ -56,3 +56,8 @@ extern chars control_flows[];
 // Extra reserved keywords
 extern List<String> extra_reserved_keywords;
 
+extern "C" void registerWasmFunction(chars name, chars mangled);
+
+List<String> aliases(String name);
+
+float precedence(String name);
