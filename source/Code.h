@@ -1369,6 +1369,8 @@ public:
     bool is_builtin = false; // hard coded functions, tests only? todo remove
     bool is_used = false; // called imports / buildins
     bool is_polymorphic = false;
+    bool is_ffi = false; // FFI import from native library
+    String ffi_library; // library name for FFI imports
     // IF polymorph, this 'Function' acts as abstract only, all REAL Functions are in variants
     List<Function *> variants; // = 20;//={.capacity=20};// multi dispatch!
 

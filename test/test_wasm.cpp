@@ -11,6 +11,7 @@ extern int tests_executed;
 
 #include "../source/wasm_emitter.h"
 #import "../source/asserts.h"
+#include "test_dynlib_import.h"
 
 void testRange() {
     tests_executed++;
@@ -1777,6 +1778,7 @@ void testAllWasm() {
     //    )
 
     testMathOperators();
+    test_dynlib_import_emit();
     testWasmLogicPrimitives();
     testWasmLogicUnary();
     testWasmLogicUnaryVariables();

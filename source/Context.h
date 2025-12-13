@@ -5,6 +5,14 @@
 
 extern Map<int64, bool> analyzed;
 
+// FFI function registry: struct to hold function name and library name
+struct FFIFunctionInfo {
+    String function_name;
+    String library_name;
+};
+
+extern List<FFIFunctionInfo> ffi_functions;
+
 class Module {
     //public:
     //	virtual ~Module() {

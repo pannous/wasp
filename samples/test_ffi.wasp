@@ -1,0 +1,3 @@
+// Test FFI imports
+import sqrt from "m"
+sqrt(4.0)
