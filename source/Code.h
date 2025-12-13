@@ -797,8 +797,11 @@ enum array_opcodes {
     arraySet                 = 0xfb16, // array.set
     arrayLen                 = 0xfb17, // array.len
     /* 0xfb18 unused */
-    arrayNewCanonFixed       = 0xfb19, // array.new_canon_fixed
+    arrayNewCanonFixed       = 0xfb19, // array.new_canon_fixed formerly known as array.init "hello" =
+    // (array.new_fixed $i8arr 5 (i32.const 104) (i32.const 101) (i32.const 108) (i32.const 108) (i32.const 111) )
     arrayInitStatic = arrayNewCanonFixed,
+    // (array.new_data $i8arr 0 $hello (i32.const 5))  // $hello e.g. (i32.const 0) start of linear memory
+    // NOT in globals constructor but ok in _start() https://github.com/WebAssembly/gc/issues/260
     /* 0xfb1a unused */
     arrayNewCanonData        = 0xfb1b, // array.new_canon_data
     arrayNewData  = arrayNewCanonData, // = 0xfb09, // array.new_data DEPRECATED!

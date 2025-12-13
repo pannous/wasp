@@ -1102,10 +1102,53 @@ private:
         // todo: instead handle `use / include / import / require` in Angle.cpp analyze!
         // especially if file.name is lib.wasm ;)
         // import IF not in data mode
+
+        // Check for FFI import pattern: import funcname from "library"
+        // Node structure at this point: [0]="import", [1]="funcname", [2]="from"
+        // The library string should be next in the input stream
+        if (node.length >= 3 && node[2].name == "from") {
+            // This is an FFI import: import X from "lib"
+            // Parse the library string (next token should be a string literal)
+            white(); // skip whitespace
+
+            // Parse the library string manually to ensure it's marked as strings kind
+            if (ch != '"' && ch != '\'') {
+                error("Expected string literal for library name");
+            }
+            codepoint quote = ch;
+            proceed(); // skip opening quote
+
+            String lib_name;
+            while (ch and ch != quote) {
+                lib_name += ch;
+                proceed();
+            }
+            if (ch == quote) proceed(); // skip closing quote
+
+            // Create a proper string node
+            Node *lib_node = new Node(lib_name);
+            lib_node->value.string = new String(lib_name);
+            lib_node->kind = strings;
+
+            // Restructure the node for Angle.cpp:
+            // Angle.cpp expects: node.name="import", node[0]=funcname, node[1]="from", node[2]=library
+            // Current structure: node is expression with [0]="import", [1]="abs", [2]="from"
+
+            // Create a new import node with the correct structure
+            Node &import_node = *new Node("import");
+            import_node.add(node[1]); // function name "abs"
+            import_node.add(node[2]); // "from"
+            import_node.add(lib_node); // library string "c"
+
+            // Set kind to functor so it won't be flattened by parseExpression()
+            import_node.kind = functor;
+
+            // Don't try to load as a file, let Angle.cpp handle it
+            return import_node;
+        }
+
         String lib;
-        if (current.first() == "from")
-            lib = current[1].name;
-        else if (node.empty()) {
+        if (node.empty()) {
             white();
             if (ch == '"' or ch == '\'' or ch == '<')proceed(); // include "c-style" // include <cpp-style>
             lib = (parseIdentifier());
