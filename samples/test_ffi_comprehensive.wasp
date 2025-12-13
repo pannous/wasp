@@ -1,0 +1,103 @@
+// Comprehensive FFI Test Suite
+// Demonstrates various parameter type combinations with native library imports
+
+// ==============================================================================
+// Test 1: Integer -> Integer (abs from libc)
+// ==============================================================================
+// Signature: int32 abs(int32)
+// Library: libc (stdlib.h)
+// Wrapper: ffi_i32_i32
+
+import abs from "c"
+abs(-42)  // Expected: 42
+// abs(0)    // Expected: 0
+// abs(100)  // Expected: 100
+
+
+// ==============================================================================
+// Test 2: Float64 -> Float64 (floor from libm)
+// ==============================================================================
+// Signature: float64 floor(float64)
+// Library: libm (math.h)
+// Wrapper: ffi_f64_f64
+
+import floor from "m"
+floor(3.7)  // Expected: 3.0
+// floor(-2.3)  // Expected: -3.0
+// floor(5.0)   // Expected: 5.0
+
+
+// ==============================================================================
+// Test 3: String -> Integer (strlen from libc)
+// ==============================================================================
+// Signature: int32 strlen(char*)
+// Library: libc (string.h)
+// Wrapper: ffi_str_i32
+
+import strlen from "c"
+strlen("hello")  // Expected: 5
+// strlen("") // Expected: 0
+// strlen("Wasp Language")  // Expected: 13
+
+
+// ==============================================================================
+// Test 4: String -> Float64 (atof from libc)
+// ==============================================================================
+// Signature: float64 atof(char*)
+// Library: libc (stdlib.h)
+// Wrapper: ffi_str_f64
+
+import atof from "c"
+atof("3.14159")  // Expected: 3.14159
+// atof("2.71828")  // Expected: 2.71828
+// atof("42")       // Expected: 42.0
+
+
+// ==============================================================================
+// Test 5: Float64, Float64 -> Float64 (fmin from libm)
+// ==============================================================================
+// Signature: float64 fmin(float64, float64)
+// Library: libm (math.h)
+// Wrapper: ffi_f64_f64_f64
+
+import fmin from "m"
+fmin(3.5, 2.1)  // Expected: 2.1
+// fmin(100.0, 50.0)  // Expected: 50.0
+// fmin(-5.0, -10.0)  // Expected: -10.0
+
+
+// ==============================================================================
+// Combined Tests: Using multiple FFI functions together
+// ==============================================================================
+
+import sqrt from "m"
+sqrt(abs(-16))  // Expected: 4.0 (sqrt of abs(-16) = sqrt(16) = 4)
+
+// Floor the result of fmin
+floor(fmin(3.7, 2.9))  // Expected: 2.0 (fmin(3.7, 2.9) = 2.9, floor(2.9) = 2.0)
+
+// Get length of a number converted to string, then use that in sqrt
+// strlen("test") => 4, sqrt(4) => 2.0
+// This would require: sqrt(strlen("test"))
+
+
+// ==============================================================================
+// Signature Pattern Examples
+// ==============================================================================
+
+// The FFI marshaller automatically detects these signature patterns:
+//
+// Single parameter:
+//   int32 -> int32       : abs
+//   float64 -> float64   : floor, sqrt, ceil, sin, cos
+//   char* -> int32       : strlen
+//   char* -> float64     : atof
+//
+// Two parameters:
+//   float64, float64 -> float64 : fmin, fmax, pow, fmod
+//   int32, int32 -> int32       : (future: max, min)
+//
+// Future expansion could support:
+//   char*, char* -> int32 : strcmp, strcoll
+//   void -> int32         : rand, getpid
+//   char*, int32 -> char* : strchr, strrchr

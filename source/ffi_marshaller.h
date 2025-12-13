@@ -5,6 +5,7 @@
 
 #include "String.h"
 #include "Node.h"
+#include "List.h"  // For List template
 #include <cstring>
 
 class FFIMarshaller {
@@ -140,6 +141,118 @@ public:
             case CType::String: return sizeof(char*);
             default: return 0;
         }
+    }
+
+    // ============================================================================
+    // Signature Pattern Detection (for automatic wrapper selection)
+    // ============================================================================
+
+    struct SignaturePattern {
+        List<CType> param_types;
+        CType return_type;
+        String wrapper_name;
+
+        SignaturePattern() : param_types(4), wrapper_name("") {
+            return_type = CType::Void;
+        }
+
+        // Helper to match signature patterns
+        bool matches(int param_count, CType p1, CType p2, CType p3, CType ret) {
+            if (param_types.size() != param_count) return false;
+            if (return_type != ret) return false;
+            if (param_count >= 1 && param_types[0] != p1) return false;
+            if (param_count >= 2 && param_types[1] != p2) return false;
+            if (param_count >= 3 && param_types[2] != p3) return false;
+            return true;
+        }
+    };
+
+    // Detect function signature pattern and return wrapper name
+    // This enables automatic selection of the appropriate FFI wrapper
+    static String detect_wrapper_name(List<CType>& param_types, CType return_type) {
+        int param_count = param_types.size();
+
+        // Single parameter functions
+        if (param_count == 1) {
+            CType p1 = param_types[0];
+
+            // int32 -> int32 (abs, etc.)
+            if (p1 == CType::Int32 && return_type == CType::Int32)
+                return "ffi_i32_i32";
+
+            // float64 -> float64 (floor, sqrt, etc.)
+            if (p1 == CType::Float64 && return_type == CType::Float64)
+                return "ffi_f64_f64";
+
+            // char* -> int32 (strlen, etc.)
+            if (p1 == CType::String && return_type == CType::Int32)
+                return "ffi_str_i32";
+
+            // char* -> float64 (atof, etc.)
+            if (p1 == CType::String && return_type == CType::Float64)
+                return "ffi_str_f64";
+
+            // char* -> char* (strdup, etc.)
+            if (p1 == CType::String && return_type == CType::String)
+                return "ffi_str_str";
+        }
+
+        // Two parameter functions
+        if (param_count == 2) {
+            CType p1 = param_types[0];
+            CType p2 = param_types[1];
+
+            // float64, float64 -> float64 (fmin, fmax, pow, fmod, etc.)
+            if (p1 == CType::Float64 && p2 == CType::Float64 && return_type == CType::Float64)
+                return "ffi_f64_f64_f64";
+
+            // int32, int32 -> int32 (max, min, gcd, etc.)
+            if (p1 == CType::Int32 && p2 == CType::Int32 && return_type == CType::Int32)
+                return "ffi_i32_i32_i32";
+
+            // char*, char* -> int32 (strcmp, etc.)
+            if (p1 == CType::String && p2 == CType::String && return_type == CType::Int32)
+                return "ffi_str_str_i32";
+        }
+
+        // No parameter functions
+        if (param_count == 0) {
+            // void -> int32 (rand, etc.)
+            if (return_type == CType::Int32)
+                return "ffi_void_i32";
+
+            // void -> float64 (time-related, etc.)
+            if (return_type == CType::Float64)
+                return "ffi_void_f64";
+        }
+
+        return ""; // Unknown signature
+    }
+
+    // Convert CType to readable string for debugging
+    static String c_type_name(CType type) {
+        switch (type) {
+            case CType::Void: return "void";
+            case CType::Int32: return "int32";
+            case CType::Int64: return "int64";
+            case CType::Float32: return "float32";
+            case CType::Float64: return "float64";
+            case CType::String: return "char*";
+            case CType::Struct: return "struct";
+            case CType::Array: return "array";
+            default: return "unknown";
+        }
+    }
+
+    // Format signature as readable string
+    static String format_signature(List<CType>& param_types, CType return_type) {
+        String sig = c_type_name(return_type) + " (";
+        for (int i = 0; i < param_types.size(); i++) {
+            if (i > 0) sig += ", ";
+            sig += c_type_name(param_types[i]);
+        }
+        sig += ")";
+        return sig;
     }
 };
 
