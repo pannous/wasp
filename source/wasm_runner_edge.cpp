@@ -8,6 +8,7 @@
 #include "Util.h"
 #include "Node.h"
 #include "ffi_loader.h"
+#include "ffi_marshaller.h"
 #include "Context.h"
 #include <cstdio>
 //#include <host/wasi/wasimodule.h>
@@ -241,7 +242,9 @@ WasmEdge_Result ffi_wrapper_f64_f64(void *func_ptr, const FrameContext *CallFram
     typedef double (*ffi_func_t)(double);
     ffi_func_t func = (ffi_func_t)func_ptr;
     double arg = WasmEdge_ValueGetF64(In[0]);
-    double result = func(arg);
+    double c_arg = FFIMarshaller::to_c_double(arg);
+    double c_result = func(c_arg);
+    double result = FFIMarshaller::from_c_double(c_result);
     Out[0] = WasmEdge_ValueGenF64(result);
     return WasmEdge_Result_Success;
 }
@@ -250,10 +253,23 @@ WasmEdge_Result ffi_wrapper_f64_f64(void *func_ptr, const FrameContext *CallFram
 WasmEdge_Result ffi_wrapper_f64_f64_f64(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     typedef double (*ffi_func_t)(double, double);
     ffi_func_t func = (ffi_func_t)func_ptr;
-    double arg1 = WasmEdge_ValueGetF64(In[0]);
-    double arg2 = WasmEdge_ValueGetF64(In[1]);
-    double result = func(arg1, arg2);
+    double arg1 = FFIMarshaller::to_c_double(WasmEdge_ValueGetF64(In[0]));
+    double arg2 = FFIMarshaller::to_c_double(WasmEdge_ValueGetF64(In[1]));
+    double c_result = func(arg1, arg2);
+    double result = FFIMarshaller::from_c_double(c_result);
     Out[0] = WasmEdge_ValueGenF64(result);
+    return WasmEdge_Result_Success;
+}
+
+// FFI wrapper for string functions: char*(char*)
+WasmEdge_Result ffi_wrapper_str_str(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    typedef char* (*ffi_func_t)(char*);
+    ffi_func_t func = (ffi_func_t)func_ptr;
+    int32_t offset = WasmEdge_ValueGetI32(In[0]);
+    const char* c_str = FFIMarshaller::offset_to_c_string(wasm_memory, offset);
+    char* c_result = func((char*)c_str);
+    int32_t result_offset = FFIMarshaller::c_string_to_offset(wasm_memory, c_result);
+    Out[0] = WasmEdge_ValueGenI32(result_offset);
     return WasmEdge_Result_Success;
 }
 
