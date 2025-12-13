@@ -16,7 +16,7 @@ endif ()
 set(SOURCE "source")
 
 # Add tests directory to include path for test headers
-include_directories(tests)
+include_directories(test)
 
 include(FetchContent) # external projects like webview
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib") # save libwebview to lib ?
@@ -397,7 +397,7 @@ endif ()
 if (NO_TESTS)
     ADD_DEFINITIONS(-DNO_TESTS)
 else ()
-    set(SOURCE_FILES ${SOURCE_FILES} tests/tests.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} test/tests.cpp)
 endif ()
 
 if (RUNTIME_ONLY)
@@ -555,7 +555,7 @@ if (WASM)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_helpers_wasm.cpp)
     if (NO_TESTS)
     else ()
-        set(SOURCE_FILES ${SOURCE_FILES} tests/test_browser.cpp)
+        set(SOURCE_FILES ${SOURCE_FILES} test/test_browser.cpp)
     endif ()
 else ()
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_helpers_host.cpp)
@@ -756,7 +756,7 @@ elseif (CTESTS) # Enable CTest
         message("WASM tests need WASMEDGE or WASMTIME")
     endif ()
     function(ADD_WASP_TEST name)
-        add_executable(test_${name} tests/test_${name}.cpp)
+        add_executable(test_${name} test/test_${name}.cpp)
         target_link_libraries(test_${name} wasp_core)
         add_test(NAME test_${name} COMMAND test_${name})
         set_tests_properties(test_${name} PROPERTIES TIMEOUT 30)
@@ -987,7 +987,7 @@ else () # NORMAL:
     if (NOT NO_TESTS AND NOT WASM)
         message("Enable CTest")
         enable_testing()
-        add_test(NAME test_current COMMAND wasp test)
+        add_test(NAME test_current COMMAND wasp test/wasp/test)
     endif ()
 endif ()
 

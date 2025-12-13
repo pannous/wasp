@@ -1302,7 +1302,7 @@ float group_precedence(char group) {
     return 999;
 }
 
-#include "../tests/test_functions.h"
+#include "../test/test_functions.h"
 
 #if BACKTRACE
 void handler(int sig) {
