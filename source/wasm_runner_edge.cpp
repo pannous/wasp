@@ -7,6 +7,8 @@
 #include "wasm_runner.h"
 #include "Util.h"
 #include "Node.h"
+#include "ffi_loader.h"
+#include "Context.h"
 #include <cstdio>
 //#include <host/wasi/wasimodule.h>
 //#include <host/wasmedge_process/processmodule.h>
@@ -231,6 +233,27 @@ WasmEdge_Result getExternRefPropertyValue(void *Data,
 
 WasmEdge_Result exit_edge(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
     exit(WasmEdge_ValueGetI32(In[0]));
+    return WasmEdge_Result_Success;
+}
+
+// FFI wrapper for double(double) functions
+WasmEdge_Result ffi_wrapper_f64_f64(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    typedef double (*ffi_func_t)(double);
+    ffi_func_t func = (ffi_func_t)func_ptr;
+    double arg = WasmEdge_ValueGetF64(In[0]);
+    double result = func(arg);
+    Out[0] = WasmEdge_ValueGenF64(result);
+    return WasmEdge_Result_Success;
+}
+
+// FFI wrapper for double(double, double) functions
+WasmEdge_Result ffi_wrapper_f64_f64_f64(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    typedef double (*ffi_func_t)(double, double);
+    ffi_func_t func = (ffi_func_t)func_ptr;
+    double arg1 = WasmEdge_ValueGetF64(In[0]);
+    double arg2 = WasmEdge_ValueGetF64(In[1]);
+    double result = func(arg1, arg2);
+    Out[0] = WasmEdge_ValueGenF64(result);
     return WasmEdge_Result_Success;
 }
 
@@ -482,6 +505,31 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         HostName = WasmEdge_StringCreateByCString("_ZdlPvm");
         WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
         WasmEdge_StringDelete(HostName);
+    }
+
+    // Add FFI imports
+    for (int i = 0; i < ffi_functions.size(); i++) {
+        FFIFunctionInfo& ffi_info = ffi_functions[i];
+        String func_name = ffi_info.function_name;
+        String lib_name = ffi_info.library_name;
+        void* ffi_func = ffi_loader.get_function(lib_name, func_name);
+        if (ffi_func) {
+            // For now, default to f64->f64 signature for math functions
+            // TODO: Add signature detection based on function metadata
+            WasmEdge_ValType P[1], R[1];
+            P[0] = WasmEdge_ValTypeGenF64();
+            R[0] = WasmEdge_ValTypeGenF64();
+            HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+            HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ffi_wrapper_f64_f64, ffi_func, 0);
+            WasmEdge_FunctionTypeDelete(HostFType);
+            HostName = WasmEdge_StringCreateByCString(func_name);
+            WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+            WasmEdge_StringDelete(HostName);
+
+            print("FFI: Loaded "s + func_name + " from " + lib_name);
+        } else {
+            warn("FFI: Failed to load "s + func_name + " from " + lib_name);
+        }
     }
 
     return HostMod;

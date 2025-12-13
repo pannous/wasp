@@ -711,6 +711,25 @@ Node &analyze(Node &node, Function &function) {
     if (firstName == "data" or firstName == "quote")
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
+    // Handle FFI imports: import funcname from "library"
+    if (name == "import" and node.length >= 3) {
+        String func_name = node[0].name;
+        // Check for "from" keyword
+        if (node.length >= 3 and node[1].name == "from" and node[2].kind == strings) {
+            String lib_name = node[2].string();
+            // Register as FFI import
+            Function &func = functions[func_name];
+            func.name = func_name;
+            func.is_import = true;
+            func.is_ffi = true;
+            func.ffi_library = lib_name;
+            func.is_used = true;
+            // Add to global FFI registry for runtime
+            ffi_functions.add({func_name, lib_name});
+            return NUL;
+        }
+    }
+
     if (name == "html") {
         useFunction("getDocumentBody");
         useFunction("createHtml");

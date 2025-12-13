@@ -29,6 +29,7 @@ List<Module *> libraries; // used modules from (automatic) import statements e.g
 // functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
 
 Map<int64, bool> analyzed = {1000};
+List<FFIFunctionInfo> ffi_functions; // FFI function registry
 // avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!
 
 
