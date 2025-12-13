@@ -14,6 +14,7 @@
 #include "Util.h"
 #include <math.h>
 #include "ffi_loader.h"
+#include "ffi_marshaller.h"
 #include "Context.h"
 
 //#include <wasmtime.h>
@@ -110,7 +111,9 @@ wrap(ffi_f64_f64) {
     typedef double (*ffi_func_t)(double);
     ffi_func_t func = (ffi_func_t)env;
     double arg = args[0].of.f64;
-    double result = func(arg);
+    double c_arg = FFIMarshaller::to_c_double(arg);
+    double c_result = func(c_arg);
+    double result = FFIMarshaller::from_c_double(c_result);
     results[0].of.f64 = result;
     return NULL;
 }
@@ -119,10 +122,23 @@ wrap(ffi_f64_f64) {
 wrap(ffi_f64_f64_f64) {
     typedef double (*ffi_func_t)(double, double);
     ffi_func_t func = (ffi_func_t)env;
-    double arg1 = args[0].of.f64;
-    double arg2 = args[1].of.f64;
-    double result = func(arg1, arg2);
+    double arg1 = FFIMarshaller::to_c_double(args[0].of.f64);
+    double arg2 = FFIMarshaller::to_c_double(args[1].of.f64);
+    double c_result = func(arg1, arg2);
+    double result = FFIMarshaller::from_c_double(c_result);
     results[0].of.f64 = result;
+    return NULL;
+}
+
+// FFI wrapper for string functions: char*(char*)
+wrap(ffi_str_str) {
+    typedef char* (*ffi_func_t)(char*);
+    ffi_func_t func = (ffi_func_t)env;
+    int32_t offset = args[0].of.i32;
+    const char* c_str = FFIMarshaller::offset_to_c_string(wasm_memory, offset);
+    char* c_result = func((char*)c_str);
+    int32_t result_offset = FFIMarshaller::c_string_to_offset(wasm_memory, c_result);
+    results[0].of.i32 = result_offset;
     return NULL;
 }
 
