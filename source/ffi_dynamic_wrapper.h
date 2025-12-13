@@ -26,7 +26,7 @@ WasmEdge_Result ffi_dynamic_wrapper(
     }
 
     // Get wasm memory for string conversions
-    extern uint8_t *wasm_memory;  // Defined in wasm_runner_edge.cpp
+    // extern uint8_t *wasm_memory;  // Defined in wasm_runner_edge.cpp
 
     // Dynamically marshal parameters based on signature
     List<FFIMarshaller::FFIValue> args(sig->param_types.size());

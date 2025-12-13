@@ -13,5 +13,5 @@
 #include "test_parser.h"
 #include "test_node.h"
 #include "test_web.h"
-#include "test_feature.h"
+#include "test_wit.h"
 #include "test_implementation.h"

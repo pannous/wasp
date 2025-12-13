@@ -105,6 +105,8 @@ The number of TESTS PASSED must not go down!
 ### Coding Style
 
 - Use `0` instead of `nullptr`
+- use #pragma once
+- use trace("msg") for debugging
 - **Never use std:: libraries** - Use the custom `String`, `List`, `Map` provided in the project, or implement simple ad-hoc algorithms
 - Use meaningful names for self-documenting code (minimize trivial comments)
 
@@ -198,3 +200,4 @@ lldb -- ./build/wasp test
 - in @source/wasmtime_runner.cpp we used a patched wasmtime wasm-c-api to read struct properties
 - After each modification run ./wasp test And commit if it works
 - If you feel bored check for a simple todo but always check running ./wasp test before and after
+- NEVER create or modify tests in ./tests/ folder unless Explicitly instructed. Instead try to work with The existing tests or if absolutely necessary create new temporary tests in ./probes/ folder

@@ -40,6 +40,9 @@ int tests_executed = 0;
 #include "../source/own_merge/common.h"
 #include "../source/asserts.h"
 
+// OTHER TESTS
+#include "test_ffi.h"
+
 //==============================================================================
 // TYPE SYSTEM TESTS (see type_tests.h for declarations)
 //==============================================================================
@@ -4358,6 +4361,7 @@ void testCurrent() {
 
 // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
+    test_ffi_comprehensive_emit();
     testMapOfStrings();
     testMapOfStringValues();
     testMaps();

@@ -27,9 +27,6 @@ void testEqualsBinding();
 void testColonImmediateBinding();
 void bindgen(Node &n);
 
-// Use/import
-void testUse();
-void testInclude();
 
 // Exceptions
 void testExceptions();

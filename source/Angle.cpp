@@ -717,6 +717,7 @@ Node &analyze(Node &node, Function &function) {
         // Check for "from" keyword
         if (node.length >= 3 and node[1].name == "from" and node[2].kind == strings) {
             String lib_name = node[2].string();
+
             // Register as FFI import
             Function &func = functions[func_name];
             func.name = func_name;
