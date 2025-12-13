@@ -3688,6 +3688,8 @@ Code emitTypeSection() {
     Code type_data;
     //	print(functionIndices);
     for (String& fun: functions) {
+        if (fun == "abs" || fun == "wasp_main") {
+        }
         if (!fun) {
             //			print(functionIndices);
             //			print(functions);
@@ -3698,13 +3700,19 @@ Code emitTypeSection() {
             else
                 warn("empty context creep functions[ø]");
                 // error("empty context creep functions[ø]");
+            if (fun == "abs") printf("DEBUG emitter: abs is empty string, skipping\n");
             continue;
         }
-        if (operator_list.has(fun)) {
+        // Skip operators unless they're FFI imports
+        Function &temp_func = functions[fun];
+        if (operator_list.has(fun) && !temp_func.is_ffi) {
             todow("how did we get here?");
             continue;
         }
+        if (fun == "abs") {
+        }
         if (is_operator(fun[0])) {
+            if (fun == "abs") printf("DEBUG emitter: abs first char is operator, skipping\n");
             todo("how did we get here?");
             continue;
         } // todo how did we get here?
@@ -3722,8 +3730,10 @@ Code emitTypeSection() {
 
         if (function.is_runtime)
             continue;
-        if (function.signature.is_handled)
+        if (function.signature.is_handled) {
+            if (fun == "abs") printf("DEBUG emitter: abs signature already handled, skipping\n");
             continue;
+        }
         //		if(context.is_import) // types in import section!
         //			continue;
 

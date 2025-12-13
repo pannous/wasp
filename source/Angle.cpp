@@ -17,6 +17,7 @@
 #include "WitReader.h"
 #include "FunctionAnalyzer.h"
 #include "OperatorAnalyzer.h"
+#include "ffi_signatures.h"
 
 #if INCLUDE_MERGER and not RUNTIME_ONLY
 #include "wasm_merger.h"
@@ -712,23 +713,52 @@ Node &analyze(Node &node, Function &function) {
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
     // Handle FFI imports: import funcname from "library"
-    if (name == "import" and node.length >= 3) {
-        String func_name = node[0].name;
-        // Check for "from" keyword
-        if (node.length >= 3 and node[1].name == "from" and node[2].kind == strings) {
-            String lib_name = node[2].string();
+    if (name == "import" and node.has("function") and node.has("library")) {
+        // Extract function and library from import node structure
+        Node &func_node = node["function"];
+        Node &lib_node = node["library"];
+        String func_name = func_node.length > 0 ? func_node.first().name : func_node.values().name;
+        String lib_name = lib_node.length > 0 ? lib_node.first().name : lib_node.values().name;
 
-            // Register as FFI import
-            Function &func = functions[func_name];
-            func.name = func_name;
-            func.is_import = true;
-            func.is_ffi = true;
-            func.ffi_library = lib_name;
-            func.is_used = true;
-            // Add to global FFI registry for runtime
-            ffi_functions.add({func_name, lib_name});
-            return NUL;
+        // Register as FFI import
+        Function &func = functions[func_name];
+        func.name = func_name;
+        func.is_import = true;
+        func.is_ffi = true;
+        func.ffi_library = lib_name;
+        func.is_used = true;
+
+        // Detect and set function signature based on name and library
+        FFISignature ffi_sig = detect_signature(func_name, lib_name, nullptr);
+
+        // Convert FFI signature to Wasp Signature
+        for (CType param_type : ffi_sig.param_types) {
+            Arg param;
+            switch (param_type) {
+                case CType::Int32: param.type = int32t; break;
+                case CType::Int64: param.type = i64; break;
+                case CType::Float32: param.type = float32t; break;
+                case CType::Float64: param.type = float64t; break;
+                case CType::String: param.type = charp; break;
+                default: param.type = int32t; break;
+            }
+            func.signature.parameters.add(param);
         }
+
+        // Set return type
+        switch (ffi_sig.return_type) {
+            case CType::Int32: func.signature.return_types.add(int32t); break;
+            case CType::Int64: func.signature.return_types.add(i64); break;
+            case CType::Float32: func.signature.return_types.add(float32t); break;
+            case CType::Float64: func.signature.return_types.add(float64t); break;
+            case CType::String: func.signature.return_types.add(charp); break;
+            case CType::Void: break; // No return type
+            default: func.signature.return_types.add(int32t); break;
+        }
+
+        // Add to global FFI registry for runtime
+        ffi_functions.add({func_name, lib_name});
+        return NUL;
     }
 
     if (name == "html") {
@@ -808,6 +838,77 @@ Node &analyze(Node &node, Function &function) {
 
     if (type == operators or type == call or isFunction(node)) //todo merge/clean
         return groupOperatorCall(node, function); // call, NOT definition
+
+    // Handle FFI imports in expression children before grouping operators
+    if (node.kind == expression && node.length > 0) {
+        List<Node> filtered_children;
+        for (int i = 0; i < node.length; i++) {
+            Node &child = node.children[i];
+            if (child.name == "import" && child.kind == functor && child.has("function") && child.has("library")) {
+                // Extract function and library from import node structure
+                // The structure is: import(function:function:"abs" library:library:"c")
+                Node &func_node = child["function"];
+                Node &lib_node = child["library"];
+
+                // The value is stored as the first child or as a string value
+                String func_name = func_node.length > 0 ? func_node.first().name : func_node.values().name;
+                String lib_name = lib_node.length > 0 ? lib_node.first().name : lib_node.values().name;
+
+
+                // Register as FFI import
+                Function &func = functions[func_name];
+                func.name = func_name;
+                func.is_import = true;
+                func.is_ffi = true;
+                func.ffi_library = lib_name;
+                func.is_used = true;
+
+                // Detect and set function signature based on name and library
+                FFISignature ffi_sig = detect_signature(func_name, lib_name, nullptr);
+                // Convert FFI signature to Wasp Signature
+                for (CType param_type : ffi_sig.param_types) {
+                    Arg param;
+                    switch (param_type) {
+                        case CType::Int32: param.type = int32t; break;
+                        case CType::Int64: param.type = i64; break;
+                        case CType::Float32: param.type = float32t; break;
+                        case CType::Float64: param.type = float64t; break;
+                        case CType::String: param.type = charp; break;
+                        default: param.type = int32t; break;
+                    }
+                    func.signature.parameters.add(param);
+                }
+                // Set return type
+                switch (ffi_sig.return_type) {
+                    case CType::Int32: func.signature.return_types.add(int32t); break;
+                    case CType::Int64: func.signature.return_types.add(i64); break;
+                    case CType::Float32: func.signature.return_types.add(float32t); break;
+                    case CType::Float64: func.signature.return_types.add(float64t); break;
+                    case CType::String: func.signature.return_types.add(charp); break;
+                    case CType::Void: break; // No return type
+                    default: func.signature.return_types.add(int32t); break;
+                }
+
+
+                // Add to global FFI registry for runtime
+                ffi_functions.add({func_name, lib_name});
+
+                // Don't add import node to filtered children (skip it)
+            } else if (child.name == "\n" || child.name == " " || child.name == "\t" || child.name == "\\") {
+                // Skip whitespace/newline nodes
+            } else {
+                // Keep non-import, non-whitespace nodes
+                filtered_children.add(child);
+            }
+        }
+        // Rebuild node.children without imports and whitespace
+        if (filtered_children.size() < node.length) {
+            node.length = filtered_children.size();
+            for (int i = 0; i < filtered_children.size(); i++) {
+                node.children[i] = filtered_children[i];
+            }
+        }
+    }
 
     Node &groupedTypes = groupTypes(node, function);
     Node &groupedDeclarations = groupDeclarations(groupedTypes, function);

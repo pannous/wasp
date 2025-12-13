@@ -361,9 +361,9 @@ static void test_ffi_abs() {
     // Signature: int32 abs(int32 value)
     // Wrapper: ffi_i32_i32
 
-    assert_emit("import abs from \"c\"\\nabs(-42)", 42);
-    assert_emit("import abs from \"c\"\\nabs(0)", 0);
-    assert_emit("import abs from \"c\"\\nabs(100)", 100);
+    assert_emit("import abs from \"c\"\nabs(-42)", 42);
+    assert_emit("import abs from \"c\"\nabs(0)", 0);
+    assert_emit("import abs from \"c\"\nabs(100)", 100);
 }
 
 static void test_ffi_floor() {

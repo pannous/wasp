@@ -1103,46 +1103,31 @@ private:
         // especially if file.name is lib.wasm ;)
         // import IF not in data mode
 
+        for (int i = 0; i < node.length; i++) {
+            printf("  node[%d].name = %s\n", i, node[i].name.data);
+        }
+
         // Check for FFI import pattern: import funcname from "library"
         // Node structure at this point: [0]="import", [1]="funcname", [2]="from"
         // The library string should be next in the input stream
         if (node.length >= 3 && node[2].name == "from") {
-            // This is an FFI import: import X from "lib"
-            // Parse the library string (next token should be a string literal)
-            white(); // skip whitespace
+            // e.g. import abs from 'm'
+            // Get function name from already-parsed node
+            String func = node[1].name;
 
-            // Parse the library string manually to ensure it's marked as strings kind
-            if (ch != '"' && ch != '\'') {
-                error("Expected string literal for library name");
-            }
-            codepoint quote = ch;
-            proceed(); // skip opening quote
+            // Parse the library string (next in stream)
+            white();
+            if (ch == '"' or ch == '\'' or ch == '<') proceed(); // skip opening quote
+            String lib = parseIdentifier();
+            if (ch == '"' or ch == '\'' or ch == '>') proceed(); // skip closing quote
 
-            String lib_name;
-            while (ch and ch != quote) {
-                lib_name += ch;
-                proceed();
-            }
-            if (ch == quote) proceed(); // skip closing quote
-
-            // Create a proper string node
-            Node *lib_node = new Node(lib_name);
-            lib_node->value.string = new String(lib_name);
-            lib_node->kind = strings;
-
-            // Restructure the node for Angle.cpp:
-            // Angle.cpp expects: node.name="import", node[0]=funcname, node[1]="from", node[2]=library
-            // Current structure: node is expression with [0]="import", [1]="abs", [2]="from"
-
-            // Create a new import node with the correct structure
+            // Create import node with dictionary-style access
             Node &import_node = *new Node("import");
-            import_node.add(node[1]); // function name "abs"
-            import_node.add(node[2]); // "from"
-            import_node.add(lib_node); // library string "c"
+            import_node["function"] = func;
+            import_node["library"] = lib;
 
             // Set kind to functor so it won't be flattened by parseExpression()
             import_node.kind = functor;
-
             // Don't try to load as a file, let Angle.cpp handle it
             return import_node;
         }
@@ -1312,7 +1297,8 @@ private:
         }
         if (close and not isWhite(close) and close != ';' and close != ',')
             parserError("unclosed pair "s + close); // todo remember opening pair line
-        return actual.flat();
+        Node &result = actual.flat();
+        return result;
     };
 
     bool isKebabBridge() {

@@ -343,13 +343,16 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
 
     // Handle imports
     if (contains(import_keywords, (chars) node.first().name.data)) {
+        for (int i = 0; i < node.length; i++) {
+            printf("  node[%d] = %s\n", i, node[i].serialize().data);
+        }
         node = direct_include(actual, node);
     }
 
-#ifndef RUNTIME_ONLY
     // Don't convert FFI imports to operators - they need to stay as functors
     bool is_ffi_import = (node.name == "import" && node.kind == functor);
 
+#ifndef RUNTIME_ONLY
     if (!is_ffi_import && (precedence(node) or operator_list.has(node.name))) {
         node.kind = operators;
     }
@@ -374,4 +377,5 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
         else
             actual.add(&node.flat());
     }
+
 }
