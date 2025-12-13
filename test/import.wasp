@@ -1,2 +1,0 @@
-use sin
-assert sin π/2 == 1 

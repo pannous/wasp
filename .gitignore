@@ -69,7 +69,7 @@ playground/
 /test/merge/target/
 .cmake
 wasp
-test/merge/
+tests/merge/
 /wapm/
 .fake
 lib/libwasmedge.dylib

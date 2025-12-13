@@ -783,7 +783,8 @@ enum struct_opcodes {
 //     arrayNewElem = 0xfb1f, // array.new_elem
 // };
 
-// https://chromium.googlesource.com/v8/v8/+/refs/heads/main/src/wasm/wasm-opcodes.h
+// https://chromium.googlesource.com/v8/v8/+/refs/heads/main/src/wasm/wasm-opcodes.h ≠
+// ≠
 // ⚠️ THESE ARE DIFFERENT! Obviously not standardized or still in flux.
 
 enum array_opcodes {
@@ -800,6 +801,7 @@ enum array_opcodes {
     arrayInitStatic = arrayNewCanonFixed,
     /* 0xfb1a unused */
     arrayNewCanonData        = 0xfb1b, // array.new_canon_data
+    arrayNewData  = arrayNewCanonData, // = 0xfb09, // array.new_data DEPRECATED!
     arrayNewCanonElem        = 0xfb1c, // array.new_canon_elem
 };
 
