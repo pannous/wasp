@@ -13,6 +13,8 @@
 #include <cstdlib>
 #include "Util.h"
 #include <math.h>
+#include "ffi_loader.h"
+#include "Context.h"
 
 //#include <wasmtime.h>
 #include "wasmtime.h"
@@ -103,6 +105,27 @@ typedef wasm_trap_t *(wasm_wrap)(void *, wasmtime_caller_t *, const wasmtime_val
 
 const wasm_functype_t *funcType(Signature &signature);
 
+// FFI wrapper for double(double) functions
+wrap(ffi_f64_f64) {
+    typedef double (*ffi_func_t)(double);
+    ffi_func_t func = (ffi_func_t)env;
+    double arg = args[0].of.f64;
+    double result = func(arg);
+    results[0].of.f64 = result;
+    return NULL;
+}
+
+// FFI wrapper for double(double, double) functions
+wrap(ffi_f64_f64_f64) {
+    typedef double (*ffi_func_t)(double, double);
+    ffi_func_t func = (ffi_func_t)env;
+    double arg1 = args[0].of.f64;
+    double arg2 = args[1].of.f64;
+    double result = func(arg1, arg2);
+    results[0].of.f64 = result;
+    return NULL;
+}
+
 wasm_wrap *link_import(String name);
 
 #include "wasmtime/val.h"
@@ -192,6 +215,32 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
             wasmtime_error_t *derr = wasmtime_linker_define_func(
                 linker, "env", 3, import_name, import_name.length, own_type, cb, NULL, NULL);
             if (derr) exit_with_error("define_func failed", derr, NULL);
+        }
+    }
+
+    // Add FFI imports
+    for (int i = 0; i < ffi_functions.size(); i++) {
+        FFIFunctionInfo& ffi_info = ffi_functions[i];
+        String func_name = ffi_info.function_name;
+        String lib_name = ffi_info.library_name;
+        void* ffi_func = ffi_loader.get_function(lib_name, func_name);
+        if (ffi_func) {
+            // For now, default to f64->f64 signature for math functions
+            // TODO: Add signature detection based on function metadata
+            wasm_functype_t *ffi_type = wasm_functype_new_1_1(
+                wasm_valtype_new_f64(), wasm_valtype_new_f64());
+            wasmtime_error_t *derr = wasmtime_linker_define_func(
+                linker, "env", 3, func_name, func_name.length, ffi_type,
+                (wasmtime_func_callback_t)&wrap_ffi_f64_f64, ffi_func, NULL);
+            wasm_functype_delete(ffi_type);
+            if (derr) {
+                warn("FFI: Failed to define "s + func_name + " from " + lib_name);
+                wasmtime_error_delete(derr);
+            } else {
+                print("FFI: Loaded "s + func_name + " from " + lib_name);
+            }
+        } else {
+            warn("FFI: Failed to load "s + func_name + " from " + lib_name);
         }
     }
 
