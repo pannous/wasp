@@ -1,7 +1,10 @@
 // FFI (Foreign Function Interface) loader for dynamic libraries
 // Loads native libraries and resolves function symbols
+// Only available on Mac/Linux (native builds), not in WASM/Browser
 
 #pragma once
+
+#ifdef NATIVE_FFI
 
 #include "String.h"
 #include "Map.h"
@@ -102,3 +105,5 @@ inline void print(const FFILibrary& lib) {
 
 // Global FFI loader instance
 static FFILoader ffi_loader;
+
+#endif // NATIVE_FFI

@@ -525,7 +525,9 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         WasmEdge_StringDelete(HostName);
     }
 
-    // Add FFI imports with dynamic signature detection
+#ifdef NATIVE_FFI
+    // Add FFI imports with dynamic signature detection from native libraries (Mac/Linux only)
+    // WASM builds cannot load native .so/.dylib files
     for (int i = 0; i < ffi_functions.size(); i++) {
         FFIFunctionInfo& ffi_info = ffi_functions[i];
         String func_name = ffi_info.function_name;
@@ -608,6 +610,7 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
             warn("FFI: Failed to load "s + func_name + " from " + lib_name);
         }
     }
+#endif // NATIVE_FFI
 
     return HostMod;
 }

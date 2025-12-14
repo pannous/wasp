@@ -234,7 +234,9 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         }
     }
 
-    // Add FFI imports
+#ifdef NATIVE_FFI
+    // Add FFI imports from native libraries (Mac/Linux only)
+    // WASM builds cannot load native .so/.dylib files
     for (int i = 0; i < ffi_functions.size(); i++) {
         FFIFunctionInfo& ffi_info = ffi_functions[i];
         String func_name = ffi_info.function_name;
@@ -259,6 +261,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
             warn("FFI: Failed to load "s + func_name + " from " + lib_name);
         }
     }
+#endif // NATIVE_FFI
 
     // Instantiate module via linker so both WASI and env imports resolve.
     error = wasmtime_linker_instantiate(linker, context, module0, &instance, &trap);
