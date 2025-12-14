@@ -4362,7 +4362,7 @@ void testCurrent() {
 
 // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
-    // test_ffi_comprehensive_emit();
+    test_ffi_all();
     testMapOfStrings();
     testMapOfStringValues();
     testMaps();
