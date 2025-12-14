@@ -9,6 +9,8 @@
 #include "Node.h"
 #include "ffi_loader.h"
 #include "ffi_marshaller.h"
+#include "ffi_signatures.h"
+#include "ffi_dynamic_wrapper.h"
 #include "Context.h"
 #include <cstdio>
 //#include <host/wasi/wasimodule.h>
@@ -523,26 +525,81 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         WasmEdge_StringDelete(HostName);
     }
 
-    // Add FFI imports
+    // Add FFI imports with dynamic signature detection
     for (int i = 0; i < ffi_functions.size(); i++) {
         FFIFunctionInfo& ffi_info = ffi_functions[i];
         String func_name = ffi_info.function_name;
         String lib_name = ffi_info.library_name;
         void* ffi_func = ffi_loader.get_function(lib_name, func_name);
         if (ffi_func) {
-            // For now, default to f64->f64 signature for math functions
-            // TODO: Add signature detection based on function metadata
-            WasmEdge_ValType P[1], R[1];
-            P[0] = WasmEdge_ValTypeGenF64();
-            R[0] = WasmEdge_ValTypeGenF64();
-            HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
-            HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ffi_wrapper_f64_f64, ffi_func, 0);
+            // Detect signature based on function name and library
+            FFISignature sig = detect_signature(func_name, lib_name, ffi_func);
+
+            // Create WasmEdge function type from signature
+            int param_count = sig.param_types.size();
+            int return_count = (sig.return_type == CType::Void) ? 0 : 1;
+
+            WasmEdge_ValType* P = param_count > 0 ? new WasmEdge_ValType[param_count] : nullptr;
+            WasmEdge_ValType* R = return_count > 0 ? new WasmEdge_ValType[return_count] : nullptr;
+
+            // Map parameter types
+            for (int j = 0; j < param_count; j++) {
+                switch (sig.param_types[j]) {
+                    case CType::Int32:
+                    case CType::String:  // Strings are passed as i32 offsets
+                        P[j] = WasmEdge_ValTypeGenI32();
+                        break;
+                    case CType::Int64:
+                        P[j] = WasmEdge_ValTypeGenI64();
+                        break;
+                    case CType::Float32:
+                        P[j] = WasmEdge_ValTypeGenF32();
+                        break;
+                    case CType::Float64:
+                        P[j] = WasmEdge_ValTypeGenF64();
+                        break;
+                    default:
+                        P[j] = WasmEdge_ValTypeGenI32();
+                }
+            }
+
+            // Map return type
+            if (return_count > 0) {
+                switch (sig.return_type) {
+                    case CType::Int32:
+                        R[0] = WasmEdge_ValTypeGenI32();
+                        break;
+                    case CType::Int64:
+                        R[0] = WasmEdge_ValTypeGenI64();
+                        break;
+                    case CType::Float32:
+                        R[0] = WasmEdge_ValTypeGenF32();
+                        break;
+                    case CType::Float64:
+                        R[0] = WasmEdge_ValTypeGenF64();
+                        break;
+                    default:
+                        R[0] = WasmEdge_ValTypeGenI32();
+                }
+            }
+
+            HostFType = WasmEdge_FunctionTypeCreate(P, param_count, R, return_count);
+
+            // Allocate persistent signature for the wrapper
+            FFISignature* sig_ptr = new FFISignature(sig);
+
+            // Use dynamic wrapper that dispatches based on signature
+            HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ffi_dynamic_wrapper, sig_ptr, 0);
             WasmEdge_FunctionTypeDelete(HostFType);
+
+            if (P) delete[] P;
+            if (R) delete[] R;
+
             HostName = WasmEdge_StringCreateByCString(func_name);
             WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
             WasmEdge_StringDelete(HostName);
 
-            print("FFI: Loaded "s + func_name + " from " + lib_name);
+            print("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
         } else {
             warn("FFI: Failed to load "s + func_name + " from " + lib_name);
         }

@@ -362,6 +362,8 @@ static void test_ffi_abs() {
     // Wrapper: ffi_i32_i32
 
     assert_emit("import abs from \"c\"\nabs(-42)", 42);
+    let a=analyze("abs(0)");
+    check(a.kind==call or a.first().kind==call);
     assert_emit("import abs from \"c\"\nabs(0)", 0);
     assert_emit("import abs from \"c\"\nabs(100)", 100);
 }

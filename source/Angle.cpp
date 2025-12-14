@@ -712,6 +712,8 @@ Node &analyze(Node &node, Function &function) {
     if (firstName == "data" or firstName == "quote")
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
+    if (name == "import")
+        print(contains(import_keywords,name) );
     // Handle FFI imports: import funcname from "library"
     if (name == "import" and node.has("function") and node.has("library")) {
         // Extract function and library from import node structure

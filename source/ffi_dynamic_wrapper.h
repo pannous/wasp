@@ -12,7 +12,7 @@
 #include "wasmedge/wasmedge.h"
 
 // Single generic wrapper for WasmEdge - handles ALL FFI functions dynamically
-WasmEdge_Result ffi_dynamic_wrapper(
+inline WasmEdge_Result ffi_dynamic_wrapper(
     void *context_data,
     const WasmEdge_CallingFrameContext *CallFrameCxt,
     const WasmEdge_Value *In,
