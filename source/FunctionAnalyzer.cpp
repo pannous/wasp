@@ -238,6 +238,29 @@ Node extractReturnTypes(Node decl, Node body) {
     return DoubleType; // LongType;// todo
 }
 
+Node &parseWhileExpression(Node &node, Node &expressiona, int i, Function &context) {
+    if (node.length == 2) {
+        node[0] = analyze(node[0], context);
+        node[1] = analyze(node[1], context);
+        return node; // all good
+    }
+    if (node.length == 1) {
+        // while()… or …while()
+        node[0] = analyze(node[0], context);
+        Node then = expressiona.from("while"); // todo: to closer!?
+        int remaining = then.length;
+        node.add(analyze(then, context).clone());
+        expressiona.remove(i + 1, i + remaining);
+        return node;
+    }
+    Node n = expressiona.from("while");
+    Node &iff = groupWhile(n, context); // todo: sketchy!
+    int j = expressiona.lastIndex(iff.last().next) - 1; // huh?
+    if (j > i)
+        expressiona.replace(i, j, iff);
+    return iff;
+}
+
 // todo this function needs some serious refactor namely get rid of the "if" matching …
 Node &groupFunctionCalls(Node &expressiona, Function &context) {
     if (expressiona.kind == declaration)return expressiona; // handled before
@@ -278,26 +301,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         //        }
         if (name == "while") {
             // error("while' should be treated earlier");
-            // todo: move into groupWhile !!
-            if (node.length == 2) {
-                node[0] = analyze(node[0], context);
-                node[1] = analyze(node[1], context);
-                continue; // all good
-            }
-            if (node.length == 1) {
-                // while()… or …while()
-                node[0] = analyze(node[0], context);
-                Node then = expressiona.from("while"); // todo: to closer!?
-                int remaining = then.length;
-                node.add(analyze(then, context).clone());
-                expressiona.remove(i + 1, i + remaining);
+            parseWhileExpression(node, expressiona, i, context);
                 continue;
-            } else {
-                Node n = expressiona.from("while");
-                Node &iff = groupWhile(n, context); // todo: sketchy!
-                int j = expressiona.lastIndex(iff.last().next) - 1; // huh?
-                if (j > i)expressiona.replace(i, j, iff);
-            }
         }
         // Check if this is a struct constructor (before checking isFunction)
         if (types.has(name) and node.length > 0) {

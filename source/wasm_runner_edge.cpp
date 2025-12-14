@@ -605,7 +605,7 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
             WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
             WasmEdge_StringDelete(HostName);
 
-            print("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
+            trace("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
         } else {
             warn("FFI: Failed to load "s + func_name + " from " + lib_name);
         }

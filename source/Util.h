@@ -94,7 +94,8 @@ static bool tracing = false; // todo not DEBUG on linux?
 #else
 #define trace(x) if(tracing)print(x);
 // #define trace(x) ; // don't trace TODO
-#define tracef(x, ...) if(tracing)printf(x,__VA_ARGS__)
+// #define tracef(x, ...) if(tracing)printf(x,__VA_ARGS__);
+#define tracef(x, ...) ;
 #endif
 
 typedef unsigned char byte;
