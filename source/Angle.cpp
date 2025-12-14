@@ -730,33 +730,8 @@ Node &analyze(Node &node, Function &function) {
         func.ffi_library = lib_name;
         func.is_used = true;
 
-        // Detect and set function signature based on name and library
-        FFISignature ffi_sig = detect_signature(func_name, lib_name, nullptr);
-
-        // Convert FFI signature to Wasp Signature
-        for (CType param_type : ffi_sig.param_types) {
-            Arg param;
-            switch (param_type) {
-                case CType::Int32: param.type = int32t; break;
-                case CType::Int64: param.type = i64; break;
-                case CType::Float32: param.type = float32t; break;
-                case CType::Float64: param.type = float64t; break;
-                case CType::String: param.type = charp; break;
-                default: param.type = int32t; break;
-            }
-            func.signature.parameters.add(param);
-        }
-
-        // Set return type
-        switch (ffi_sig.return_type) {
-            case CType::Int32: func.signature.return_types.add(int32t); break;
-            case CType::Int64: func.signature.return_types.add(i64); break;
-            case CType::Float32: func.signature.return_types.add(float32t); break;
-            case CType::Float64: func.signature.return_types.add(float64t); break;
-            case CType::String: func.signature.return_types.add(charp); break;
-            case CType::Void: break; // No return type
-            default: func.signature.return_types.add(int32t); break;
-        }
+        // Detect and set function signature directly (reuses existing Signature class)
+        detect_ffi_signature(func_name, lib_name, func.signature);
 
         // Add to global FFI registry for runtime
         ffi_functions.add({func_name, lib_name});
@@ -865,32 +840,8 @@ Node &analyze(Node &node, Function &function) {
                 func.ffi_library = lib_name;
                 func.is_used = true;
 
-                // Detect and set function signature based on name and library
-                FFISignature ffi_sig = detect_signature(func_name, lib_name, nullptr);
-                // Convert FFI signature to Wasp Signature
-                for (CType param_type : ffi_sig.param_types) {
-                    Arg param;
-                    switch (param_type) {
-                        case CType::Int32: param.type = int32t; break;
-                        case CType::Int64: param.type = i64; break;
-                        case CType::Float32: param.type = float32t; break;
-                        case CType::Float64: param.type = float64t; break;
-                        case CType::String: param.type = charp; break;
-                        default: param.type = int32t; break;
-                    }
-                    func.signature.parameters.add(param);
-                }
-                // Set return type
-                switch (ffi_sig.return_type) {
-                    case CType::Int32: func.signature.return_types.add(int32t); break;
-                    case CType::Int64: func.signature.return_types.add(i64); break;
-                    case CType::Float32: func.signature.return_types.add(float32t); break;
-                    case CType::Float64: func.signature.return_types.add(float64t); break;
-                    case CType::String: func.signature.return_types.add(charp); break;
-                    case CType::Void: break; // No return type
-                    default: func.signature.return_types.add(int32t); break;
-                }
-
+                // Detect and set function signature directly (reuses existing Signature class)
+                detect_ffi_signature(func_name, lib_name, func.signature);
 
                 // Add to global FFI registry for runtime
                 ffi_functions.add({func_name, lib_name});
