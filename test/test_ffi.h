@@ -475,12 +475,9 @@ static void test_ffi_all() {
     // Main comprehensive test function that runs all FFI tests
     test_ffi_abs();
     test_ffi_floor();
-    todow("test_ffi_strlen");
-    skip(
+    test_ffi_fmin();
     test_ffi_strlen();
     test_ffi_atof();
-    test_ffi_fmin();
     test_ffi_combined();
-    )
     test_ffi_signature_detection();
 }

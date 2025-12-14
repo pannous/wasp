@@ -355,8 +355,13 @@ bool addLocal(Function &context, String name, Type type, bool is_param) {
     }
     if (globals.has(name))
         error(name + " already declared as global"s);
-    if (isFunction(name, true))
+    if (isFunction(name, true)) {
+        // Allow re-importing FFI functions (they're idempotent)
+        if (functions[name].is_ffi) {
+            return false; // Already declared, skip adding again
+        }
         error(name + " already declared as function"s);
+    }
     if (not context.locals.has(name)) {
         int position = context.locals.size();
         context.locals.add(name, Local{.is_param = is_param, .position = position, .name = name, .type = type});
