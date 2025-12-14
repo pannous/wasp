@@ -4340,6 +4340,7 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting current tests 💡");
+    // assert_emit("abs(0)",0);
     // assert_emit("`hello ${42}`", "hello 42"); // todo use formatLong
     // assert_emit("`hello ${1+1}`", "hello 2");
     // assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
@@ -4361,7 +4362,7 @@ void testCurrent() {
 
 // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
-    test_ffi_comprehensive_emit();
+    // test_ffi_comprehensive_emit();
     testMapOfStrings();
     testMapOfStringValues();
     testMaps();

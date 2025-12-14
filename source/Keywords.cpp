@@ -342,7 +342,6 @@ bool isFunction(String op, bool deep_search) {
     //	if(_isFunction[op.hash()])return true;
     if (op.empty())return false;
     if (op == "‖")return false;
-    if (functions.has(op))return true;
     if (functions.has(op))return true; // pre registered signatures
     if (op.in(function_list))
         return true;
