@@ -104,6 +104,11 @@ endif ()
 
 if (NOT WASM)
     set(CONSOLE 1) # can't get readline to work in wasm
+    # Enable native FFI (dynamic library loading via dlopen/dlsym) only on Mac/Linux
+    # WASM can still have FFI-like functionality via runtime imports, but not native libraries
+    set(NATIVE_FFI 1)
+    ADD_DEFINITIONS(-DNATIVE_FFI)
+    message("NATIVE_FFI enabled for Mac/Linux")
     if (NOT RUNTIME_ONLY)
         # In addition to the compiler,
         # The WASP runtime can be bundled with WASM runtimes:
