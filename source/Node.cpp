@@ -1118,6 +1118,7 @@ Node &Node::flat() {
             }
             return child;
         }
+        // if(not value.data and child.kind==longs)return child; // todo abs(0) vs tee{a:1} !?
         if ((int64) children < MAX_MEM and not value.data and name.empty()) {
             child.parent = parent;
             return child.flat();
