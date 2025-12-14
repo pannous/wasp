@@ -42,6 +42,7 @@ int tests_executed = 0;
 
 // OTHER TESTS
 #include "test_ffi.h"
+#include "test_ffi_header_parser.h"
 
 //==============================================================================
 // TYPE SYSTEM TESTS (see type_tests.h for declarations)
@@ -4363,6 +4364,7 @@ void testCurrent() {
 // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
     test_ffi_all();
+    test_ffi_header_parser();
     testMapOfStrings();
     testMapOfStringValues();
     testMaps();

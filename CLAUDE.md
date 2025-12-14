@@ -201,3 +201,4 @@ lldb -- ./build/wasp test
 - After each modification run ./wasp test And commit if it works
 - If you feel bored check for a simple todo but always check running ./wasp test before and after
 - NEVER create or modify tests in ./tests/ folder unless Explicitly instructed. Instead try to work with The existing tests or if absolutely necessary create new temporary tests in ./probes/ folder
+- use typeName() To get the name of a Kind / Type / ValueType

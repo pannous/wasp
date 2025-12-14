@@ -689,6 +689,28 @@ Node &analyze(String code) {
     return analyze(parse(code));
 }
 
+void handleNativeImport(Node &node) {
+    // Extract function and library from import node structure
+    Node &func_node = node["function"];
+    Node &lib_node = node["library"];
+    String func_name = func_node.length > 0 ? func_node.first().name : func_node.values().name;
+    String lib_name = lib_node.length > 0 ? lib_node.first().name : lib_node.values().name;
+
+    // Register as FFI import
+    Function &func = functions[func_name];
+    func.name = func_name;
+    func.is_import = true;
+    func.is_ffi = true;
+    func.ffi_library = lib_name;
+    func.is_used = true;
+
+    // Detect and set function signature directly (reuses existing Signature class)
+    detect_ffi_signature(func_name, lib_name, func.signature);
+
+    // Add to global FFI registry for runtime
+    ffi_functions.add({func_name, lib_name});
+}
+
 /*
  * ☢️ ⚛ Nuclear Core ⚠️ 🚧
  * turning some knobs might yield some great powers
@@ -712,30 +734,12 @@ Node &analyze(Node &node, Function &function) {
     if (firstName == "data" or firstName == "quote")
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
-    if (name == "import")
+    if (name.in(import_keywords)) {
         print(contains(import_keywords,name) );
-    // Handle FFI imports: import funcname from "library"
-    if (name == "import" and node.has("function") and node.has("library")) {
-        // Extract function and library from import node structure
-        Node &func_node = node["function"];
-        Node &lib_node = node["library"];
-        String func_name = func_node.length > 0 ? func_node.first().name : func_node.values().name;
-        String lib_name = lib_node.length > 0 ? lib_node.first().name : lib_node.values().name;
-
-        // Register as FFI import
-        Function &func = functions[func_name];
-        func.name = func_name;
-        func.is_import = true;
-        func.is_ffi = true;
-        func.ffi_library = lib_name;
-        func.is_used = true;
-
-        // Detect and set function signature directly (reuses existing Signature class)
-        detect_ffi_signature(func_name, lib_name, func.signature);
-
-        // Add to global FFI registry for runtime
-        ffi_functions.add({func_name, lib_name});
-        return NUL;
+        if(node.has("function") and node.has("library")) {
+            handleNativeImport(node);
+            return NUL;
+        }//else todo ("move other import here")
     }
 
     if (name == "html") {
@@ -822,30 +826,7 @@ Node &analyze(Node &node, Function &function) {
         for (int i = 0; i < node.length; i++) {
             Node &child = node.children[i];
             if (child.name == "import" && child.kind == functor && child.has("function") && child.has("library")) {
-                // Extract function and library from import node structure
-                // The structure is: import(function:function:"abs" library:library:"c")
-                Node &func_node = child["function"];
-                Node &lib_node = child["library"];
-
-                // The value is stored as the first child or as a string value
-                String func_name = func_node.length > 0 ? func_node.first().name : func_node.values().name;
-                String lib_name = lib_node.length > 0 ? lib_node.first().name : lib_node.values().name;
-
-
-                // Register as FFI import
-                Function &func = functions[func_name];
-                func.name = func_name;
-                func.is_import = true;
-                func.is_ffi = true;
-                func.ffi_library = lib_name;
-                func.is_used = true;
-
-                // Detect and set function signature directly (reuses existing Signature class)
-                detect_ffi_signature(func_name, lib_name, func.signature);
-
-                // Add to global FFI registry for runtime
-                ffi_functions.add({func_name, lib_name});
-
+                handleNativeImport(child);
                 // Don't add import node to filtered children (skip it)
             } else if (child.name == "\n" || child.name == " " || child.name == "\t" || child.name == "\\") {
                 // Skip whitespace/newline nodes

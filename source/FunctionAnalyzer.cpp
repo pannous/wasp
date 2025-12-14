@@ -238,6 +238,7 @@ Node extractReturnTypes(Node decl, Node body) {
     return DoubleType; // LongType;// todo
 }
 
+// todo this function needs some serious refactor namely get rid of the "if" matching …
 Node &groupFunctionCalls(Node &expressiona, Function &context) {
     if (expressiona.kind == declaration)return expressiona; // handled before
     Function *import = findLibraryFunction(expressiona.name, false);
