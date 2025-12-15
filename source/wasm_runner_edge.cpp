@@ -600,6 +600,12 @@ Node struct_to_node(WasmEdge_Value val) {
     return result;
 }
 
+bool comp_type(WasmEdge_ValType val_type, WasmEdge_ValType type) {
+    for(int i=0; i<8; i++)
+        if(val_type.Data[i] != type.Data[i]) return false;
+    return true;
+}
+
 extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     // perfect except we can't access memory
 
@@ -677,27 +683,42 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     Res = WasmEdge_VMExecute(VMCxt, FuncName, Params, 0, Returns, 1);
     WasmEdge_StringDelete(FuncName);
     if (WasmEdge_ResultOK(Res)) {
+        let a=WasmEdge_ValueGenV128(0);
+        let b = WasmEdge_ValueGenFuncRef(0);
+        let c =WasmEdge_ValueGenExternRef(0);
+        let d=WasmEdge_ValueGenI64(0);
+        auto ret = Returns[0];
+        auto val_type = ret.Type;
+        if (comp_type(val_type, a.Type)) trace("Return type is v128");
+        if (comp_type(val_type, b.Type)) trace("Return type is funcref");
+        if (comp_type(val_type, c.Type)) trace("Return type is externref");
+        if (comp_type(val_type, d.Type)) trace("Return type is i64");
+        // WasmEdge_ValueTypeGen
+        // auto value_get = WasmEdge_ValueGet(Returns[0].Type);
+
+        //    /* print(val_type);// 0 0 0x64 0x6b 0 0 0 0
         //        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
         // Check for struct reference first (GC proposal types)
-#ifdef WasmEdge_ValueIsStructRef
+// #ifdef WasmEdge_ValueIsStructRef
         trace("Checking for structref...");
-        if (WasmEdge_ValueIsStructRef(Returns[0])) {
+        if (WasmEdge_ValueIsStructRef(ret)) {
             trace("Got structref!");
-            Node result = struct_to_node(Returns[0]);
+            Node result = struct_to_node(ret);
             return result.toSmartPointer();
         } else {
             trace("Not a structref");
         }
-#else
-        trace("WasmEdge_ValueIsStructRef not available");
-#endif
+// #else
+//         trace("WasmEdge_ValueIsStructRef not available");
+// #endif
 
-        if(WasmEdge_ValTypeIsExternRef(Returns[0].Type)) {
-            void *ref = WasmEdge_ValueGetExternRef(Returns[0]);
+        if(WasmEdge_ValTypeIsExternRef(val_type)) {
+            void *ref = WasmEdge_ValueGetExternRef(ret);
             trace("Got externref (non-struct)");
             print(ref);
         }
-        int64_t value = WasmEdge_ValueGetI64(Returns[0]);
+
+        int64_t value = WasmEdge_ValueGetI64(ret);
         //        printf("Got result: 0x%llx\n", value);
         auto node1 = smartNode(value);
         //        print(node1);
