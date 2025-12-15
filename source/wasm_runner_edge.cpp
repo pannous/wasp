@@ -570,10 +570,11 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     const WasmEdge_ModuleInstanceContext *wasi_module = WasmEdge_StoreFindModule(store, wasi_name);
     WasmEdge_StringDelete(wasi_name);
 
+    WasmEdge_ModuleInstanceContext *env_module = nullptr;
     if (wasi_module) {
         // Create a new "env" module and copy WASI functions into it
         WasmEdge_String env_name = WasmEdge_StringCreateByCString("env");
-        WasmEdge_ModuleInstanceContext *env_wasi_module = WasmEdge_ModuleInstanceCreate(env_name);
+        env_module = WasmEdge_ModuleInstanceCreate(env_name);
 
         // Copy common WASI functions to env module
         for (const char* func_name : wasi_function_list) {
@@ -582,18 +583,15 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
             const WasmEdge_FunctionInstanceContext *wasi_func = WasmEdge_ModuleInstanceFindFunction(wasi_module, fname);
             if (wasi_func) {
                 // Re-export the same function instance under "env" module
-                WasmEdge_ModuleInstanceAddFunction(env_wasi_module, fname, (WasmEdge_FunctionInstanceContext*)wasi_func);
+                WasmEdge_ModuleInstanceAddFunction(env_module, fname, (WasmEdge_FunctionInstanceContext*)wasi_func);
             }
             WasmEdge_StringDelete(fname);
         }
-
-        // Register the env WASI module
-        WasmEdge_VMRegisterModuleFromImport(VMCxt, env_wasi_module);
         WasmEdge_StringDelete(env_name);
     }
 
-    // link other custom modules
-    auto HostMod = CreateExternModule();
+    // Add custom functions to the same env module (or create one if WASI not available)
+    auto HostMod = CreateExternModule(env_module);
     WasmEdge_Result ok = WasmEdge_VMRegisterModuleFromImport(VMCxt, HostMod);
     if (not WasmEdge_ResultOK(ok)) {
         auto err = WasmEdge_ResultGetMessage(ok);
