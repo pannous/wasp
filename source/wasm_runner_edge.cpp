@@ -41,48 +41,9 @@ WasmEdge_Result ExternSquare(void *Data,
 }
 
 
-// TODO Why are these not provided by WASM Edge WASI?
-// TODO undo commit 81146284bfc411dae072caf257df376d12a97b4b "had to add 10 dummy functions WHY?"
-WasmEdge_Result fd_write_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
-                              WasmEdge_Value *Out) {
-    printf("fd_write_wrap TODO\n");
-    return WasmEdge_Result_Success;
-}
-
-WasmEdge_Result fclose(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
-    printf("fclose TODO\n");
-    return WasmEdge_Result_Success;
-}
-
-
-WasmEdge_Result print_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
-                           WasmEdge_Value *Out) {
-    printf("print_wrap TODO\n");
-    return WasmEdge_Result_Success;
-}
-
-
-WasmEdge_Result proc_exit_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
-                               WasmEdge_Value *Out) {
-    exit(WasmEdge_ValueGetI32(In[0]));
-    return WasmEdge_Result_Success;
-}
-
-
-WasmEdge_Result getenv(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
-    return WasmEdge_Result_Success; // todo
-}
-
-
-WasmEdge_Result fopen(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
-    // Out. readfile(In[0]);
-    return WasmEdge_Result_Success; // todo
-}
-
-
-WasmEdge_Result fprintf(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
-    return WasmEdge_Result_Success; // todo
-}
+// Note: fd_write, proc_exit, fclose, fopen, fprintf, getenv, fgetc, etc.
+// are provided by WasmEdge's built-in WASI support via WasmEdge_ConfigureAddHostRegistration
+// No need for manual implementations!
 
 WasmEdge_Result getElementById(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
                                WasmEdge_Value *Out) {
@@ -234,8 +195,20 @@ WasmEdge_Result getExternRefPropertyValue(void *Data,
 }
 
 
-WasmEdge_Result exit_edge(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
-    exit(WasmEdge_ValueGetI32(In[0]));
+// exit_edge removed - WASI provides proc_exit
+
+WasmEdge_Result getenv_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    auto env_var_offset = WasmEdge_ValueGetI32(In[0]);
+    auto env_var = (chars) wasm_memory + env_var_offset;
+    const char *value = std::getenv(env_var);
+    if (!value) {
+        Out[0] = WasmEdge_ValueGenI32(0); // Return null pointer for non-existent env var
+        return WasmEdge_Result_Success;
+    }
+    // Copy value to wasm memory at next available location
+    int offset = 0x200000; // Use different offset than download()
+    strcpy2((char *) wasm_memory + offset, value);
+    Out[0] = WasmEdge_ValueGenI32(offset);
     return WasmEdge_Result_Success;
 }
 
@@ -276,9 +249,6 @@ WasmEdge_Result ffi_wrapper_str_str(void *func_ptr, const FrameContext *CallFram
 }
 
 
-WasmEdge_Result fgetc(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
-    return WasmEdge_Result_Success; // todo
-}
 
 
 // Host function to call `AddFunc` by external reference
@@ -292,42 +262,7 @@ WasmEdge_Result ExternAdd(void *Data,
     return WasmEdge_Result_Success;
 }
 
-WasmEdge_ModuleInstanceContext *CreateWasiModule() {
-    // wasi_snapshot_preview1 is BUILTIN
-    auto wasi_module_name = WasmEdge_StringCreateByCString("wasi_unstable");
-    WasmEdge_ModuleInstanceContext *HostModuleWasi = WasmEdge_ModuleInstanceCreate(wasi_module_name);
-    WasmEdge_String HostName;
-    WasmEdge_FunctionTypeContext *HostFType = NULL;
-    WasmEdge_FunctionInstanceContext *HostFunc = NULL; {
-        WasmEdge_Result Res;
-        WasmEdge_ValType P[1], R[0];
-        //        P[0] = WasmEdge_ValTypeGenI32();// charp (id:string)
-        P[0] = WasmEdge_ValTypeGenI32();
-        R[0] = WasmEdge_ValTypeGenI32();
-        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 0);
-        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, proc_exit_wrap, NULL, 0);
-        WasmEdge_FunctionTypeDelete(HostFType);
-        HostName = WasmEdge_StringCreateByCString("proc_exit");
-        WasmEdge_ModuleInstanceAddFunction(HostModuleWasi, HostName, HostFunc);
-        WasmEdge_StringDelete(HostName);
-    } {
-        //        void fd_write_host(int FD, char **strp, int *len, int *nwritten) {
-        WasmEdge_ValType P[4], R[1];
-        P[0] = WasmEdge_ValTypeGenI32();
-        P[1] = WasmEdge_ValTypeGenI32();
-        P[2] = WasmEdge_ValTypeGenI32();
-        P[3] = WasmEdge_ValTypeGenI32();
-        R[0] = WasmEdge_ValTypeGenI32(); // return value???
-        HostName = WasmEdge_StringCreateByCString("fd_write");
-        HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
-        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fd_write_wrap, NULL, 0);
-        WasmEdge_FunctionTypeDelete(HostFType);
-        WasmEdge_ModuleInstanceAddFunction(HostModuleWasi, HostName, HostFunc);
-        WasmEdge_StringDelete(HostName);
-    }
-
-    return HostModuleWasi;
-}
+// CreateWasiModule() removed - use WasmEdge's built-in WASI via WasmEdge_ConfigureAddHostRegistration instead
 
 
 // Helper function to create the "extern_module" module instance.
@@ -336,70 +271,12 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     WasmEdge_FunctionTypeContext *HostFType = NULL;
     WasmEdge_FunctionInstanceContext *HostFunc = NULL;
     HostName = WasmEdge_StringCreateByCString("env"); // extern_module
-    if (not HostMod) HostMod = WasmEdge_ModuleInstanceCreate(HostName); {
-        WasmEdge_ValType P[1], R[0];
-        // R[0] = WasmEdge_ValTypeGenI32();
-        P[0] = WasmEdge_ValTypeGenI32(); // string
-        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 0);
-        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, exit_edge, NULL, 0);
-        WasmEdge_FunctionTypeDelete(HostFType);
-        HostName = WasmEdge_StringCreateByCString("exit");
-        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
-        WasmEdge_StringDelete(HostName);
-    } {
-        WasmEdge_ValType P[1], R[1];
-        R[0] = WasmEdge_ValTypeGenI32(); // string
-        P[0] = WasmEdge_ValTypeGenI32(); // string
-        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
-        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getenv, NULL, 0);
-        WasmEdge_FunctionTypeDelete(HostFType);
-        HostName = WasmEdge_StringCreateByCString("getenv");
-        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
-        WasmEdge_StringDelete(HostName);
-    } {
-        WasmEdge_ValType P[1], R[1];
-        R[0] = WasmEdge_ValTypeGenI32();
-        P[0] = WasmEdge_ValTypeGenI32(); // pipe e.g. stdin
-        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
-        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fgetc, NULL, 0);
-        WasmEdge_FunctionTypeDelete(HostFType);
-        HostName = WasmEdge_StringCreateByCString("fgetc");
-        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
-        WasmEdge_StringDelete(HostName);
-    } {
-        WasmEdge_ValType P[1], R[1];
-        R[0] = WasmEdge_ValTypeGenI32(); // OK?
-        P[0] = WasmEdge_ValTypeGenI32(); // pipe e.g. stdin
-        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
-        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fclose, NULL, 0);
-        WasmEdge_FunctionTypeDelete(HostFType);
-        HostName = WasmEdge_StringCreateByCString("fclose");
-        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
-        WasmEdge_StringDelete(HostName);
-    } {
-        WasmEdge_ValType P[2], R[1];
-        R[0] = WasmEdge_ValTypeGenI32(); // string
-        P[0] = WasmEdge_ValTypeGenI32(); // string filename
-        P[1] = WasmEdge_ValTypeGenI32(); // string type "r" …
-        HostFType = WasmEdge_FunctionTypeCreate(P, 2, R, 1);
-        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fopen, NULL, 0);
-        WasmEdge_FunctionTypeDelete(HostFType);
-        HostName = WasmEdge_StringCreateByCString("fopen");
-        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
-        WasmEdge_StringDelete(HostName);
-    } {
-        WasmEdge_ValType P[3], R[1];
-        R[0] = WasmEdge_ValTypeGenI32();
-        P[0] = WasmEdge_ValTypeGenI32();
-        P[1] = WasmEdge_ValTypeGenI32();
-        P[2] = WasmEdge_ValTypeGenI32();
-        HostFType = WasmEdge_FunctionTypeCreate(P, 3, R, 1);
-        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, fprintf, NULL, 0);
-        WasmEdge_FunctionTypeDelete(HostFType);
-        HostName = WasmEdge_StringCreateByCString("fprintf");
-        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
-        WasmEdge_StringDelete(HostName);
-    } {
+    if (not HostMod) HostMod = WasmEdge_ModuleInstanceCreate(HostName);
+
+    // REMOVED: exit, getenv, fgetc, fclose, fopen, fprintf - these are provided by WasmEdge's built-in WASI
+    // Only register custom non-WASI functions below:
+
+    {
         WasmEdge_ValType P[2], R[1];
         R[0] = WasmEdge_ValTypeGenI64();
         P[0] = WasmEdge_ValTypeGenExternRef();
@@ -489,6 +366,16 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
         HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, concat_wrap, NULL, 0);
         WasmEdge_FunctionTypeDelete(HostFType);
         HostName = WasmEdge_StringCreateByCString("concat"); // if we don't merge runtime
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    } {
+        WasmEdge_ValType P[1], R[1];
+        R[0] = WasmEdge_ValTypeGenI32(); // charp (result string)
+        P[0] = WasmEdge_ValTypeGenI32(); // charp (env var name)
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, getenv_wrap, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("getenv");
         WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
         WasmEdge_StringDelete(HostName);
     } {
@@ -708,17 +595,15 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
 int64 run_wasm2(char *wasm_path) {
     //extern "C" int64 run_wasm(char *wasm_path){
     /* Create the configure context and add the WASI support. */
-    /* This step is not necessary unless you need WASI support. */
     WasmEdge_ConfigureContext *ConfCxt = WasmEdge_ConfigureCreate();
-    //	WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
+    WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
     /* The configure and store context to the VM creation can be NULL. */
     WasmEdge_VMContext *context = WasmEdge_VMCreate(ConfCxt, 0);
 
-    // link other modules
+    // link custom host module (non-WASI functions)
     auto HostMod = CreateExternModule(nullptr);
     WasmEdge_VMRegisterModuleFromImport(VMCxt, HostMod);
-    auto WasiMod = CreateWasiModule();
-    WasmEdge_VMRegisterModuleFromImport(VMCxt, WasiMod);
+    // WASI is now automatically available via WasmEdge_ConfigureAddHostRegistration above
 
     //	WasmEdge_ValueGenExternRef(AddFunc);
 
