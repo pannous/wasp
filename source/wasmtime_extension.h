@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \brief Check if an `anyref` is a `structref`.
  *
@@ -50,3 +54,7 @@ wasmtime_anyref_struct_get_field(wasmtime_context_t *context,
                                  const wasmtime_anyref_t *anyref,
                                  size_t index,
                                  wasmtime_val_t *out);
+
+#ifdef __cplusplus
+}
+#endif
