@@ -170,15 +170,55 @@ int64 read_struct_field(const wasmtime_anyref_t &anyref, int field) {
     error("Failed to get field\n");
 }
 
+Node struct_to_node_wasmtime(const wasmtime_anyref_t &anyref) {
+    trace("Got structref - attempting to reflect fields");
+    Node result;
+    result.kind = structs;
+
+    // Try to extract fields (iterate until failure)
+    for (int fieldIdx = 0; fieldIdx < 8; fieldIdx++) {
+        wasmtime_val_t field_val;
+        if (!wasmtime_anyref_struct_get_field(context, &anyref, fieldIdx, &field_val)) {
+            // No more fields
+            break;
+        }
+
+        // Convert field value to Node based on type
+        Node fieldNode;
+        if (field_val.kind == WASMTIME_I32) {
+            fieldNode = Node(field_val.of.i32);
+        } else if (field_val.kind == WASMTIME_I64) {
+            fieldNode = Node(field_val.of.i64);
+        } else if (field_val.kind == WASMTIME_F32) {
+            fieldNode = Node((double)field_val.of.f32);
+        } else if (field_val.kind == WASMTIME_F64) {
+            fieldNode = Node(field_val.of.f64);
+        } else {
+            // Unknown type, skip
+            wasmtime_val_unroot(&field_val);
+            continue;
+        }
+
+        // Add field to result node (use numeric key for now)
+        result[fieldIdx] = fieldNode;
+        wasmtime_val_unroot(&field_val);
+    }
+
+    trace("Reflected struct with "s + formatLong(result.size()) + " fields");
+    print(result);
+    return result;
+}
+
 int64 read_ref(const wasmtime_val_t &results) {
     if (results.kind == WASMTIME_ANYREF or results.kind == WASMTIME_EXTERNREF) {
         wasmtime_anyref_t anyref = results.of.anyref;
         // Check if it's a struct
         if (wasmtime_anyref_is_struct(context, &anyref)) {
-            printf("new_object returned a structref\n");
-            return read_struct_field(anyref, 0);
+            trace("new_object returned a structref");
+            Node result = struct_to_node_wasmtime(anyref);
+            return result.toSmartPointer();
         }
-        printf("new_object returned an anyref but not a structref\n");
+        trace("new_object returned an anyref but not a structref");
     }
     return 0;
 }
