@@ -1,6 +1,17 @@
 #include "../source/asserts.h"
 // void test_wasm_structs();
+// extern int tests_executed;
+// Node &compile(String);
 
+void testStructWast() {
+    tests_executed++;
+    let wast = R"((module
+  (type $Box (struct (field $val (mut i32))))
+  (global $box (export "box") (ref $Box) (struct.new $Box (i32.const 42)))
+))";
+    // compile(wast);
+    int ok = run_wasm_file("test/wast/box.wast");
+}
 
 void testStruct() {
     tests_executed++;
@@ -94,11 +105,10 @@ void testWasmGC() {
 }
 
 static void test_wasm_node_struct() {
-
     tests_executed++;
     // auto wasp_object_code = "a{b:c}";
     auto wasp_object_code = "a{b:42}";
-    auto aNode=parse(wasp_object_code);
+    auto aNode = parse(wasp_object_code);
     assert_emit(wasp_object_code, aNode);
 }
 
@@ -106,7 +116,7 @@ static void test_wasm_linear_memory_node() {
     tests_executed++;
     // auto wasp_object_code = "a{b:c}";
     auto wasp_object_code = "a{b:42}";
-    auto aNode=parse(wasp_object_code);
+    auto aNode = parse(wasp_object_code);
     assert_emit(wasp_object_code, aNode);
 }
 
@@ -114,7 +124,7 @@ static void test_wasm_structs() {
     tests_executed++;
     test_wasm_node_struct();
     auto aNode = Node("A").setKind(clazz);
-    aNode["a"]=IntegerType;
+    aNode["a"] = IntegerType;
     auto a2 = analyze("class A{a:int}");
     assert_equals(aNode, a2);
     assert_emit("class A{a:int}", aNode);
