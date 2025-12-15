@@ -523,47 +523,7 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
 }
 
 
-extern "C" int64 run_wasm(bytes buffer, int buf_size) {
-    // perfect except we can't access memory
-
-    /* Create the configure context and add the WASI support. */
-    /* This step is not necessary unless you need WASI support. */
-    WasmEdge_ConfigureContext *conf = WasmEdge_ConfigureCreate();
-    WasmEdge_ConfigureAddHostRegistration(conf, WasmEdge_HostRegistration_Wasi);
-
-    //--enable-instruction-count
-    //--enable-gas-measuring
-    //--enable-time-measuring
-    // wasmedge --enable-all
-    // most are enabled by default and need explicit disabling --disable-multi-value …
-    // ⚠️ "Though the user can specify enabling the proposal, the support for the proposal is not implemented yet." :(
-    // Those implemented have a check mark: ✔️	https://wasmedge.org/book/en/features/proposals.html
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Annotations);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_BulkMemoryOperations);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Component);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExtendedConst); // i32.add in global's init
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExceptionHandling);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_FunctionReferences); // function pointers!!
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_GC);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ImportExportMutGlobals);
-    // WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Memory64);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiValue); // ✓
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiMemories); // ✓ --enable-multi-memory
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_TailCall);
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ReferenceTypes); // externref ≠ GC types! :(
-    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Threads);
-
-    //    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_SIMD); BOYCOTT use WASM vector proposal instead!
-
-    // --enable-function-reference NOT YET https://github.com/WasmEdge/WasmEdge/pull/2122
-    // ⚠️ "Though the user can specify enabling the proposal, the support for the proposal is not implemented yet." :(
-
-    /* The configure and store context to the VM creation can be NULL. */
-    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(conf, NULL);
-
-    // Get the store context to access registered modules
-    WasmEdge_StoreContext *store = WasmEdge_VMGetStoreContext(VMCxt);
-
+WasmEdge_ModuleInstanceContext * duplicate_wasi_to_env(WasmEdge_VMContext *VMCxt, WasmEdge_StoreContext *store, chars name) {
     // Try to get the WASI module and duplicate it under "env" name
     // This allows legacy WASM files that import WASI functions from "env" to work
     WasmEdge_String wasi_name = WasmEdge_StringCreateByCString("wasi_snapshot_preview1");
@@ -572,8 +532,8 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
 
     WasmEdge_ModuleInstanceContext *env_module = nullptr;
     if (wasi_module) {
-        // Create a new "env" module and copy WASI functions into it
-        WasmEdge_String env_name = WasmEdge_StringCreateByCString("env");
+        // Create a new "env" / "wasi_unstable" module and copy WASI functions into it
+        WasmEdge_String env_name = WasmEdge_StringCreateByCString(name);// env and wasi_unstable
         env_module = WasmEdge_ModuleInstanceCreate(env_name);
 
         // Copy common WASI functions to env module
@@ -597,6 +557,55 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
         auto err = WasmEdge_ResultGetMessage(ok);
         printf("Error: %s\n", err);
     }
+    return env_module;
+}
+
+extern "C" int64 run_wasm(bytes buffer, int buf_size) {
+    // perfect except we can't access memory
+
+    /* Create the configure context and add the WASI support. */
+    /* This step is not necessary unless you need WASI support. */
+    WasmEdge_ConfigureContext *conf = WasmEdge_ConfigureCreate();
+    WasmEdge_ConfigureAddHostRegistration(conf, WasmEdge_HostRegistration_Wasi);
+
+    //--enable-instruction-count
+    //--enable-gas-measuring
+    //--enable-time-measuring
+    // wasmedge --enable-all
+    // most are enabled by default and need explicit disabling --disable-multi-value …
+    // ⚠️ "Though the user can specify enabling the proposal, the support for the proposal is not implemented yet." :(
+    // Those implemented have a check mark: ✔️	https://wasmedge.org/book/en/features/proposals.html
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Annotations);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_BulkMemoryOperations);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Component);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExtendedConst); // i32.add in global's init
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ExceptionHandling);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_FunctionReferences); // function pointers!!
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_GC);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ImportExportMutGlobals);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Memory64);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiMemories); // ✓ --enable-multi-memory
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_MultiValue); // ✓
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_NonTrapFloatToIntConversions);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_ReferenceTypes); // externref ≠ GC types! :(
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_TailCall);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_Threads);
+    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_SignExtensionOperators);
+    //    WasmEdge_ConfigureAddProposal(conf, WasmEdge_Proposal_SIMD); BOYCOT! use WASM vector proposal instead!
+    // SIMD is proliferating cancer, use https://github.com/WebAssembly/flexible-vectors !
+
+    // --enable-function-reference NOT YET https://github.com/WasmEdge/WasmEdge/pull/2122
+    // ⚠️ "Though the user can specify enabling the proposal, the support for the proposal is not implemented yet." :(
+
+    /* The configure and store context to the VM creation can be NULL. */
+    WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(conf, NULL);
+
+    // Get the store context to access registered modules
+    WasmEdge_StoreContext *store = WasmEdge_VMGetStoreContext(VMCxt);
+
+    duplicate_wasi_to_env(VMCxt, store,"env");
+    duplicate_wasi_to_env(VMCxt, store,"wasi_unstable");
+
     WasmEdge_Result Res;
     Res = WasmEdge_VMLoadWasmFromBuffer(VMCxt, buffer, buf_size);
     if (!WasmEdge_ResultOK(Res)) printf("⚠️Load WASM failed. Error: %s\n", WasmEdge_ResultGetMessage(Res));
@@ -616,7 +625,6 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     else
         warn("⚠️Can't connect wasmedge memory");
 
-
     // Try to find which function exists: main, _start, or wasp_main
     WasmEdge_String FuncName = WasmEdge_StringCreateByCString("wasp_main");
     if (not WasmEdge_VMGetFunctionType(VMCxt, FuncName))
@@ -630,6 +638,59 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     WasmEdge_StringDelete(FuncName);
     if (WasmEdge_ResultOK(Res)) {
         //        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
+        if(WasmEdge_ValTypeIsExternRef(Returns[0].Type)) {
+            trace("Got externref!");
+#if not LINUX
+            // Check if it's a struct reference
+            if (WasmEdge_ValueIsStructRef(Returns[0])) {
+                trace("Got structref - attempting to reflect fields");
+                Node result; // turn Box{val=42} into Node(name=Box, kind=struct)[val]=42
+                result.kind = structs;
+
+                // Try to extract fields (assuming we know field count or iterate until failure)
+                // Most structs have 1-4 fields, try up to 8 as reasonable limit
+                for (uint32_t fieldIdx = 0; fieldIdx < 8; fieldIdx++) {
+                    WasmEdge_Value fieldVal;
+                    WasmEdge_Result res = WasmEdge_ValueGetStructField(Returns[0], fieldIdx, &fieldVal);
+
+                    if (res.Code != WasmEdge_Result_Success.Code) {
+                        // No more fields
+                        break;
+                    }
+
+                    // Convert field value to Node based on type
+                    Node fieldNode;
+                    if (WasmEdge_ValTypeIsI32(fieldVal.Type)) {
+                        fieldNode = Node(WasmEdge_ValueGetI32(fieldVal));
+                    } else if (WasmEdge_ValTypeIsI64(fieldVal.Type)) {
+                        fieldNode = Node(WasmEdge_ValueGetI64(fieldVal));
+                    } else if (WasmEdge_ValTypeIsF32(fieldVal.Type)) {
+                        fieldNode = Node(WasmEdge_ValueGetF32(fieldVal));
+                    } else if (WasmEdge_ValTypeIsF64(fieldVal.Type)) {
+                        fieldNode = Node(WasmEdge_ValueGetF64(fieldVal));
+                    } else {
+                        // Unknown type, skip
+                        continue;
+                    }
+
+                    // Add field to result node (use numeric key for now)
+                    result[(int)fieldIdx] = fieldNode;
+                }
+
+                trace("Reflected struct with "s + formatLong(result.size()) + " fields");
+                print(result);
+                return result.toSmartPointer();
+            } else {
+                void *ref = WasmEdge_ValueGetExternRef(Returns[0]);
+                trace("Got non-struct externref");
+                print(ref);
+            }
+#else
+            void *ref = WasmEdge_ValueGetExternRef(Returns[0]);
+            trace("Got externref (struct reflection not available on Linux)");
+            print(ref);
+#endif
+        }
         int64_t value = WasmEdge_ValueGetI64(Returns[0]);
         //        printf("Got result: 0x%llx\n", value);
         auto node1 = smartNode(value);
@@ -639,46 +700,4 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     } else
         error("WASM EDGE Error: "s+ WasmEdge_ResultGetMessage(Res));
     return -1;
-}
-
-int64 run_wasm2(char *wasm_path) {
-    //extern "C" int64 run_wasm(char *wasm_path){
-    /* Create the configure context and add the WASI support. */
-    WasmEdge_ConfigureContext *ConfCxt = WasmEdge_ConfigureCreate();
-    WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
-    /* The configure and store context to the VM creation can be NULL. */
-    WasmEdge_VMContext *context = WasmEdge_VMCreate(ConfCxt, 0);
-
-    // link custom host module (non-WASI functions)
-    auto HostMod = CreateExternModule(nullptr);
-    WasmEdge_VMRegisterModuleFromImport(VMCxt, HostMod);
-    // WASI is now automatically available via WasmEdge_ConfigureAddHostRegistration above
-
-    //	WasmEdge_ValueGenExternRef(AddFunc);
-
-    //	WasmEdge_VMGetFunctionList(context,)
-    //	context.
-    /* The parameters and returns arrays. */
-    int ParamCount = 0;
-    WasmEdge_Value Params[0]; //ParamCount];// = { WasmEdge_ValueGenI32(32) };
-    WasmEdge_Value Returns[1];
-    /* Function name. */
-    WasmEdge_String FuncName = WasmEdge_StringCreateByCString("test");
-    /* Run the WASM function from file. */
-    WasmEdge_Result Res = WasmEdge_VMRunWasmFromFile(context, wasm_path, FuncName, Params, ParamCount, Returns, 1);
-    //
-
-    if (WasmEdge_ResultOK(Res)) {
-        int32_t i = WasmEdge_ValueGetI32(Returns[0]);
-        printf("Get result: %d\n", i);
-        return (int) i;
-    } else {
-        printf("Error: %s\n", WasmEdge_ResultGetMessage(Res));
-        return -1;
-    }
-
-    /* Resources deallocations. */
-    WasmEdge_VMDelete(context);
-    WasmEdge_ConfigureDelete(ConfCxt);
-    WasmEdge_StringDelete(FuncName);
 }

@@ -8,9 +8,12 @@ void testStructWast() {
     let wast = R"((module
   (type $Box (struct (field $val (mut i32))))
   (global $box (export "box") (ref $Box) (struct.new $Box (i32.const 42)))
+  (func $main (export "main") (result (ref $Box)))
 ))";
     // compile(wast);
     int ok = run_wasm_file("test/wast/box.wast");
+    Node& box = *smartNode(ok);
+    check(box["val"]==42);
 }
 
 void testStruct() {

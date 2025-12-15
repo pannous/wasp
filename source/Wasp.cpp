@@ -1374,13 +1374,8 @@ Node parseFile(String filename, ParserOptions options) {
         error("file not found "s + filename);
     else
         info("found "s + found);
-    if (found.endsWith("wast") or found.endsWith("wat")) {
-#ifndef WASM
-        system("/usr/local/bin/wat2wasm "s + found);
-#endif
-        found = found.replace("wast", "wasm");
-        // and use it:
-    }
+    if (found.endsWith("wast") or found.endsWith("wat"))
+        found = compileWast(found); // and use it:
     if (found.endsWith("wasm")) {
         // handle in Angle.cpp analysis, not in valueNode
         //			read_wasm(found);
