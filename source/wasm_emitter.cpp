@@ -17,6 +17,7 @@
 //#include "wasm_runner.h"
 #include "wasm_reader.h"
 #include "wasm_merger.h"
+#include "Keywords.h"
 //#include "asserts.h"
 
 extern int __force_link_parser_globals;
@@ -3788,12 +3789,16 @@ Code emitImportSection() {
         String import_module = "env";
         if (function.module and not function.module->name.empty())
             import_module = function.module->name;
+        else if (contains(wasi_function_list, fun))
+            import_module = "wasi_snapshot_preview1";
         if (function.is_import and function.is_used and not function.is_builtin) {
             if (function.call_index >= 0)
                 check_silent(function.call_index == import_count) // todo remove when tested
             function.call_index = import_count++;
             if (function.module and not function.module->name.empty())
                 import_module = function.module->name;
+            else if (contains(wasi_function_list, fun))
+                import_module = "wasi_snapshot_preview1";
             auto type = typeMap[fun];
             import_code =
                     import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);

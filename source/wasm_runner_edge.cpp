@@ -12,6 +12,7 @@
 #include "ffi_signatures.h"
 #include "ffi_dynamic_wrapper.h"
 #include "Context.h"
+#include "Keywords.h"
 #include <cstdio>
 //#include <host/wasi/wasimodule.h>
 //#include <host/wasmedge_process/processmodule.h>
@@ -233,6 +234,12 @@ WasmEdge_Result ffi_wrapper_f64_f64_f64(void *func_ptr, const FrameContext *Call
     double c_result = func(arg1, arg2);
     double result = FFIMarshaller::from_c_double(c_result);
     Out[0] = WasmEdge_ValueGenF64(result);
+    return WasmEdge_Result_Success;
+}
+
+WasmEdge_Result abs_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+    int32_t val = WasmEdge_ValueGetI32(In[0]);
+    Out[0] = WasmEdge_ValueGenI32(val < 0 ? -val : val);
     return WasmEdge_Result_Success;
 }
 
@@ -499,6 +506,19 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     }
 #endif // NATIVE_FFI
 
+    // Register abs function (often imported from env instead of being a builtin)
+    {
+        WasmEdge_ValType P[1], R[1];
+        P[0] = WasmEdge_ValTypeGenI32();
+        R[0] = WasmEdge_ValTypeGenI32();
+        HostFType = WasmEdge_FunctionTypeCreate(P, 1, R, 1);
+        HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, abs_wrap, NULL, 0);
+        WasmEdge_FunctionTypeDelete(HostFType);
+        HostName = WasmEdge_StringCreateByCString("abs");
+        WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+        WasmEdge_StringDelete(HostName);
+    }
+
     return HostMod;
 }
 
@@ -541,7 +561,38 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     /* The configure and store context to the VM creation can be NULL. */
     WasmEdge_VMContext *VMCxt = WasmEdge_VMCreate(conf, NULL);
 
-    // link other modules
+    // Get the store context to access registered modules
+    WasmEdge_StoreContext *store = WasmEdge_VMGetStoreContext(VMCxt);
+
+    // Try to get the WASI module and duplicate it under "env" name
+    // This allows legacy WASM files that import WASI functions from "env" to work
+    WasmEdge_String wasi_name = WasmEdge_StringCreateByCString("wasi_snapshot_preview1");
+    const WasmEdge_ModuleInstanceContext *wasi_module = WasmEdge_StoreFindModule(store, wasi_name);
+    WasmEdge_StringDelete(wasi_name);
+
+    if (wasi_module) {
+        // Create a new "env" module and copy WASI functions into it
+        WasmEdge_String env_name = WasmEdge_StringCreateByCString("env");
+        WasmEdge_ModuleInstanceContext *env_wasi_module = WasmEdge_ModuleInstanceCreate(env_name);
+
+        // Copy common WASI functions to env module
+        for (const char* func_name : wasi_function_list) {
+            if (!func_name) break;
+            WasmEdge_String fname = WasmEdge_StringCreateByCString(func_name);
+            const WasmEdge_FunctionInstanceContext *wasi_func = WasmEdge_ModuleInstanceFindFunction(wasi_module, fname);
+            if (wasi_func) {
+                // Re-export the same function instance under "env" module
+                WasmEdge_ModuleInstanceAddFunction(env_wasi_module, fname, (WasmEdge_FunctionInstanceContext*)wasi_func);
+            }
+            WasmEdge_StringDelete(fname);
+        }
+
+        // Register the env WASI module
+        WasmEdge_VMRegisterModuleFromImport(VMCxt, env_wasi_module);
+        WasmEdge_StringDelete(env_name);
+    }
+
+    // link other custom modules
     auto HostMod = CreateExternModule();
     WasmEdge_Result ok = WasmEdge_VMRegisterModuleFromImport(VMCxt, HostMod);
     if (not WasmEdge_ResultOK(ok)) {
@@ -557,7 +608,7 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     if (!WasmEdge_ResultOK(Res)) printf("⚠️Instantiate WASM failed. Error: %s\n", WasmEdge_ResultGetMessage(Res));
 
     const WasmEdge_ModuleInstanceContext *module_ctx = WasmEdge_VMGetActiveModule(VMCxt);
-    WasmEdge_StoreContext *store = WasmEdge_VMGetStoreContext(VMCxt);
+    store = WasmEdge_VMGetStoreContext(VMCxt);
     auto mem = WasmEdge_StringCreateByCString("memory");
     WasmEdge_MemoryInstanceContext *memory_ctx = WasmEdge_ModuleInstanceFindMemory(module_ctx, mem);
     uint8_t *memo = WasmEdge_MemoryInstanceGetPointer(memory_ctx, 0, 0);
