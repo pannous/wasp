@@ -263,3 +263,5 @@ bool contains(bytes list, bytes match, int len, int match_len);
 
 // duplicate!
 // char *demangle(String &fun); // implemented in wasm_reader.cpp
+
+String compileWast(chars file);

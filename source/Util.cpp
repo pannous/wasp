@@ -610,3 +610,15 @@ double square(double a) {
 // int64 square(int64 a) { //
 //     return a * a;
 // }
+
+
+String compileWast(chars file) {
+#ifndef WASM
+        // chars wast_compiler = "/usr/local/bin/wat2wasm  --enable-all --debug-names ";
+        chars wast_compiler = "/opt/homebrew/bin/wasm-as --enable-reference-types --enable-gc ";
+        int status = system(concat(wast_compiler, file));
+        if (status)
+            error("FAILED compiling wast dependencty "s + file);
+#endif
+        return String(file).replace(".wast", ".wasm");
+}

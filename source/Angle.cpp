@@ -878,12 +878,17 @@ Node &analyze(Node &node, Function &function) {
 }
 
 
+
+
 extern "C" int64 run_wasm_file(chars file) {
-    let buffer = load(String(file));
 #if RUNTIME_ONLY
     error("RUNTIME_ONLY");
     return -1;
 #else
+    String found = String(file);
+    if(found.endsWith(".wat") or found.endsWith(".wast") )
+        found = compileWast(file);
+    let buffer = load(found);
     return run_wasm((bytes) buffer.data, buffer.length);
 #endif
 }

@@ -4357,6 +4357,7 @@ void testCurrent() {
     // testPing();
     // testFunctionArgumentCast();
     // test_dynlib_import();
+    testStructWast();
     // testStruct();
     // test_wasm_node_struct();
     // test_wasm_structs();
