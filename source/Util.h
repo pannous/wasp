@@ -79,8 +79,8 @@ static bool tracing = false;  // todo
 static bool tracing = false; // will further explode HEAP usage!!
 // static bool tracing = true;
 #elif DEBUG
-// static bool tracing = true;
-static bool tracing = false;
+static bool tracing = true;
+// static bool tracing = false;
 #else
 // static bool tracing = true;
 static bool tracing = false; // todo not DEBUG on linux?

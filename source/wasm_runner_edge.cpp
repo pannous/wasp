@@ -560,6 +560,46 @@ WasmEdge_ModuleInstanceContext * duplicate_wasi_to_env(WasmEdge_VMContext *VMCxt
     return env_module;
 }
 
+Node struct_to_node(WasmEdge_Value val) {
+    trace("Got structref - attempting to reflect fields");
+    Node result; // turn Box{val=42} into Node(name=Box, kind=struct)[val]=42
+    result.kind = structs;
+
+    // Try to extract fields (assuming we know field count or iterate until failure)
+    // Most structs have 1-4 fields, try up to 8 as reasonable limit
+    for (uint32_t fieldIdx = 0; fieldIdx < 8; fieldIdx++) {
+        WasmEdge_Value fieldVal;
+        WasmEdge_Result res = WasmEdge_ValueGetStructField(val, fieldIdx, &fieldVal);
+
+        if (res.Code != WasmEdge_Result_Success.Code) {
+            // No more fields
+            break;
+        }
+
+        // Convert field value to Node based on type
+        Node fieldNode;
+        if (WasmEdge_ValTypeIsI32(fieldVal.Type)) {
+            fieldNode = Node(WasmEdge_ValueGetI32(fieldVal));
+        } else if (WasmEdge_ValTypeIsI64(fieldVal.Type)) {
+            fieldNode = Node(WasmEdge_ValueGetI64(fieldVal));
+        } else if (WasmEdge_ValTypeIsF32(fieldVal.Type)) {
+            fieldNode = Node(WasmEdge_ValueGetF32(fieldVal));
+        } else if (WasmEdge_ValTypeIsF64(fieldVal.Type)) {
+            fieldNode = Node(WasmEdge_ValueGetF64(fieldVal));
+        } else {
+            // Unknown type, skip
+            continue;
+        }
+
+        // Add field to result node (use numeric key for now)
+        result[(int)fieldIdx] = fieldNode;
+    }
+
+    trace("Reflected struct with "s + formatLong(result.size()) + " fields");
+    print(result);
+    return result;
+}
+
 extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     // perfect except we can't access memory
 
@@ -623,7 +663,7 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     if (memo)
         wasm_memory = memo;
     else
-        warn("⚠️Can't connect wasmedge memory");
+        warn("⚠️Can't connect to wasm memory in wasmedge, is it exported?");
 
     // Try to find which function exists: main, _start, or wasp_main
     WasmEdge_String FuncName = WasmEdge_StringCreateByCString("wasp_main");
@@ -638,58 +678,24 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     WasmEdge_StringDelete(FuncName);
     if (WasmEdge_ResultOK(Res)) {
         //        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
-        if(WasmEdge_ValTypeIsExternRef(Returns[0].Type)) {
-            trace("Got externref!");
-#if not LINUX
-            // Check if it's a struct reference
-            if (WasmEdge_ValueIsStructRef(Returns[0])) {
-                trace("Got structref - attempting to reflect fields");
-                Node result; // turn Box{val=42} into Node(name=Box, kind=struct)[val]=42
-                result.kind = structs;
-
-                // Try to extract fields (assuming we know field count or iterate until failure)
-                // Most structs have 1-4 fields, try up to 8 as reasonable limit
-                for (uint32_t fieldIdx = 0; fieldIdx < 8; fieldIdx++) {
-                    WasmEdge_Value fieldVal;
-                    WasmEdge_Result res = WasmEdge_ValueGetStructField(Returns[0], fieldIdx, &fieldVal);
-
-                    if (res.Code != WasmEdge_Result_Success.Code) {
-                        // No more fields
-                        break;
-                    }
-
-                    // Convert field value to Node based on type
-                    Node fieldNode;
-                    if (WasmEdge_ValTypeIsI32(fieldVal.Type)) {
-                        fieldNode = Node(WasmEdge_ValueGetI32(fieldVal));
-                    } else if (WasmEdge_ValTypeIsI64(fieldVal.Type)) {
-                        fieldNode = Node(WasmEdge_ValueGetI64(fieldVal));
-                    } else if (WasmEdge_ValTypeIsF32(fieldVal.Type)) {
-                        fieldNode = Node(WasmEdge_ValueGetF32(fieldVal));
-                    } else if (WasmEdge_ValTypeIsF64(fieldVal.Type)) {
-                        fieldNode = Node(WasmEdge_ValueGetF64(fieldVal));
-                    } else {
-                        // Unknown type, skip
-                        continue;
-                    }
-
-                    // Add field to result node (use numeric key for now)
-                    result[(int)fieldIdx] = fieldNode;
-                }
-
-                trace("Reflected struct with "s + formatLong(result.size()) + " fields");
-                print(result);
-                return result.toSmartPointer();
-            } else {
-                void *ref = WasmEdge_ValueGetExternRef(Returns[0]);
-                trace("Got non-struct externref");
-                print(ref);
-            }
+        // Check for struct reference first (GC proposal types)
+#ifdef WasmEdge_ValueIsStructRef
+        trace("Checking for structref...");
+        if (WasmEdge_ValueIsStructRef(Returns[0])) {
+            trace("Got structref!");
+            Node result = struct_to_node(Returns[0]);
+            return result.toSmartPointer();
+        } else {
+            trace("Not a structref");
+        }
 #else
-            void *ref = WasmEdge_ValueGetExternRef(Returns[0]);
-            trace("Got externref (struct reflection not available on Linux)");
-            print(ref);
+        trace("WasmEdge_ValueIsStructRef not available");
 #endif
+
+        if(WasmEdge_ValTypeIsExternRef(Returns[0].Type)) {
+            void *ref = WasmEdge_ValueGetExternRef(Returns[0]);
+            trace("Got externref (non-struct)");
+            print(ref);
         }
         int64_t value = WasmEdge_ValueGetI64(Returns[0]);
         //        printf("Got result: 0x%llx\n", value);
