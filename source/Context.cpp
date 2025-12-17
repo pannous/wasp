@@ -64,6 +64,12 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 
     // Check if a native library has been loaded for this function (before trying funclets)
     #ifdef NATIVE_FFI
+    // Skip operators - they should not be imported as FFI functions
+    extern bool is_operator(codepoint ch, bool check_identifiers);
+    if (name.length > 0 && is_operator(name[0], false)) {
+        // Operators like +, -, *, / should not be treated as FFI imports
+        goto skip_native_ffi_1;
+    }
     extern List<Module *> libraries;
     for (Module *library: libraries) {
         if (library->is_native_library) {
@@ -90,6 +96,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
             return use_required_import(&func);
         }
     }
+    skip_native_ffi_1:
     #endif
 
     if (contains(funclet_list, name)) {
@@ -128,6 +135,10 @@ Function *findLibraryFunction(String name, bool searchAliases) {
 
         // Check if this is a native library that's been loaded via `use m` or `use c`
         if (library->is_native_library) {
+            // Skip operators - they should not be imported as FFI functions
+            if (name.length > 0 && is_operator(name[0], false)) {
+                continue; // Skip this library, try next one
+            }
             // Try to dynamically import the function from the native library
             #ifdef NATIVE_FFI
             extern Map<String, Module *> native_libraries;

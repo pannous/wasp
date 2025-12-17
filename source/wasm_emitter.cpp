@@ -3713,10 +3713,11 @@ Code emitTypeSection() {
         if (fun == "abs") {
         }
         if (is_operator(fun[0])) {
-            if (fun == "abs") printf("DEBUG emitter: abs first char is operator, skipping\n");
-            todo("how did we get here?");
+            // Skip operators that weren't caught by the operator_list check above
+            // This can happen for operators like '-' that might not be in operator_list
+            trace("Skipping operator function: "s + fun);
             continue;
-        } // todo how did we get here?
+        }
         Function &function = functions[fun];
         Signature &signature = function.signature;
         if (not function.is_declared /*export/declarations*/ and not function.is_used /*imports*/) {
