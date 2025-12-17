@@ -46,6 +46,12 @@ static wasmtime_context_t *context = NULL;
 //static uint8_t *wasm_memory = NULL;
 static bool initialized = false;
 
+#ifdef NATIVE_FFI
+// Global functions map from Context.cpp
+extern Map<String, Function> functions;
+extern Map<String, Module *> native_libraries;
+#endif
+
 // Helper to consistently write a null externref result regardless of header variant
 static inline void set_result_null_externref(wasmtime_val_t *out) {
     out->kind = WASMTIME_EXTERNREF;
@@ -240,7 +246,6 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 #ifdef NATIVE_FFI
         // Skip FFI functions - they're handled by the FFI section below
         // Use global functions map since FFI info isn't preserved in WASM binary
-        extern Map<String, Function> functions;  // Defined in Context.cpp
         if (functions.has(import_name) && functions[import_name].is_ffi) {
             continue;
         }
@@ -262,7 +267,6 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 #ifdef NATIVE_FFI
     // Add FFI imports from native library modules (Mac/Linux only)
     // WASM builds cannot load native .so/.dylib files
-    extern Map<String, Module *> native_libraries;  // Defined in Context.cpp
 
     // Iterate over native library modules (libc, libm, etc.)
     for (int i = 0; i < native_libraries.size(); i++) {
