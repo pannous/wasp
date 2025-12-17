@@ -2,6 +2,7 @@
 #include "wasmtime.h"
 #include "wasmtime_extension.h" // wasmtime_anyref_is_struct via modified wasmtime/crates/c-api/src/ref.rs see wasmtime_modified_ref.rs
 
+
 // #include "wasmtime/wasi.h"
 // #include "wasmtime/wasi.hh"
 
@@ -15,7 +16,10 @@
 #include <math.h>
 #include "ffi_loader.h"
 #include "ffi_marshaller.h"
+#include "ffi_signatures.h"
+#include "ffi_dynamic_wrapper.h"
 #include "Context.h"
+#include "wasmtime/val.h"
 
 //#include <wasmtime.h>
 #include "wasmtime.h"
@@ -61,7 +65,14 @@ static inline void set_result_null_externref(wasmtime_val_t *out) {
 
 void init_wasmtime() {
     if (initialized) return; // Prevent re-initialization
-    engine = wasm_engine_new();
+
+    // Create config and enable GC proposal
+    wasm_config_t *config = wasm_config_new();
+    wasmtime_config_wasm_gc_set(config, true);
+    wasmtime_config_wasm_function_references_set(config, true);
+    wasmtime_config_wasm_reference_types_set(config, true);
+
+    engine = wasm_engine_new_with_config(config);
     assert(engine != NULL);
     store = wasmtime_store_new(engine, NULL, NULL);
     assert(store != NULL);
@@ -106,45 +117,7 @@ typedef wasm_trap_t *(wasm_wrap)(void *, wasmtime_caller_t *, const wasmtime_val
 
 const wasm_functype_t *funcType(Signature &signature);
 
-// FFI wrapper for double(double) functions
-wrap(ffi_f64_f64) {
-    typedef double (*ffi_func_t)(double);
-    ffi_func_t func = (ffi_func_t)env;
-    double arg = args[0].of.f64;
-    double c_arg = FFIMarshaller::to_c_double(arg);
-    double c_result = func(c_arg);
-    double result = FFIMarshaller::from_c_double(c_result);
-    results[0].of.f64 = result;
-    return NULL;
-}
-
-// FFI wrapper for double(double, double) functions
-wrap(ffi_f64_f64_f64) {
-    typedef double (*ffi_func_t)(double, double);
-    ffi_func_t func = (ffi_func_t)env;
-    double arg1 = FFIMarshaller::to_c_double(args[0].of.f64);
-    double arg2 = FFIMarshaller::to_c_double(args[1].of.f64);
-    double c_result = func(arg1, arg2);
-    double result = FFIMarshaller::from_c_double(c_result);
-    results[0].of.f64 = result;
-    return NULL;
-}
-
-// FFI wrapper for string functions: char*(char*)
-wrap(ffi_str_str) {
-    typedef char* (*ffi_func_t)(char*);
-    ffi_func_t func = (ffi_func_t)env;
-    int32_t offset = args[0].of.i32;
-    const char* c_str = FFIMarshaller::offset_to_c_string(wasm_memory, offset);
-    char* c_result = func((char*)c_str);
-    int32_t result_offset = FFIMarshaller::c_string_to_offset(wasm_memory, c_result);
-    results[0].of.i32 = result_offset;
-    return NULL;
-}
-
 wasm_wrap *link_import(String name);
-
-#include "wasmtime/val.h"
 #if WASMTIME_PATCH
 int64 read_struct_field(const wasmtime_anyref_t &anyref, int field) {
     // Get field (e.g. the 'num' field with value 42)
@@ -190,7 +163,7 @@ Node struct_to_node_wasmtime(const wasmtime_anyref_t &anyref) {
         } else if (field_val.kind == WASMTIME_I64) {
             fieldNode = Node(field_val.of.i64);
         } else if (field_val.kind == WASMTIME_F32) {
-            fieldNode = Node((double)field_val.of.f32);
+            fieldNode = Node((double) field_val.of.f32);
         } else if (field_val.kind == WASMTIME_F64) {
             fieldNode = Node(field_val.of.f64);
         } else {
@@ -236,7 +209,9 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     wasmtime_instance_t instance;
     wasm_trap_t *trap = NULL;
 
-    // #define ENABLE_WASI_STDIO
+#if not  ENABLE_WASI_STDIO
+#define ENABLE_WASI_STDIO
+#endif
 #ifdef ENABLE_WASI_STDIO
     // Instantiate via linker with WASI providing stdio (fd_write etc.) and our custom env funcs.
     wasmtime_linker_t *linker = wasmtime_linker_new(engine);
@@ -275,7 +250,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     }
 
 #ifdef NATIVE_FFI
-    // Add FFI imports from native libraries (Mac/Linux only)
+    // Add FFI imports with dynamic signature detection from native libraries (Mac/Linux only)
     // WASM builds cannot load native .so/.dylib files
     for (int i = 0; i < ffi_functions.size(); i++) {
         FFIFunctionInfo& ffi_info = ffi_functions[i];
@@ -283,19 +258,87 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         String lib_name = ffi_info.library_name;
         void* ffi_func = ffi_loader.get_function(lib_name, func_name);
         if (ffi_func) {
-            // For now, default to f64->f64 signature for math functions
-            // TODO: Add signature detection based on function metadata
-            wasm_functype_t *ffi_type = wasm_functype_new_1_1(
-                wasm_valtype_new_f64(), wasm_valtype_new_f64());
+            // Detect signature using Wasp's signature detection
+            Signature wasp_sig;
+            detect_ffi_signature(func_name, lib_name, wasp_sig);
+
+            // Convert to runtime FFISignature for dynamic wrapper
+            FFIMarshaller::FFISignature sig = FFIMarshaller::wasp_signature_to_ffi(wasp_sig, ffi_func, func_name);
+
+            // Create Wasmtime function type from signature
+            int param_count = sig.param_types.size();
+            int return_count = (sig.return_type == FFIMarshaller::CType::Void) ? 0 : 1;
+
+            wasm_valtype_t** P = param_count > 0 ? new wasm_valtype_t*[param_count] : nullptr;
+            wasm_valtype_t** R = return_count > 0 ? new wasm_valtype_t*[return_count] : nullptr;
+
+            // Map parameter types
+            for (int j = 0; j < param_count; j++) {
+                switch (sig.param_types[j]) {
+                    case FFIMarshaller::CType::Int32:
+                    case FFIMarshaller::CType::String:  // Strings are passed as i32 offsets
+                        P[j] = wasm_valtype_new(WASM_I32);
+                        break;
+                    case FFIMarshaller::CType::Int64:
+                        P[j] = wasm_valtype_new(WASM_I64);
+                        break;
+                    case FFIMarshaller::CType::Float32:
+                        P[j] = wasm_valtype_new(WASM_F32);
+                        break;
+                    case FFIMarshaller::CType::Float64:
+                        P[j] = wasm_valtype_new(WASM_F64);
+                        break;
+                    default:
+                        P[j] = wasm_valtype_new(WASM_I32);
+                }
+            }
+
+            // Map return type
+            if (return_count > 0) {
+                switch (sig.return_type) {
+                    case FFIMarshaller::CType::Int32:
+                        R[0] = wasm_valtype_new(WASM_I32);
+                        break;
+                    case FFIMarshaller::CType::Int64:
+                        R[0] = wasm_valtype_new(WASM_I64);
+                        break;
+                    case FFIMarshaller::CType::Float32:
+                        R[0] = wasm_valtype_new(WASM_F32);
+                        break;
+                    case FFIMarshaller::CType::Float64:
+                        R[0] = wasm_valtype_new(WASM_F64);
+                        break;
+                    default:
+                        R[0] = wasm_valtype_new(WASM_I32);
+                }
+            }
+
+            // Create parameter and return vectors
+            wasm_valtype_vec_t params, results;
+            wasm_valtype_vec_new(&params, param_count, P);
+            wasm_valtype_vec_new(&results, return_count, R);
+
+            // Create function type
+            wasm_functype_t* ffi_type = wasm_functype_new(&params, &results);
+
+            // Allocate persistent signature for the wrapper
+            FFIMarshaller::FFISignature* sig_ptr = new FFIMarshaller::FFISignature(sig);
+
+            // Use dynamic wrapper that dispatches based on signature
             wasmtime_error_t *derr = wasmtime_linker_define_func(
                 linker, "env", 3, func_name, func_name.length, ffi_type,
-                (wasmtime_func_callback_t)&wrap_ffi_f64_f64, ffi_func, NULL);
+                ffi_dynamic_wrapper_wasmtime, sig_ptr, NULL);
+
             wasm_functype_delete(ffi_type);
+
+            if (P) delete[] P;
+            if (R) delete[] R;
+
             if (derr) {
                 warn("FFI: Failed to define "s + func_name + " from " + lib_name);
                 wasmtime_error_delete(derr);
             } else {
-                print("FFI: Loaded "s + func_name + " from " + lib_name);
+                trace("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
             }
         } else {
             warn("FFI: Failed to load "s + func_name + " from " + lib_name);
@@ -877,15 +920,15 @@ wasm_valkind_t mapTypeToWasmtime(Type type) {
         // case anyref: // old name
         case externref:
             return WASM_EXTERNREF; // legacy externref in some wasm.h variants
-// #ifdef WASM_ANYREF
-//             return WASM_ANYREF; // old GC/reference types via wasm-c-api
-// // #elif defined(WASM_EXTERNREF)
-// #else
-//             // error("externref not supported by this wasm.h (no WASM_ANYREF/WASM_EXTERNREF)"s);
-//             return WASMTIME_ANYREF; // unexpected kind: 7
-//             // return WASMTIME_EXTERNREF; // unexpected kind: 6
-//             // return WASM_I32;
-// #endif
+        // #ifdef WASM_ANYREF
+        //             return WASM_ANYREF; // old GC/reference types via wasm-c-api
+        // // #elif defined(WASM_EXTERNREF)
+        // #else
+        //             // error("externref not supported by this wasm.h (no WASM_ANYREF/WASM_EXTERNREF)"s);
+        //             return WASMTIME_ANYREF; // unexpected kind: 7
+        //             // return WASMTIME_EXTERNREF; // unexpected kind: 6
+        //             // return WASM_I32;
+        // #endif
         case funcref:
             return WASM_FUNCREF;
         case charp:
@@ -900,16 +943,15 @@ wasm_valkind_t mapTypeToWasmtime(Type type) {
 const wasm_functype_t *funcType(Signature &signature) {
     int param_count = signature.parameters.size();
 
-    if(signature.functions.size()>1) {
-        auto n=signature.functions.first()->name;
+    if (signature.functions.size() > 1) {
+        auto n = signature.functions.first()->name;
         print(n);
     }
 
     // Map return type
     Type returnType = signature.return_types.last(none);
     wasm_valtype_t *return_type = 0;
-    if (returnType != nils)
-    {
+    if (returnType != nils) {
         auto rk = mapTypeToWasmtime(returnType);
         return_type = wasm_valtype_new(rk);
     }
