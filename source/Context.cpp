@@ -27,6 +27,7 @@ Map<String, Function> functions = {1000};
 //Map<String, Function> library_functions; see:
 List<Module *> libraries; // used modules from (automatic) import statements e.g. import math; use log; …  ≠
 // functions of preloaded libraries are found WITHOUT `use` `import` statement (as in Swift) !
+Map<String, Module *> native_libraries = {10}; // FFI native libraries (libc="c", libm="m", etc.)
 
 Map<int64, bool> analyzed = {1000};
 // avoid duplicate analysis (of if/while) todo: via simple tree walk, not this!

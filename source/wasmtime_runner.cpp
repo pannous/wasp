@@ -260,20 +260,26 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     }
 
 #ifdef NATIVE_FFI
-    // Add FFI imports with dynamic signature detection from native libraries (Mac/Linux only)
+    // Add FFI imports from native library modules (Mac/Linux only)
     // WASM builds cannot load native .so/.dylib files
-    // Use global functions map since FFI info isn't preserved in WASM binary
-    extern Map<String, Function> functions;  // Defined in Context.cpp
-    for (int i = 0; i < functions.size(); i++) {
-        Function& func = functions.values[i];
-        if (!func.is_ffi) continue;
+    extern Map<String, Module *> native_libraries;  // Defined in Context.cpp
 
-        String func_name = func.name;
-        String lib_name = func.ffi_library;
-        void* ffi_func = ffi_loader.get_function(lib_name, func_name);
-        if (ffi_func) {
-            // Use signature already detected during parsing
-            Signature& wasp_sig = func.signature;
+    // Iterate over native library modules (libc, libm, etc.)
+    for (int i = 0; i < native_libraries.size(); i++) {
+        Module* lib_module = native_libraries.values[i];
+        if (!lib_module || !lib_module->is_native_library) continue;
+
+        String lib_name = lib_module->name;
+
+        // Iterate over exported functions in this native library
+        for (int j = 0; j < lib_module->functions.size(); j++) {
+            Function& func = lib_module->functions.values[j];
+            String func_name = func.name;
+
+            void* ffi_func = ffi_loader.get_function(lib_name, func_name);
+            if (ffi_func) {
+                // Use signature already detected during parsing
+                Signature& wasp_sig = func.signature;
 
             // Convert to runtime FFISignature for dynamic wrapper
             FFIMarshaller::FFISignature sig = FFIMarshaller::wasp_signature_to_ffi(wasp_sig, ffi_func, func_name);
@@ -339,7 +345,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 
             // Use dynamic wrapper that dispatches based on signature
             wasmtime_error_t *derr = wasmtime_linker_define_func(
-                linker, "env", 3, func_name, func_name.length, ffi_type,
+                linker, lib_name, lib_name.length, func_name, func_name.length, ffi_type,
                 ffi_dynamic_wrapper_wasmtime, sig_ptr, NULL);
 
             wasm_functype_delete(ffi_type);
@@ -353,8 +359,9 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
             } else {
                 trace("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
             }
-        } else {
-            warn("FFI: Failed to load "s + func_name + " from " + lib_name);
+            } else {
+                warn("FFI: Failed to load "s + func_name + " from " + lib_name);
+            }
         }
     }
 #endif // NATIVE_FFI

@@ -420,90 +420,98 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     }
 
 #ifdef NATIVE_FFI
-    // Add FFI imports with dynamic signature detection from native libraries (Mac/Linux only)
+    // Add FFI imports from native library modules (Mac/Linux only)
     // WASM builds cannot load native .so/.dylib files
-    extern Map<String, Function> functions;  // Defined in Context.cpp
-    for (int i = 0; i < functions.size(); i++) {
-        Function& func = functions.values[i];
-        if (!func.is_ffi) continue;
+    extern Map<String, Module *> native_libraries;  // Defined in Context.cpp
 
-        String func_name = func.name;
-        String lib_name = func.ffi_library;
-        void* ffi_func = ffi_loader.get_function(lib_name, func_name);
-        if (ffi_func) {
-            // Use signature already detected during parsing
-            Signature& wasp_sig = func.signature;
+    // Iterate over native library modules (libc, libm, etc.)
+    for (int i = 0; i < native_libraries.size(); i++) {
+        Module* lib_module = native_libraries.values[i];
+        if (!lib_module || !lib_module->is_native_library) continue;
 
-            // Convert to runtime FFISignature for dynamic wrapper
-            FFIMarshaller::FFISignature sig = FFIMarshaller::wasp_signature_to_ffi(wasp_sig, ffi_func, func_name);
+        String lib_name = lib_module->name;
 
-            // Create WasmEdge function type from signature
-            int param_count = sig.param_types.size();
-            int return_count = (sig.return_type == FFIMarshaller::CType::Void) ? 0 : 1;
+        // Iterate over exported functions in this native library
+        for (int j = 0; j < lib_module->functions.size(); j++) {
+            Function& func = lib_module->functions.values[j];
+            String func_name = func.name;
 
-            WasmEdge_ValType* P = param_count > 0 ? new WasmEdge_ValType[param_count] : nullptr;
-            WasmEdge_ValType* R = return_count > 0 ? new WasmEdge_ValType[return_count] : nullptr;
+            void* ffi_func = ffi_loader.get_function(lib_name, func_name);
+            if (ffi_func) {
+                // Use signature already detected during parsing
+                Signature& wasp_sig = func.signature;
 
-            // Map parameter types
-            for (int j = 0; j < param_count; j++) {
-                switch (sig.param_types[j]) {
-                    case FFIMarshaller::CType::Int32:
-                    case FFIMarshaller::CType::String:  // Strings are passed as i32 offsets
-                        P[j] = WasmEdge_ValTypeGenI32();
-                        break;
-                    case FFIMarshaller::CType::Int64:
-                        P[j] = WasmEdge_ValTypeGenI64();
-                        break;
-                    case FFIMarshaller::CType::Float32:
-                        P[j] = WasmEdge_ValTypeGenF32();
-                        break;
-                    case FFIMarshaller::CType::Float64:
-                        P[j] = WasmEdge_ValTypeGenF64();
-                        break;
-                    default:
-                        P[j] = WasmEdge_ValTypeGenI32();
+                // Convert to runtime FFISignature for dynamic wrapper
+                FFIMarshaller::FFISignature sig = FFIMarshaller::wasp_signature_to_ffi(wasp_sig, ffi_func, func_name);
+
+                // Create WasmEdge function type from signature
+                int param_count = sig.param_types.size();
+                int return_count = (sig.return_type == FFIMarshaller::CType::Void) ? 0 : 1;
+
+                WasmEdge_ValType* P = param_count > 0 ? new WasmEdge_ValType[param_count] : nullptr;
+                WasmEdge_ValType* R = return_count > 0 ? new WasmEdge_ValType[return_count] : nullptr;
+
+                // Map parameter types
+                for (int k = 0; k < param_count; k++) {
+                    switch (sig.param_types[k]) {
+                        case FFIMarshaller::CType::Int32:
+                        case FFIMarshaller::CType::String:  // Strings are passed as i32 offsets
+                            P[k] = WasmEdge_ValTypeGenI32();
+                            break;
+                        case FFIMarshaller::CType::Int64:
+                            P[k] = WasmEdge_ValTypeGenI64();
+                            break;
+                        case FFIMarshaller::CType::Float32:
+                            P[k] = WasmEdge_ValTypeGenF32();
+                            break;
+                        case FFIMarshaller::CType::Float64:
+                            P[k] = WasmEdge_ValTypeGenF64();
+                            break;
+                        default:
+                            P[k] = WasmEdge_ValTypeGenI32();
+                    }
                 }
-            }
 
-            // Map return type
-            if (return_count > 0) {
-                switch (sig.return_type) {
-                    case FFIMarshaller::CType::Int32:
-                        R[0] = WasmEdge_ValTypeGenI32();
-                        break;
-                    case FFIMarshaller::CType::Int64:
-                        R[0] = WasmEdge_ValTypeGenI64();
-                        break;
-                    case FFIMarshaller::CType::Float32:
-                        R[0] = WasmEdge_ValTypeGenF32();
-                        break;
-                    case FFIMarshaller::CType::Float64:
-                        R[0] = WasmEdge_ValTypeGenF64();
-                        break;
-                    default:
-                        R[0] = WasmEdge_ValTypeGenI32();
+                // Map return type
+                if (return_count > 0) {
+                    switch (sig.return_type) {
+                        case FFIMarshaller::CType::Int32:
+                            R[0] = WasmEdge_ValTypeGenI32();
+                            break;
+                        case FFIMarshaller::CType::Int64:
+                            R[0] = WasmEdge_ValTypeGenI64();
+                            break;
+                        case FFIMarshaller::CType::Float32:
+                            R[0] = WasmEdge_ValTypeGenF32();
+                            break;
+                        case FFIMarshaller::CType::Float64:
+                            R[0] = WasmEdge_ValTypeGenF64();
+                            break;
+                        default:
+                            R[0] = WasmEdge_ValTypeGenI32();
+                    }
                 }
+
+                HostFType = WasmEdge_FunctionTypeCreate(P, param_count, R, return_count);
+
+                // Allocate persistent signature for the wrapper
+                FFIMarshaller::FFISignature* sig_ptr = new FFIMarshaller::FFISignature(sig);
+
+                // Use dynamic wrapper that dispatches based on signature
+                HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ffi_dynamic_wrapper, sig_ptr, 0);
+                WasmEdge_FunctionTypeDelete(HostFType);
+
+                if (P) delete[] P;
+                if (R) delete[] R;
+
+                HostName = WasmEdge_StringCreateByCString(func_name);
+                WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+                WasmEdge_StringDelete(HostName);
+
+                trace("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
+            } else {
+                warn("FFI: Failed to load "s + func_name + " from " + lib_name);
             }
-
-            HostFType = WasmEdge_FunctionTypeCreate(P, param_count, R, return_count);
-
-            // Allocate persistent signature for the wrapper
-            FFIMarshaller::FFISignature* sig_ptr = new FFIMarshaller::FFISignature(sig);
-
-            // Use dynamic wrapper that dispatches based on signature
-            HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ffi_dynamic_wrapper, sig_ptr, 0);
-            WasmEdge_FunctionTypeDelete(HostFType);
-
-            if (P) delete[] P;
-            if (R) delete[] R;
-
-            HostName = WasmEdge_StringCreateByCString(func_name);
-            WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
-            WasmEdge_StringDelete(HostName);
-
-            trace("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
-        } else {
-            warn("FFI: Failed to load "s + func_name + " from " + lib_name);
         }
     }
 #endif // NATIVE_FFI
