@@ -56,6 +56,22 @@ public:
 #endif
         }
 
+        // Try Homebrew/local library path (macOS) or lib64 (Linux)
+        if (!handle) {
+#ifdef __APPLE__
+            String lib_path = "/usr/local/lib/lib"s + lib_name + ".dylib";
+            handle = dlopen(lib_path, RTLD_LAZY | RTLD_LOCAL);
+            if (!handle) {
+                // Try Homebrew ARM64 path
+                lib_path = "/opt/homebrew/lib/lib"s + lib_name + ".dylib";
+                handle = dlopen(lib_path, RTLD_LAZY | RTLD_LOCAL);
+            }
+#else
+            String lib_path = "/usr/lib/x86_64-linux-gnu/lib"s + lib_name + ".so";
+            handle = dlopen(lib_path, RTLD_LAZY | RTLD_LOCAL);
+#endif
+        }
+
         if (handle) {
             loaded_libraries.add(lib_name, FFILibrary(lib_name, handle));
         } else {

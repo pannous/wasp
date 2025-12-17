@@ -5,6 +5,12 @@
 #include "Code.h"  // For Signature, Arg, Type
 #include <cstring>
 
+#ifdef NATIVE_FFI
+#include "ffi_header_parser.h"
+#include <fstream>
+#include <sys/stat.h>
+#endif
+
 // Helper: Manual string comparison (workaround for String == operator issue)
 static inline bool str_eq(const String& s, const char* literal) {
     int len = strlen(literal);
@@ -15,12 +21,104 @@ static inline bool str_eq(const String& s, const char* literal) {
     return true;
 }
 
+#ifdef NATIVE_FFI
+// Try to detect signature from C header files
+inline bool detect_signature_from_headers(const String& func_name, const String& lib_name, Signature& sig) {
+    // Common header file locations
+    const char* header_paths[] = {
+        "/usr/include/SDL2/SDL.h",
+        "/usr/local/include/SDL2/SDL.h",
+        "/opt/homebrew/include/SDL2/SDL.h",
+        "/usr/include/math.h",
+        "/usr/include/stdlib.h",
+        "/usr/include/string.h",
+        nullptr
+    };
+
+    // Try to find and read relevant header file based on library name
+    String header_content;
+    for (int i = 0; header_paths[i] != nullptr; i++) {
+        struct stat buffer;
+        if (stat(header_paths[i], &buffer) == 0) {
+            // Header file exists, try to read it
+            std::ifstream file(header_paths[i]);
+            if (file.is_open()) {
+                std::string line;
+                // Look for function declaration matching func_name
+                while (std::getline(file, line)) {
+                    // Skip comments and non-declaration lines
+                    size_t comment_pos = line.find("//");
+                    if (comment_pos != std::string::npos) {
+                        line = line.substr(0, comment_pos);
+                    }
+                    if (line.find("/*") != std::string::npos || line.find("*/") != std::string::npos) {
+                        continue; // Skip block comment lines
+                    }
+                    if (line.find("*") == 0 || line.find(" *") != std::string::npos) {
+                        continue; // Skip comment lines
+                    }
+
+                    // Look for actual function declarations
+                    if (line.find(func_name.data) != std::string::npos &&
+                        line.find('(') != std::string::npos &&
+                        line.find(';') != std::string::npos &&
+                        (line.find("extern") != std::string::npos ||
+                         line.find("DECLSPEC") != std::string::npos ||
+                         line.find(func_name.data) == 0)) {
+                        // Found potential declaration, try to parse it
+                        String decl = line.c_str();
+
+                        // Try to parse without verbose output
+                        int old_trace = 0; // Suppress trace during parsing
+                        Node& parsed = parse(decl);
+
+                        FFIHeaderSignature ffi_sig;
+                        ffi_sig.library = lib_name;
+                        if (extractFunctionSignature(parsed, ffi_sig) &&
+                            str_eq(ffi_sig.name, func_name.data)) {
+                            // Successfully extracted signature!
+                            sig.parameters.clear();
+                            sig.return_types.clear();
+
+                            // Convert to Signature format
+                            for (const String& param_type : ffi_sig.param_types) {
+                                Arg param;
+                                param.type = mapCTypeToWasp(param_type);
+                                sig.parameters.add(param);
+                            }
+
+                            Type ret_type = mapCTypeToWasp(ffi_sig.return_type);
+                            if (ret_type != nils && ret_type != voids) {
+                                sig.return_types.add(ret_type);
+                            }
+
+                            file.close();
+                            return true;
+                        }
+                    }
+                }
+                file.close();
+            }
+        }
+    }
+    return false;
+}
+#endif
+
 // Detect function signature based on function name and library
 // Populates the provided Signature object with parameter and return types
 inline void detect_ffi_signature(const String& func_name, const String& lib_name, Signature& sig) {
     sig.parameters.clear();
     sig.return_types.clear();
 
+#ifdef NATIVE_FFI
+    // Try header-based reflection first
+    if (detect_signature_from_headers(func_name, lib_name, sig)) {
+        return; // Successfully detected from headers
+    }
+#endif
+
+    // Fall back to hardcoded signature database
     // Helper to add parameter
     auto add_param = [&](Type type) {
         Arg param;
@@ -84,6 +182,44 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
         }
         else {
             // Default: int -> int
+            add_param(int32t);
+            sig.return_types.add(int32t);
+        }
+    }
+    // SDL2 library functions
+    else if (str_eq(lib_name, "SDL2")) {
+        if (str_eq(func_name, "SDL_Init")) {
+            // int SDL_Init(Uint32 flags)
+            add_param(int32t);
+            sig.return_types.add(int32t);
+        }
+        else if (str_eq(func_name, "SDL_Quit")) {
+            // void SDL_Quit(void) - no return value, leave return_types empty
+        }
+        else if (str_eq(func_name, "SDL_CreateWindow")) {
+            // SDL_Window* SDL_CreateWindow(const char* title, int x, int y, int w, int h, Uint32 flags)
+            add_param(charp);  // title
+            add_param(int32t); // x
+            add_param(int32t); // y
+            add_param(int32t); // w
+            add_param(int32t); // h
+            add_param(int32t); // flags
+            sig.return_types.add(i64); // pointer
+        }
+        else if (str_eq(func_name, "SDL_DestroyWindow")) {
+            // void SDL_DestroyWindow(SDL_Window* window) - no return value
+            add_param(i64); // pointer
+        }
+        else if (str_eq(func_name, "SDL_GetTicks")) {
+            // Uint32 SDL_GetTicks(void)
+            sig.return_types.add(int32t);
+        }
+        else if (str_eq(func_name, "SDL_GetError")) {
+            // const char* SDL_GetError(void)
+            sig.return_types.add(charp);
+        }
+        else {
+            // Default SDL function: int -> int
             add_param(int32t);
             sig.return_types.add(int32t);
         }

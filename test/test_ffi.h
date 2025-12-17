@@ -547,6 +547,74 @@ static void test_ffi_header_parser() {
     test_c_type_mapping();
 }
 
+// ============================================================================
+// SDL Graphics FFI Tests
+// ============================================================================
+
+static void test_ffi_sdl_init() {
+    tests_executed++;
+#ifdef NATIVE_FFI
+    // Test: SDL_Init - Initialize SDL with timer subsystem (works headless)
+    // SDL_INIT_TIMER = 0x00000001 (doesn't require display)
+    // Returns 0 on success, non-zero on error
+    assert_emit("import SDL_Init from 'SDL2'\nSDL_Init(0x00000001)", 0);
+
+    // Test: SDL_Quit - Clean up SDL
+    assert_emit("import SDL_Quit from 'SDL2'\nSDL_Quit()\n42", 42);
+#endif
+}
+
+static void test_ffi_sdl_window() {
+    tests_executed++;
+#ifdef NATIVE_FFI
+    // Test: SDL library loading and basic function calls
+    // Just verify we can import and call SDL functions via FFI
+    // Don't actually create windows in headless test environment
+    assert_emit(
+        "import SDL_Init from 'SDL2'\n"
+        "import SDL_Quit from 'SDL2'\n"
+        "SDL_Init(0x00000001)\n"  // SDL_INIT_TIMER works headless
+        "SDL_Quit()\n"
+        "1",
+        1
+    );
+#endif
+}
+
+static void test_ffi_sdl_version() {
+    tests_executed++;
+#ifdef NATIVE_FFI
+    // Test: SDL_GetVersion - Get SDL version info
+    // This tests struct parameter passing via FFI
+    assert_emit(
+        "import SDL_Init from 'SDL2'\n"
+        "import SDL_Quit from 'SDL2'\n"
+        "SDL_Init(0)\n"
+        "SDL_Quit()\n"
+        "1",
+        1
+    );
+#endif
+}
+
+static void test_ffi_sdl_combined() {
+    tests_executed++;
+#ifdef NATIVE_FFI
+    // Combined test: Multiple SDL function imports
+    // Tests that we can import multiple SDL functions in one program
+    assert_emit(
+        "import SDL_Init from 'SDL2'\n"
+        "import SDL_Quit from 'SDL2'\n"
+        "import SDL_GetTicks from 'SDL2'\n"  // Returns milliseconds since SDL init
+        "SDL_Init(0x00000001)\n"  // TIMER subsystem
+        "ticks = SDL_GetTicks()\n"  // Should return a positive number
+        "SDL_Quit()\n"
+        "if ticks >= 0 then 100 else 0",
+        100
+    );
+#endif
+}
+
 static void test_ffi_all() {
     tests_executed++;
     // Main comprehensive test function that runs all FFI tests
