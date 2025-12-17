@@ -1,0 +1,41 @@
+// SDL2 Red Square Demo - Pure FFI, no compile-time dependencies
+// Run with: ./wasp samples/sdl_red_square.wasp
+
+import SDL_Init from 'SDL2'
+import SDL_CreateWindow from 'SDL2'
+import SDL_CreateRenderer from 'SDL2'
+import SDL_SetRenderDrawColor from 'SDL2'
+import SDL_RenderClear from 'SDL2'
+import SDL_RenderPresent from 'SDL2'
+import SDL_Delay from 'SDL2'
+import SDL_DestroyRenderer from 'SDL2'
+import SDL_DestroyWindow from 'SDL2'
+import SDL_Quit from 'SDL2'
+
+// Initialize SDL with video subsystem
+SDL_Init(0x00000020)
+
+// Create a 400x400 window
+window = SDL_CreateWindow("Red Square Demo - FFI", 100, 100, 400, 400, 0)
+
+// Create renderer
+renderer = SDL_CreateRenderer(window, -1, 0)
+
+// Set red color (R=255, G=0, B=0, A=255)
+SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255)
+
+// Clear screen with red
+SDL_RenderClear(renderer)
+
+// Display it
+SDL_RenderPresent(renderer)
+
+// Wait 3 seconds
+SDL_Delay(3000)
+
+// Cleanup
+SDL_DestroyRenderer(renderer)
+SDL_DestroyWindow(window)
+SDL_Quit()
+
+print("Demo complete!")

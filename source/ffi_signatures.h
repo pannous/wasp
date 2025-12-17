@@ -24,11 +24,17 @@ static inline bool str_eq(const String& s, const char* literal) {
 #ifdef NATIVE_FFI
 // Try to detect signature from C header files
 inline bool detect_signature_from_headers(const String& func_name, const String& lib_name, Signature& sig) {
-    // Common header file locations
+    // Common header file locations - check specific headers first
     const char* header_paths[] = {
-        "/usr/include/SDL2/SDL.h",
-        "/usr/local/include/SDL2/SDL.h",
+        "/opt/homebrew/include/SDL2/SDL_render.h",
+        "/usr/local/include/SDL2/SDL_render.h",
+        "/usr/include/SDL2/SDL_render.h",
+        "/opt/homebrew/include/SDL2/SDL_timer.h",
+        "/usr/local/include/SDL2/SDL_timer.h",
+        "/usr/include/SDL2/SDL_timer.h",
         "/opt/homebrew/include/SDL2/SDL.h",
+        "/usr/local/include/SDL2/SDL.h",
+        "/usr/include/SDL2/SDL.h",
         "/usr/include/math.h",
         "/usr/include/stdlib.h",
         "/usr/include/string.h",
@@ -44,6 +50,9 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
             std::ifstream file(header_paths[i]);
             if (file.is_open()) {
                 std::string line;
+                std::string accumulated;
+                bool in_declaration = false;
+
                 // Look for function declaration matching func_name
                 while (std::getline(file, line)) {
                     // Skip comments and non-declaration lines
@@ -52,24 +61,46 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
                         line = line.substr(0, comment_pos);
                     }
                     if (line.find("/*") != std::string::npos || line.find("*/") != std::string::npos) {
-                        continue; // Skip block comment lines
+                        continue;
                     }
                     if (line.find("*") == 0 || line.find(" *") != std::string::npos) {
-                        continue; // Skip comment lines
+                        continue;
                     }
 
-                    // Look for actual function declarations
+                    // Check if this line starts a declaration with our function
                     if (line.find(func_name.data) != std::string::npos &&
-                        line.find('(') != std::string::npos &&
-                        line.find(';') != std::string::npos &&
                         (line.find("extern") != std::string::npos ||
-                         line.find("DECLSPEC") != std::string::npos ||
-                         line.find(func_name.data) == 0)) {
-                        // Found potential declaration, try to parse it
-                        String decl = line.c_str();
+                         line.find("DECLSPEC") != std::string::npos)) {
+                        in_declaration = true;
+                        accumulated = line;
+                    } else if (in_declaration) {
+                        // Trim leading/trailing whitespace from line
+                        std::string trimmed = line;
+                        size_t start = trimmed.find_first_not_of(" \t\r\n");
+                        if (start != std::string::npos) {
+                            trimmed = trimmed.substr(start);
+                        }
+                        accumulated += " " + trimmed;
+                    }
 
-                        // Try to parse without verbose output
-                        int old_trace = 0; // Suppress trace during parsing
+                    // Check if declaration is complete (has semicolon)
+                    if (in_declaration && accumulated.find(';') != std::string::npos) {
+                        // Clean up the declaration
+                        std::string clean_line = accumulated;
+
+                        // Remove SDL-specific macros
+                        size_t pos;
+                        while ((pos = clean_line.find("DECLSPEC ")) != std::string::npos) {
+                            clean_line.erase(pos, 9);
+                        }
+                        while ((pos = clean_line.find("SDLCALL ")) != std::string::npos) {
+                            clean_line.erase(pos, 8);
+                        }
+                        while ((pos = clean_line.find("extern ")) != std::string::npos) {
+                            clean_line.erase(pos, 7);
+                        }
+
+                        String decl = clean_line.c_str();
                         Node& parsed = parse(decl);
 
                         FFIHeaderSignature ffi_sig;
@@ -95,6 +126,10 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
                             file.close();
                             return true;
                         }
+
+                        // Reset for next declaration
+                        in_declaration = false;
+                        accumulated.clear();
                     }
                 }
                 file.close();
@@ -219,7 +254,7 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
             sig.return_types.add(charp);
         }
         else {
-            // Default SDL function: int -> int
+            // All other SDL functions: try header reflection, fallback to int->int
             add_param(int32t);
             sig.return_types.add(int32t);
         }
