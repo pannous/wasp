@@ -422,15 +422,17 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
 #ifdef NATIVE_FFI
     // Add FFI imports with dynamic signature detection from native libraries (Mac/Linux only)
     // WASM builds cannot load native .so/.dylib files
-    for (int i = 0; i < ffi_functions.size(); i++) {
-        FFIFunctionInfo& ffi_info = ffi_functions[i];
-        String func_name = ffi_info.function_name;
-        String lib_name = ffi_info.library_name;
+    extern Map<String, Function> functions;  // Defined in Context.cpp
+    for (int i = 0; i < functions.size(); i++) {
+        Function& func = functions.values[i];
+        if (!func.is_ffi) continue;
+
+        String func_name = func.name;
+        String lib_name = func.ffi_library;
         void* ffi_func = ffi_loader.get_function(lib_name, func_name);
         if (ffi_func) {
-            // Detect signature using Wasp's signature detection
-            Signature wasp_sig;
-            detect_ffi_signature(func_name, lib_name, wasp_sig);
+            // Use signature already detected during parsing
+            Signature& wasp_sig = func.signature;
 
             // Convert to runtime FFISignature for dynamic wrapper
             FFIMarshaller::FFISignature sig = FFIMarshaller::wasp_signature_to_ffi(wasp_sig, ffi_func, func_name);
