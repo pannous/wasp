@@ -750,12 +750,45 @@ Node &analyze(Node &node, Function &function) {
     if (firstName == "data" or firstName == "quote")
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
-    if (name.in(import_keywords)) {
+    if (name.in(import_keywords) || firstName.in(import_keywords)) {
         print(contains(import_keywords,name) );
         if(node.has("function") and node.has("library")) {
             handleNativeImport(node);
             return NUL;
-        }//else todo ("move other import here")
+        }
+
+        // Handle `use <library>` for native libraries (e.g., use math, use m)
+        if (node.length > 0) {
+            String lib_name = node.last().name;
+            // Map common library names to native library names
+            if (lib_name == "math") lib_name = "m";
+
+            // Check if it's a native library (libc="c", libm="m", etc.)
+            if (lib_name == "m" || lib_name == "c") {
+                extern Map<String, Module *> native_libraries;
+
+                // Get or create native library Module
+                Module *lib_module;
+                if (!native_libraries.has(lib_name)) {
+                    lib_module = new Module();
+                    lib_module->name = lib_name;
+                    lib_module->is_native_library = true;
+                    native_libraries.add(lib_name, lib_module);
+                } else {
+                    lib_module = native_libraries[lib_name];
+                }
+
+                // Mark library as used so its functions are available
+                extern List<Module *> libraries;
+                if (!libraries.has(lib_module)) {
+                    libraries.add(lib_module);
+                }
+
+                trace("Loaded native library: "s + lib_name);
+                return NUL;
+            }
+        }
+        //else todo ("move other import here")
     }
 
     if (name == "html") {

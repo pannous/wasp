@@ -9,6 +9,11 @@
 #include "Code.h"
 #include "Keywords.h"
 #include "wasm_reader.h"
+
+#ifdef NATIVE_FFI
+#include "ffi_signatures.h"
+#endif
+
 String &normOperator(String &alias);
 
 Module *module; // todo: use?
@@ -88,6 +93,36 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         if (position >= 0) {
             Function &func = library->functions.values[position];
             return use_required_import(&func);
+        }
+
+        // Check if this is a native library that's been loaded via `use m` or `use c`
+        if (library->is_native_library) {
+            // Try to dynamically import the function from the native library
+            #ifdef NATIVE_FFI
+            extern Map<String, Module *> native_libraries;
+            String lib_name = library->name;
+
+            // Create FFI import for this function
+            Function &func = functions[name];
+            func.name = name;
+            func.is_import = true;
+            func.is_ffi = true;
+            func.ffi_library = lib_name;
+            func.is_used = true;
+            func.module = library;
+
+            // Detect and set function signature
+            detect_ffi_signature(name, lib_name, func.signature);
+
+            // Also add to native library module's functions map (if not already present)
+            if (!library->functions.has(name)) {
+                library->functions.add(name, func);
+                library->export_names.add(name);
+            }
+
+            trace("Dynamically imported FFI function: "s + name + " from " + lib_name);
+            return use_required_import(&func);
+            #endif
         }
     }
     Function *function = 0;
