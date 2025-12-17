@@ -236,6 +236,19 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         // Skip WASI-provided imports so our mock versions don't shadow them.
         if (import_name == "fd_write" || import_name == "args_get" || import_name == "args_sizes_get") continue;
         // todo ALL wasi imports
+
+#ifdef NATIVE_FFI
+        // Skip FFI functions - they're handled by the FFI section below
+        bool is_ffi = false;
+        for (int i = 0; i < ffi_functions.size(); i++) {
+            if (ffi_functions[i].function_name == import_name) {
+                is_ffi = true;
+                break;
+            }
+        }
+        if (is_ffi) continue;
+#endif
+
         Signature &signature = meta.functions[import_name].signature;
         if (import_name == "_ZdlPvm")
             signature.return_types.clear(); // todo bug from where?
