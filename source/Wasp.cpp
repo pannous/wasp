@@ -1142,6 +1142,21 @@ private:
             lib = (node.last().name);
         if (lib == "memory")
             return node; // todo ignore memory includes???
+
+        // Check if it's a native library (m, c, math)
+        String native_lib = lib;
+        if (lib == "math") native_lib = "m";
+        if (native_lib == "m" || native_lib == "c") {
+            // Don't try to load as file, let Angle.cpp handle it during analysis
+            // Create a node structure that matches import keyword pattern:
+            // First child should be the keyword "use", second child is the library
+            Node &import_node = *new Node();
+            import_node.add(*new Node("use"));
+            import_node.add(*new Node(native_lib));
+            import_node.kind = groups;  // groups, not functor
+            return import_node;
+        }
+
         if (not file.empty() and file.endsWith(".wit")) // todo file from where ??
             lib.replaceAllInPlace('-', '_'); // stupid kebab case!
         if (!lib.empty()) // creates 'include' node for wasm …
