@@ -4358,7 +4358,9 @@ void testCurrent() {
     // testFunctionArgumentCast();
     // test_dynlib_import();
     // testStructWast();
-    // testStruct();
+#if WASMEDGE
+    testStruct(); // no wasmtime yet
+#endif
     // test_wasm_node_struct();
     // test_wasm_structs();
 
