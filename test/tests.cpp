@@ -4354,7 +4354,7 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
-    // test_dynlib_import_emit(); // TODO: FFI tests don't work with WASM compilation
+    test_dynlib_import_emit();
     // testStructWast();
 #if WASMEDGE
     testStruct(); // no wasmtime yet
@@ -4364,7 +4364,7 @@ void testCurrent() {
 
 // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
-    // test_ffi_all(); // TODO: FFI tests with assert_emit don't work (WASM compilation issue)
+    test_ffi_all();
     test_ffi_header_parser();
     testMapOfStrings();
     testMapOfStringValues();
