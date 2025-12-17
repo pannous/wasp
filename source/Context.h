@@ -58,6 +58,7 @@ public:
     Code field_names; // GC struct.field
 
     int start_index;
+    bool is_native_library = false; // True for FFI native libraries (libc, libm, etc.)
     List<Global> globals;
     List<String> import_names;
     List<String> export_names;

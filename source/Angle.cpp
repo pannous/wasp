@@ -696,16 +696,35 @@ void handleNativeImport(Node &node) {
     String func_name = func_node.length > 0 ? func_node.first().name : func_node.values().name;
     String lib_name = lib_node.length > 0 ? lib_node.first().name : lib_node.values().name;
 
-    // Register as FFI import
+    // Get or create native library Module
+    extern Map<String, Module *> native_libraries;  // Defined in Context.cpp
+    Module *lib_module;
+    if (!native_libraries.has(lib_name)) {
+        lib_module = new Module();
+        lib_module->name = lib_name;
+        lib_module->is_native_library = true;
+        native_libraries.add(lib_name, lib_module);
+    } else {
+        lib_module = native_libraries[lib_name];
+    }
+
+    // Register as FFI import in global functions map
     Function &func = functions[func_name];
     func.name = func_name;
     func.is_import = true;
     func.is_ffi = true;
     func.ffi_library = lib_name;
     func.is_used = true;
+    func.module = lib_module;
 
     // Detect and set function signature directly (reuses existing Signature class)
     detect_ffi_signature(func_name, lib_name, func.signature);
+
+    // Also add to native library module's functions map (if not already present)
+    if (!lib_module->functions.has(func_name)) {
+        lib_module->functions.add(func_name, func);
+        lib_module->export_names.add(func_name);
+    }
 }
 
 /*
