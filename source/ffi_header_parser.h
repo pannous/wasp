@@ -19,13 +19,25 @@ struct FFIHeaderSignature {
 
 // Map C type names to Wasp type names
 inline Type mapCTypeToWasp(String c_type) {
+    // Handle basic types
     if (c_type == "double") return float64t;
     if (c_type == "float") return float32t;
     if (c_type == "int") return int32t;
     if (c_type == "long") return i64;
-    if (c_type == "char*" or c_type == "const char*") return charp;
     if (c_type == "void") return nils;
+
+    // Handle string pointers specially
+    if (c_type == "char*" or c_type == "const char*") return charp;
     if (c_type.contains("char") and c_type.contains("*")) return charp;
+
+    // All other pointers (SDL_Window*, SDL_Renderer*, etc.) as opaque i64
+    // FFI pointers are handles/tokens - we don't access their internals
+    if (c_type.contains("*")) return i64;
+
+    // Unsigned types
+    if (c_type.contains("Uint32") or c_type == "uint32_t") return int32t;
+    if (c_type.contains("Uint8") or c_type == "uint8_t") return int32t;
+
     return unknown_type;
 }
 
