@@ -118,9 +118,9 @@ if (NOT WASM)
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         # ⚠️ NO engine has (c-api) support for wit / component model as of 2025-03 !!! ⚠️
         # https://github.com/bytecodealliance/wasmtime/issues/6987
-        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+#        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         set(WEBAPP 0)
-#        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
+        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
         #        SET(SPIN 1) WebAssembly Gateway Interface (WAGI) OK: Write to STDOUT, ENV[QUERY_STRING] for input, uploads through STDIN
         #  set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
@@ -906,9 +906,15 @@ elseif (WASMTIME)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/wasm-c-api/include/)
 
+#    set(WASMTIME_PATCH 1)
+    ADD_DEFINITIONS(-DWASMTIME_PATCH)
+
     # Link against pre-built dynamic library
     if (APPLE)
         target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/libwasmtime.dylib)
+#        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/deps/libwasmtime.dylib)
+#        target_link_libraries(wasp PUBLIC /opt/homebrew/lib/libwasmtime.dylib)
+#        target_link_libraries(wasp PUBLIC /opt/homebrew/Cellar/wasmtime/latest/lib/libwasmtime.dylib) # unpatched!
         # Set rpath so the dylib can be found at runtime
         set_target_properties(wasp PROPERTIES
             BUILD_RPATH "/opt/wasm/wasmtime/target/aarch64-apple-darwin/release"
