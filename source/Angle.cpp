@@ -824,6 +824,7 @@ Node &analyze(Node &node, Function &function) {
     if ((type == expression and not name.empty() and not name.contains("-")))
         addLocal(function, name, int32t, false); //  todo deep type analysis x = π * fun() % 4
     if (type == key) {
+
         if (node.value.node /* i=ø has no node */) {
             Node &analyzed = analyze(*node.value.node, function);
             // Preserve struct constructor type information through cloning

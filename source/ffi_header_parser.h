@@ -32,6 +32,7 @@ inline Type mapCTypeToWasp(String c_type) {
 
     // All other pointers (SDL_Window*, SDL_Renderer*, etc.) as opaque i64
     // FFI pointers are handles/tokens - we don't access their internals
+    // Note: pointer64 = wasm_int64 = i64, but i64 is clearer
     if (c_type.contains("*")) return i64;
 
     // Unsigned types
