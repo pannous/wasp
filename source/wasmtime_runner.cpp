@@ -281,19 +281,18 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
                 // Use signature already detected during parsing
                 Signature& wasp_sig = func.signature;
 
-            // Convert to runtime FFISignature for dynamic wrapper
-            FFIMarshaller::FFISignature sig = FFIMarshaller::wasp_signature_to_ffi(wasp_sig, ffi_func, func_name);
-
             // Create Wasmtime function type from signature
-            int param_count = sig.param_types.size();
-            int return_count = (sig.return_type == FFIMarshaller::CType::Void) ? 0 : 1;
+            int param_count = wasp_sig.parameters.size();
+            FFIMarshaller::CType return_ctype = FFIMarshaller::get_return_ctype(wasp_sig);
+            int return_count = (return_ctype == FFIMarshaller::CType::Void) ? 0 : 1;
 
             wasm_valtype_t** P = param_count > 0 ? new wasm_valtype_t*[param_count] : nullptr;
             wasm_valtype_t** R = return_count > 0 ? new wasm_valtype_t*[return_count] : nullptr;
 
             // Map parameter types
             for (int j = 0; j < param_count; j++) {
-                switch (sig.param_types[j]) {
+                FFIMarshaller::CType param_ctype = FFIMarshaller::get_param_ctype(wasp_sig, j);
+                switch (param_ctype) {
                     case FFIMarshaller::CType::Int32:
                     case FFIMarshaller::CType::String:  // Strings are passed as i32 offsets
                         P[j] = wasm_valtype_new(WASM_I32);
@@ -314,7 +313,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 
             // Map return type
             if (return_count > 0) {
-                switch (sig.return_type) {
+                switch (return_ctype) {
                     case FFIMarshaller::CType::Int32:
                         R[0] = wasm_valtype_new(WASM_I32);
                         break;
@@ -340,13 +339,13 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
             // Create function type
             wasm_functype_t* ffi_type = wasm_functype_new(&params, &results);
 
-            // Allocate persistent signature for the wrapper
-            FFIMarshaller::FFISignature* sig_ptr = new FFIMarshaller::FFISignature(sig);
+            // Create persistent FFI context for the wrapper
+            FFIMarshaller::FFIContext* ctx = create_ffi_context(&wasp_sig, ffi_func, func_name);
 
             // Use dynamic wrapper that dispatches based on signature
             wasmtime_error_t *derr = wasmtime_linker_define_func(
                 linker, lib_name, lib_name.length, func_name, func_name.length, ffi_type,
-                ffi_dynamic_wrapper_wasmtime, sig_ptr, NULL);
+                ffi_dynamic_wrapper_wasmtime, ctx, NULL);
 
             wasm_functype_delete(ffi_type);
 
