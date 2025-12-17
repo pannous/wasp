@@ -441,19 +441,18 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
                 // Use signature already detected during parsing
                 Signature& wasp_sig = func.signature;
 
-                // Convert to runtime FFISignature for dynamic wrapper
-                FFIMarshaller::FFISignature sig = FFIMarshaller::wasp_signature_to_ffi(wasp_sig, ffi_func, func_name);
-
                 // Create WasmEdge function type from signature
-                int param_count = sig.param_types.size();
-                int return_count = (sig.return_type == FFIMarshaller::CType::Void) ? 0 : 1;
+                int param_count = wasp_sig.parameters.size();
+                FFIMarshaller::CType return_ctype = FFIMarshaller::get_return_ctype(wasp_sig);
+                int return_count = (return_ctype == FFIMarshaller::CType::Void) ? 0 : 1;
 
                 WasmEdge_ValType* P = param_count > 0 ? new WasmEdge_ValType[param_count] : nullptr;
                 WasmEdge_ValType* R = return_count > 0 ? new WasmEdge_ValType[return_count] : nullptr;
 
                 // Map parameter types
                 for (int k = 0; k < param_count; k++) {
-                    switch (sig.param_types[k]) {
+                    FFIMarshaller::CType param_ctype = FFIMarshaller::get_param_ctype(wasp_sig, k);
+                    switch (param_ctype) {
                         case FFIMarshaller::CType::Int32:
                         case FFIMarshaller::CType::String:  // Strings are passed as i32 offsets
                             P[k] = WasmEdge_ValTypeGenI32();
@@ -474,7 +473,7 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
 
                 // Map return type
                 if (return_count > 0) {
-                    switch (sig.return_type) {
+                    switch (return_ctype) {
                         case FFIMarshaller::CType::Int32:
                             R[0] = WasmEdge_ValTypeGenI32();
                             break;
@@ -494,11 +493,11 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
 
                 HostFType = WasmEdge_FunctionTypeCreate(P, param_count, R, return_count);
 
-                // Allocate persistent signature for the wrapper
-                FFIMarshaller::FFISignature* sig_ptr = new FFIMarshaller::FFISignature(sig);
+                // Create persistent FFI context for the wrapper
+                FFIMarshaller::FFIContext* ctx = create_ffi_context(&wasp_sig, ffi_func, func_name);
 
                 // Use dynamic wrapper that dispatches based on signature
-                HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ffi_dynamic_wrapper, sig_ptr, 0);
+                HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ffi_dynamic_wrapper, ctx, 0);
                 WasmEdge_FunctionTypeDelete(HostFType);
 
                 if (P) delete[] P;

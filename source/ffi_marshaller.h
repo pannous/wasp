@@ -25,18 +25,15 @@ public:
     };
 
     // ============================================================================
-    // Runtime FFI Signature (used by dynamic wrapper)
+    // Runtime FFI Context (wraps Signature with function pointer)
     // ============================================================================
 
-    struct FFISignature {
-        List<CType> param_types;
-        CType return_type;
+    struct FFIContext {
         void* function_ptr;
         String function_name;
+        class Signature* signature;
 
-        FFISignature() : param_types(8), function_ptr(nullptr), function_name("") {
-            return_type = CType::Void;
-        }
+        FFIContext() : function_ptr(nullptr), function_name(""), signature(nullptr) {}
     };
 
     // ============================================================================
@@ -56,28 +53,21 @@ public:
     }
 
     // ============================================================================
-    // Conversion from Wasp's Signature to runtime FFISignature
+    // Helper: Extract parameter CType from Signature
     // ============================================================================
 
-    static FFISignature wasp_signature_to_ffi(Signature& wasp_sig, void* func_ptr, const String& func_name) {
-        FFISignature ffi_sig;
-        ffi_sig.function_ptr = func_ptr;
-        ffi_sig.function_name = func_name;
+    static CType get_param_ctype(const class Signature& sig, int index) {
+        if (index >= sig.parameters.size()) return CType::Unknown;
+        return wasp_type_to_ctype(sig.parameters[index].type);
+    }
 
-        // Convert parameters
-        for (int i = 0; i < wasp_sig.parameters.size(); i++) {
-            CType ctype = wasp_type_to_ctype(wasp_sig.parameters[i].type);
-            ffi_sig.param_types.add(ctype);
-        }
+    // ============================================================================
+    // Helper: Extract return CType from Signature
+    // ============================================================================
 
-        // Convert return type
-        if (wasp_sig.return_types.size() > 0) {
-            ffi_sig.return_type = wasp_type_to_ctype(wasp_sig.return_types.last());
-        } else {
-            ffi_sig.return_type = CType::Void;
-        }
-
-        return ffi_sig;
+    static CType get_return_ctype(const class Signature& sig) {
+        if (sig.return_types.size() == 0) return CType::Void;
+        return wasp_type_to_ctype(sig.return_types[sig.return_types.size() - 1]);
     }
 
     // ============================================================================
@@ -189,76 +179,79 @@ public:
 
     // Dynamically call a C function based on runtime signature information
     // This eliminates the need for hardcoded wrappers for each signature pattern
-    static FFIValue call_dynamic(FFISignature& sig, List<FFIValue>& args) {
+    static FFIValue call_dynamic(FFIContext& ctx, List<FFIValue>& args) {
         FFIValue result;
         result.i64 = 0;
 
-        int param_count = sig.param_types.size();
+        if (!ctx.signature || !ctx.function_ptr) return result;
+
+        int param_count = ctx.signature->parameters.size();
+        CType return_type = get_return_ctype(*ctx.signature);
 
         // 0 parameters
         if (param_count == 0) {
-            if (sig.return_type == CType::Int32) {
+            if (return_type == CType::Int32) {
                 typedef int32_t (*func_t)();
-                result.i32 = ((func_t)sig.function_ptr)();
-            } else if (sig.return_type == CType::Float64) {
+                result.i32 = ((func_t)ctx.function_ptr)();
+            } else if (return_type == CType::Float64) {
                 typedef double (*func_t)();
-                result.f64 = ((func_t)sig.function_ptr)();
+                result.f64 = ((func_t)ctx.function_ptr)();
             }
         }
         // 1 parameter
         else if (param_count == 1) {
-            CType p1 = sig.param_types[0];
+            CType p1 = get_param_ctype(*ctx.signature, 0);
 
-            if (p1 == CType::Int32 && sig.return_type == CType::Int32) {
+            if (p1 == CType::Int32 && return_type == CType::Int32) {
                 typedef int32_t (*func_t)(int32_t);
-                result.i32 = ((func_t)sig.function_ptr)(args[0].i32);
+                result.i32 = ((func_t)ctx.function_ptr)(args[0].i32);
             }
-            else if (p1 == CType::Float64 && sig.return_type == CType::Float64) {
+            else if (p1 == CType::Float64 && return_type == CType::Float64) {
                 typedef double (*func_t)(double);
-                result.f64 = ((func_t)sig.function_ptr)(args[0].f64);
+                result.f64 = ((func_t)ctx.function_ptr)(args[0].f64);
             }
-            else if (p1 == CType::String && sig.return_type == CType::Int32) {
+            else if (p1 == CType::String && return_type == CType::Int32) {
                 typedef int32_t (*func_t)(const char*);
-                result.i32 = ((func_t)sig.function_ptr)(args[0].str);
+                result.i32 = ((func_t)ctx.function_ptr)(args[0].str);
             }
-            else if (p1 == CType::String && sig.return_type == CType::Float64) {
+            else if (p1 == CType::String && return_type == CType::Float64) {
                 typedef double (*func_t)(const char*);
-                result.f64 = ((func_t)sig.function_ptr)(args[0].str);
+                result.f64 = ((func_t)ctx.function_ptr)(args[0].str);
             }
         }
         // 2 parameters
         else if (param_count == 2) {
-            CType p1 = sig.param_types[0];
-            CType p2 = sig.param_types[1];
+            CType p1 = get_param_ctype(*ctx.signature, 0);
+            CType p2 = get_param_ctype(*ctx.signature, 1);
 
-            if (p1 == CType::Float64 && p2 == CType::Float64 && sig.return_type == CType::Float64) {
+            if (p1 == CType::Float64 && p2 == CType::Float64 && return_type == CType::Float64) {
                 typedef double (*func_t)(double, double);
-                result.f64 = ((func_t)sig.function_ptr)(args[0].f64, args[1].f64);
+                result.f64 = ((func_t)ctx.function_ptr)(args[0].f64, args[1].f64);
             }
-            else if (p1 == CType::Int32 && p2 == CType::Int32 && sig.return_type == CType::Int32) {
+            else if (p1 == CType::Int32 && p2 == CType::Int32 && return_type == CType::Int32) {
                 typedef int32_t (*func_t)(int32_t, int32_t);
-                result.i32 = ((func_t)sig.function_ptr)(args[0].i32, args[1].i32);
+                result.i32 = ((func_t)ctx.function_ptr)(args[0].i32, args[1].i32);
             }
-            else if (p1 == CType::String && p2 == CType::String && sig.return_type == CType::Int32) {
+            else if (p1 == CType::String && p2 == CType::String && return_type == CType::Int32) {
                 typedef int32_t (*func_t)(const char*, const char*);
-                result.i32 = ((func_t)sig.function_ptr)(args[0].str, args[1].str);
+                result.i32 = ((func_t)ctx.function_ptr)(args[0].str, args[1].str);
             }
         }
         // 3 parameters
         else if (param_count == 3) {
-            CType p1 = sig.param_types[0];
-            CType p2 = sig.param_types[1];
-            CType p3 = sig.param_types[2];
+            CType p1 = get_param_ctype(*ctx.signature, 0);
+            CType p2 = get_param_ctype(*ctx.signature, 1);
+            CType p3 = get_param_ctype(*ctx.signature, 2);
 
             if (p1 == CType::Float64 && p2 == CType::Float64 && p3 == CType::Float64 &&
-                sig.return_type == CType::Float64) {
+                return_type == CType::Float64) {
                 typedef double (*func_t)(double, double, double);
-                result.f64 = ((func_t)sig.function_ptr)(args[0].f64, args[1].f64, args[2].f64);
+                result.f64 = ((func_t)ctx.function_ptr)(args[0].f64, args[1].f64, args[2].f64);
             }
             else if (p1 == CType::Int32 && p2 == CType::Int32 && p3 == CType::Int32 &&
-                     sig.return_type == CType::Int32) {
+                     return_type == CType::Int32) {
                 typedef int32_t (*func_t)(int32_t, int32_t, int32_t);
-                result.i32 = ((func_t)sig.function_ptr)(args[0].i32, args[1].i32, args[2].i32);
+                result.i32 = ((func_t)ctx.function_ptr)(args[0].i32, args[1].i32, args[2].i32);
             }
         }
 

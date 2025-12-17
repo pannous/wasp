@@ -18,23 +18,26 @@ inline WasmEdge_Result ffi_dynamic_wrapper(
     const WasmEdge_Value *In,
     WasmEdge_Value *Out
 ) {
-    // Context contains FFISignature with function pointer and signature info
-    FFIMarshaller::FFISignature* sig = (FFIMarshaller::FFISignature*)context_data;
+    // Context contains FFIContext with function pointer and signature info
+    FFIMarshaller::FFIContext* ctx = (FFIMarshaller::FFIContext*)context_data;
 
-    if (!sig || !sig->function_ptr) {
+    if (!ctx || !ctx->function_ptr || !ctx->signature) {
         return WasmEdge_Result_Fail;
     }
 
     // Get wasm memory for string conversions
     // extern uint8_t *wasm_memory;  // Defined in wasm_runner_edge.cpp
 
+    int param_count = ctx->signature->parameters.size();
+
     // Dynamically marshal parameters based on signature
-    List<FFIMarshaller::FFIValue> args(sig->param_types.size());
+    List<FFIMarshaller::FFIValue> args(param_count);
 
-    for (int i = 0; i < sig->param_types.size(); i++) {
+    for (int i = 0; i < param_count; i++) {
         FFIMarshaller::FFIValue arg;
+        FFIMarshaller::CType param_type = FFIMarshaller::get_param_ctype(*ctx->signature, i);
 
-        switch (sig->param_types[i]) {
+        switch (param_type) {
             case FFIMarshaller::CType::Int32:
                 arg.i32 = WasmEdge_ValueGetI32(In[i]);
                 arg.i32 = FFIMarshaller::to_c_int32(arg.i32);
@@ -70,10 +73,12 @@ inline WasmEdge_Result ffi_dynamic_wrapper(
     }
 
     // Call the native function dynamically
-    FFIMarshaller::FFIValue result = FFIMarshaller::call_dynamic(*sig, args);
+    FFIMarshaller::FFIValue result = FFIMarshaller::call_dynamic(*ctx, args);
 
     // Marshal return value based on signature
-    switch (sig->return_type) {
+    FFIMarshaller::CType return_type = FFIMarshaller::get_return_ctype(*ctx->signature);
+
+    switch (return_type) {
         case FFIMarshaller::CType::Int32: {
             int32_t ret = FFIMarshaller::from_c_int32(result.i32);
             Out[0] = WasmEdge_ValueGenI32(ret);
@@ -127,23 +132,26 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
     wasmtime_val_t *results,
     size_t nresults
 ) {
-    // Env contains FFISignature with function pointer and signature info
-    FFIMarshaller::FFISignature* sig = (FFIMarshaller::FFISignature*)env;
+    // Env contains FFIContext with function pointer and signature info
+    FFIMarshaller::FFIContext* ctx = (FFIMarshaller::FFIContext*)env;
 
-    if (!sig || !sig->function_ptr) {
+    if (!ctx || !ctx->function_ptr || !ctx->signature) {
         return NULL; // Or create trap
     }
 
     // Get wasm memory for string conversions
     extern void *wasm_memory;  // Defined in wasmtime_runner.cpp
 
+    int param_count = ctx->signature->parameters.size();
+
     // Dynamically marshal parameters based on signature
-    List<FFIMarshaller::FFIValue> ffi_args(sig->param_types.size());
+    List<FFIMarshaller::FFIValue> ffi_args(param_count);
 
-    for (int i = 0; i < sig->param_types.size(); i++) {
+    for (int i = 0; i < param_count; i++) {
         FFIMarshaller::FFIValue arg;
+        FFIMarshaller::CType param_type = FFIMarshaller::get_param_ctype(*ctx->signature, i);
 
-        switch (sig->param_types[i]) {
+        switch (param_type) {
             case FFIMarshaller::CType::Int32:
                 arg.i32 = args[i].of.i32;
                 arg.i32 = FFIMarshaller::to_c_int32(arg.i32);
@@ -179,10 +187,12 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
     }
 
     // Call the native function dynamically
-    FFIMarshaller::FFIValue result = FFIMarshaller::call_dynamic(*sig, ffi_args);
+    FFIMarshaller::FFIValue result = FFIMarshaller::call_dynamic(*ctx, ffi_args);
 
     // Marshal return value based on signature
-    switch (sig->return_type) {
+    FFIMarshaller::CType return_type = FFIMarshaller::get_return_ctype(*ctx->signature);
+
+    switch (return_type) {
         case FFIMarshaller::CType::Int32:
             results[0].kind = WASMTIME_I32;
             results[0].of.i32 = FFIMarshaller::from_c_int32(result.i32);
@@ -221,22 +231,15 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
 
 #endif // WASMTIME
 
-// Helper to create FFI signature from Wasp Signature
-inline void create_ffi_signature(
-    FFIMarshaller::FFISignature& ffi_sig,
-    class Signature& wasp_sig,
-    void* func_ptr
+// Helper to create FFI context from Wasp Signature
+inline FFIMarshaller::FFIContext* create_ffi_context(
+    class Signature* wasp_sig,
+    void* func_ptr,
+    const String& func_name
 ) {
-    ffi_sig.function_ptr = func_ptr;
-
-    // Convert parameter types
-    for (int i = 0; i < wasp_sig.parameters.size(); i++) {
-        Type wasp_type = wasp_sig.parameters[i].type;
-        FFIMarshaller::CType c_type = FFIMarshaller::detect_c_type(wasp_type);
-        ffi_sig.param_types.add(c_type);
-    }
-
-    // Convert return type
-    Type return_wasp_type = wasp_sig.return_types.last(none);
-    ffi_sig.return_type = FFIMarshaller::detect_c_type(return_wasp_type);
+    FFIMarshaller::FFIContext* ctx = new FFIMarshaller::FFIContext();
+    ctx->signature = wasp_sig;
+    ctx->function_ptr = func_ptr;
+    ctx->function_name = func_name;
+    return ctx;
 }
