@@ -191,6 +191,10 @@ lldb -- ./build/wasp test
 - Source maps generated for browser debugging
 - Use `wasmtime -D debug-info=y` to enable debug info at runtime
 
+## wasm Debug
+In case some inexplicable error occurs, debug wasm files with `wasm2wat --no-check --enable-all --ignore-custom-section-errors`  and `wasm-objdump -x -d -s`
+debug wasm files with hexdump if they are illformed. compare with a minimal working wasm.
+
 ### Common Issues
 
 - Memory alignment issues in WASM - ensure proper alignment in Node allocation

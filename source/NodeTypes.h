@@ -225,26 +225,36 @@ enum Primitive /*32*/ {
     wasm_externref = 0x6f,
     wasmtype_struct = 0x5f, // as in type section
     wasmtype_array = 0x5e, // as in type section
+
+    ////	smarti32 = 0xF3,// see smartType
+    smarti64 = 0xF6, // why 0xF6?
+
     wasm_leb = 0x77,
     wasm_float64 = 0x7C, // float64
     float_type = wasm_float64,
     wasm_f32 = 0x7d,
     wasm_int64 = 0x7E, // AS OPPOSED TO longs signed or unsigned? we don't care
+    pointer64 = wasm_int64, // e.g. extern pointers via FFI e.g. SDL_Window*
     wasm_int32 = 0x7f, // make sure to not confuse these with boxed Number node_pointer of kind longs, reals!
-    pointer = wasm_int32, // 0xF0, // todo: lower later! internal todo: int64 on wasm-64
+    pointer = wasm_int32, // 0x80 0xF0, // todo: lower later! internal todo: int64 on wasm-64
     self = pointer,
+    type32 = 0x80, // todo see smart_pointer_64 etc OK?
     //    node_pointer = wasm_int32,
     node_pointer = 0xD000, // address of a Node in linear memory
 
     //	node = int32, // NEEDS to be handled smartly, CAN't be differentiated from int32 now!
-    type32 = 0x80, // todo see smart_pointer_64 etc OK?
-    ////	smarti32 = 0xF3,// see smartType
-    smarti64 = 0xF6,
+
     node = 0xA0, // Node struct versus Node* node_pointer = 0xD000  todo better scheme 0xAF F for fointer!
     //    angle = 0xA4,//  angle object pointer/offset versus node_pointer smarti vs anyref todo What is this?
     any = 0xA1, // Wildcard for function signatures, like haskell add :: a->a
     //	unknown = any,
     array = 0xAA, // compatible with List, Node, String (?)
+
+    byte_i8 = 0xB0, // when indexing uint8 byte array.
+    byte_char = 0xBC, // when indexing ascii array. todo: maybe codepoint into UTF8!?
+    shorty = 0xB16,
+    int16t = 0xB16,
+
     charp = 0xC0, // char* vs codepoint(*) vs byte_char
     stringp = 0xCF, // String* vs stringref …
     string_struct = 0xC8, // String
@@ -284,10 +294,6 @@ enum Primitive /*32*/ {
     //	pointer = 0xF0,
     //	externalPointer = 0xFE,
 
-    byte_i8 = 0xB0, // when indexing uint8 byte array.
-    byte_char = 0xBC, // when indexing ascii array. todo: maybe codepoint into UTF8!?
-    shorty = 0xB16,
-    int16t = 0xB16,
     //    THE 0xF0 … range is reserved for numbers
     // Type =>  must use 'enum' tag to refer to type 'Type' NAH!
     //	c_char = 0xB0, // when indexing byte array. todo: maybe codepoint into UTF8!?

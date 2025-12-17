@@ -233,17 +233,17 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
         }
         else if (str_eq(func_name, "SDL_CreateWindow")) {
             // SDL_Window* SDL_CreateWindow(const char* title, int x, int y, int w, int h, Uint32 flags)
-            add_param(charp);  // title
-            add_param(int32t); // x
-            add_param(int32t); // y
-            add_param(int32t); // w
-            add_param(int32t); // h
-            add_param(int32t); // flags
-            sig.return_types.add(i64); // pointer
+            add_param(charp);     // title
+            add_param(int32t);    // x
+            add_param(int32t);    // y
+            add_param(int32t);    // w
+            add_param(int32t);    // h
+            add_param(int32t);    // flags
+            sig.return_types.add(i64); // window pointer
         }
         else if (str_eq(func_name, "SDL_DestroyWindow")) {
             // void SDL_DestroyWindow(SDL_Window* window) - no return value
-            add_param(i64); // pointer
+            add_param(i64); // window pointer
         }
         else if (str_eq(func_name, "SDL_GetTicks")) {
             // Uint32 SDL_GetTicks(void)
@@ -252,6 +252,42 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
         else if (str_eq(func_name, "SDL_GetError")) {
             // const char* SDL_GetError(void)
             sig.return_types.add(charp);
+        }
+        // Hardcoded SDL rendering functions (multi-line parser needs work)
+        else if (str_eq(func_name, "SDL_CreateRenderer")) {
+            // SDL_Renderer* SDL_CreateRenderer(SDL_Window* window, int index, Uint32 flags)
+            add_param(i64);    // window
+            add_param(int32t); // index
+            add_param(int32t); // flags
+            sig.return_types.add(i64); // renderer
+        }
+        else if (str_eq(func_name, "SDL_DestroyRenderer")) {
+            // void SDL_DestroyRenderer(SDL_Renderer* renderer)
+            add_param(i64);
+        }
+        else if (str_eq(func_name, "SDL_SetRenderDrawColor")) {
+            // int SDL_SetRenderDrawColor(SDL_Renderer* renderer, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
+            add_param(i64);    // renderer
+            add_param(int32t); // r
+            add_param(int32t); // g
+            add_param(int32t); // b
+            add_param(int32t); // a
+            sig.return_types.add(int32t);
+        }
+        else if (str_eq(func_name, "SDL_RenderClear")) {
+            // int SDL_RenderClear(SDL_Renderer* renderer)
+            add_param(i64);
+            sig.return_types.add(int32t);
+        }
+        else if (str_eq(func_name, "SDL_RenderPresent")) {
+            // void SDL_RenderPresent(SDL_Renderer* renderer)
+            add_param(i64);
+        }
+        else if (str_eq(func_name, "SDL_RenderFillRect")) {
+            // int SDL_RenderFillRect(SDL_Renderer* renderer, const SDL_Rect* rect)
+            add_param(i64); // renderer
+            add_param(i64); // rect (can be NULL)
+            sig.return_types.add(int32t);
         }
         else {
             // All other SDL functions: try header reflection, fallback to int->int
