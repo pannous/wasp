@@ -706,9 +706,6 @@ void handleNativeImport(Node &node) {
 
     // Detect and set function signature directly (reuses existing Signature class)
     detect_ffi_signature(func_name, lib_name, func.signature);
-
-    // Add to global FFI registry for runtime
-    ffi_functions.add({func_name, lib_name});
 }
 
 /*
