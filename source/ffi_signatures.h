@@ -17,7 +17,7 @@ static inline bool str_eq(const String& s, const char* literal) {
 
 // Detect function signature based on function name and library
 // Populates the provided Signature object with parameter and return types
-static void detect_ffi_signature(const String& func_name, const String& lib_name, Signature& sig) {
+inline void detect_ffi_signature(const String& func_name, const String& lib_name, Signature& sig) {
     sig.parameters.clear();
     sig.return_types.clear();
 
