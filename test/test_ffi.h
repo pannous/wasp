@@ -431,7 +431,7 @@ static void test_parse_c_function_declaration() {
 static void test_extract_function_signature() {
     tests_executed++;
 #if !WASM
-    print("\n=== Testing Signature Extraction ===");
+    print("\n=== Testing Signature Extraction! ===");
 
     String c_code1 = "double sqrt(double x);";
     Node& parsed1 = parse(c_code1);
