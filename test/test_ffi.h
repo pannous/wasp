@@ -552,8 +552,8 @@ static void test_ffi_header_parser() {
 // ============================================================================
 
 static void test_ffi_sdl_init() {
-    tests_executed++;
 #ifdef NATIVE_FFI
+    tests_executed++;
     // Test: SDL_Init - Initialize SDL with timer subsystem (works headless)
     // SDL_INIT_TIMER = 0x00000001 (doesn't require display)
     // Returns 0 on success, non-zero on error
@@ -611,6 +611,43 @@ static void test_ffi_sdl_combined() {
         "SDL_Quit()\n"
         "if ticks >= 0 then 100 else 0",
         100
+    );
+#endif
+}
+
+static void test_ffi_sdl_red_square_demo() {
+    tests_executed++;
+#ifdef NATIVE_FFI
+    // DEMO: Display a red square using SDL2 via FFI
+    // This will show an actual window with graphics
+    assert_emit(
+        "import SDL_Init from 'SDL2'\n"
+        "import SDL_CreateWindow from 'SDL2'\n"
+        "import SDL_CreateRenderer from 'SDL2'\n"
+        "import SDL_SetRenderDrawColor from 'SDL2'\n"
+        "import SDL_RenderClear from 'SDL2'\n"
+        "import SDL_RenderFillRect from 'SDL2'\n"
+        "import SDL_RenderPresent from 'SDL2'\n"
+        "import SDL_Delay from 'SDL2'\n"
+        "import SDL_DestroyRenderer from 'SDL2'\n"
+        "import SDL_DestroyWindow from 'SDL2'\n"
+        "import SDL_Quit from 'SDL2'\n"
+        "\n"
+        "SDL_Init(0x00000020)\n"  // SDL_INIT_VIDEO
+        "window = SDL_CreateWindow(\"Red Square Demo\", 100, 100, 400, 400, 0)\n"
+        "renderer = SDL_CreateRenderer(window, -1, 0)\n"
+        "\n"
+        "SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255)\n"  // Red color
+        "SDL_RenderClear(renderer)\n"  // Fill background with red
+        "\n"
+        "SDL_RenderPresent(renderer)\n"  // Show it
+        "SDL_Delay(2000)\n"  // Wait 2 seconds
+        "\n"
+        "SDL_DestroyRenderer(renderer)\n"
+        "SDL_DestroyWindow(window)\n"
+        "SDL_Quit()\n"
+        "1",
+        1
     );
 #endif
 }
