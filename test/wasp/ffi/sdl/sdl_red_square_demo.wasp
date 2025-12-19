@@ -39,3 +39,4 @@ SDL_DestroyWindow(window)
 SDL_Quit()
 
 print("Demo complete!")
+1
