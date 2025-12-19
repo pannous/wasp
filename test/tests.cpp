@@ -4314,7 +4314,8 @@ void testWaspRuntimeModule() {
     // check(wasp.functions.has("_Z4powiij"));// extern "C"'ed
     check(wasp.functions.has("powi")); // ok if not WASM
     check(wasp.functions.has("powd")); // ok if not WASM
-    check(wasp.functions.has("test42"));
+    // todo load wasp-runtime-debug.wasm for:
+    // check(wasp.functions.has("test42"));
     check(wasp.functions.has("modulo_float"));
     check(wasp.functions.has("modulo_double"));
     check(wasp.functions.has("square"));

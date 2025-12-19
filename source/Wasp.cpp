@@ -1448,6 +1448,10 @@ void usage() {
 
 #define __MAIN__
 
+#if WABT_MERGE or INCLUDE_MERGER
+void merge_files(int argc, char **argv);
+#endif
+
 #if not CTESTS
 int main(int argc, char **argv) {
     if (getenv("SERVER_SOFTWARE"))
@@ -1491,7 +1495,7 @@ int main(int argc, char **argv) {
             return eval(wasp_code).value.longy;
         } else if (args.endsWith(".wasm")) {
             if (argc >= 3) {
-#if WABT_MERGE
+#if WABT_MERGE or INCLUDE_MERGER
                 merge_files(--argc, ++argv);
 #else
                 todo("linking files needs compilation with WABT_MERGE")

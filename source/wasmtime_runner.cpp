@@ -254,6 +254,9 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         Signature &signature = meta.functions[import_name].signature;
         if (import_name == "_ZdlPvm")
             signature.return_types.clear(); // todo bug from where?
+        // exit/proc_exit should have no return type (void functions)
+        if (import_name == "exit" || import_name == "proc_exit")
+            signature.return_types.clear();
         const wasm_functype_t *type0 = funcType(signature);
         wasm_functype_t *own_type = (wasm_functype_t *) type0; // API expects non-const
         wasmtime_func_callback_t cb = (wasmtime_func_callback_t) link_import(import_name);
