@@ -26,6 +26,9 @@ static inline bool str_eq(const String& s, const char* literal) {
 inline bool detect_signature_from_headers(const String& func_name, const String& lib_name, Signature& sig) {
     // Common header file locations - check specific headers first
     const char* header_paths[] = {
+        "/opt/homebrew/include/SDL2/SDL_events.h",
+        "/usr/local/include/SDL2/SDL_events.h",
+        "/usr/include/SDL2/SDL_events.h",
         "/opt/homebrew/include/SDL2/SDL_render.h",
         "/usr/local/include/SDL2/SDL_render.h",
         "/usr/include/SDL2/SDL_render.h",
