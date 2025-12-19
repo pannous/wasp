@@ -750,6 +750,7 @@ void testWasmLogicCombined() {
     assert_emit("3<1 or 3<1", 3 < 1);
     assert_emit("9>8 or 3<1", 9 > 8);
     assert_emit("9>8 or 9>8", 9 > 8);
+    assert_emit("9>8 or 8>9", 9 > 8);
 }
 
 void testWasmIf() {

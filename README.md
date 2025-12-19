@@ -178,7 +178,7 @@ overhead **[graphics](https://github.com/pannous/wasp/wiki/graphics)** adapter (
 - It has built-in **mixed content** support *(like HTML5 or even better)*
 - It supports **high-order** composition *(like S-expression or even better)*
 
-|                        | [Wasp](https://github.com/pannous/wasp/wiki)/[Mark](https://github.com/henry-luo/wasp) | JSON     | HTML | XML | S-expr  | YAML     |
+|                        | [Wasp](https://github.com/pannous/wasp/wiki) | JSON     | HTML | XML | S-expr  | YAML     |
 |------------------------|----------------------------------------------------------------------------------------|----------|------|-----|---------|----------|
 | Clean syntax           | yes                                                                                    | yes      | no   | yes | yes     | yes      |
 | Fully-typed            | yes                                                                                    | yes      | no   | no  | yes     | yes      |

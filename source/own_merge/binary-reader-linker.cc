@@ -188,7 +188,7 @@ namespace wabt {
             }
 
             Result BinaryReaderLinker::BeginSection(Index section_index, SectionType section_code, Offset size) {
-                printf("BeginSection %s: section_index=%zu section_code=%d size=%zu offset=%zu\n",
+                tracef("BeginSection %s: section_index=%zu section_code=%d size=%zu offset=%zu\n",
                        binary_->name, (size_t)section_index, (int)section_code, (size_t)size, (size_t)state->offset);
                 Section *sec = new Section();
                 binary_->sections.add(sec);
@@ -210,10 +210,10 @@ namespace wabt {
                     }
                     sec->payload_offset = sec->offset + leb_bytes;
                     sec->payload_size = sec->size - leb_bytes;
-                    printf("  Section %d: count=%d payload_offset=%zu payload_size=%zu\n",
+                    tracef("  Section %d: count=%d payload_offset=%zu payload_size=%zu\n",
                            (int)section_code, sec->count, (size_t)sec->payload_offset, sec->payload_size);
                     if (sec->section_code == SectionType::Code) {
-                        printf("  **CODE SECTION FOUND**\n");
+                        tracef("  **CODE SECTION FOUND**\n");
                     }
                 }
                 return Result::Ok;
@@ -301,7 +301,7 @@ namespace wabt {
         } // end anonymous namespace
 
         Result ReadBinaryLinker(LinkerInputBinary *input_info) {
-            printf("ReadBinaryLinker %s: data.size_=%d\n", input_info->name, input_info->data.size_);
+            tracef("ReadBinaryLinker %s: data.size_=%d\n", input_info->name, input_info->data.size_);
             BinaryReaderLinker reader(input_info);
             ReadBinaryOptions read_options;
             read_options.read_debug_names = true;
@@ -311,7 +311,7 @@ namespace wabt {
             read_options.features.enable_bulk_memory();
             Result result = ReadBinary(input_info->data.items, input_info->data.size_, &reader,
                               (const ReadBinaryOptions) read_options);
-            printf("ReadBinaryLinker %s: completed with result=%d\n", input_info->name, (int)result);
+            tracef("ReadBinaryLinker %s: completed with result=%d\n", input_info->name, (int)result);
             return result;
 
             //            return ReadBinary(input_info->data.items, input_info->data.size(), &reader, (const ReadBinaryOptions) read_options);

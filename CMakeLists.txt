@@ -405,6 +405,9 @@ if (RUNTIME_ONLY)
     message("RUNTIME_ONLY!")
     ADD_DEFINITIONS(-DRUNTIME_ONLY)
     set(INCLUDE_MERGER 0)
+    if(DEBUG) # wasp-runtime-debug.wasm test42(){return 42;}
+        set(SOURCE_FILES ${SOURCE_FILES} test/test_functions.h)
+    endif ()
 else ()
     message("NOT RUNTIME_ONLY, including compiler files!")
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Code.cpp)
@@ -420,9 +423,6 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_reader.cpp)
 endif ()
 
-#    if(DEBUG)
-        set(SOURCE_FILES ${SOURCE_FILES} test/test_functions.h)
-#    endif ()
 
 
 if (INCLUDE_MERGER)
