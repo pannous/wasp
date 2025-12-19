@@ -364,7 +364,7 @@ endif ()
 
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/String.cpp ${SOURCE}/Node.cpp ${SOURCE}/Map.cpp ${SOURCE}/Util.cpp ${SOURCE}/List.cpp
-        ${SOURCE}/CharUtils.cpp ${SOURCE}/LiteralParser.cpp ${SOURCE}/Keywords.cpp
+        ${SOURCE}/CharUtils.cpp ${SOURCE}/LiteralParser.cpp
         ${SOURCE}/Wasp.cpp ${SOURCE}/wasm_helpers.cpp ${SOURCE}/Code.cpp ${SOURCE}/NodeTypes.cpp ${SOURCE}/smart_types.cpp
         ${SOURCE}/Runtime.cpp
 )
@@ -406,10 +406,11 @@ if (RUNTIME_ONLY)
     ADD_DEFINITIONS(-DRUNTIME_ONLY)
     set(INCLUDE_MERGER 0)
 else ()
-    message("NOT RUNTIME_ONLY")
+    message("NOT RUNTIME_ONLY, including compiler files!")
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Code.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Angle.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Context.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Keywords.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/FunctionAnalyzer.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/OperatorAnalyzer.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Interpret.cpp)
@@ -418,6 +419,10 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/WitReader.h)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_reader.cpp)
 endif ()
+
+#    if(DEBUG)
+        set(SOURCE_FILES ${SOURCE_FILES} test/test_functions.h)
+#    endif ()
 
 
 if (INCLUDE_MERGER)

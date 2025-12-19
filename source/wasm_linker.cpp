@@ -21,6 +21,7 @@
 #include "Code.h"
 #include "Angle.h"
 #include "Keywords.h"
+#include "CharUtils.h"
 #include "Util.h"
 
 
@@ -411,7 +412,7 @@ LinkerInputBinary::LinkerInputBinary(const char *filename, List<uint8_t> &data)
       table_index_offset(0),
       memory_page_count(0),
       memory_page_offset(0),
-      memory_data_start(0),
+      // memory_data_start(0),
       table_elem_count(0) {
 }
 
@@ -580,6 +581,10 @@ void Linker::WriteSectionPayload(Section *sec) {
     assert(current_payload_offset_ != -1);
     sec->output_payload_offset = stream_.offset() - current_payload_offset_;
     uint8_t *payload = &sec->binary->data[sec->payload_offset];
+    if (sec->section_code == SectionType::Code) {
+        printf("WriteSectionPayload Code section from %s: count=%d payload_size=%zu\n",
+               sec->binary->name, sec->count, sec->payload_size);
+    }
     stream_.WriteData(payload, sec->payload_size, "section content");
 }
 
@@ -915,6 +920,23 @@ bool Linker::WriteCombinedSection(SectionType section_code, const SectionPtrVect
         case SectionType::Data:
             WriteDataSection(sections, total_count);
             break;
+        case SectionType::DataCount: {
+            // DataCount must match the total count in Data section
+            // Calculate total Data segments from all binaries (not DataCount sections!)
+            Index data_segment_count = 0;
+            for (LinkerInputBinary *&binary: inputs_) {
+                for (Section *&sec: binary->sections) {
+                    if (sec->section_code == SectionType::Data) {
+                        data_segment_count += sec->count;
+                    }
+                }
+            }
+            total_size = U32Leb128Length(data_segment_count);
+            // Note: section code already written at line 897
+            WriteU32Leb128(&stream_, total_size, "section size");
+            WriteU32Leb128(&stream_, data_segment_count, "data segment count");
+            break;
+        }
         default: {
             // just append
 
@@ -1100,8 +1122,7 @@ void Linker::ResolveSymbols() {
                 }
             } else {
                 export_list.add(ExportInfo(&_export, binary));
-                warn("ignore export");
-                // warn("ignore export of kind %d %s"s % (short) _export.kind % (chars) GetKindName(_export.kind));
+                warn("ignore export of kind %d %s"s % (short) _export.kind % (chars) GetKindName(_export.kind));
             }
         }
         info("load binary functions to private_map");
@@ -1297,10 +1318,15 @@ void Linker::CalculateRelocOffsets() {
 void Linker::WriteBinary() {
     // Find all the sections of each type.
     SectionPtrVector sections[kBinarySectionCount];
+    printf("WriteBinary: processing %zu input binaries\n", inputs_.size());
     for (LinkerInputBinary *&binary: inputs_) {
+        printf("  Binary: %s with %zu sections\n", binary->name, binary->sections.size());
         for (Section *&sec: binary->sections) {
             Section *section = sec;
             int sectionCode = (int) sec->section_code;
+            if (sectionCode == (int)SectionType::Code) {
+                printf("    Found Code section: count=%d payload_size=%zu\n", sec->count, sec->payload_size);
+            }
             SectionPtrVector &sec_list = sections[sectionCode];
             sec_list.add(section);
         }
@@ -1309,10 +1335,19 @@ void Linker::WriteBinary() {
     // Write the final binary.
     stream_.WriteU32(WABT_BINARY_MAGIC, "WABT_BINARY_MAGIC");
     stream_.WriteU32(WABT_BINARY_VERSION, "WABT_BINARY_VERSION");
-    // Write known sections first.
-    for (size_t i = (int) FIRST_KNOWN_SECTION; i < kBinarySectionCount; i++) {
-        WriteCombinedSection((SectionType) i, sections[i]);
-    }
+    // Write known sections in correct WASM order (DataCount must come before Code!)
+    WriteCombinedSection(SectionType::Type, sections[(int)SectionType::Type]);
+    WriteCombinedSection(SectionType::Import, sections[(int)SectionType::Import]);
+    WriteCombinedSection(SectionType::FuncType, sections[(int)SectionType::FuncType]);
+    WriteCombinedSection(SectionType::Table, sections[(int)SectionType::Table]);
+    WriteCombinedSection(SectionType::Memory, sections[(int)SectionType::Memory]);
+    WriteCombinedSection(SectionType::Global, sections[(int)SectionType::Global]);
+    WriteCombinedSection(SectionType::Export, sections[(int)SectionType::Export]);
+    WriteCombinedSection(SectionType::Start, sections[(int)SectionType::Start]);
+    WriteCombinedSection(SectionType::Elem, sections[(int)SectionType::Elem]);
+    WriteCombinedSection(SectionType::DataCount, sections[(int)SectionType::DataCount]); // Before Code!
+    WriteCombinedSection(SectionType::Code, sections[(int)SectionType::Code]);
+    WriteCombinedSection(SectionType::Data, sections[(int)SectionType::Data]);
     WriteNamesSection();
     /* Generate a new set of reloction sections */
     //	if (s_relocatable) {
