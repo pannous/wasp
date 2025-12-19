@@ -55,8 +55,8 @@ void testMergeRuntime() {
     tests_executed++;
 #if INCLUDE_MERGER
     Module &runtime = loadModule("wasp-runtime.wasm");
-    // Module &main = loadModule("test/merge/main_memory.wasm");
-    Module &main = loadModule("test/merge/main_global.wasm");
+    Module &main = loadModule("test/merge/main_memory.wasm");
+    // Module &main = loadModule("test/merge/main_global.wasm");
     main.code.needs_relocate = true;
     runtime.code.needs_relocate = false;
     Code merged = merge_binaries(runtime.code, main.code);
