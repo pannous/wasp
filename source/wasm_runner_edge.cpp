@@ -424,6 +424,25 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     // WASM builds cannot load native .so/.dylib files
     extern Map<String, Module *> native_libraries;  // Defined in Context.cpp
 
+    // Reconstruct native_libraries from WASM imports
+    // (native_libraries is only populated during compilation, not during WASM execution)
+    for (int i = 0; i < meta.functions.size(); i++) {
+        Function& func = meta.functions.values[i];
+        if (func.is_ffi && !func.ffi_library.empty()) {
+            String lib_name = func.ffi_library;
+            if (!native_libraries.has(lib_name)) {
+                Module* lib_module = new Module();
+                lib_module->name = lib_name;
+                lib_module->is_native_library = true;
+                native_libraries.add(lib_name, lib_module);
+            }
+            Module* lib_module = native_libraries[lib_name];
+            if (!lib_module->functions.has(func.name)) {
+                lib_module->functions.add(func.name, func);
+            }
+        }
+    }
+
     // Iterate over native library modules (libc, libm, etc.)
     for (int i = 0; i < native_libraries.size(); i++) {
         Module* lib_module = native_libraries.values[i];
