@@ -68,7 +68,7 @@ playground/
 /.cmake/api/v1/reply/
 /test/merge/target/
 .cmake
-wasp
+/wasp
 tests/merge/
 /wapm/
 .fake

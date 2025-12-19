@@ -1,0 +1,9 @@
+import SDL_Init from 'SDL2'
+import SDL_Quit from 'SDL2'
+import SDL_GetTicks from 'SDL2'
+
+SDL_Init(0x00000001)
+ticks = SDL_GetTicks()
+SDL_Quit()
+
+if ticks >= 0 then 100 else 0

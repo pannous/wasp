@@ -1,0 +1,2 @@
+import fmin from 'm'
+fmin(3.5, 2.1)
