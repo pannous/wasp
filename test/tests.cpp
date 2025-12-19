@@ -4354,6 +4354,7 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
+    assert_is("", NIL);
     test_dynlib_import_emit();
     // testStructWast();
 #if WASMEDGE
@@ -4364,6 +4365,7 @@ void testCurrent() {
 
 // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
+    // test_ffi_sdl();
     test_ffi_all();
     test_ffi_header_parser();
     // SDL tests temporarily disabled - debugging type mismatches
