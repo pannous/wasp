@@ -1,0 +1,5 @@
+import SDL_Init from 'SDL2'
+import SDL_Quit from 'SDL2'
+SDL_Init(0x00000001)
+SDL_Quit()
+1
