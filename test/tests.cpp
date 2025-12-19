@@ -991,6 +991,7 @@ void testRenameWasmFunction() {
     Module &module1 = loadModule("samples/test.wasm");
     module1.functions.at(0).name = "test";
     module1.save("samples/test2.wasm");
+    // todo: check by loadModule("samples/test2.wasm");
 }
 
 void testPower() {
