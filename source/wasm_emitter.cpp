@@ -3749,11 +3749,17 @@ Code emitTypeSection() {
         Code td = Code(func) + Code(param_count);
 
         for (int i = 0; i < param_count; ++i) {
-            td += Code(fixValtype(mapTypeToWasm(signature.parameters[i].type)));
+            Valtype ptype = mapTypeToWasm(signature.parameters[i].type);
+            if (ptype == void_block or ptype == none or ptype == (Valtype)0x40)
+                error("Function '"s + fun + "' parameter " + i + " has invalid void type (0x40)");
+            td += Code(fixValtype(ptype));
         }
         td.addByte(signature.return_types.size());
         for (Type ret: signature.return_types) {
-            Valtype valtype = fixValtype(mapTypeToWasm(ret));
+            Valtype rtype = mapTypeToWasm(ret);
+            if (rtype == void_block or rtype == none or rtype == (Valtype)0x40)
+                error("Function '"s + fun + "' return type has invalid void type (0x40)");
+            Valtype valtype = fixValtype(rtype);
             td.addByte(valtype);
         }
         type_data += td;
@@ -3769,6 +3775,8 @@ Code emitTypeSection() {
 
 Valtype fixValtype(Valtype valtype) {
     if (valtype == (Valtype) charp) return int32t;
+    if (valtype == void_block or valtype == none or valtype == (Valtype)0x40)
+        error("void_block/none (0x40) cannot be used as function parameter or return type");
     if ((int) valtype >= node)
         error("exposed internal Valtype");
     //    if (valtype > 0xC0)error("exposed internal Valtype");
