@@ -622,18 +622,18 @@ Code emitHtml(Node &node, Function &function, ExternRef parent = 0) {
 [[nodiscard]]
 Code emitScript(Node &node, Function &function) {
     Code code;
-    printf("emitScript … %s", node.serialize().data);
+    tracef("emitScript … %s", node.serialize().data);
     if (node.name == "script") {
         if (node.value.data) {
             code.add(emitString(node.value.node->serialize(), function)); // todo : value can't be string RIGHT!?
         }
         for (auto &child: node) {
             const String &text = child.serialize();
-            printf("emitScript %s", text.data);
+            tracef("emitScript %s", text.data);
             code.add(emitString(text, function));
         }
     } else {
-        printf("emitScript %s", node.name.data);
+        tracef("emitScript %s", node.name.data);
         code.add(emitStringData(node, function));
     }
     code.add(emitCall("addScript", function));
@@ -1580,7 +1580,7 @@ Code emitValue(Node &node, Function &context) {
                 if (name == node.value.string)
                     goto emit_getter_block;
                 Node &value = *node.value.node;
-                if (debug) printf("emitCode: About to call emitSetter via node.value.node path, value.kind=%d, value.type=%p\n",
+                if (debug) tracef("emitCode: About to call emitSetter via node.value.node path, value.kind=%d, value.type=%p\n",
                                  value.kind, (void*)value.type);
                 warn("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!"); // todo FIX!!
                 code.add(emitSetter(node, value, context));
@@ -1699,7 +1699,7 @@ Code emitGetter(Node &node, Node &field, Function &context) {
     // Handle struct field access for wasm structs
     if(use_wasm_structs) {
         if (debug) {
-            printf("emitGetter: node.name=%s, node.kind=%d, has_type=%p, last_type=%d\n",
+            tracef("emitGetter: node.name=%s, node.kind=%d, has_type=%p, last_type=%d\n",
                    node.name.data, node.kind, (void*)types.has(node.name), (int)last_type);
         }
 
@@ -1781,30 +1781,30 @@ Code emitAttribute(Node &node, Function &context) {
     }
 
     if (debug) {
-        printf("emitAttribute: object.name=%s, object.kind=%d, object.type=%p\n",
+        tracef("emitAttribute: object.name=%s, object.kind=%d, object.type=%p\n",
                object.name.data, object.kind, (void*)object.type);
-        printf("  object.length=%d\n", object.length);
+        tracef("  object.length=%d\n", object.length);
         if (object.length > 0) {
-            printf("  object[0].serialize()=%s\n", object[0].serialize().data);
-            printf("  object[0].name=%s\n", object[0].name.data);
+            tracef("  object[0].serialize()=%s\n", object[0].serialize().data);
+            tracef("  object[0].name=%s\n", object[0].name.data);
         }
-        printf("  object.serialize()=%s\n", object.serialize().data);
-        printf("  object.value.node=%p\n", (void*)object.value.node);
+        tracef("  object.serialize()=%s\n", object.serialize().data);
+        tracef("  object.value.node=%p\n", (void*)object.value.node);
         if (object.value.node) {
-            printf("  object.value.node->serialize()=%s\n", object.value.node->serialize().data);
-            printf("  object.value.node->name=%s\n", object.value.node->name.data);
+            tracef("  object.value.node->serialize()=%s\n", object.value.node->serialize().data);
+            tracef("  object.value.node->name=%s\n", object.value.node->name.data);
         }
-        printf("  node.serialize()=%s\n", node.serialize().data);
-        printf("  node.length=%d\n", node.length);
+        tracef("  node.serialize()=%s\n", node.serialize().data);
+        tracef("  node.length=%d\n", node.length);
         if (node.length > 0) {
-            printf("  node[0].serialize()=%s, name=%s\n", node[0].serialize().data, node[0].name.data);
+            tracef("  node[0].serialize()=%s, name=%s\n", node[0].serialize().data, node[0].name.data);
         }
-        printf("  context.locals.size=%d\n", context.locals.size());
+        tracef("  context.locals.size=%d\n", context.locals.size());
         for (int i = 0; i < context.locals._size; i++) {
             String &key = context.locals.keys[i];
             if (key.empty()) continue;
             Local &loc = context.locals.values[i];
-            printf("    local[%s]: type=%d, ref=%p\n", key.data, (int)loc.type, (void*)loc.ref);
+            tracef("    local[%s]: type=%d, ref=%p\n", key.data, (int)loc.type, (void*)loc.ref);
         }
     }
 
@@ -1815,30 +1815,30 @@ Code emitAttribute(Node &node, Function &context) {
     // For references, try to get type from the local variable
     if (!object.type and object.kind == reference and context.locals.has(object.name)) {
         Local &local = context.locals[object.name];
-        if (debug) printf("Checking local %s: typeXX=%p, ref=%p\n",
+        if (debug) tracef("Checking local %s: typeXX=%p, ref=%p\n",
                           object.name.data, (void*)local.typeXX, (void*)local.ref);
 
         // First check Local.typeXX which should have the struct type
         if (local.typeXX) {
             object.type = local.typeXX;
-            if (debug) printf("  Set object.type from local.typeXX\n");
+            if (debug) tracef("  Set object.type from local.typeXX\n");
         }
         // Then check Local.ref which points to the constructor node
         else if (local.ref and local.ref->type) {
             object.type = local.ref->type;
-            if (debug) printf("  Set object.type from local.ref->type\n");
+            if (debug) tracef("  Set object.type from local.ref->type\n");
         }
         // Finally check referenceMap
         else if (referenceMap.has(object.name)) {
             Node &ref_value = referenceMap[object.name];
-            if (debug) printf("  ref_value.kind=%d, ref_value.type=%p\n",
+            if (debug) tracef("  ref_value.kind=%d, ref_value.type=%p\n",
                               ref_value.kind, (void*)ref_value.type);
             if (ref_value.kind == constructor and ref_value.type) {
                 object.type = ref_value.type;
-                if (debug) printf("  Set object.type from referenceMap constructor\n");
+                if (debug) tracef("  Set object.type from referenceMap constructor\n");
             } else if (ref_value.type) {
                 object.type = ref_value.type;
-                if (debug) printf("  Set object.type from referenceMap value.type\n");
+                if (debug) tracef("  Set object.type from referenceMap value.type\n");
             }
         }
     }
@@ -1872,9 +1872,9 @@ Code emitAttribute(Node &node, Function &context) {
             Code code = emitValue(object, context);
             // After emitting, check if it's a struct via last_type and last_object
             if (debug) {
-                printf("emitAttribute: after emitValue, last_type=%s (%d), last_object=%p\n",
+                tracef("emitAttribute: after emitValue, last_type=%s (%d), last_object=%p\n",
                        typeName(last_type), (int)last_type, (void*)last_object);
-                if (last_object) printf("  last_object->name=%s\n", last_object->name.data);
+                if (last_object) tracef("  last_object->name=%s\n", last_object->name.data);
             }
             if (last_type == Valtype::wasm_struct and last_object and types.has(last_object->name)) {
                 Node &typ = *types[last_object->name];
@@ -1930,11 +1930,11 @@ Code emitOperator(Node &node, Function &context) {
     if (name == ":=")return emitSetter(node, first, context);
     if (name == "=") {
         if (debug) {
-            printf("emitOperator: name==, node.length=%d\n", node.length);
-            printf("  first (node[0]): kind=%d, type=%p, serialize()=%s\n",
+            tracef("emitOperator: name==, node.length=%d\n", node.length);
+            tracef("  first (node[0]): kind=%d, type=%p, serialize()=%s\n",
                    first.kind, (void*)first.type, first.serialize().data);
             if (node.length > 1) {
-                printf("  second (node[1]): kind=%d, type=%p, serialize()=%s\n",
+                tracef("  second (node[1]): kind=%d, type=%p, serialize()=%s\n",
                        node[1].kind, (void*)node[1].type, node[1].serialize().data);
             }
         }
@@ -1942,14 +1942,14 @@ Code emitOperator(Node &node, Function &context) {
     }
     if (name == ".") {
         if (debug) {
-            printf("About to call emitAttribute for: %s\n", node.serialize().data);
+            tracef("About to call emitAttribute for: %s\n", node.serialize().data);
             if (node.length > 0) {
                 Node &first_child = node.first();
-                printf("  node.first().serialize()=%s, kind=%d, name=%s\n",
+                tracef("  node.first().serialize()=%s, kind=%d, name=%s\n",
                        first_child.serialize().data, first_child.kind, first_child.name.data);
-                printf("  node.first().parent=%p\n", (void*)first_child.parent);
+                tracef("  node.first().parent=%p\n", (void*)first_child.parent);
                 if (first_child.parent) {
-                    printf("    parent.serialize()=%s\n", first_child.parent->serialize().data);
+                    tracef("    parent.serialize()=%s\n", first_child.parent->serialize().data);
                 }
             }
         }
@@ -2344,7 +2344,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
         case declaration:
             return emitDeclaration(node, first);
         case assignment:
-            if (debug) printf("emitCode: assignment, node.serialize()=%s, first.kind=%d, first.type=%p\n",
+            if (debug) tracef("emitCode: assignment, node.serialize()=%s, first.kind=%d, first.type=%p\n",
                              node.serialize().data, first.kind, (void*)first.type);
             return emitSetter(node, first, context);
         case nils:
@@ -3245,12 +3245,12 @@ Code emitSetter(Node &node, Node &value, Function &context) {
         referenceMap[variable] = value; // node; // lookup types, array length …
     }
     // Store struct constructor information for later field access
-    if (debug) printf("emitSetter: variable=%s, value.kind=%d (%s), value.type=%p\n",
+    if (debug) tracef("emitSetter: variable=%s, value.kind=%d (%s), value.type=%p\n",
                       variable.data, value.kind, typeName(value.kind), (void*)value.type);
 
     // Store in referenceMap and in Local.ref/typeXX for type lookup during field access
     if (use_wasm_structs and (value.kind == constructor or value.type)) {
-        if (debug) printf("Storing struct info in referenceMap and Local: %s\n", variable.data);
+        if (debug) tracef("Storing struct info in referenceMap and Local: %s\n", variable.data);
         referenceMap[variable] = value;
 
         // Also store in the local variable's ref and typeXX fields
@@ -3701,7 +3701,7 @@ Code emitTypeSection() {
             else
                 warn("empty context creep functions[ø]");
                 // error("empty context creep functions[ø]");
-            if (fun == "abs") printf("DEBUG emitter: abs is empty string, skipping\n");
+            if (fun == "abs") tracef("DEBUG emitter: abs is empty string, skipping\n");
             continue;
         }
         // Skip operators unless they're FFI imports
@@ -3733,7 +3733,7 @@ Code emitTypeSection() {
         if (function.is_runtime)
             continue;
         if (function.signature.is_handled) {
-            if (fun == "abs") printf("DEBUG emitter: abs signature already handled, skipping\n");
+            if (fun == "abs") tracef("DEBUG emitter: abs signature already handled, skipping\n");
             continue;
         }
         //		if(context.is_import) // types in import section!
@@ -4614,6 +4614,8 @@ Code &compile(String code, bool clean) {
         clearEmitterContext();
         clearAnalyzerContext(); // needs to be outside analyze, because analyze is recursive
     }
+    if(not code.contains("\n") and code.endsWith(".wasp"))
+        code = load(code);
     Node parsed = parse(code);
     //    print(parsed.serialize());
     Node &ast = analyze(parsed, functions["wasp_main"]);

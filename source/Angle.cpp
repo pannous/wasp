@@ -284,7 +284,7 @@ Node &groupStructConstructors(Node &node, Function &context) {
         Node &type = *types[name];
         if (type.kind == clazz || type.kind == structs) {
             // This is a struct constructor call
-            if (debug) printf("Converting %s{...} to constructor\n", name.data);
+            tracef("Converting %s{...} to constructor\n", name.data);
             Node &insta = constructInstance(node, context);
             if (debug)
                 printf("After constructInstance: result.kind=%d, result.serialize()=%s\n", insta.kind,
@@ -337,17 +337,17 @@ Node &classDeclaration(Node &node, Function &function);
 
 Node &classDeclaration(Node &node, Function &function) {
     // including class type interface struct record keywords !
-    if (debug) printf("classDeclaration called\n");
+    tracef("classDeclaration called\n");
     if (node.length < 2)
         error("wrong class declaration format; should be: class name{…}");
     Node &dec = node[1];
     String &kind_name = node.first().name;
-    if (debug) printf("  kind_name=%s, dec.name=%s\n", kind_name.data, dec.name.data);
+    tracef("  kind_name=%s, dec.name=%s\n", kind_name.data, dec.name.data);
 
     String &name = dec.name;
     // If type already exists (from collectStructDeclarations), just return the existing one
     if (types.has(name)) {
-        if (debug) printf("  Type '%s' already in types map (from collectStructDeclarations), returning existing\n",
+        tracef("  Type '%s' already in types map (from collectStructDeclarations), returning existing\n",
                           name.data);
         return *types[name];
     }
@@ -382,9 +382,9 @@ Node &classDeclaration(Node &node, Function &function) {
         else
             error("incompatible structure %s already declared:\n"s % name + types[name]->serialize() /*+ node.line*/);
     } else {
-        if (debug) printf("  Adding type '%s' to types map\n", name.data);
+        tracef("  Adding type '%s' to types map\n", name.data);
         types.add(name, dec.clone());
-        if (debug) printf("  After add: types.has('%s')=%p\n", name.data, (void *) types.has(name));
+        tracef("  After add: types.has('%s')=%p\n", name.data, (void *) types.has(name));
     }
     return dec;
 }

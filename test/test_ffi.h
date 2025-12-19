@@ -77,6 +77,11 @@ static void test_ffi_atof() {
     assert_emit("import atof from \"c\"\natof(\"42\")", 42.0);
 }
 
+static void test_ffi_fmin_wasp_file() {
+    tests_executed++;
+    assert_emit("test/wasp/ffi/test_ffi_fmin.wasp", 2.1);
+}
+
 static void test_ffi_fmin() {
     tests_executed++;
     // Test: float64, float64 -> float64 (fmin from libm)
@@ -557,7 +562,7 @@ static void test_ffi_sdl_init() {
     // Test: SDL_Init - Initialize SDL with timer subsystem (works headless)
     // SDL_INIT_TIMER = 0x00000001 (doesn't require display)
     // Returns 0 on success, non-zero on error
-    assert_emit("import SDL_Init from 'SDL2'\nSDL_Init(0x00000001)", 0);
+    assert_emit("test/wasp/ffi/sdl/sdl_init.wasp", 0);
 
     // Test: SDL_Quit - Clean up SDL
     assert_emit("import SDL_Quit from 'SDL2'\nSDL_Quit()\n42", 42);
@@ -570,14 +575,7 @@ static void test_ffi_sdl_window() {
     // Test: SDL library loading and basic function calls
     // Just verify we can import and call SDL functions via FFI
     // Don't actually create windows in headless test environment
-    assert_emit(
-        "import SDL_Init from 'SDL2'\n"
-        "import SDL_Quit from 'SDL2'\n"
-        "SDL_Init(0x00000001)\n"  // SDL_INIT_TIMER works headless
-        "SDL_Quit()\n"
-        "1",
-        1
-    );
+    assert_emit("test/wasp/ffi/sdl/sdl_init_quit.wasp", 1);
 #endif
 }
 
@@ -586,14 +584,7 @@ static void test_ffi_sdl_version() {
 #ifdef NATIVE_FFI
     // Test: SDL_GetVersion - Get SDL version info
     // This tests struct parameter passing via FFI
-    assert_emit(
-        "import SDL_Init from 'SDL2'\n"
-        "import SDL_Quit from 'SDL2'\n"
-        "SDL_Init(0)\n"
-        "SDL_Quit()\n"
-        "1",
-        1
-    );
+    assert_emit("test/wasp/ffi/sdl/sdl_init_quit.wasp", 1);
 #endif
 }
 
@@ -602,16 +593,7 @@ static void test_ffi_sdl_combined() {
 #ifdef NATIVE_FFI
     // Combined test: Multiple SDL function imports
     // Tests that we can import multiple SDL functions in one program
-    assert_emit(
-        "import SDL_Init from 'SDL2'\n"
-        "import SDL_Quit from 'SDL2'\n"
-        "import SDL_GetTicks from 'SDL2'\n"  // Returns milliseconds since SDL init
-        "SDL_Init(0x00000001)\n"  // TIMER subsystem
-        "ticks = SDL_GetTicks()\n"  // Should return a positive number
-        "SDL_Quit()\n"
-        "if ticks >= 0 then 100 else 0",
-        100
-    );
+    assert_emit("test/wasp/ffi/sdl/sdl_get_ticks.wasp", 100);
 #endif
 }
 
@@ -620,35 +602,7 @@ static void test_ffi_sdl_red_square_demo() {
 #ifdef NATIVE_FFI
     // DEMO: Display a red square using SDL2 via FFI
     // This will show an actual window with graphics
-    assert_emit(
-        "import SDL_Init from 'SDL2'\n"
-        "import SDL_CreateWindow from 'SDL2'\n"
-        "import SDL_CreateRenderer from 'SDL2'\n"
-        "import SDL_SetRenderDrawColor from 'SDL2'\n"
-        "import SDL_RenderClear from 'SDL2'\n"
-        "import SDL_RenderFillRect from 'SDL2'\n"
-        "import SDL_RenderPresent from 'SDL2'\n"
-        "import SDL_Delay from 'SDL2'\n"
-        "import SDL_DestroyRenderer from 'SDL2'\n"
-        "import SDL_DestroyWindow from 'SDL2'\n"
-        "import SDL_Quit from 'SDL2'\n"
-        "\n"
-        "SDL_Init(0x00000020)\n"  // SDL_INIT_VIDEO
-        "window = SDL_CreateWindow(\"Red Square Demo\", 100, 100, 400, 400, 0)\n"
-        "renderer = SDL_CreateRenderer(window, -1, 0)\n"
-        "\n"
-        "SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255)\n"  // Red color
-        "SDL_RenderClear(renderer)\n"  // Fill background with red
-        "\n"
-        "SDL_RenderPresent(renderer)\n"  // Show it
-        "SDL_Delay(2000)\n"  // Wait 2 seconds
-        "\n"
-        "SDL_DestroyRenderer(renderer)\n"
-        "SDL_DestroyWindow(window)\n"
-        "SDL_Quit()\n"
-        "1",
-        1
-    );
+    assert_emit("test/wasp/ffi/sdl/sdl_red_square_demo.wasp", 1);
 #endif
 }
 
@@ -658,8 +612,10 @@ static void test_ffi_all() {
     test_ffi_abs();
     test_ffi_floor();
     test_ffi_fmin();
+    test_ffi_fmin_wasp_file();
     test_ffi_strlen();
     test_ffi_atof();
     test_ffi_combined();
     test_ffi_signature_detection();
+    // test_ffi_sdl();
 }

@@ -578,6 +578,7 @@ bool String::startsWith(chars string, int from) const {
 }
 
 bool String::endsWith(const char *string) const {
+    if(not data)return false;
     int len1 = strlen(string);
     length = strlen(data); // todo LOST WHEN?
     return len1 <= length and eq(data + length - len1, string, len1);

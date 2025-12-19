@@ -1103,9 +1103,8 @@ private:
         // especially if file.name is lib.wasm ;)
         // import IF not in data mode
 
-        for (int i = 0; i < node.length; i++) {
-            printf("  node[%d].name = %s\n", i, node[i].name.data);
-        }
+        for (int i = 0; i < node.length; i++)
+            tracef("  node[%d].name = %s\n", i, node[i].name.data);
 
         // Check for FFI import pattern: import funcname from "library"
         // Node structure at this point: [0]="import", [1]="funcname", [2]="from"
