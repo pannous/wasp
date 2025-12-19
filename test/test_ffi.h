@@ -25,23 +25,6 @@
 // Dynamic Library Import Tests (using 'use' keyword)
 // ============================================================================
 
-static void test_dynlib_import_emit() {
-    tests_executed++;
-#ifdef NATIVE_FFI
-    // Test FFI import and usage with 'use' keyword
-    // These are actual C library functions, not WASM builtins
-    // Note: FFI only works in native mode, not when compiled to WASM
-
-    // Math library functions (libm) - using functions that work reliably
-    assert_is("use m; ceil(3.2)", 4.0);
-    assert_is("use math; floor(3.7)", 3.0);
-    assert_is("use m; fmin(3.5, 2.1)", 2.1);
-    assert_is("use m; fmax(1.5, 2.5)", 2.5);
-#else
-
-#endif
-}
-
 // ============================================================================
 // Basic FFI Tests - Core functionality
 // ============================================================================
@@ -606,16 +589,26 @@ static void test_ffi_sdl_red_square_demo() {
 #endif
 }
 
+static void test_ffi_sdl() {
+    tests_executed++;
+    test_ffi_sdl_init();
+    test_ffi_sdl_window();
+    test_ffi_sdl_version();
+    test_ffi_sdl_combined();
+    test_ffi_sdl_red_square_demo();
+}
+
 static void test_ffi_all() {
     tests_executed++;
     // Main comprehensive test function that runs all FFI tests
-    test_ffi_abs();
-    test_ffi_floor();
     test_ffi_fmin();
     test_ffi_fmin_wasp_file();
-    test_ffi_strlen();
-    test_ffi_atof();
+    test_ffi_abs(); // careful this is already a built-in wasm operator
+    test_ffi_floor(); // careful this is already a built-in wasm operator
+    test_ffi_strlen(); // careful this is already a built-in wasp library function
+    test_ffi_atof(); // careful this is already a built-in wasp library function
     test_ffi_combined();
     test_ffi_signature_detection();
-    // test_ffi_sdl();
+    test_ffi_header_parser();
+    test_ffi_sdl();
 }

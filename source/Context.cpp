@@ -5,6 +5,7 @@
 #include "Context.h"
 
 #include "Angle.h"
+#include "CharUtils.h"
 #include "Map.h"
 #include "Code.h"
 #include "Keywords.h"

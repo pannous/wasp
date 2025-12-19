@@ -79,9 +79,9 @@ void init_wasmtime() {
     wasmtime_config_wasm_reference_types_set(config, true);
 
     engine = wasm_engine_new_with_config(config);
-    assert(engine != NULL);
+    check_silent(engine != NULL);
     store = wasmtime_store_new(engine, NULL, NULL);
-    assert(store != NULL);
+    check_silent(store != NULL);
     context = wasmtime_store_context(store);
     initialized = true;
 }

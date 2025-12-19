@@ -48,6 +48,7 @@ public:
     int global_count = 0;
     int code_count = 0;
     int data_segments_count = 0; // ≠ data_section.length   ALL MUST BE IN the one Data section!
+    int data_count = 0; // extra section? what's that?
     // name section:
     Code element_section; // todo?
     Code local_names;

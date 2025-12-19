@@ -344,7 +344,7 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
     // Handle imports
     if (contains(import_keywords, (chars) node.first().name.data)) {
         for (int i = 0; i < node.length; i++) {
-            printf("  node[%d] = %s\n", i, node[i].serialize().data);
+            tracef("  node[%d] = %s\n", i, node[i].serialize().data);
         }
         node = direct_include(actual, node);
     }

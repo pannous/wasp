@@ -131,11 +131,7 @@ if (NOT WASM)
         #  set(WASMX 1)  # doesn't work: cannot insert imports or function types!
         #  set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong! Hates GC…
         # others: WAVM WAMR
-        if (WEBAPP)
-            set(INCLUDE_MERGER 1) # should work !?
-        else ()
-            set(INCLUDE_MERGER 1) # works with WASI
-        endif ()
+        set(INCLUDE_MERGER 1) # works with WASI
     endif ()
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
     # ^^ fixes <cmath> mac errors!
@@ -278,6 +274,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
     #ADD_COMPILE_FLAG("-Wl,--allow-undefined") # really?
     ADD_COMPILE_FLAG("-Wno-unused-command-line-argument")
+    ADD_COMPILE_FLAG("-Wno-deprecated-literal-operator")
     ADD_COMPILE_FLAG("-Wno-writable-strings") # dangerous! fix assert_is("square 3", 9)
     ADD_COMPILE_FLAG("-Wno-ambiguous-reversed-operator")
     ADD_COMPILE_FLAG("-Wno-unknown-attributes") # import_module("wasi_unstable")
@@ -369,8 +366,7 @@ endif ()
 set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/String.cpp ${SOURCE}/Node.cpp ${SOURCE}/Map.cpp ${SOURCE}/Util.cpp ${SOURCE}/List.cpp
         ${SOURCE}/CharUtils.cpp ${SOURCE}/LiteralParser.cpp ${SOURCE}/Keywords.cpp
         ${SOURCE}/Wasp.cpp ${SOURCE}/wasm_helpers.cpp ${SOURCE}/Code.cpp ${SOURCE}/NodeTypes.cpp ${SOURCE}/smart_types.cpp
-        ${SOURCE}/Runtime.cpp ${SOURCE}/Context.cpp
-        ${SOURCE}/FunctionAnalyzer.cpp ${SOURCE}/OperatorAnalyzer.cpp
+        ${SOURCE}/Runtime.cpp
 )
 # NOTE: WaspParsers.cpp is #included in Wasp.cpp, not compiled separately
 
@@ -413,6 +409,9 @@ else ()
     message("NOT RUNTIME_ONLY")
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Code.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Angle.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Context.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/FunctionAnalyzer.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/OperatorAnalyzer.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Interpret.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_emitter.cpp)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/DwarfEmitter.cpp)
@@ -975,8 +974,7 @@ elseif (WASMX)
 elseif (V8)
     MESSAGE("USING V8")
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
-    set(SOURCE_FILES ${SOURCE}/wasm_runner_v8.cpp ${SOURCE_FILES}
-            source/Context.h)
+    set(SOURCE_FILES ${SOURCE}/wasm_runner_v8.cpp ${SOURCE_FILES} source/Context.h)
     add_executable(wasp ${SOURCE_FILES})
     target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/v8/include/)

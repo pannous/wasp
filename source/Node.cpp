@@ -1490,7 +1490,10 @@ Node *reconstructArray(int *array_struct) {
         else if (value_kind == int16t)chile = new Node(*(short *) val);
         else if ((int) value_kind == longs)chile = new Node(*(int64 *) val);
         else if ((int) value_kind == reals)chile = new Node(*(double *) val);
-        else todo("smartNode of array with element kind "s + typeName((Kind)value_kind));
+        else {
+            chile = 0;
+            todo("smartNode of array with element kind "s + typeName((Kind)value_kind));
+        }
         arr->add(chile);
     }
     return arr;

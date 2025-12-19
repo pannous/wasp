@@ -618,7 +618,8 @@ double pow(double x, double y) {
 
 #if RUNTIME_ONLY
 Module &read_wasm(bytes buffer, int size0) {
-	return *new Module();
+    Module *m = 0;
+	return *m;//*new Module();
 }
 #endif
 
@@ -638,5 +639,5 @@ float modulo_float(float a, float b) {
 }
 
  #if RUNTIME_ONLY // precedence??
-    float precedence(Node &operater){return 0.0f;}
+    // float precedence(Node &operater){return 0.0f;}
 #endif
