@@ -86,6 +86,13 @@ int64 unsignedLEB128(Code &byt) {
 int consumeByte(Code &byt) {
     return byt.data[byt.start++];
 }
+int consumeInt32() {
+    int b1 = code[pos++];
+    int b2 = code[pos++];
+    int b3 = code[pos++];
+    int b4 = code[pos++];
+    return (b1 << 0) | (b2 << 8) | (b3 << 16) | (b4 << 24);
+}
 
 int siz() {
     return unsignedLEB128();
@@ -361,6 +368,12 @@ void consumeElementSection() {
     module->element_section = vec();
     //	if(debug_reader)printf("element section (!?)");
     if (debug_reader)printf("element sections: %d \n", module->element_section.length);
+}
+
+void consumeDataCountSection() {
+    Code data_count_vector = vec();
+    module->data_count = unsignedLEB128(data_count_vector);
+    if (debug_reader)printf("data count: %d \n", module->data_count);
 }
 
 void consumeCustomSection() {
@@ -661,6 +674,9 @@ void consumeSections() {
                 break;
             case custom_section:
                 consumeCustomSection(); // => consumeNameSection()
+                break;
+            case datacount:
+                consumeDataCountSection();
                 break;
             default:
                 if (debug_reader)print("Invalid section %d at pos %d %x\n"s % section % pos % pos);

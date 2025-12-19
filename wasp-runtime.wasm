@@ -1,1 +1,1 @@
-cmake-build-wasm-runtime/wasp-runtime.wasm
+./cmake-build-wasm-runtime/wasp-runtime.wasm

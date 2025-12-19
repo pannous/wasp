@@ -362,8 +362,10 @@ public:
             source = readFile(findFile(source, parserOptions.current_dir));
         }
 #ifndef RELEASE
-        put_chars("Parsing: ");
-        println(source.data);
+        if(not options.data_mode) {// todo: e.g. c-header parser
+            put_chars("Parsing: ");
+            println(source.data);
+        }
 #endif
         columnStart = 0;
         at = -1;

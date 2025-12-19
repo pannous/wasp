@@ -103,6 +103,12 @@ String sectionName(Sections section) {
             return "start";
         case memory_section:
             return "memory";
+        case datacount:
+            return "datacount";
+        case tag_section:
+            return "tag";
+        case string_section:
+            return "string";
         default:
             error("INVALID SECTION #%d\nprevious section must have been corrupted\n"s % section);
             return "INVALID";

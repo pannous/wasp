@@ -186,12 +186,11 @@ cmake -B build -DSANITIZE=1 . && make -C build
 lldb -- ./build/wasp test
 ```
 
-**WASM Debugging:**
+## **WASM Debugging:**
 - DWARF debug info available in WASM builds (`-g3 -gdwarf-4`)
 - Source maps generated for browser debugging
 - Use `wasmtime -D debug-info=y` to enable debug info at runtime
 
-## wasm Debug
 In case some inexplicable error occurs, debug wasm files with `wasm2wat --no-check --enable-all --ignore-custom-section-errors`  and `wasm-objdump -x -d -s`
 debug wasm files with hexdump if they are illformed. compare with a minimal working wasm.
 

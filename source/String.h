@@ -452,7 +452,7 @@ public:
             } else if (char16_ts[i] >= 0xFFFE) {
                 codepoints[i] = 0xFFFD; // error
             } else {
-                codepoints[i] = char16_ts[i]; // non surrogate
+                codepoints[i] = (codepoint) char16_ts[i]; // non surrogate
             }
             i++;
         }

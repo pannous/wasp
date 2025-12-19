@@ -11,6 +11,7 @@
 //
 // todo: test_functions.cpp
 
+#include <unistd.h>
 // Section markers below indicate where each category's tests are located.
 //==============================================================================
 int tests_executed = 0;
@@ -4354,8 +4355,14 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
-    assert_is("", NIL);
-    test_dynlib_import_emit();
+    test_ffi_sdl_red_square_demo();
+    sleep(10);
+    exit(0);
+    assert_emit("`hello ${42}`", "hello 42");
+    assert_emit("`$test world`", "hello world");
+
+    test_ffi_all();
+
     // testStructWast();
 #if WASMEDGE
     testStruct(); // no wasmtime yet
@@ -4366,8 +4373,6 @@ void testCurrent() {
 // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
     // test_ffi_sdl();
-    test_ffi_all();
-    test_ffi_header_parser();
     // SDL tests temporarily disabled - debugging type mismatches
     // test_ffi_sdl_init();
     // test_ffi_sdl_window();
