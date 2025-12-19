@@ -109,6 +109,7 @@ The number of TESTS PASSED must not go down!
 - use trace("msg") for debugging
 - **Never use std:: libraries** - Use the custom `String`, `List`, `Map` provided in the project, or implement simple ad-hoc algorithms
 - Use meaningful names for self-documenting code (minimize trivial comments)
+- Never manually add (ffi) Signatures instead derive them dynamically by reflection
 
 ### Code Organization
 
@@ -205,3 +206,4 @@ debug wasm files with hexdump if they are illformed. compare with a minimal work
 - If you feel bored check for a simple todo but always check running ./wasp test before and after
 - NEVER create or modify tests in ./tests/ folder unless Explicitly instructed. Instead try to work with The existing tests or if absolutely necessary create new temporary tests in ./probes/ folder
 - use typeName() To get the name of a Kind / Type / ValueType
+
