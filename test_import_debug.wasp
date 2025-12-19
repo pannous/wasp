@@ -1,2 +1,0 @@
-import abs from "c"
-abs(-42)
