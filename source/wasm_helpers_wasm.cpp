@@ -621,6 +621,20 @@ Module &read_wasm(bytes buffer, int size0) {
     Module *m = 0;
 	return *m;//*new Module();
 }
+
+// C++ exception handling stubs for RUNTIME_ONLY builds
+extern "C" void* __cxa_begin_catch(void* exceptionObject) {
+    return exceptionObject;
+}
+
+extern "C" void _ZSt9terminatev() noexcept {
+    // terminate() stub
+}
+
+// operator delete stubs
+void operator delete(void* p, unsigned long sz) noexcept {
+    // do nothing
+}
 #endif
 
 #if !MY_WASM
