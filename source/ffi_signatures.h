@@ -101,7 +101,7 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
                         }
 
                         String decl = clean_line.c_str();
-                        Node& parsed = parse(decl);
+                        Node& parsed = parse(decl, { .data_mode = true });
 
                         FFIHeaderSignature ffi_sig;
                         ffi_sig.library = lib_name;
@@ -113,6 +113,9 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
 
                             // Convert to Signature format
                             for (const String& param_type : ffi_sig.param_types) {
+                                if (str_eq(param_type, "void")) {
+                                    continue; // Skip void parameters (e.g., func(void))
+                                }
                                 Arg param;
                                 param.type = mapCTypeToWasp(param_type);
                                 sig.parameters.add(param);
