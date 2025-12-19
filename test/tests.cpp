@@ -4355,9 +4355,10 @@ void testCurrent() {
 #else
     // testPing();
     // testFunctionArgumentCast();
-    test_ffi_sdl_red_square_demo();
-    sleep(10);
-    exit(0);
+    // test_ffi_sdl_red_square_demo();
+    // sleep(10);
+    // testMergeRuntime();
+    // exit(0);
     assert_emit("`hello ${42}`", "hello 42");
     assert_emit("`$test world`", "hello world");
 

@@ -1580,7 +1580,7 @@ Code emitValue(Node &node, Function &context) {
                 if (name == node.value.string)
                     goto emit_getter_block;
                 Node &value = *node.value.node;
-                if (debug) tracef("emitCode: About to call emitSetter via node.value.node path, value.kind=%d, value.type=%p\n",
+                tracef("emitCode: About to call emitSetter via node.value.node path, value.kind=%d, value.type=%p\n",
                                  value.kind, (void*)value.type);
                 warn("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!"); // todo FIX!!
                 code.add(emitSetter(node, value, context));
@@ -1815,30 +1815,30 @@ Code emitAttribute(Node &node, Function &context) {
     // For references, try to get type from the local variable
     if (!object.type and object.kind == reference and context.locals.has(object.name)) {
         Local &local = context.locals[object.name];
-        if (debug) tracef("Checking local %s: typeXX=%p, ref=%p\n",
+        tracef("Checking local %s: typeXX=%p, ref=%p\n",
                           object.name.data, (void*)local.typeXX, (void*)local.ref);
 
         // First check Local.typeXX which should have the struct type
         if (local.typeXX) {
             object.type = local.typeXX;
-            if (debug) tracef("  Set object.type from local.typeXX\n");
+            tracef("  Set object.type from local.typeXX\n");
         }
         // Then check Local.ref which points to the constructor node
         else if (local.ref and local.ref->type) {
             object.type = local.ref->type;
-            if (debug) tracef("  Set object.type from local.ref->type\n");
+            tracef("  Set object.type from local.ref->type\n");
         }
         // Finally check referenceMap
         else if (referenceMap.has(object.name)) {
             Node &ref_value = referenceMap[object.name];
-            if (debug) tracef("  ref_value.kind=%d, ref_value.type=%p\n",
+            tracef("  ref_value.kind=%d, ref_value.type=%p\n",
                               ref_value.kind, (void*)ref_value.type);
             if (ref_value.kind == constructor and ref_value.type) {
                 object.type = ref_value.type;
-                if (debug) tracef("  Set object.type from referenceMap constructor\n");
+                tracef("  Set object.type from referenceMap constructor\n");
             } else if (ref_value.type) {
                 object.type = ref_value.type;
-                if (debug) tracef("  Set object.type from referenceMap value.type\n");
+                tracef("  Set object.type from referenceMap value.type\n");
             }
         }
     }
@@ -2344,7 +2344,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
         case declaration:
             return emitDeclaration(node, first);
         case assignment:
-            if (debug) tracef("emitCode: assignment, node.serialize()=%s, first.kind=%d, first.type=%p\n",
+            tracef("emitCode: assignment, node.serialize()=%s, first.kind=%d, first.type=%p\n",
                              node.serialize().data, first.kind, (void*)first.type);
             return emitSetter(node, first, context);
         case nils:
@@ -3245,12 +3245,11 @@ Code emitSetter(Node &node, Node &value, Function &context) {
         referenceMap[variable] = value; // node; // lookup types, array length …
     }
     // Store struct constructor information for later field access
-    if (debug) tracef("emitSetter: variable=%s, value.kind=%d (%s), value.type=%p\n",
-                      variable.data, value.kind, typeName(value.kind), (void*)value.type);
+    tracef("emitSetter: variable=%s, value.kind=%d (%s), value.type=%p\n", variable.data, value.kind, typeName(value.kind), (void*)value.type);
 
     // Store in referenceMap and in Local.ref/typeXX for type lookup during field access
     if (use_wasm_structs and (value.kind == constructor or value.type)) {
-        if (debug) tracef("Storing struct info in referenceMap and Local: %s\n", variable.data);
+        tracef("Storing struct info in referenceMap and Local: %s\n", variable.data);
         referenceMap[variable] = value;
 
         // Also store in the local variable's ref and typeXX fields
