@@ -221,3 +221,116 @@ inline String extract_library_name(const String& module_name) {
 
     return module_name;  // Already just the library name
 }
+
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#include <mach-o/nlist.h>
+#include <mach-o/loader.h>
+
+// Enumerate all exported functions from a loaded library on macOS
+inline void enumerate_library_functions_macos(void* handle, Map<String, Function>& functions, const String& library_name) {
+    // Get the library image index from handle
+    Dl_info info;
+    if (dladdr(handle, &info) == 0) {
+        warn("Could not get library info for "s + library_name);
+        return;
+    }
+
+    const struct mach_header_64* header = (const struct mach_header_64*)info.dli_fbase;
+    if (!header) return;
+
+    // Parse Mach-O to find symbol table
+    struct load_command* cmd = (struct load_command*)((char*)header + sizeof(struct mach_header_64));
+    struct symtab_command* symtab = nullptr;
+
+    for (uint32_t i = 0; i < header->ncmds; i++) {
+        if (cmd->cmd == LC_SYMTAB) {
+            symtab = (struct symtab_command*)cmd;
+            break;
+        }
+        cmd = (struct load_command*)((char*)cmd + cmd->cmdsize);
+    }
+
+    if (!symtab) {
+        trace("No symbol table found in "s + library_name);
+        return;
+    }
+
+    // Access symbol table
+    struct nlist_64* symbols = (struct nlist_64*)((char*)header + symtab->symoff);
+    char* string_table = (char*)header + symtab->stroff;
+
+    int func_count = 0;
+    for (uint32_t i = 0; i < symtab->nsyms; i++) {
+        struct nlist_64* sym = &symbols[i];
+
+        // Check if it's an external defined function symbol
+        if ((sym->n_type & N_TYPE) == N_SECT &&  // Defined in a section
+            (sym->n_type & N_EXT) &&              // External symbol
+            sym->n_value != 0) {                   // Has an address
+
+            const char* name = string_table + sym->n_un.n_strx;
+            if (name && name[0] == '_') name++;  // Skip leading underscore on macOS
+
+            // Skip compiler-generated or internal symbols
+            if (name[0] == '.' || name[0] == 'L' || name[0] == 'l') continue;
+            if (strstr(name, "$") || strstr(name, "OUTLINED")) continue;
+
+            Function func;
+            func.name = String(name);
+            func.is_ffi = true;
+            func.ffi_library = library_name;
+
+            // Try to inspect signature
+            inspect_ffi_signature(library_name, func.name, func.signature);
+
+            functions.add(func.name, func);
+            func_count++;
+        }
+    }
+
+    trace("Enumerated "s + formatLong(func_count) + " functions from " + library_name);
+}
+#endif
+
+#ifdef __linux__
+#include <link.h>
+#include <elf.h>
+
+// Enumerate all exported functions from a loaded library on Linux
+inline void enumerate_library_functions_linux(void* handle, Map<String, Function>& functions, const String& library_name) {
+    struct link_map* map;
+    if (dlinfo(handle, RTLD_DI_LINKMAP, &map) != 0) {
+        warn("Could not get link map for "s + library_name);
+        return;
+    }
+
+    // Read ELF symbol table
+    // This is simplified - full implementation would parse ELF headers
+    trace("Linux ELF enumeration not yet implemented for "s + library_name);
+    // TODO: Parse ELF .dynsym section to enumerate symbols
+}
+#endif
+
+// Enumerate ALL functions from a library (called when importing entire module)
+// e.g., "import c" or "use m"
+inline void enumerate_library_functions(const String& library_name, Map<String, Function>& functions) {
+    void* handle = load_library(library_name);
+    if (!handle) {
+        warn("Failed to load library for enumeration: "s + library_name);
+        return;
+    }
+
+    trace("Enumerating all functions from library: "s + library_name);
+
+#ifdef __APPLE__
+    enumerate_library_functions_macos(handle, functions, library_name);
+#elif __linux__
+    enumerate_library_functions_linux(handle, functions, library_name);
+#else
+    warn("Function enumeration not implemented for this platform");
+#endif
+
+    // Don't close the handle - we need it for future dlsym calls
+    // dlclose(handle);
+}
