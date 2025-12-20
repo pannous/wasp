@@ -145,3 +145,6 @@ Frameworks/*
 Frameworks/**
 a.out
 build.make
+Frameworks
+Frameworks/*
+Frameworks/**

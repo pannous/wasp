@@ -103,6 +103,7 @@ struct ParserOptions {
 
     // parse x[1] as x:1 reference with immediate value or x:[1] reference with pattern
     // parse x={y} as x:{y} as x{y} or keep operator =
+    bool debug = false;
     bool data_mode = false;
     bool arrow = true; // false; // treat -> arrow as map operator :
     bool dollar_names = true; // false;// $name as in wat,wit $extern_ref within wasp!
