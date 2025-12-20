@@ -225,7 +225,15 @@ void parseImportNames(Code &payload) {
         }
         Signature &signature = module->funcTypes[type];
         int coi = module->import_count + i;
-        module->functions.add(name1, {.code_index = coi, .call_index = i, .name = name1, .signature = signature});
+        Function func = {.code_index = coi, .call_index = i, .name = name1, .signature = signature};
+
+        // Check if this is an FFI import from a native library module
+        if (mod != "env" && mod != "wasi_snapshot_preview1") {
+            func.is_ffi = true;
+            func.ffi_library = mod;
+        }
+
+        module->functions.add(name1, func);
         module->import_names.add(name1);
     }
     info("imports DONE");

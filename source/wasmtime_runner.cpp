@@ -267,67 +267,35 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
                 linker, "env", 3, import_name, import_name.length, own_type, cb, NULL, NULL);
             if (derr) exit_with_error("define_func failed", derr, NULL);
         }
-#ifdef NATIVE_FFI
-        // If no static mapping found, try dynamic FFI loading from common libraries
-        else {
-            // Try common libraries in order: m (math), c (libc), raylib, SDL2
-            const char* common_libs[] = {"m", "c", "raylib", "SDL2", nullptr};
-            void* ffi_func = nullptr;
-            String found_lib;
-
-            for (int i = 0; common_libs[i] != nullptr; i++) {
-                ffi_func = ffi_loader.get_function(common_libs[i], import_name);
-                if (ffi_func) {
-                    found_lib = common_libs[i];
-                    break;
-                }
-            }
-
-            if (ffi_func) {
-                // Create FFI context for dynamic wrapper
-                FFIMarshaller::FFIContext* ctx = create_ffi_context(&signature, ffi_func, import_name);
-
-                wasmtime_error_t *derr = wasmtime_linker_define_func(
-                    linker, "env", 3, import_name, import_name.length, own_type,
-                    ffi_dynamic_wrapper_wasmtime, ctx, NULL);
-
-                if (derr) {
-                    warn("Failed to link FFI function: "s + import_name);
-                    wasmtime_error_delete(derr);
-                } else {
-                    trace("Dynamically linked FFI: "s + import_name + " from " + found_lib);
-                }
-            }
-        }
-#endif
+        // Note: FFI functions (with module != "env") are handled separately below
     }
 
 #ifdef NATIVE_FFI
     // Add FFI imports from native library modules (Mac/Linux only)
     // WASM builds cannot load native .so/.dylib files
 
-    // Reconstruct native_libraries from WASM imports
-    // (native_libraries is only populated during compilation, not during WASM execution)
+    // Build local map of FFI libraries from WASM imports (module name != "env")
+    Map<String, Module*> runtime_libraries{10};
     for (int i = 0; i < meta.functions.size(); i++) {
         Function& func = meta.functions.values[i];
         if (func.is_ffi && !func.ffi_library.empty()) {
             String lib_name = func.ffi_library;
-            if (!native_libraries.has(lib_name)) {
+            if (!runtime_libraries.has(lib_name)) {
                 Module* lib_module = new Module();
                 lib_module->name = lib_name;
                 lib_module->is_native_library = true;
-                native_libraries.add(lib_name, lib_module);
+                runtime_libraries.add(lib_name, lib_module);
             }
-            Module* lib_module = native_libraries[lib_name];
+            Module* lib_module = runtime_libraries[lib_name];
             if (!lib_module->functions.has(func.name)) {
                 lib_module->functions.add(func.name, func);
             }
         }
     }
 
-    // Iterate over native library modules (libc, libm, etc.)
-    for (int i = 0; i < native_libraries.size(); i++) {
-        Module* lib_module = native_libraries.values[i];
+    // Iterate over FFI library modules and link their functions
+    for (int i = 0; i < runtime_libraries.size(); i++) {
+        Module* lib_module = runtime_libraries.values[i];
         if (!lib_module || !lib_module->is_native_library) continue;
 
         String lib_name = lib_module->name;

@@ -370,6 +370,7 @@ void clearAnalyzerContext() {
     //	needs to be outside analyze, because analyze is recursive
 #ifndef RUNTIME_ONLY
     libraries.clear(); // todo: keep runtime or keep as INACTIVE to save reparsing
+    native_libraries.clear(); // Clear FFI library modules between compilations
     //    module_cache.clear(); NOO not the cache lol
     types.clear();
     globals.clear();
