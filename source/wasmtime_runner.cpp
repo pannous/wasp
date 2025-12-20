@@ -317,7 +317,6 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 
             void* ffi_func = ffi_loader.get_function(lib_name, func_name);
             if (ffi_func) {
-                trace("FFI LOADED: "s + func_name + " from " + lib_name);
                 // Use signature already detected during parsing
                 Signature& wasp_sig = func.signature;
 
@@ -405,9 +404,13 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     }
 #endif // NATIVE_FFI
 
+    fprintf(stderr, "Instantiating module via linker...\n");
+    fflush(stderr);
     // Instantiate module via linker so both WASI and env imports resolve.
     error = wasmtime_linker_instantiate(linker, context, module0, &instance, &trap);
     wasmtime_module_delete(module0);
+    fprintf(stderr, "Module instantiated\n");
+    fflush(stderr);
     if (error != NULL || trap != NULL) exit_with_error("Failed to instantiate module via linker", error, trap);
 #else
     // Legacy path: manual import array (keeps existing behavior without WASI stdio)
@@ -441,16 +444,24 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         exit_with_error("Failed to retrieve function export wasp_main", NULL, NULL);
     }
 
+    fprintf(stderr, "Getting memory export...\n");
+    fflush(stderr);
     wasmtime_extern_t memory_export;
     if (wasmtime_instance_export_get(context, &instance, "memory", strlen("memory"), &memory_export)) {
         if (memory_export.kind == WASMTIME_EXTERN_MEMORY) {
             wasmtime_memory_t memory0 = memory_export.of.memory;
             wasm_memory = wasmtime_memory_data(context, &memory0);
+            fprintf(stderr, "Got memory at %p\n", wasm_memory);
+            fflush(stderr);
         }
     }
 
+    fprintf(stderr, "Calling wasp_main function...\n");
+    fflush(stderr);
     wasmtime_val_t results;
     error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, 1, &trap);
+    fprintf(stderr, "Function call returned\n");
+    fflush(stderr);
     if (error != NULL || trap != NULL) exit_with_error("Failed to call function", error, trap);
     // Do not assume i64; return a best-effort integer for convenience.
     switch (results.kind) {

@@ -4,6 +4,7 @@
 #include <cxxabi.h> // for abi::__cxa_demangle
 #include "wasm_reader.h"
 #include "Util.h"
+#include "ffi_signatures.h"
 //#include "wasm_emitter.h"
 // compare with wasm-objdump -h
 
@@ -115,11 +116,11 @@ Code vec(Code &data, bool consume = true) {
 }
 
 String &name(Code &wstring) {
-    // Shared string view, so don't worry about trailing extra chars
+    // MUST copy the string data, not share, because wstring buffer gets reused
     int64 len = unsignedLEB128(wstring);
     auto nam = (char *) wstring.data + wstring.start;
-    String *string = new String(nam, len, true);
-    //    String *string = new String(nam, len, false);
+    String *string = new String(nam, len, false); // false = copy data, don't share
+    //    String *string = new String(nam, len, true); // OLD BUG: shared pointer gets corrupted
     wstring.start += len; // advance internally
     //	if (len > 40)put(string);
     return *string;
@@ -212,8 +213,8 @@ void parseImportNames(Code &payload) {
     // and TYPES!
     trace("Imports:");
     for (int i = 0; (i < module->import_count) and (payload.start < payload.length); ++i) {
-        String &mod = name(payload); // module
-        String &name1 = name(payload); // shared is NOT 0 terminated, needs to be 0-terminated now?
+        String mod = name(payload); // module - MUST be copy, not reference!
+        String name1 = name(payload); // name - MUST be copy, not reference!
         trace("import %s"s % mod + "." + name1);
         int kind = unsignedLEB128(payload); // func, global, …
         int type = unsignedLEB128(payload); // i32 … for globals
@@ -231,6 +232,11 @@ void parseImportNames(Code &payload) {
         if (mod != "env" && mod != "wasi_snapshot_preview1") {
             func.is_ffi = true;
             func.ffi_library = mod;
+
+            // Re-detect signature from library/function name
+            // (WASM loses type info like charp -> i32, so we need to restore it)
+            // CRITICAL: detect_ffi_signature takes (func_name, lib_name) not (lib_name, func_name)!
+            detect_ffi_signature(name1, mod, func.signature);
         }
 
         module->functions.add(name1, func);
