@@ -304,6 +304,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 
             void* ffi_func = ffi_loader.get_function(lib_name, func_name);
             if (ffi_func) {
+                // print("FFI LOADED: "s + func_name + " from " + lib_name);
                 // Use signature already detected during parsing
                 Signature& wasp_sig = func.signature;
 

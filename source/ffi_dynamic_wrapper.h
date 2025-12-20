@@ -136,8 +136,11 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
     FFIMarshaller::FFIContext* ctx = (FFIMarshaller::FFIContext*)env;
 
     if (!ctx || !ctx->function_ptr || !ctx->signature) {
+        print("FFI ERROR: Invalid context for function call");
         return NULL; // Or create trap
     }
+
+    // print("FFI CALL: "s + ctx->function_name + " with " + formatLong(nargs) + " args");
 
     // Get wasm memory for string conversions
     extern void *wasm_memory;  // Defined in wasmtime_runner.cpp
@@ -155,26 +158,31 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
             case FFIMarshaller::CType::Int32:
                 arg.i32 = args[i].of.i32;
                 arg.i32 = FFIMarshaller::to_c_int32(arg.i32);
+                // print("  arg["s + formatLong(i) + "] i32 = " + formatLong(arg.i32));
                 break;
 
             case FFIMarshaller::CType::Int64:
                 arg.i64 = args[i].of.i64;
                 arg.i64 = FFIMarshaller::to_c_int64(arg.i64);
+                // print("  arg["s + formatLong(i) + "] i64 = " + formatLong(arg.i64));
                 break;
 
             case FFIMarshaller::CType::Float32:
                 arg.f32 = args[i].of.f32;
                 arg.f32 = FFIMarshaller::to_c_float(arg.f32);
+                // printf("  arg[%d] f32 = %f\n", i, arg.f32);
                 break;
 
             case FFIMarshaller::CType::Float64:
                 arg.f64 = args[i].of.f64;
                 arg.f64 = FFIMarshaller::to_c_double(arg.f64);
+                // printf("  arg[%d] f64 = %f\n", i, arg.f64);
                 break;
 
             case FFIMarshaller::CType::String: {
                 int32_t offset = args[i].of.i32;
                 arg.str = FFIMarshaller::offset_to_c_string(wasm_memory, offset);
+                // print("  arg["s + formatLong(i) + "] str = \"" + arg.str + "\"");
                 break;
             }
 
