@@ -1,4 +1,3 @@
-from wasp import * # to silence python warnings;)
 y=0
 j=0
 width=height=400
