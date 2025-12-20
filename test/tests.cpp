@@ -4331,6 +4331,20 @@ void testWaspRuntimeModule() {
     check_is(wasp.functions["square"].variants[1]->signature.parameters[0].type, reals);
 }
 
+void test_while_true_forever() {
+    todow("test_while_true_forever");
+    skip(
+    auto node = parse("1:2");
+    print(node.serialize());
+    check(node.serialize() == "1:2");
+    check(node.values().value.longy == 2);
+    check(node.kind == pair or node.kind == key);
+    check(node.value.longy == 1);
+    assert_emit("while True : 2", 0); // should hang forever ;)
+    // assert_emit("while 1 : 2", 0); // should hang forever ;)
+    )
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
@@ -4362,6 +4376,7 @@ void testCurrent() {
     // testMergeRuntime();
     // exit(0);
 
+    test_while_true_forever();
     test_ffi_all();
 
     // testStructWast();

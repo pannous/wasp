@@ -32,10 +32,11 @@ EndDrawing()
 // Keep window visible briefly
 // NOTE: Event loops with while(!WindowShouldClose()) don't work yet due to WASM compiler issue
 // Using short delay - completes quickly, no spinning wheel
-delay = 0
-while(delay < 5000000000) {
-    delay++
-}
+sleep(10000)
+#delay = 0
+#while(delay < 5000000000) {
+#    delay++
+#}
 
 // Clean up
 CloseWindow()

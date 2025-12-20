@@ -1,6 +1,9 @@
 Problem "1:2"
 If we set node.kind = key we don't have "1".value = 1 but "1".value=(node 2) 
 
+Currently we reuse this kind for 
+a[x]=y  but also for x:y
+
   General Solution: Key-Value Pair Representation
 
   Problem: Represent "1:2" where we need access to both:
