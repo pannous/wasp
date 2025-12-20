@@ -27,6 +27,7 @@ bool isnumber(char c) { return c >= '0' and c <= '9'; }
 #ifndef PURE_WASM
 
 #include "stdio.h" // FILE
+#include <unistd.h> // isatty
 
 #endif
 
@@ -362,7 +363,8 @@ public:
             source = readFile(findFile(source, parserOptions.current_dir));
         }
 #ifndef RELEASE
-        if(not options.data_mode) {// todo: e.g. c-header parser
+        if (not options.data_mode and options.debug) {
+            // todo: e.g. c-header parser
             put_chars("Parsing: ");
             println(source.data);
         }
@@ -1154,7 +1156,7 @@ private:
             Node &import_node = *new Node();
             import_node.add(*new Node("use"));
             import_node.add(*new Node(native_lib));
-            import_node.kind = groups;  // groups, not functor
+            import_node.kind = groups; // groups, not functor
             return import_node;
         }
 
@@ -1216,7 +1218,8 @@ private:
                 close = 0; // ok, we are done
                 break;
             } // todo: merge <>
-            if (closing(ch, close)) { // 1,2,3;  «;» closes «,» list
+            if (closing(ch, close)) {
+                // 1,2,3;  «;» closes «,» list
                 close = 0; // ok, we are done
                 break;
             } // inner match ok
@@ -1301,7 +1304,8 @@ private:
                         continue;
                     } // else fall through to default … expressione
                 case '%': // escape keywords for names in wit
-                    if (parserOptions.percent_names) { // and…
+                    if (parserOptions.percent_names) {
+                        // and…
                         proceed();
                         actual.add(Node(parseIdentifier())); // todo make sure not to mark as operator …
                         continue;
@@ -1383,7 +1387,6 @@ void load_parser_initialization() {
 //wasm-ld: error: wasp.o: undefined symbol: vtable for __cxxabiv1::__class_type_info
 
 
-
 Node parseFile(String filename, ParserOptions options) {
     String found = findFile(filename, options.current_dir);
     if (not found)
@@ -1459,7 +1462,6 @@ int main(int argc, char **argv) {
     String args;
     for (int i = 1; i < argc; ++i) args += i > 1 ? String(" ") + argv[i] : String(argv[i]);
     String path = argv[0];
-    print("Wasp 🐝 "s + wasp_version);
     //   String arg=extractArg(argv,argc);
 
 #if WASM
@@ -1474,6 +1476,23 @@ int main(int argc, char **argv) {
     try {
         if (argc == 1) {
             // no args, just program name
+#ifndef PURE_WASM
+            // Check if stdin is a pipe (not a terminal)
+            if (!isatty(STDIN_FILENO)) {
+                // Read from stdin and evaluate
+                String input;
+                char buffer[4096];
+                while (fgets(buffer, sizeof(buffer), stdin)) {
+                    input += buffer;
+                }
+                if (input.length > 0) {
+                    Node result = eval(input);
+                    print(result.serialize());
+                    return 0;
+                }
+            }
+#endif
+            print("Wasp 🐝 "s + wasp_version);
             usage();
             console();
             return 0;
@@ -1590,7 +1609,6 @@ int main(int argc, char **argv) {
 //}
 //#endif
 #endif
-
 
 
 static Wasp wasp_parser; // todo: why can't we use instances in wasm?
