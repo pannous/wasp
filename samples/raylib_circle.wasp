@@ -14,9 +14,8 @@ import SetTargetFPS from "raylib"
 import GetTime from "raylib"
 
 // Color constants (RGBA packed as i32, little endian: 0xAABBGGRR)
-RAYWHITE = 0xFFF5F5F5    // Light gray background
-MAROON = 0xFF2E1990      // Dark red circle
-DARKGRAY = 0xFF505050    // Dark gray text
+// NOTE: Using direct hex values due to variable assignment bug - will fix later
+// RAYWHITE = 0xFFF5F5F5, MAROON = 0xFF2E1990, DARKGRAY = 0xFF505050
 
 // Create window: 800x600 pixels
 InitWindow(800, 600, "Wasp Raylib - Circle Demo")
@@ -24,10 +23,10 @@ SetTargetFPS(60)
 
 // Draw frame and keep it visible
 BeginDrawing()
-ClearBackground(RAYWHITE)
-DrawText("Wasp Raylib FFI Demo", 250, 20, 30, DARKGRAY)
-DrawText("Press Ctrl+C to close", 260, 560, 20, DARKGRAY)
-DrawCircle(400, 300, 80.0, MAROON)
+ClearBackground(0xFFF5F5F5)  // RAYWHITE - Light gray background
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)  // DARKGRAY
+DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)  // DARKGRAY
+DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON - Dark red circle
 EndDrawing()
 
 // Busy wait delay - pure computation to keep window open
