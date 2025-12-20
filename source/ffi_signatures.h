@@ -161,14 +161,14 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
 
 // Detect function signature based on function name and library
 // Populates the provided Signature object with parameter and return types
-inline void detect_ffi_signature(const String& func_name, const String& lib_name, Signature& sig) {
+inline void detect_ffi_signature(const String& function_name, const String& library_name, Signature& sig) {
     sig.parameters.clear();
     sig.return_types.clear();
 
 #ifdef NATIVE_FFI
     // Try header-based reflection first
     Signature header_sig;
-    bool found_in_header = detect_signature_from_headers(func_name, lib_name, header_sig);
+    bool found_in_header = detect_signature_from_headers(function_name, library_name, header_sig);
     Signature hardcoded_sig; // For verification
 #endif
 
@@ -184,11 +184,11 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
     // Most signatures now come from header files via detect_signature_from_headers()
 
     // Simple library-specific defaults
-    if (lib_name.data[0] == 'm' && lib_name.length == 1) {
+    if (library_name.data[0] == 'm' && library_name.length == 1) {
         // Two-parameter math functions (common fallback)
-        if (str_eq(func_name, "pow") || str_eq(func_name, "fmod") ||
-            str_eq(func_name, "fmax") || str_eq(func_name, "fmin") ||
-            str_eq(func_name, "atan2") || str_eq(func_name, "hypot")) {
+        if (str_eq(function_name, "pow") || str_eq(function_name, "fmod") ||
+            str_eq(function_name, "fmax") || str_eq(function_name, "fmin") ||
+            str_eq(function_name, "atan2") || str_eq(function_name, "hypot")) {
             add_param(float64t);
             add_param(float64t);
             sig.return_types.add(float64t);
@@ -199,15 +199,15 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
             sig.return_types.add(float64t);
         }
     }
-    else if (lib_name.data[0] == 'c' && lib_name.length == 1) {
+    else if (library_name.data[0] == 'c' && library_name.length == 1) {
         // Common string functions that take char* parameter
-        if (str_eq(func_name, "strlen") || str_eq(func_name, "atoi") ||
-            str_eq(func_name, "atof") || str_eq(func_name, "atol")) {
+        if (str_eq(function_name, "strlen") || str_eq(function_name, "atoi") ||
+            str_eq(function_name, "atof") || str_eq(function_name, "atol")) {
             add_param(charp);
-            sig.return_types.add(str_eq(func_name, "atof") ? float64t : int32t);
+            sig.return_types.add(str_eq(function_name, "atof") ? float64t : int32t);
         }
         // String comparison functions (two char* params)
-        else if (str_eq(func_name, "strcmp") || str_eq(func_name, "strcoll")) {
+        else if (str_eq(function_name, "strcmp") || str_eq(function_name, "strcoll")) {
             add_param(charp);
             add_param(charp);
             sig.return_types.add(int32t);
@@ -218,39 +218,39 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
             sig.return_types.add(int32t);
         }
     }
-    else if (str_eq(lib_name, "SDL2")) {
+    else if (str_eq(library_name, "SDL2")) {
         // Minimal SDL fallback signatures (header parsing should handle most)
-        if (str_eq(func_name, "SDL_Init")) {
+        if (str_eq(function_name, "SDL_Init")) {
             add_param(int32t); sig.return_types.add(int32t);
         }
-        else if (str_eq(func_name, "SDL_Quit")) {
+        else if (str_eq(function_name, "SDL_Quit")) {
             // void
         }
-        else if (str_eq(func_name, "SDL_GetTicks")) {
+        else if (str_eq(function_name, "SDL_GetTicks")) {
             sig.return_types.add(int32t);
         }
-        else if (str_eq(func_name, "SDL_CreateWindow")) {
+        else if (str_eq(function_name, "SDL_CreateWindow")) {
             add_param(charp); add_param(int32t); add_param(int32t);
             add_param(int32t); add_param(int32t); add_param(int32t);
             sig.return_types.add(i64);
         }
-        else if (str_eq(func_name, "SDL_CreateRenderer")) {
+        else if (str_eq(function_name, "SDL_CreateRenderer")) {
             add_param(i64); add_param(int32t); add_param(int32t);
             sig.return_types.add(i64);
         }
-        else if (str_eq(func_name, "SDL_DestroyWindow") || str_eq(func_name, "SDL_DestroyRenderer") ||
-                 str_eq(func_name, "SDL_RenderPresent")) {
+        else if (str_eq(function_name, "SDL_DestroyWindow") || str_eq(function_name, "SDL_DestroyRenderer") ||
+                 str_eq(function_name, "SDL_RenderPresent")) {
             add_param(i64); // void return
         }
-        else if (str_eq(func_name, "SDL_SetRenderDrawColor")) {
+        else if (str_eq(function_name, "SDL_SetRenderDrawColor")) {
             add_param(i64); add_param(int32t); add_param(int32t);
             add_param(int32t); add_param(int32t);
             sig.return_types.add(int32t);
         }
-        else if (str_eq(func_name, "SDL_RenderClear")) {
+        else if (str_eq(function_name, "SDL_RenderClear")) {
             add_param(i64); sig.return_types.add(int32t);
         }
-        else if (str_eq(func_name, "SDL_Delay")) {
+        else if (str_eq(function_name, "SDL_Delay")) {
             add_param(int32t); // void return
         }
         else {
@@ -259,37 +259,37 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
             sig.return_types.add(int32t);
         }
     }
-    else if (str_eq(lib_name, "raylib")) {
+    else if (str_eq(library_name, "raylib")) {
         // Minimal raylib fallbacks
-        if (str_eq(func_name, "InitWindow")) {
+        if (str_eq(function_name, "InitWindow")) {
             add_param(int32t); add_param(int32t); add_param(charp);
         }
-        else if (str_eq(func_name, "CloseWindow") || str_eq(func_name, "BeginDrawing") ||
-                 str_eq(func_name, "EndDrawing")) {
+        else if (str_eq(function_name, "CloseWindow") || str_eq(function_name, "BeginDrawing") ||
+                 str_eq(function_name, "EndDrawing")) {
             // void -> void
         }
-        else if (str_eq(func_name, "WindowShouldClose") || str_eq(func_name, "IsWindowReady")) {
+        else if (str_eq(function_name, "WindowShouldClose") || str_eq(function_name, "IsWindowReady")) {
             sig.return_types.add(int32t);
         }
-        else if (str_eq(func_name, "SetTargetFPS") || str_eq(func_name, "ClearBackground")) {
+        else if (str_eq(function_name, "SetTargetFPS") || str_eq(function_name, "ClearBackground")) {
             add_param(int32t);
         }
-        else if (str_eq(func_name, "DrawCircle")) {
+        else if (str_eq(function_name, "DrawCircle")) {
             // void DrawCircle(int centerX, int centerY, float radius, Color color)
             add_param(int32t); add_param(int32t); add_param(float32t); add_param(int32t);
         }
-        else if (str_eq(func_name, "DrawRectangle")) {
+        else if (str_eq(function_name, "DrawRectangle")) {
             // void DrawRectangle(int posX, int posY, int width, int height, Color color)
             add_param(int32t); add_param(int32t); add_param(int32t); add_param(int32t); add_param(int32t);
         }
-        else if (str_eq(func_name, "DrawText")) {
+        else if (str_eq(function_name, "DrawText")) {
             // void DrawText(const char *text, int posX, int posY, int fontSize, Color color)
             add_param(charp); add_param(int32t); add_param(int32t); add_param(int32t); add_param(int32t);
         }
-        else if (str_eq(func_name, "GetFrameTime")) {
+        else if (str_eq(function_name, "GetFrameTime")) {
             sig.return_types.add(float32t);
         }
-        else if (str_eq(func_name, "GetTime")) {
+        else if (str_eq(function_name, "GetTime")) {
             sig.return_types.add(float64t);
         }
         else {
@@ -335,7 +335,7 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
         }
 
         if (!matches) {
-            printf("⚠️  Signature mismatch for %s from '%s':\n", func_name.data, lib_name.data);
+            printf("⚠️  Signature mismatch for %s from '%s':\n", function_name.data, library_name.data);
             printf("   Header: (");
             for (size_t i = 0; i < header_sig.parameters.size(); i++) {
                 printf("%s%s", typeName(header_sig.parameters[i].type),
