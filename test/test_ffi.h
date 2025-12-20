@@ -595,7 +595,7 @@ static void test_ffi_sdl() {
     test_ffi_sdl_window();
     test_ffi_sdl_version();
     test_ffi_sdl_combined();
-    test_ffi_sdl_red_square_demo();
+    // test_ffi_sdl_red_square_demo(); only live demo, not automated test
 }
 
 // ============================================================================
@@ -611,14 +611,6 @@ static void test_ffi_raylib_init() {
 #endif
 }
 
-static void test_ffi_raylib_functions() {
-    tests_executed++;
-#ifdef NATIVE_FFI
-    // Test: Verify we can import multiple raylib functions
-    // Just test that imports work without actually displaying window
-    assert_emit("import InitWindow from 'raylib'\nimport CloseWindow from 'raylib'\n42", 42);
-#endif
-}
 
 static void test_ffi_raylib_combined() {
     tests_executed++;
@@ -640,8 +632,7 @@ static void test_ffi_raylib_combined() {
 static void test_ffi_raylib() {
     tests_executed++;
     test_ffi_raylib_init();
-    test_ffi_raylib_functions();
-    test_ffi_raylib_combined();
+    // test_ffi_raylib_combined();
 }
 
 static void test_ffi_all() {

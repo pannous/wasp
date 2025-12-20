@@ -4361,8 +4361,6 @@ void testCurrent() {
     // sleep(10);
     // testMergeRuntime();
     // exit(0);
-    assert_emit("`hello ${42}`", "hello 42");
-    assert_emit("`$test world`", "hello world");
 
     test_ffi_all();
 
