@@ -6,6 +6,7 @@
 #include <cstring>
 
 #ifdef NATIVE_FFI
+#include "ffi_inspector.h"         // Dynamic signature inspection via dlsym
 #include "ffi_header_parser.h"
 #include "ffi_library_headers.h"
 #include <fstream>
@@ -143,7 +144,13 @@ inline void detect_ffi_signature(const String& function_name, const String& libr
     sig.return_types.clear();
 
 #ifdef NATIVE_FFI
-    // Try header-based reflection first
+    // Strategy 1: Dynamic inspection via dlsym (BEST - uses actual library!)
+    if (inspect_ffi_signature(library_name, function_name, sig)) {
+        trace("FFI signature detected via dynamic inspection: "s + function_name + " from " + library_name);
+        return;  // Success! No need for other methods
+    }
+
+    // Strategy 2: Header-based reflection
     Signature header_sig;
     bool found_in_header = detect_signature_from_headers(function_name, library_name, header_sig);
     Signature hardcoded_sig; // For verification
