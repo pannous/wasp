@@ -1,17 +1,16 @@
-// Raylib FFI Demo - Animated graphics with multiple shapes
-// This example creates a window and displays animated circles and rectangles
+// Raylib FFI Demo - Multiple shapes display
+// This example creates a window and displays colorful shapes
+// Note: Displays a static frame (animation requires while loop enhancement)
 
 // Import raylib functions
 import InitWindow from "raylib"
 import CloseWindow from "raylib"
-import WindowShouldClose from "raylib"
 import BeginDrawing from "raylib"
 import EndDrawing from "raylib"
 import ClearBackground from "raylib"
 import DrawCircle from "raylib"
 import DrawRectangle from "raylib"
 import DrawText from "raylib"
-import SetTargetFPS from "raylib"
 
 // Color constants (RGBA packed as i32, little endian format: 0xAABBGGRR)
 RAYWHITE = 0xFFF5F5F5    // Light gray background
@@ -25,51 +24,31 @@ DARKGRAY = 0xFF505050    // Dark gray
 // Initialize window
 WIDTH = 800
 HEIGHT = 600
-InitWindow(WIDTH, HEIGHT, "Wasp Raylib Demo - Animated Shapes")
+InitWindow(WIDTH, HEIGHT, "Wasp Raylib Demo - Multiple Shapes")
 
-// Set target frames per second
-SetTargetFPS(60)
+// Draw a single frame with multiple shapes
+BeginDrawing()
+ClearBackground(RAYWHITE)
 
-// Main animation loop
-frame = 0
-while WindowShouldClose() == 0 do {
-    BeginDrawing()
+// Title text
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, DARKGRAY)
+DrawText("Close window to exit", 270, 560, 20, DARKGRAY)
 
-    // Clear background
-    ClearBackground(RAYWHITE)
+// Center circle
+DrawCircle(400, 300, 40.0, MAROON)
 
-    // Draw title text
-    DrawText("Wasp Raylib FFI Demo", 250, 20, 30, DARKGRAY)
-    DrawText("Press ESC to exit", 300, 560, 20, DARKGRAY)
+// Corner circles
+DrawCircle(100, 100, 30.0, DARKBLUE)
+DrawCircle(700, 100, 30.0, GOLD)
+DrawCircle(100, 500, 30.0, GREEN)
+DrawCircle(700, 500, 30.0, RED)
 
-    // Animated circle - moves horizontally
-    offset = frame % 600
-    cx = 100 + offset
-    DrawCircle(cx, 300, 40.0, MAROON)
+// Rectangles
+DrawRectangle(350, 250, 50, 50, GOLD)
+DrawRectangle(200, 200, 50, 30, GREEN)
+DrawRectangle(200, 350, 30, 50, RED)
 
-    // Static circles at corners
-    DrawCircle(100, 100, 30.0, DARKBLUE)
-    DrawCircle(700, 100, 30.0, GOLD)
-    DrawCircle(100, 500, 30.0, GREEN)
-    DrawCircle(700, 500, 30.0, RED)
-
-    // Pulsing rectangle at center - size changes
-    pulse_offset = (frame % 60) - 30
-    if pulse_offset < 0 then pulse_offset = -pulse_offset
-    pulse_size = 50 + pulse_offset
-    DrawRectangle(350, 250, pulse_size, pulse_size, GOLD)
-
-    // Moving rectangles
-    rect_x = 100 + (frame % 600)
-    DrawRectangle(rect_x, 200, 50, 30, GREEN)
-
-    rect_y = 100 + (frame % 400)
-    DrawRectangle(200, rect_y, 30, 50, RED)
-
-    EndDrawing()
-
-    frame = frame + 1
-}
+EndDrawing()
 
 // Clean up
 CloseWindow()
