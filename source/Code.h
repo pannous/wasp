@@ -1364,12 +1364,12 @@ public:
     Node *body = 0;
     Code *code = 0;
 
-    bool is_import = false; // not serialized in functype section, but in import section wt
-    //    bool is_declared; // has fresh Code body to emit!
     bool is_declared = false; // only those types/functions that are declared (export) or used in call
+    bool is_import = false; // not serialized in functype section, but in import section wt
+    bool is_host = false; // todo not yet used, also what's the difference to is_import, these:
+    bool is_builtin = false; // hard coded functions, tests only? todo remove
     bool is_runtime = false; // old special imports to wasm.wasm
     bool is_handled = false; // already emitted (e.g. as runtime)
-    bool is_builtin = false; // hard coded functions, tests only? todo remove
     bool is_used = false; // called imports / buildins
     bool is_polymorphic = false;
     bool is_ffi = false; // FFI import from native library
@@ -1388,6 +1388,12 @@ public:
 
     Function &import() {
         is_import = true;
+        return *this;
+    }
+
+    Function &host() {
+        is_import = true;
+        is_host = true;
         return *this;
     }
 

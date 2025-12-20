@@ -196,14 +196,8 @@ In case some inexplicable error occurs, debug wasm files with `wasm2wat --no-che
 debug wasm files with hexdump if they are illformed. compare with a minimal working wasm.
 
 ### Common Issues
-
-- Memory alignment issues in WASM - ensure proper alignment in Node allocation
-- Cross-compilation differences between native and WASM builds
-- Stack size issues in WASM can cause "memory access out of bounds" errors
-- String corruption if stack size is too low or too high
 - in @source/wasmtime_runner.cpp we used a patched wasmtime wasm-c-api to read struct properties
 - After each modification run ./wasp test And commit if it works
-- If you feel bored check for a simple todo but always check running ./wasp test before and after
 - NEVER create or modify tests in ./tests/ folder unless Explicitly instructed. Instead try to work with The existing tests or if absolutely necessary create new temporary tests in ./probes/ folder
 - use typeName() To get the name of a Kind / Type / ValueType
-
+- don't create random ./docs/ or .md files unless explicitly instructed

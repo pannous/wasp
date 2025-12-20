@@ -138,7 +138,7 @@ void preRegisterFunctions() {
     //    for (int i = 0; i < runtime.functions.size(); ++i)
     //        runtime.functions.values[i].is_used = false; // reset after last used, as libraries are shared between tests
 
-    functions["proc_exit"].import();
+    functions["proc_exit"].host();
     functions["proc_exit"].signature.add(int32t, "exit_code"); // file descriptor
     //	wasp-runtime.wasm needs to be recompiled too!
 #if WASMEDGE
@@ -146,7 +146,7 @@ void preRegisterFunctions() {
 #else
     functions["proc_exit"].module = new Module{.name="wasi_unstable"};
 #endif
-    functions["fd_write"].import();
+    functions["fd_write"].host();
     functions["fd_write"].signature.add(int32t, "fd"); // file descriptor
     functions["fd_write"].signature.add(pointer, "iovs");
     functions["fd_write"].signature.add(size32, "iovs_len");
@@ -159,75 +159,73 @@ void preRegisterFunctions() {
     functions["fd_write"].module = new Module{.name="wasi_unstable"};
 #endif
 
-    functions["printx"].import();
+    functions["printx"].host();
     functions["printx"].signature.add(externref, "extern_reference");
 
-    functions["download"].import();
+    functions["download"].host();
     functions["download"].signature.add(charp, "url").returns(charp);
     // todo alias ^^
-    functions["fetch"].import();
+    functions["fetch"].host();
     functions["fetch"].signature.add(charp, "url").returns(charp);
 
-    functions["sleep"].import();
+    functions["sleep"].host();
     functions["sleep"].signature.add(int32t, "milliseconds");
-    functions["delay_ms"].import();
-    functions["delay_ms"].signature.add(int32t, "milliseconds");
 
     // DOM functions
-    functions["getDocumentBody"].import().signature.returns(externref);
-    functions["createHtml"].import();
+    functions["getDocumentBody"].host().signature.returns(externref);
+    functions["createHtml"].host();
     functions["createHtml"].signature.add(externref, "parent").add(charp, "innerHtml").returns(externref);
-    functions["createHtmlElement"].import();
+    functions["createHtmlElement"].host();
     functions["createHtmlElement"].signature.add(externref, "parent").add(charp, "tag").add(charp, "id").returns(
         externref);
 
-    functions["addScript"].import().signature.add(charp, "js");
+    functions["addScript"].host().signature.add(charp, "js");
 
     //#if WASM // no funclets in browser (yet?)
-    //    functions["pow"].import(); PREVENTS reading from pow.wasm file!
+    //    functions["pow"].host(); PREVENTS reading from pow.wasm file!
     //    functions["pow"].signature.add(float64).add(float64).returns(float64);
 
-    functions["print"].import();
+    functions["print"].host();
     //    functions["print"].signature.add(node).returns(voids);
     functions["print"].signature.add(smarti64).returns(voids);
 
-    functions["getElementById"].import();
+    functions["getElementById"].host();
     functions["getElementById"].signature.add(charp, "id").returns(externref /*!!*/);
 
-    functions["toNode"].import();
+    functions["toNode"].host();
     functions["toNode"].signature.add(referencex, "id").returns(node);
     // todo: do all these via toNode!
-    functions["toString"].import();
+    functions["toString"].host();
     functions["toString"].signature.add(referencex, "id").returns(charp);
-    functions["toLong"].import();
+    functions["toLong"].host();
     functions["toLong"].signature.add(referencex, "id").returns(longs);
-    functions["toReal"].import();
+    functions["toReal"].host();
     functions["toReal"].signature.add(referencex, "id").returns(reals);
 
-    // functions["formatLong"].import();
+    // functions["formatLong"].host();
     // functions["formatLong"].signature.add(longs).returns(strings);
 
-    functions["concat"].import(); // todo load from runtime AGAIN 2025-06-16
+    functions["concat"].host(); // todo load from runtime AGAIN 2025-06-16
     functions["concat"].signature.add(charp).add(charp).returns(charp);
 
 
-    functions["invokeExternRef"].import();
+    functions["invokeExternRef"].host();
     // how to distinguish between functions and properties? 1. no params use getExternRefPropertyValue
     functions["invokeExternRef"].signature.add(externref).add(charp, "method").add(charp, "params").returns(smarti64);
 
     //    functions["invokeExternRef"].signature.add(externref).add(strings, "method").add(node, "params").returns(smarti64);
     //    TODO get pointer of node on stack
 
-    functions["getExternRefPropertyValue"].import(); // for consumption
+    functions["getExternRefPropertyValue"].host(); // for consumption
     functions["getExternRefPropertyValue"].signature.add(externref, "object").add(charp, "field").returns(smarti64);
     //	functions["getExternRefPropertyValue"].signature.add(externref).add(charp).returns(stringref); // ⚠️ not yet in webview!
 
-    functions["setExternRefPropertyValue"].import();
+    functions["setExternRefPropertyValue"].host();
     functions["setExternRefPropertyValue"].signature.
             add(externref, "object").add(charp, "field").add(smarti64, "value").returns(smarti64);
 
 
-    //	functions["$"].import();
+    //	functions["$"].host();
     //	functions["$"].signature.add(strings).returns(referencex);
 
     functions["puts"].builtin();
@@ -239,7 +237,7 @@ void preRegisterFunctions() {
     functions["quit"].builtin(); // no args, calls proc_exit(0)
 
     // TESTS! not useful otherwise!
-    //    functions["square"].import().signature.add(int32).returns(int32);// test only!!
+    //    functions["square"].host().signature.add(int32).returns(int32);// test only!!
 
 #if MULTI_VALUE
     functions["wasp_main"].signature.returns(i64).returns(i32);// [result, type32] transparently (no flipped stack order)
@@ -249,8 +247,8 @@ void preRegisterFunctions() {
 #endif
     // check(functions["wasp_main"].name == "wasp_main");
     // check(functions["wasp_main"].signature.return_types.size() >= 1);
-    //    functions["paint"].import().signature.returns(voids);// paint surface
-    //    functions["init_graphics"].import().signature.returns(pointer);// surface
+    //    functions["paint"].host().signature.returns(voids);// paint surface
+    //    functions["init_graphics"].host().signature.returns(pointer);// surface
 
     // BUILTINS
     //    functions["nop"].builtin(); NOT A FUNCTION! an op
