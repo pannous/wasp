@@ -253,14 +253,6 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         if (import_name == "fd_write" || import_name == "args_get" || import_name == "args_sizes_get") continue;
         // todo ALL wasi imports
 
-#ifdef NATIVE_FFI
-        // Skip FFI functions - they're handled by the FFI section below
-        // Use global functions map since FFI info isn't preserved in WASM binary
-        if (functions.has(import_name) && functions[import_name].is_ffi) {
-            continue;
-        }
-#endif
-
         Signature &signature = meta.functions[import_name].signature;
         if (import_name == "_ZdlPvm")
             signature.return_types.clear(); // todo bug from where?
@@ -275,6 +267,39 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
                 linker, "env", 3, import_name, import_name.length, own_type, cb, NULL, NULL);
             if (derr) exit_with_error("define_func failed", derr, NULL);
         }
+#ifdef NATIVE_FFI
+        // If no static mapping found, try dynamic FFI loading from common libraries
+        else {
+            // Try common libraries in order: m (math), c (libc), raylib, SDL2
+            const char* common_libs[] = {"m", "c", "raylib", "SDL2", nullptr};
+            void* ffi_func = nullptr;
+            String found_lib;
+
+            for (int i = 0; common_libs[i] != nullptr; i++) {
+                ffi_func = ffi_loader.get_function(common_libs[i], import_name);
+                if (ffi_func) {
+                    found_lib = common_libs[i];
+                    break;
+                }
+            }
+
+            if (ffi_func) {
+                // Create FFI context for dynamic wrapper
+                FFIMarshaller::FFIContext* ctx = create_ffi_context(&signature, ffi_func, import_name);
+
+                wasmtime_error_t *derr = wasmtime_linker_define_func(
+                    linker, "env", 3, import_name, import_name.length, own_type,
+                    ffi_dynamic_wrapper_wasmtime, ctx, NULL);
+
+                if (derr) {
+                    warn("Failed to link FFI function: "s + import_name);
+                    wasmtime_error_delete(derr);
+                } else {
+                    trace("Dynamically linked FFI: "s + import_name + " from " + found_lib);
+                }
+            }
+        }
+#endif
     }
 
 #ifdef NATIVE_FFI
@@ -926,8 +951,10 @@ wasm_wrap *link_import(String name) {
     if (name == "getElementById") return &wrap_getElementById;
     if (name == "wasp_main") return &hello_callback;
     if (name == "memory")
-        return 0; // not a funciton
-    error("unmapped import "s + name);
+        return 0; // not a function
+
+    // Return nullptr for unknown imports - they'll be handled by dynamic FFI if available
+    trace("No static mapping for import: "s + name + " (will try dynamic FFI)");
     return 0;
 }
 

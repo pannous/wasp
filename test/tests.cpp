@@ -4333,7 +4333,11 @@ void testWaspRuntimeModule() {
 
 void test_while_true_forever() {
     todow("test_while_true_forever");
+
     skip(
+    assert_emit("def stop():{0};while !stop() : {}", 0); // should hang forever ;)
+    assert_emit("def goo():{1};while goo() : {}", 0); // should hang forever ;)
+
     auto node = parse("1:2");
     print(node.serialize());
     check(node.serialize() == "1:2");
@@ -4375,7 +4379,7 @@ void testCurrent() {
     // sleep(10);
     // testMergeRuntime();
     // exit(0);
-
+    test_dynlib_import_emit();
     test_while_true_forever();
     test_ffi_all();
 

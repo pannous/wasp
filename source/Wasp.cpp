@@ -1146,10 +1146,10 @@ private:
         if (lib == "memory")
             return node; // todo ignore memory includes???
 
-        // Check if it's a native library (m, c, math)
+        // Check if it's a native library (m, c, math, raylib, SDL2)
         String native_lib = lib;
         if (lib == "math") native_lib = "m";
-        if (native_lib == "m" || native_lib == "c") {
+        if (native_lib == "m" || native_lib == "c" || native_lib == "raylib" || native_lib == "SDL2") {
             // Don't try to load as file, let Angle.cpp handle it during analysis
             // Create a node structure that matches import keyword pattern:
             // First child should be the keyword "use", second child is the library

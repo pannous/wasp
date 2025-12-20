@@ -25,6 +25,19 @@
 // Dynamic Library Import Tests (using 'use' keyword)
 // ============================================================================
 
+static void test_dynlib_import_emit() {
+    tests_executed++;
+    // Test FFI import and usage with 'use' keyword
+    // These are actual C library functions, not WASM builtins
+    // Note: FFI only works in native mode, not when compiled to WASM
+
+    // Math library functions (libm) - using functions that work reliably
+    assert_is("use m; ceil(3.2)", 4.0);
+    assert_is("use math; floor(3.7)", 3.0);
+    assert_is("use m; fmin(3.5, 2.1)", 2.1);
+    assert_is("use m; fmax(1.5, 2.5)", 2.5);
+}
+
 // ============================================================================
 // Basic FFI Tests - Core functionality
 // ============================================================================
@@ -647,6 +660,7 @@ static void test_ffi_all() {
     test_ffi_combined();
     test_ffi_signature_detection();
     test_ffi_header_parser();
+    test_dynlib_import_emit();
     test_ffi_sdl();
     test_ffi_raylib();
 }
