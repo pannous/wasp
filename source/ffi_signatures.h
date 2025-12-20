@@ -268,11 +268,29 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
                  str_eq(func_name, "EndDrawing")) {
             // void -> void
         }
-        else if (str_eq(func_name, "WindowShouldClose")) {
+        else if (str_eq(func_name, "WindowShouldClose") || str_eq(func_name, "IsWindowReady")) {
             sig.return_types.add(int32t);
         }
         else if (str_eq(func_name, "SetTargetFPS") || str_eq(func_name, "ClearBackground")) {
-            add_param(int32t); // void return
+            add_param(int32t);
+        }
+        else if (str_eq(func_name, "DrawCircle")) {
+            // void DrawCircle(int centerX, int centerY, float radius, Color color)
+            add_param(int32t); add_param(int32t); add_param(float32t); add_param(int32t);
+        }
+        else if (str_eq(func_name, "DrawRectangle")) {
+            // void DrawRectangle(int posX, int posY, int width, int height, Color color)
+            add_param(int32t); add_param(int32t); add_param(int32t); add_param(int32t); add_param(int32t);
+        }
+        else if (str_eq(func_name, "DrawText")) {
+            // void DrawText(const char *text, int posX, int posY, int fontSize, Color color)
+            add_param(charp); add_param(int32t); add_param(int32t); add_param(int32t); add_param(int32t);
+        }
+        else if (str_eq(func_name, "GetFrameTime")) {
+            sig.return_types.add(float32t);
+        }
+        else if (str_eq(func_name, "GetTime")) {
+            sig.return_types.add(float64t);
         }
         else {
             // Raylib default: int -> void (most drawing functions)
