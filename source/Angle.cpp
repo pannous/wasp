@@ -620,8 +620,7 @@ Node &groupWhile(Node &n, Function &context) {
     if (n.length == 1 && !n.value.data)
         error("Missing block for while statement");
 
-    // Extract condition and 'then' block
-    Node &condition = n.children[0];
+    Node& condition = (n.length == 0) ? n : n.children[0];
     Node then = (n.length > 1) ? n.children[1] : Node(); // Use explicit initialization
 
     // Handle ":", "do" grouping
@@ -635,8 +634,10 @@ Node &groupWhile(Node &n, Function &context) {
     }
 
     // Handle standalone conditions and alternative grouping cases
-    if (condition.value.data && !condition.next)
+    if (condition.value.data && !condition.next) {
         then = condition.values();
+        condition.value.data = 0; // Clear value to avoid confusion
+    }
     if (condition.kind == reference) {
         for (Node &child: n) {
             if (child.kind == groups || child.kind == objects) {
