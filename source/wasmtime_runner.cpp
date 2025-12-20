@@ -253,6 +253,16 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         if (import_name == "fd_write" || import_name == "args_get" || import_name == "args_sizes_get") continue;
         // todo ALL wasi imports
 
+#ifdef NATIVE_FFI
+        // Skip FFI functions - they're handled by the FFI section below
+        if (meta.functions.has(import_name)) {
+            Function& func = meta.functions[import_name];
+            if (func.is_ffi && !func.ffi_library.empty()) {
+                continue;  // Will be linked under correct module in FFI section
+            }
+        }
+#endif
+
         Signature &signature = meta.functions[import_name].signature;
         if (import_name == "_ZdlPvm")
             signature.return_types.clear(); // todo bug from where?
@@ -307,7 +317,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 
             void* ffi_func = ffi_loader.get_function(lib_name, func_name);
             if (ffi_func) {
-                // print("FFI LOADED: "s + func_name + " from " + lib_name);
+                trace("FFI LOADED: "s + func_name + " from " + lib_name);
                 // Use signature already detected during parsing
                 Signature& wasp_sig = func.signature;
 

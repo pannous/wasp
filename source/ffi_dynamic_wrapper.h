@@ -179,7 +179,7 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
             case FFIMarshaller::CType::String: {
                 int32_t offset = args[i].of.i32;
                 arg.str = FFIMarshaller::offset_to_c_string(wasm_memory, offset);
-                // print("  arg["s + formatLong(i) + "] str = \"" + arg.str + "\"");
+                trace("FFI: "s + ctx->function_name + " arg[" + formatLong(i) + "] str@" + formatLong(offset) + " = \"" + (arg.str ? arg.str : "(null)") + "\"");
                 break;
             }
 
