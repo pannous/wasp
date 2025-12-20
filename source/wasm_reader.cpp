@@ -213,25 +213,25 @@ void parseImportNames(Code &payload) {
     // and TYPES!
     trace("Imports:");
     for (int i = 0; (i < module->import_count) and (payload.start < payload.length); ++i) {
-        String mod = name(payload); // module - MUST be copy, not reference!
-        String name1 = name(payload); // name - MUST be copy, not reference!
-        trace("import %s"s % mod + "." + name1);
+        String library_name = name(payload); // library (e.g., "c", "m", "raylib") - MUST be copy, not reference!
+        String function_name = name(payload); // function (e.g., "strlen", "ceil") - MUST be copy, not reference!
+        trace("import %s"s % library_name + "." + function_name);
         int kind = unsignedLEB128(payload); // func, global, …
         int type = unsignedLEB128(payload); // i32 … for globals
         if (kind == 3 /*global import*/) {
             bool is_mutable = unsignedLEB128(payload);
-            Global global{i, name1, (Valtype) type,/*todo value*/0, is_mutable, true, false};
+            Global global{i, function_name, (Valtype) type,/*todo value*/0, is_mutable, true, false};
             module->globals.add(global);
             continue;
         }
         Signature &signature = module->funcTypes[type];
         int coi = module->import_count + i;
-        Function func = {.code_index = coi, .call_index = i, .name = name1, .signature = signature};
+        Function func = {.code_index = coi, .call_index = i, .name = function_name, .signature = signature};
 
         // Check if this is an FFI import from a native library module
-        if (mod != "env" && mod != "wasi_snapshot_preview1") {
+        if (library_name != "env" && library_name != "wasi_snapshot_preview1") {
             func.is_ffi = true;
-            func.ffi_library = mod;
+            func.ffi_library = library_name;
 
             // Re-detect signature from library/function name
             // (WASM loses type info like charp -> i32, so we need to restore it)
@@ -239,11 +239,11 @@ void parseImportNames(Code &payload) {
             // ⚠️  CRITICAL: Arguments MUST be (function_name, library_name) NOT (library, function)!
             // ⚠️  This has broken 3+ times. Test with strlen before committing!
             // ⚠️  See docs/ffi-strlen-bug-guide.md for details
-            detect_ffi_signature(name1, mod, func.signature);
+            detect_ffi_signature(function_name, library_name, func.signature);
         }
 
-        module->functions.add(name1, func);
-        module->import_names.add(name1);
+        module->functions.add(function_name, func);
+        module->import_names.add(function_name);
     }
     info("imports DONE");
 }
