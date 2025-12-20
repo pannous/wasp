@@ -4387,6 +4387,33 @@ Code emitNameSection() {
     return nameSection.clone();
 }
 
+// Emit FFI metadata custom section to preserve is_ffi and ffi_library info
+Code emitFFIMetaSection() {
+    Code ffi_entries;
+    int ffi_count = 0;
+
+    // Iterate over all functions and collect FFI metadata
+    for (int i = 0; i < functions.size(); i++) {
+        Function& func = functions.values[i];
+        if (func.is_ffi && !func.ffi_library.empty()) {
+            // Each entry: function_name_len + function_name + library_name_len + library_name
+            Code entry = encodeVector(Code(func.name)) + encodeVector(Code(func.ffi_library));
+            ffi_entries = ffi_entries + entry;
+            ffi_count++;
+        }
+    }
+
+    if (ffi_count == 0) {
+        return Code(); // No FFI functions, skip section
+    }
+
+    // Format: section_name + count + entries
+    const Code &ffiSectionData = encodeVector(
+        Code("wasp.ffi") + Code(ffi_count) + ffi_entries);
+
+    return createSection(custom_section, ffiSectionData);
+}
+
 //Code dataSection() {
 //	return Code();
 //}
@@ -4606,6 +4633,7 @@ Code &emit(Node &root_ast, String program) {
                 + emitDataSections()
                 //			+ linkingSection()
                 + emitNameSection()
+                + emitFFIMetaSection() // custom section with FFI metadata
                 //	              + emitDwarfSections()  // https://yurydelendik.github.io/webassembly-dwarf/
                 + emitProducers() // custom section with compiler version
                 //	              + emitTargetFeatures()
