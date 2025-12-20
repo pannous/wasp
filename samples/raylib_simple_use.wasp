@@ -2,17 +2,17 @@
 // Demonstrates using raylib graphics library via FFI
 // Note: This creates a window and displays a static circle
 
-// Import raylib functions
-#import raylib // preloads/offers ALL including:
-import InitWindow from "raylib"
-import CloseWindow from "raylib"
-import BeginDrawing from "raylib"
-import EndDrawing from "raylib"
-import ClearBackground from "raylib"
-import DrawCircle from "raylib"
-import DrawText from "raylib"
-import SetTargetFPS from "raylib"
-import GetTime from "raylib"
+import raylib
+// Above should preload/offer ALL functions including:
+#import InitWindow from "raylib"
+#import CloseWindow from "raylib"
+#import BeginDrawing from "raylib"
+#import EndDrawing from "raylib"
+#import ClearBackground from "raylib"
+#import DrawCircle from "raylib"
+#import DrawText from "raylib"
+#import SetTargetFPS from "raylib"
+#import GetTime from "raylib"
 
 // Color constants (RGBA packed as i32, little endian: 0xAABBGGRR)
 // NOTE: Using direct hex values due to variable assignment bug - will fix later

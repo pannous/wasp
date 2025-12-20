@@ -1,0 +1,8 @@
+// Test: use entire raylib library
+use raylib
+
+// Now all raylib functions should be available without individual imports
+InitWindow(800, 600, "Test")
+DrawCircle(400, 300, 50.0, 0xFF0000FF)
+CloseWindow()
+1

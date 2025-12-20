@@ -744,6 +744,7 @@ Node &analyze(Node &node, Function &function) {
         function.is_declared = true;
         functions.add(context, function); // index not known yet
     }
+
     int64 hash = node.hash();
     if (analyzed.has(hash))
         return node;
@@ -767,8 +768,8 @@ Node &analyze(Node &node, Function &function) {
             // Map common library names to native library names
             if (lib_name == "math") lib_name = "m";
 
-            // Check if it's a native library (libc="c", libm="m", etc.)
-            if (lib_name == "m" || lib_name == "c") {
+            // Check if it's a native library (libc="c", libm="m", raylib, SDL2, etc.)
+            if (lib_name == "m" || lib_name == "c" || lib_name == "raylib" || lib_name == "SDL2") {
                 extern Map<String, Module *> native_libraries;
 
                 // Get or create native library Module
