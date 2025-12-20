@@ -146,7 +146,8 @@ enum Kind /* 32 bit*/ {
     generics, // node tag or list<node>   NOT value.kind==strings !
     tags = generics, // <html>
 
-    key, // key with value
+    key, // key with value (legacy - uses value.node)
+    pair, // key-value pair using children[0]=key, children[1]=value
     fields, // key in struct / class / type / prototype / interface / record (wit) possibly WITHOUT VALUE
     // todo do we really need strict schema separation from normal 'schema' of node{kind=clazz} ?
 

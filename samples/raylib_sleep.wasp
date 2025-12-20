@@ -1,0 +1,18 @@
+use raylib
+InitWindow(800, 600, "Wasp Raylib  Circle Demo")
+SetTargetFPS(60)
+ 
+// Draw multiple frames to keep window responsive                                          
+// NOTE: Event loops with while(!WindowShouldClose()) don't work yet due to WASM compiler issue
+// Using frame loop with sleep()  keeps window responsive, no spinning cursor             
+frame = 0                                                                                  
+while(frame < 120) {  // 120 frames at 60fps = 2 seconds                                   
+    BeginDrawing()                                                                         
+    ClearBackground(0xFFF5F5F5)  // RAYWHITE  Light gray background                       
+    DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)  // DARKGRAY                 
+    DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)  // DARKGRAY               
+    DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON  Dark red circle                    
+    EndDrawing()                                                                           
+    sleep(16)  // ~60fps (16ms per frame)                                                  
+    frame = frame + 1                                                                      
+}                                                                                          
