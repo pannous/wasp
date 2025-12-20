@@ -1,0 +1,18 @@
+// Raylib FFI test - Basic initialization
+// Tests that raylib functions can be imported and called
+
+import InitWindow from "raylib"
+import CloseWindow from "raylib"
+import SetTargetFPS from "raylib"
+
+// Initialize window (headless mode should handle this gracefully)
+InitWindow(800, 600, "Wasp Raylib Test")
+
+// Set FPS
+SetTargetFPS(60)
+
+// Close immediately
+CloseWindow()
+
+// Return success
+42

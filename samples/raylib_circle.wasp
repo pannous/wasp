@@ -1,0 +1,47 @@
+// Raylib FFI Example - Draw a circle in a window
+// Demonstrates using raylib graphics library via FFI
+
+// Import raylib functions
+import InitWindow from "raylib"
+import CloseWindow from "raylib"
+import WindowShouldClose from "raylib"
+import BeginDrawing from "raylib"
+import EndDrawing from "raylib"
+import ClearBackground from "raylib"
+import DrawCircle from "raylib"
+import SetTargetFPS from "raylib"
+
+// Color constants (RGBA packed as i32)
+// Format: 0xAABBGGRR (little endian)
+RAYWHITE = 0xFFF5F5F5    // Light gray background
+MAROON = 0xFF2E1990      // Dark red circle
+
+// Create window: 800x600 pixels
+InitWindow(800, 600, "Wasp Raylib - Circle")
+
+// Set target FPS
+SetTargetFPS(60)
+
+// Main loop - draw for a few frames then close
+frame_count = 0
+max_frames = 100
+
+// WindowShouldClose returns 0 when window is open
+while WindowShouldClose() == 0 and frame_count < max_frames do {
+    BeginDrawing()
+
+    // Clear background to light gray
+    ClearBackground(RAYWHITE)
+
+    // Draw circle at center (400, 300) with radius 80
+    DrawCircle(400, 300, 80.0, MAROON)
+
+    EndDrawing()
+
+    frame_count = frame_count + 1
+}
+
+CloseWindow()
+
+// Return success
+1
