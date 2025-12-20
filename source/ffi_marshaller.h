@@ -196,6 +196,9 @@ public:
             } else if (return_type == CType::Float64) {
                 typedef double (*func_t)();
                 result.f64 = ((func_t)ctx.function_ptr)();
+            } else if (return_type == CType::Void) {
+                typedef void (*func_t)();
+                ((func_t)ctx.function_ptr)();
             }
         }
         // 1 parameter
@@ -205,6 +208,10 @@ public:
             if (p1 == CType::Int32 && return_type == CType::Int32) {
                 typedef int32_t (*func_t)(int32_t);
                 result.i32 = ((func_t)ctx.function_ptr)(args[0].i32);
+            }
+            else if (p1 == CType::Int32 && return_type == CType::Void) {
+                typedef void (*func_t)(int32_t);
+                ((func_t)ctx.function_ptr)(args[0].i32);
             }
             else if (p1 == CType::Float64 && return_type == CType::Float64) {
                 typedef double (*func_t)(double);
@@ -252,6 +259,47 @@ public:
                      return_type == CType::Int32) {
                 typedef int32_t (*func_t)(int32_t, int32_t, int32_t);
                 result.i32 = ((func_t)ctx.function_ptr)(args[0].i32, args[1].i32, args[2].i32);
+            }
+            // InitWindow(int, int, char*) -> void
+            else if (p1 == CType::Int32 && p2 == CType::Int32 && p3 == CType::String &&
+                     return_type == CType::Void) {
+                typedef void (*func_t)(int32_t, int32_t, const char*);
+                ((func_t)ctx.function_ptr)(args[0].i32, args[1].i32, args[2].str);
+            }
+        }
+        // 4 parameters
+        else if (param_count == 4) {
+            CType p1 = get_param_ctype(*ctx.signature, 0);
+            CType p2 = get_param_ctype(*ctx.signature, 1);
+            CType p3 = get_param_ctype(*ctx.signature, 2);
+            CType p4 = get_param_ctype(*ctx.signature, 3);
+
+            // DrawCircle(int, int, float, int) -> void
+            if (p1 == CType::Int32 && p2 == CType::Int32 && p3 == CType::Float32 && p4 == CType::Int32 &&
+                return_type == CType::Void) {
+                typedef void (*func_t)(int32_t, int32_t, float, int32_t);
+                ((func_t)ctx.function_ptr)(args[0].i32, args[1].i32, args[2].f32, args[3].i32);
+            }
+        }
+        // 5 parameters
+        else if (param_count == 5) {
+            CType p1 = get_param_ctype(*ctx.signature, 0);
+            CType p2 = get_param_ctype(*ctx.signature, 1);
+            CType p3 = get_param_ctype(*ctx.signature, 2);
+            CType p4 = get_param_ctype(*ctx.signature, 3);
+            CType p5 = get_param_ctype(*ctx.signature, 4);
+
+            // DrawText(char*, int, int, int, int) -> void
+            if (p1 == CType::String && p2 == CType::Int32 && p3 == CType::Int32 &&
+                p4 == CType::Int32 && p5 == CType::Int32 && return_type == CType::Void) {
+                typedef void (*func_t)(const char*, int32_t, int32_t, int32_t, int32_t);
+                ((func_t)ctx.function_ptr)(args[0].str, args[1].i32, args[2].i32, args[3].i32, args[4].i32);
+            }
+            // DrawRectangle(int, int, int, int, int) -> void
+            else if (p1 == CType::Int32 && p2 == CType::Int32 && p3 == CType::Int32 &&
+                     p4 == CType::Int32 && p5 == CType::Int32 && return_type == CType::Void) {
+                typedef void (*func_t)(int32_t, int32_t, int32_t, int32_t, int32_t);
+                ((func_t)ctx.function_ptr)(args[0].i32, args[1].i32, args[2].i32, args[3].i32, args[4].i32);
             }
         }
 

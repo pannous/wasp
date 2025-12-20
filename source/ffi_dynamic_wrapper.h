@@ -140,8 +140,6 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
         return NULL; // Or create trap
     }
 
-    // print("FFI CALL: "s + ctx->function_name + " with " + formatLong(nargs) + " args");
-
     // Get wasm memory for string conversions
     extern void *wasm_memory;  // Defined in wasmtime_runner.cpp
 
@@ -158,7 +156,6 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
             case FFIMarshaller::CType::Int32:
                 arg.i32 = args[i].of.i32;
                 arg.i32 = FFIMarshaller::to_c_int32(arg.i32);
-                // print("  arg["s + formatLong(i) + "] i32 = " + formatLong(arg.i32));
                 break;
 
             case FFIMarshaller::CType::Int64:
