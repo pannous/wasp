@@ -29,10 +29,11 @@ DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)  // DARKGRAY
 DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON - Dark red circle
 EndDrawing()
 
-// Busy wait delay - pure computation to keep window open
-// (approximately 5 seconds on most machines)
+// Keep window visible briefly
+// NOTE: Event loops with while(!WindowShouldClose()) don't work yet due to WASM compiler issue
+// Using short delay - completes quickly, no spinning wheel
 delay = 0
-while(delay < 5000000000) {
+while(delay < 10000000) {
     delay++
 }
 

@@ -167,12 +167,16 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
 
 #ifdef NATIVE_FFI
     // Try header-based reflection first
-    if (detect_signature_from_headers(func_name, lib_name, sig)) {
-        return; // Successfully detected from headers
-    }
+    Signature header_sig;
+    bool found_in_header = detect_signature_from_headers(func_name, lib_name, header_sig);
+
+    if (found_in_header) {
+        // We found it in headers - but let's verify against hardcoded for now
+        // Store header signature temporarily
+        Signature hardcoded_sig;
 #endif
 
-    // Fall back to hardcoded signature database
+    // Get hardcoded signature database for verification
     // Helper to add parameter
     auto add_param = [&](Type type) {
         Arg param;
@@ -387,4 +391,67 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
         add_param(float64t);
         sig.return_types.add(float64t);
     }
+
+#ifdef NATIVE_FFI
+    // Verification step: compare header-parsed signature with hardcoded
+    if (found_in_header) {
+        hardcoded_sig = sig; // Save the hardcoded signature
+
+        // Compare parameter counts
+        bool matches = (header_sig.parameters.length == hardcoded_sig.parameters.length);
+
+        // Compare parameter types
+        if (matches) {
+            for (int i = 0; i < header_sig.parameters.length; i++) {
+                if (header_sig.parameters[i].type != hardcoded_sig.parameters[i].type) {
+                    matches = false;
+                    break;
+                }
+            }
+        }
+
+        // Compare return types
+        if (matches) {
+            matches = (header_sig.return_types.length == hardcoded_sig.return_types.length);
+            if (matches) {
+                for (int i = 0; i < header_sig.return_types.length; i++) {
+                    if (header_sig.return_types[i] != hardcoded_sig.return_types[i]) {
+                        matches = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!matches) {
+            printf("⚠️  Signature mismatch for %s from '%s':\n", func_name.data, lib_name.data);
+            printf("   Header: (");
+            for (int i = 0; i < header_sig.parameters.length; i++) {
+                printf("%s%s", type_name(header_sig.parameters[i].type),
+                       i < header_sig.parameters.length - 1 ? ", " : "");
+            }
+            printf(") -> ");
+            if (header_sig.return_types.length > 0) {
+                printf("%s\n", type_name(header_sig.return_types[0]));
+            } else {
+                printf("void\n");
+            }
+            printf("   Hardcoded: (");
+            for (int i = 0; i < hardcoded_sig.parameters.length; i++) {
+                printf("%s%s", type_name(hardcoded_sig.parameters[i].type),
+                       i < hardcoded_sig.parameters.length - 1 ? ", " : "");
+            }
+            printf(") -> ");
+            if (hardcoded_sig.return_types.length > 0) {
+                printf("%s\n", type_name(hardcoded_sig.return_types[0]));
+            } else {
+                printf("void\n");
+            }
+        }
+
+        // Use header signature (it's more accurate)
+        sig = header_sig;
+        return;
+    }
+#endif
 }
