@@ -624,10 +624,14 @@ Node &groupWhile(Node &n, Function &context) {
     Node &condition = n.children[0];
     Node then = (n.length > 1) ? n.children[1] : Node(); // Use explicit initialization
 
-    // Handle ":" and "do" grouping
+    // Handle ":", "do" grouping
     if (n.has(":")) {
         condition = n.to(":");
         then = n.from(":");
+    }
+    if (n.has("do")) {
+        condition = n.to("do");
+        then = n.from("do");
     }
 
     // Handle standalone conditions and alternative grouping cases

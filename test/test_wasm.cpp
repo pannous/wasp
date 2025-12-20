@@ -776,6 +776,7 @@ void testWasmWhile() {
     assert_emit("i=1;while(i<9){i++};i+1", 10);
     assert_emit("i=1;while(i<9 and i > -10){i+=2;i--};i+1", 10);
     assert_emit("i=1;while(i<9)i++;i+1", 10);
+    assert_emit("i=1;while i<10 do {i++};i", 10);
     skip( // fails on 2nd attempt todo
         assert_emit("x=y=0;width=height=400;while y++<height and x++<width: nop;y", 400);
     )
