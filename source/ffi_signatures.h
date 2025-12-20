@@ -169,14 +169,10 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
     // Try header-based reflection first
     Signature header_sig;
     bool found_in_header = detect_signature_from_headers(func_name, lib_name, header_sig);
-
-    if (found_in_header) {
-        // We found it in headers - but let's verify against hardcoded for now
-        // Store header signature temporarily
-        Signature hardcoded_sig;
+    Signature hardcoded_sig; // For verification
 #endif
 
-    // Get hardcoded signature database for verification
+    // Build hardcoded signature for comparison/fallback
     // Helper to add parameter
     auto add_param = [&](Type type) {
         Arg param;
@@ -184,210 +180,107 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
         sig.parameters.add(param);
     };
 
-    // Math library functions (libm)
+    // Minimal fallback signatures (only used when header parsing unavailable)
+    // Most signatures now come from header files via detect_signature_from_headers()
+
+    // Simple library-specific defaults
     if (lib_name.data[0] == 'm' && lib_name.length == 1) {
-        // Most math functions: double -> double
-        if (str_eq(func_name, "sqrt") || str_eq(func_name, "floor") || str_eq(func_name, "ceil") ||
-            str_eq(func_name, "sin") || str_eq(func_name, "cos") || str_eq(func_name, "tan") ||
-            str_eq(func_name, "fabs") || str_eq(func_name, "log") || str_eq(func_name, "exp")) {
-            add_param(float64t);
-            sig.return_types.add(float64t);
-        }
-        // Two-parameter math functions: (double, double) -> double
-        else if (str_eq(func_name, "pow") || str_eq(func_name, "fmod") ||
-                 str_eq(func_name, "fmax") || str_eq(func_name, "fmin")) {
+        // Two-parameter math functions (common fallback)
+        if (str_eq(func_name, "pow") || str_eq(func_name, "fmod") ||
+            str_eq(func_name, "fmax") || str_eq(func_name, "fmin") ||
+            str_eq(func_name, "atan2") || str_eq(func_name, "hypot")) {
             add_param(float64t);
             add_param(float64t);
             sig.return_types.add(float64t);
         }
         else {
-            // Default: double -> double
+            // Math library: default to double -> double
             add_param(float64t);
             sig.return_types.add(float64t);
         }
     }
-    // C library functions (libc)
     else if (lib_name.data[0] == 'c' && lib_name.length == 1) {
-        if (str_eq(func_name, "abs")) {
-            // int abs(int)
-            add_param(int32t);
-            sig.return_types.add(int32t);
+        // Common string functions that take char* parameter
+        if (str_eq(func_name, "strlen") || str_eq(func_name, "atoi") ||
+            str_eq(func_name, "atof") || str_eq(func_name, "atol")) {
+            add_param(charp);
+            sig.return_types.add(str_eq(func_name, "atof") ? float64t : int32t);
         }
+        // String comparison functions (two char* params)
         else if (str_eq(func_name, "strcmp") || str_eq(func_name, "strcoll")) {
-            // int strcmp(const char*, const char*)
             add_param(charp);
             add_param(charp);
-            sig.return_types.add(int32t);
-        }
-        else if (str_eq(func_name, "strlen")) {
-            // size_t strlen(const char*)
-            add_param(charp);
-            sig.return_types.add(int32t);
-        }
-        else if (str_eq(func_name, "atoi")) {
-            // int atoi(const char*)
-            add_param(charp);
-            sig.return_types.add(int32t);
-        }
-        else if (str_eq(func_name, "atof") || str_eq(func_name, "strtod")) {
-            // double atof(const char*)
-            add_param(charp);
-            sig.return_types.add(float64t);
-        }
-        else if (str_eq(func_name, "rand")) {
-            // int rand(void)
             sig.return_types.add(int32t);
         }
         else {
-            // Default: int -> int
+            // C library: default to int -> int
             add_param(int32t);
             sig.return_types.add(int32t);
         }
     }
-    // SDL2 library functions
     else if (str_eq(lib_name, "SDL2")) {
+        // Minimal SDL fallback signatures (header parsing should handle most)
         if (str_eq(func_name, "SDL_Init")) {
-            // int SDL_Init(Uint32 flags)
-            add_param(int32t);
-            sig.return_types.add(int32t);
+            add_param(int32t); sig.return_types.add(int32t);
         }
         else if (str_eq(func_name, "SDL_Quit")) {
-            // void SDL_Quit(void) - no return value, leave return_types empty
-        }
-        else if (str_eq(func_name, "SDL_CreateWindow")) {
-            // SDL_Window* SDL_CreateWindow(const char* title, int x, int y, int w, int h, Uint32 flags)
-            add_param(charp);     // title
-            add_param(int32t);    // x
-            add_param(int32t);    // y
-            add_param(int32t);    // w
-            add_param(int32t);    // h
-            add_param(int32t);    // flags
-            sig.return_types.add(i64); // window pointer
-        }
-        else if (str_eq(func_name, "SDL_DestroyWindow")) {
-            // void SDL_DestroyWindow(SDL_Window* window) - no return value
-            add_param(i64); // window pointer
+            // void
         }
         else if (str_eq(func_name, "SDL_GetTicks")) {
-            // Uint32 SDL_GetTicks(void)
             sig.return_types.add(int32t);
         }
-        else if (str_eq(func_name, "SDL_GetError")) {
-            // const char* SDL_GetError(void)
-            sig.return_types.add(charp);
+        else if (str_eq(func_name, "SDL_CreateWindow")) {
+            add_param(charp); add_param(int32t); add_param(int32t);
+            add_param(int32t); add_param(int32t); add_param(int32t);
+            sig.return_types.add(i64);
         }
-        // Hardcoded SDL rendering functions (multi-line parser needs work)
         else if (str_eq(func_name, "SDL_CreateRenderer")) {
-            // SDL_Renderer* SDL_CreateRenderer(SDL_Window* window, int index, Uint32 flags)
-            add_param(i64);    // window
-            add_param(int32t); // index
-            add_param(int32t); // flags
-            sig.return_types.add(i64); // renderer
+            add_param(i64); add_param(int32t); add_param(int32t);
+            sig.return_types.add(i64);
         }
-        else if (str_eq(func_name, "SDL_DestroyRenderer")) {
-            // void SDL_DestroyRenderer(SDL_Renderer* renderer)
-            add_param(i64);
+        else if (str_eq(func_name, "SDL_DestroyWindow") || str_eq(func_name, "SDL_DestroyRenderer") ||
+                 str_eq(func_name, "SDL_RenderPresent")) {
+            add_param(i64); // void return
         }
         else if (str_eq(func_name, "SDL_SetRenderDrawColor")) {
-            // int SDL_SetRenderDrawColor(SDL_Renderer* renderer, Uint8 r, Uint8 g, Uint8 b, Uint8 a)
-            add_param(i64);    // renderer
-            add_param(int32t); // r
-            add_param(int32t); // g
-            add_param(int32t); // b
-            add_param(int32t); // a
+            add_param(i64); add_param(int32t); add_param(int32t);
+            add_param(int32t); add_param(int32t);
             sig.return_types.add(int32t);
         }
         else if (str_eq(func_name, "SDL_RenderClear")) {
-            // int SDL_RenderClear(SDL_Renderer* renderer)
-            add_param(i64);
-            sig.return_types.add(int32t);
+            add_param(i64); sig.return_types.add(int32t);
         }
-        else if (str_eq(func_name, "SDL_RenderPresent")) {
-            // void SDL_RenderPresent(SDL_Renderer* renderer)
-            add_param(i64);
-        }
-        else if (str_eq(func_name, "SDL_RenderFillRect")) {
-            // int SDL_RenderFillRect(SDL_Renderer* renderer, const SDL_Rect* rect)
-            add_param(i64); // renderer
-            add_param(i64); // rect (can be NULL)
-            sig.return_types.add(int32t);
+        else if (str_eq(func_name, "SDL_Delay")) {
+            add_param(int32t); // void return
         }
         else {
-            // All other SDL functions: try header reflection, fallback to int->int
+            // SDL default
             add_param(int32t);
             sig.return_types.add(int32t);
         }
     }
-    // Raylib library functions
     else if (str_eq(lib_name, "raylib")) {
+        // Minimal raylib fallbacks
         if (str_eq(func_name, "InitWindow")) {
-            // void InitWindow(int width, int height, const char* title)
-            add_param(int32t);  // width
-            add_param(int32t);  // height
-            add_param(charp);   // title
+            add_param(int32t); add_param(int32t); add_param(charp);
         }
-        else if (str_eq(func_name, "CloseWindow")) {
-            // void CloseWindow(void)
+        else if (str_eq(func_name, "CloseWindow") || str_eq(func_name, "BeginDrawing") ||
+                 str_eq(func_name, "EndDrawing")) {
+            // void -> void
         }
         else if (str_eq(func_name, "WindowShouldClose")) {
-            // bool WindowShouldClose(void)
             sig.return_types.add(int32t);
         }
-        else if (str_eq(func_name, "IsWindowReady")) {
-            // bool IsWindowReady(void)
-            sig.return_types.add(int32t);
-        }
-        else if (str_eq(func_name, "BeginDrawing")) {
-            // void BeginDrawing(void)
-        }
-        else if (str_eq(func_name, "EndDrawing")) {
-            // void EndDrawing(void)
-        }
-        else if (str_eq(func_name, "ClearBackground")) {
-            // void ClearBackground(Color color) - Color is RGBA as 4 bytes packed in i32
-            add_param(int32t);
-        }
-        else if (str_eq(func_name, "DrawCircle")) {
-            // void DrawCircle(int centerX, int centerY, float radius, Color color)
-            add_param(int32t);   // centerX
-            add_param(int32t);   // centerY
-            add_param(float32t); // radius
-            add_param(int32t);   // color (RGBA packed)
-        }
-        else if (str_eq(func_name, "DrawRectangle")) {
-            // void DrawRectangle(int posX, int posY, int width, int height, Color color)
-            add_param(int32t);  // posX
-            add_param(int32t);  // posY
-            add_param(int32t);  // width
-            add_param(int32t);  // height
-            add_param(int32t);  // color
-        }
-        else if (str_eq(func_name, "DrawText")) {
-            // void DrawText(const char* text, int posX, int posY, int fontSize, Color color)
-            add_param(charp);   // text
-            add_param(int32t);  // posX
-            add_param(int32t);  // posY
-            add_param(int32t);  // fontSize
-            add_param(int32t);  // color
-        }
-        else if (str_eq(func_name, "SetTargetFPS")) {
-            // void SetTargetFPS(int fps)
-            add_param(int32t);
-        }
-        else if (str_eq(func_name, "GetFrameTime")) {
-            // float GetFrameTime(void)
-            sig.return_types.add(float32t);
-        }
-        else if (str_eq(func_name, "GetTime")) {
-            // double GetTime(void)
-            sig.return_types.add(float64t);
+        else if (str_eq(func_name, "SetTargetFPS") || str_eq(func_name, "ClearBackground")) {
+            add_param(int32t); // void return
         }
         else {
-            // Default raylib function: void -> void
+            // Raylib default: int -> void (most drawing functions)
+            add_param(int32t);
         }
     }
     else {
-        // Unknown library - default to double -> double
+        // Unknown library: default to double -> double
         add_param(float64t);
         sig.return_types.add(float64t);
     }
@@ -395,14 +288,14 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
 #ifdef NATIVE_FFI
     // Verification step: compare header-parsed signature with hardcoded
     if (found_in_header) {
-        hardcoded_sig = sig; // Save the hardcoded signature
+        hardcoded_sig = sig; // Save the hardcoded signature we just built
 
         // Compare parameter counts
-        bool matches = (header_sig.parameters.length == hardcoded_sig.parameters.length);
+        bool matches = (header_sig.parameters.size() == hardcoded_sig.parameters.size());
 
         // Compare parameter types
         if (matches) {
-            for (int i = 0; i < header_sig.parameters.length; i++) {
+            for (size_t i = 0; i < header_sig.parameters.size(); i++) {
                 if (header_sig.parameters[i].type != hardcoded_sig.parameters[i].type) {
                     matches = false;
                     break;
@@ -412,9 +305,9 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
 
         // Compare return types
         if (matches) {
-            matches = (header_sig.return_types.length == hardcoded_sig.return_types.length);
+            matches = (header_sig.return_types.size() == hardcoded_sig.return_types.size());
             if (matches) {
-                for (int i = 0; i < header_sig.return_types.length; i++) {
+                for (size_t i = 0; i < header_sig.return_types.size(); i++) {
                     if (header_sig.return_types[i] != hardcoded_sig.return_types[i]) {
                         matches = false;
                         break;
@@ -426,24 +319,24 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
         if (!matches) {
             printf("⚠️  Signature mismatch for %s from '%s':\n", func_name.data, lib_name.data);
             printf("   Header: (");
-            for (int i = 0; i < header_sig.parameters.length; i++) {
-                printf("%s%s", type_name(header_sig.parameters[i].type),
-                       i < header_sig.parameters.length - 1 ? ", " : "");
+            for (size_t i = 0; i < header_sig.parameters.size(); i++) {
+                printf("%s%s", typeName(header_sig.parameters[i].type),
+                       i < header_sig.parameters.size() - 1 ? ", " : "");
             }
             printf(") -> ");
-            if (header_sig.return_types.length > 0) {
-                printf("%s\n", type_name(header_sig.return_types[0]));
+            if (header_sig.return_types.size() > 0) {
+                printf("%s\n", typeName(header_sig.return_types[0]));
             } else {
                 printf("void\n");
             }
             printf("   Hardcoded: (");
-            for (int i = 0; i < hardcoded_sig.parameters.length; i++) {
-                printf("%s%s", type_name(hardcoded_sig.parameters[i].type),
-                       i < hardcoded_sig.parameters.length - 1 ? ", " : "");
+            for (size_t i = 0; i < hardcoded_sig.parameters.size(); i++) {
+                printf("%s%s", typeName(hardcoded_sig.parameters[i].type),
+                       i < hardcoded_sig.parameters.size() - 1 ? ", " : "");
             }
             printf(") -> ");
-            if (hardcoded_sig.return_types.length > 0) {
-                printf("%s\n", type_name(hardcoded_sig.return_types[0]));
+            if (hardcoded_sig.return_types.size() > 0) {
+                printf("%s\n", typeName(hardcoded_sig.return_types[0]));
             } else {
                 printf("void\n");
             }
