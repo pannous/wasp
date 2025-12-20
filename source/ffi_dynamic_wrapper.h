@@ -136,7 +136,6 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
     FFIMarshaller::FFIContext* ctx = (FFIMarshaller::FFIContext*)env;
 
     if (!ctx || !ctx->function_ptr || !ctx->signature) {
-        print("FFI ERROR: Invalid context for function call");
         return NULL; // Or create trap
     }
 
@@ -179,7 +178,6 @@ static wasm_trap_t* ffi_dynamic_wrapper_wasmtime(
             case FFIMarshaller::CType::String: {
                 int32_t offset = args[i].of.i32;
                 arg.str = FFIMarshaller::offset_to_c_string(wasm_memory, offset);
-                trace("FFI: "s + ctx->function_name + " arg[" + formatLong(i) + "] str@" + formatLong(offset) + " = \"" + (arg.str ? arg.str : "(null)") + "\"");
                 break;
             }
 
