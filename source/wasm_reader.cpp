@@ -376,6 +376,29 @@ void consumeDataCountSection() {
     if (debug_reader)printf("data count: %d \n", module->data_count);
 }
 
+void consumeFFIMetaSection(Code &payload) {
+    int ffi_count = unsignedLEB128(payload);
+    if (debug_reader) printf("FFI metadata: %d functions\n", ffi_count);
+
+    for (int i = 0; i < ffi_count; i++) {
+        // Read function name
+        Code func_name_vec = vec(payload);
+        String func_name((chars)func_name_vec.data, func_name_vec.length);
+
+        // Read library name
+        Code lib_name_vec = vec(payload);
+        String lib_name((chars)lib_name_vec.data, lib_name_vec.length);
+
+        // Find and update the function metadata
+        if (module->functions.has(func_name)) {
+            Function& func = module->functions[func_name];
+            func.is_ffi = true;
+            func.ffi_library = lib_name;
+            if (debug_reader) printf("  FFI: %s from %s\n", func_name.data, lib_name.data);
+        }
+    }
+}
+
 void consumeCustomSection() {
     Code customSectionDatas = vec();
     String type = name(customSectionDatas);
@@ -385,6 +408,8 @@ void consumeCustomSection() {
     //    trace("custom section length: %d\n", payload.length);
     if (type == "names" or type == "name") {
         consumeNameSection(payload);
+    } else if (type == "wasp.ffi") {
+        consumeFFIMetaSection(payload);
     } else if (type == "target_features")
     //	https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md#target-features-section
     // 	atomics bulk-memory exception-handling multivalue mutable-globals nontrapping-fpoint sign-ext simd128 tail-call
