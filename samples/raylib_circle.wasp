@@ -32,7 +32,7 @@ EndDrawing()
 // Busy wait delay - pure computation to keep window open
 // (approximately 5 seconds on most machines)
 delay = 0
-while(delay < 500000000) {
+while(delay < 5000000000) {
     delay++
 }
 

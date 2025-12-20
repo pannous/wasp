@@ -329,6 +329,10 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
             // bool WindowShouldClose(void)
             sig.return_types.add(int32t);
         }
+        else if (str_eq(func_name, "IsWindowReady")) {
+            // bool IsWindowReady(void)
+            sig.return_types.add(int32t);
+        }
         else if (str_eq(func_name, "BeginDrawing")) {
             // void BeginDrawing(void)
         }

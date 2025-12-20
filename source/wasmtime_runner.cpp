@@ -72,6 +72,15 @@ static inline void set_result_null_externref(wasmtime_val_t *out) {
 void init_wasmtime() {
     if (initialized) return; // Prevent re-initialization
 
+#ifdef NATIVE_FFI
+    // Preload raylib BEFORE wasmtime initialization (wasmtime breaks GLFW/graphics)
+    static bool raylib_preloaded = false;
+    if (!raylib_preloaded) {
+        raylib_preloaded = true;
+        dlopen("/opt/homebrew/lib/libraylib.dylib", RTLD_LAZY | RTLD_GLOBAL);
+    }
+#endif
+
     // Create config and enable GC proposal
     wasm_config_t *config = wasm_config_new();
     wasmtime_config_wasm_gc_set(config, true);
