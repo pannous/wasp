@@ -25,6 +25,16 @@ static inline bool str_eq(const String& s, const char* literal) {
 // Try to detect signature from C header files
 inline bool detect_signature_from_headers(const String& func_name, const String& lib_name, Signature& sig) {
     // Common header file locations - check specific headers first
+    // todo find headers BY NAME:
+    /*
+    e.g. 
+    import raylib =>
+    search raylib.h in:
+    /usr/include/
+    /usr/local/include/
+    /opt/homebrew/include/
+    …
+*/
     const char* header_paths[] = {
         "/opt/homebrew/include/SDL2/SDL_events.h",
         "/usr/local/include/SDL2/SDL_events.h",
@@ -38,6 +48,9 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
         "/opt/homebrew/include/SDL2/SDL.h",
         "/usr/local/include/SDL2/SDL.h",
         "/usr/include/SDL2/SDL.h",
+        "/opt/homebrew/include/raylib.h",
+        "/usr/local/include/raylib.h",
+        "/usr/include/raylib.h",
         "/usr/include/math.h",
         "/usr/include/stdlib.h",
         "/usr/include/string.h",
@@ -299,6 +312,70 @@ inline void detect_ffi_signature(const String& func_name, const String& lib_name
             // All other SDL functions: try header reflection, fallback to int->int
             add_param(int32t);
             sig.return_types.add(int32t);
+        }
+    }
+    // Raylib library functions
+    else if (str_eq(lib_name, "raylib")) {
+        if (str_eq(func_name, "InitWindow")) {
+            // void InitWindow(int width, int height, const char* title)
+            add_param(int32t);  // width
+            add_param(int32t);  // height
+            add_param(charp);   // title
+        }
+        else if (str_eq(func_name, "CloseWindow")) {
+            // void CloseWindow(void)
+        }
+        else if (str_eq(func_name, "WindowShouldClose")) {
+            // bool WindowShouldClose(void)
+            sig.return_types.add(int32t);
+        }
+        else if (str_eq(func_name, "BeginDrawing")) {
+            // void BeginDrawing(void)
+        }
+        else if (str_eq(func_name, "EndDrawing")) {
+            // void EndDrawing(void)
+        }
+        else if (str_eq(func_name, "ClearBackground")) {
+            // void ClearBackground(Color color) - Color is RGBA as 4 bytes packed in i32
+            add_param(int32t);
+        }
+        else if (str_eq(func_name, "DrawCircle")) {
+            // void DrawCircle(int centerX, int centerY, float radius, Color color)
+            add_param(int32t);   // centerX
+            add_param(int32t);   // centerY
+            add_param(float32t); // radius
+            add_param(int32t);   // color (RGBA packed)
+        }
+        else if (str_eq(func_name, "DrawRectangle")) {
+            // void DrawRectangle(int posX, int posY, int width, int height, Color color)
+            add_param(int32t);  // posX
+            add_param(int32t);  // posY
+            add_param(int32t);  // width
+            add_param(int32t);  // height
+            add_param(int32t);  // color
+        }
+        else if (str_eq(func_name, "DrawText")) {
+            // void DrawText(const char* text, int posX, int posY, int fontSize, Color color)
+            add_param(charp);   // text
+            add_param(int32t);  // posX
+            add_param(int32t);  // posY
+            add_param(int32t);  // fontSize
+            add_param(int32t);  // color
+        }
+        else if (str_eq(func_name, "SetTargetFPS")) {
+            // void SetTargetFPS(int fps)
+            add_param(int32t);
+        }
+        else if (str_eq(func_name, "GetFrameTime")) {
+            // float GetFrameTime(void)
+            sig.return_types.add(float32t);
+        }
+        else if (str_eq(func_name, "GetTime")) {
+            // double GetTime(void)
+            sig.return_types.add(float64t);
+        }
+        else {
+            // Default raylib function: void -> void
         }
     }
     else {

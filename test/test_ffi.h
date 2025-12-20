@@ -598,6 +598,52 @@ static void test_ffi_sdl() {
     test_ffi_sdl_red_square_demo();
 }
 
+// ============================================================================
+// Raylib Graphics FFI Tests
+// ============================================================================
+
+static void test_ffi_raylib_init() {
+#ifdef NATIVE_FFI
+    tests_executed++;
+    // Test: Basic raylib initialization and cleanup
+    // InitWindow creates a window, CloseWindow cleans up
+    assert_emit("test/wasp/ffi/raylib/raylib_init.wasp", 42);
+#endif
+}
+
+static void test_ffi_raylib_functions() {
+    tests_executed++;
+#ifdef NATIVE_FFI
+    // Test: Verify we can import multiple raylib functions
+    // Just test that imports work without actually displaying window
+    assert_emit("import InitWindow from 'raylib'\nimport CloseWindow from 'raylib'\n42", 42);
+#endif
+}
+
+static void test_ffi_raylib_combined() {
+    tests_executed++;
+#ifdef NATIVE_FFI
+    // Test: Multiple raylib imports in one program
+    assert_emit(
+        "import InitWindow from 'raylib'\n"
+        "import SetTargetFPS from 'raylib'\n"
+        "import CloseWindow from 'raylib'\n"
+        "InitWindow(800, 600, \"Test\")\n"
+        "SetTargetFPS(60)\n"
+        "CloseWindow()\n"
+        "100",
+        100
+    );
+#endif
+}
+
+static void test_ffi_raylib() {
+    tests_executed++;
+    test_ffi_raylib_init();
+    test_ffi_raylib_functions();
+    test_ffi_raylib_combined();
+}
+
 static void test_ffi_all() {
     tests_executed++;
     // Main comprehensive test function that runs all FFI tests
@@ -611,4 +657,5 @@ static void test_ffi_all() {
     test_ffi_signature_detection();
     test_ffi_header_parser();
     test_ffi_sdl();
+    test_ffi_raylib();
 }
