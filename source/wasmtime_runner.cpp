@@ -674,6 +674,12 @@ wrap(delay_ms) {
     return NULL;
 }
 
+wrap(sleep) {
+    int ms = args[0].of.i32;
+    usleep(ms * 1000);  // Convert milliseconds to microseconds
+    return NULL;
+}
+
 wrap(getenv) {
     auto env_var = (char *) wasm_memory + args[0].of.i32;
     const char *value = std::getenv(env_var);
@@ -850,6 +856,7 @@ wasm_wrap *link_import(String name) {
     if (name == "_Z7consolev") return &wrap_nop;
     if (name == "getenv") return &wrap_getenv;
     if (name == "delay_ms") return &wrap_delay_ms;
+    if (name == "sleep") return &wrap_sleep;  // Universal sleep function (milliseconds)
     // fprintf is variadic and FILE*-based; until proper WASI/stdio plumbing exists,
     // route it to the simple string printer to avoid unmapped import crashes.
     if (name == "fprintf") return &wrap_puts; // TODO: implement proper WASI-backed fprintf

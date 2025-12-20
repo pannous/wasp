@@ -168,6 +168,11 @@ void preRegisterFunctions() {
     functions["fetch"].import();
     functions["fetch"].signature.add(charp, "url").returns(charp);
 
+    functions["sleep"].import();
+    functions["sleep"].signature.add(int32t, "milliseconds");
+    functions["delay_ms"].import();
+    functions["delay_ms"].signature.add(int32t, "milliseconds");
+
     // DOM functions
     functions["getDocumentBody"].import().signature.returns(externref);
     functions["createHtml"].import();
