@@ -21,18 +21,40 @@ import GetTime from "raylib"
 InitWindow(800, 600, "Wasp Raylib - Circle Demo")
 SetTargetFPS(60)
 
-// Draw frame and keep it visible
+// Draw a few frames to keep window responsive (no spinning cursor)
+// NOTE: Full event loops with while(!WindowShouldClose()) don't work yet due to WASM compiler issue
+// Simple approach: draw a few frames with small delays between them
 BeginDrawing()
-ClearBackground(0xFFF5F5F5)  // RAYWHITE - Light gray background
+ClearBackground(0xFFF5F5F5)  // RAYWHITE
 DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)  // DARKGRAY
 DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)  // DARKGRAY
-DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON - Dark red circle
+DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON
 EndDrawing()
+sleep(500)
 
-// Keep window visible briefly
-// NOTE: Event loops with while(!WindowShouldClose()) don't work yet due to WASM compiler issue
-// Using sleep() - universal built-in function, no import needed
-sleep(2000)  // Sleep for 2 seconds (milliseconds)
+BeginDrawing()
+ClearBackground(0xFFF5F5F5)
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)
+DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)
+DrawCircle(400, 300, 80.0, 0xFF2E1990)
+EndDrawing()
+sleep(500)
+
+BeginDrawing()
+ClearBackground(0xFFF5F5F5)
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)
+DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)
+DrawCircle(400, 300, 80.0, 0xFF2E1990)
+EndDrawing()
+sleep(500)
+
+BeginDrawing()
+ClearBackground(0xFFF5F5F5)
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)
+DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)
+DrawCircle(400, 300, 80.0, 0xFF2E1990)
+EndDrawing()
+sleep(500)
 
 // Clean up
 CloseWindow()
