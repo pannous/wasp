@@ -1,0 +1,58 @@
+// Raylib FFI Demo - Multiple shapes display
+// This example creates a window and displays colorful shapes
+// Note: Displays a static frame (animation requires while loop enhancement)
+
+// Import raylib functions
+import InitWindow from "raylib"
+import CloseWindow from "raylib"
+import BeginDrawing from "raylib"
+import EndDrawing from "raylib"
+import ClearBackground from "raylib"
+import DrawCircle from "raylib"
+import DrawRectangle from "raylib"
+import DrawText from "raylib"
+
+// Color constants (RGBA packed as i32, little endian format: 0xAABBGGRR)
+// NOTE: Using direct hex values due to variable assignment bug - will fix later
+// RAYWHITE=0xFFF5F5F5, MAROON=0xFF2E1990, DARKBLUE=0xFF8B4513,
+// GOLD=0xFF00D7FF, GREEN=0xFF00C853, RED=0xFF0000FF, DARKGRAY=0xFF505050
+
+// Initialize window
+WIDTH = 800
+HEIGHT = 600
+InitWindow(WIDTH, HEIGHT, "Wasp Raylib Demo - Multiple Shapes")
+
+// Draw a frame with multiple shapes
+BeginDrawing()
+ClearBackground(0xFFF5F5F5)  // RAYWHITE
+
+// Title text
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)  // DARKGRAY
+DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)  // DARKGRAY
+
+// Center circle
+DrawCircle(400, 300, 40.0, 0xFF2E1990)  // MAROON
+
+// Corner circles
+DrawCircle(100, 100, 30.0, 0xFF8B4513)  // DARKBLUE
+DrawCircle(700, 100, 30.0, 0xFF00D7FF)  // GOLD
+DrawCircle(100, 500, 30.0, 0xFF00C853)  // GREEN
+DrawCircle(700, 500, 30.0, 0xFF0000FF)  // RED
+
+// Rectangles
+DrawRectangle(350, 250, 50, 50, 0xFF00D7FF)  // GOLD
+DrawRectangle(200, 200, 50, 30, 0xFF00C853)  // GREEN
+DrawRectangle(200, 350, 30, 50, 0xFF0000FF)  // RED
+
+EndDrawing()
+
+// Busy wait delay to keep window visible
+delay = 0
+while(delay < 500000000) {
+    delay++
+}
+
+// Clean up
+CloseWindow()
+
+1

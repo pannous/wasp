@@ -1,0 +1,31 @@
+// Raylib FFI Example - Simple static circle
+// Demonstrates basic raylib graphics without animation
+
+import InitWindow from "raylib"
+import CloseWindow from "raylib"
+import BeginDrawing from "raylib"
+import EndDrawing from "raylib"
+import ClearBackground from "raylib"
+import DrawCircle from "raylib"
+import DrawText from "raylib"
+
+// Color constants (RGBA packed as i32, little endian: 0xAABBGGRR)
+// NOTE: Using direct hex values due to variable assignment bug - will fix later
+// RAYWHITE = 0xFFF5F5F5, MAROON = 0xFF2E1990, DARKGRAY = 0xFF505050
+
+// Create window
+InitWindow(800, 600, "Wasp Raylib - Simple Circle")
+
+// Draw a single frame
+BeginDrawing()
+ClearBackground(0xFFF5F5F5)  // RAYWHITE
+DrawText("Wasp Raylib Demo", 280, 20, 30, 0xFF505050)  // DARKGRAY
+DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)  // DARKGRAY
+DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON
+EndDrawing()
+
+delay = 0                                                                                   
+while(delay < 5000000000) {                                                                  
+    delay++                                                                                 
+}  
+delay
