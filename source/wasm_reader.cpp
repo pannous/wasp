@@ -235,7 +235,10 @@ void parseImportNames(Code &payload) {
 
             // Re-detect signature from library/function name
             // (WASM loses type info like charp -> i32, so we need to restore it)
-            // CRITICAL: detect_ffi_signature takes (func_name, lib_name) not (lib_name, func_name)!
+
+            // ⚠️  CRITICAL: Arguments MUST be (function_name, library_name) NOT (library, function)!
+            // ⚠️  This has broken 3+ times. Test with strlen before committing!
+            // ⚠️  See docs/ffi-strlen-bug-guide.md for details
             detect_ffi_signature(name1, mod, func.signature);
         }
 
