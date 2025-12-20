@@ -1142,6 +1142,7 @@ Node &Node::setName(chars name0) {
 
 // extract value from this (remove name to avoid emit-setter )
 Node &Node::values() {
+    if (kind == pair && length >= 2) return children[1];  // NEW: pair uses children
     if (kind == key)return *value.node;
     if (kind == longs)return *new Node(value.longy);
     if (kind == reals)return *new Node(value.real);

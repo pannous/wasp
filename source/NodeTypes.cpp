@@ -108,6 +108,7 @@ Type mapType(Node &arg) {
         case generics:
         case linked_list:
         case key:
+        case pair:
         case fields:
         case symbol:
         case operators:

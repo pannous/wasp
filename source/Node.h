@@ -494,11 +494,20 @@ public:
             return *value.node; // todo sure??, could be direct type!?
         if (kind == operators && next != nullptr)
             return *next; // todo remove hack
+        if (kind == pair && length >= 2)
+            return children[1];  // For pair nodes, first() returns the value
         if (kind == key && value.node != nullptr)
             return *value.node;
         return *this; // (x)==x   danger: loops
         //		error("No such element");
         //		return ERROR;
+    }
+
+    // For pair nodes, return the key (children[0])
+    Node &keys() {
+        if (kind == pair && length >= 1)
+            return children[0];
+        return *this;
     }
 
     //	if you do not declare a copy constructor, the compiler gives you one implicitly.
