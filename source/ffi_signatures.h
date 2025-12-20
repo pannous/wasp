@@ -7,6 +7,7 @@
 
 #ifdef NATIVE_FFI
 #include "ffi_header_parser.h"
+#include "ffi_library_headers.h"
 #include <fstream>
 #include <sys/stat.h>
 #endif
@@ -24,46 +25,22 @@ static inline bool str_eq(const String& s, const char* literal) {
 #ifdef NATIVE_FFI
 // Try to detect signature from C header files
 inline bool detect_signature_from_headers(const String& func_name, const String& lib_name, Signature& sig) {
-    // Common header file locations - check specific headers first
-    // todo find headers BY NAME:
-    /*
-    e.g. 
-    import raylib =>
-    search raylib.h in:
-    /usr/include/
-    /usr/local/include/
-    /opt/homebrew/include/
-    …
-*/
-    const char* header_paths[] = {
-        "/opt/homebrew/include/SDL2/SDL_events.h",
-        "/usr/local/include/SDL2/SDL_events.h",
-        "/usr/include/SDL2/SDL_events.h",
-        "/opt/homebrew/include/SDL2/SDL_render.h",
-        "/usr/local/include/SDL2/SDL_render.h",
-        "/usr/include/SDL2/SDL_render.h",
-        "/opt/homebrew/include/SDL2/SDL_timer.h",
-        "/usr/local/include/SDL2/SDL_timer.h",
-        "/usr/include/SDL2/SDL_timer.h",
-        "/opt/homebrew/include/SDL2/SDL.h",
-        "/usr/local/include/SDL2/SDL.h",
-        "/usr/include/SDL2/SDL.h",
-        "/opt/homebrew/include/raylib.h",
-        "/usr/local/include/raylib.h",
-        "/usr/include/raylib.h",
-        "/usr/include/math.h",
-        "/usr/include/stdlib.h",
-        "/usr/include/string.h",
-        nullptr
-    };
+    // Get header files for this library from the mapping
+    List<String>* header_paths = get_library_headers(lib_name);
 
-    // Try to find and read relevant header file based on library name
-    String header_content;
-    for (int i = 0; header_paths[i] != nullptr; i++) {
+    if (!header_paths) {
+        // No known headers for this library
+        return false;
+    }
+
+    // Try each header file for this library
+    for (int i = 0; i < header_paths->size(); i++) {
+        const char* header_path = (*header_paths)[i].data;
+
         struct stat buffer;
-        if (stat(header_paths[i], &buffer) == 0) {
+        if (stat(header_path, &buffer) == 0) {
             // Header file exists, try to read it
-            std::ifstream file(header_paths[i]);
+            std::ifstream file(header_path);
             if (file.is_open()) {
                 std::string line;
                 std::string accumulated;
