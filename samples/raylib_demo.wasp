@@ -26,13 +26,13 @@ WIDTH = 800
 HEIGHT = 600
 InitWindow(WIDTH, HEIGHT, "Wasp Raylib Demo - Multiple Shapes")
 
-// Draw a single frame with multiple shapes
+// Draw a frame with multiple shapes
 BeginDrawing()
 ClearBackground(RAYWHITE)
 
 // Title text
 DrawText("Wasp Raylib FFI Demo", 250, 20, 30, DARKGRAY)
-DrawText("Close window to exit", 270, 560, 20, DARKGRAY)
+DrawText("Press Ctrl+C to close", 260, 560, 20, DARKGRAY)
 
 // Center circle
 DrawCircle(400, 300, 40.0, MAROON)
@@ -49,6 +49,12 @@ DrawRectangle(200, 200, 50, 30, GREEN)
 DrawRectangle(200, 350, 30, 50, RED)
 
 EndDrawing()
+
+// Busy wait delay to keep window visible
+delay = 0
+while(delay < 500000000) {
+    delay++
+}
 
 // Clean up
 CloseWindow()
