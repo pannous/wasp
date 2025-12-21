@@ -95,11 +95,10 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
                         }
 
                         String decl = clean_line.c_str();
-                        Node& parsed = parse(decl, { .data_mode = true });
 
                         FFIHeaderSignature ffi_sig;
                         ffi_sig.library = lib_name;
-                        if (extractFunctionSignature(parsed, ffi_sig) &&
+                        if (extractFunctionSignatureFromString(decl, ffi_sig) &&
                             str_eq(ffi_sig.name, func_name.data)) {
                             // Successfully extracted signature!
                             sig.parameters.clear();

@@ -10,6 +10,7 @@
 // Parse C header files and extract FFI function signatures
 // Uses Wasp's own parser to understand C function declarations
 
+// todo GET RID and use Signature
 struct FFIHeaderSignature {
     String name;
     String return_type;
@@ -55,90 +56,150 @@ inline String formatParamList(const List<String>& params) {
     return result;
 }
 
-// Generate FFI signature line for ffi_signatures.h
+// Generate DEBUG FFI signature line for ffi_signatures.h
 inline String generateFFISignatureLine(const FFIHeaderSignature& sig) {
     Type ret = mapCTypeToWasp(sig.return_type);
     String params = formatParamList(sig.param_types);
-
     return "    ADD_FFI_SIG(\""s + sig.name + "\", \"" + sig.library + "\", " +
            typeName(ret) + ", {" + params + "})";
 }
 
-// Extract function signature from parsed Node
-// Handles patterns like: double sqrt(double x) and int strlen(char* str)
-inline bool extractFunctionSignature(Node& node, FFIHeaderSignature& sig) {
-    // Pattern 1: "double sqrt(double x)" parses as:
-    //   group[reference("double"), group("sqrt", [reference("double"), reference("x")])]
-    // Pattern 2: "int strlen(char* str)" parses as:
-    //   group[reference("int"), operator("strlen"), group([expression[char, *, str]])]
+// Extract function signature directly from C declaration string
+// REPLACES AST-based parsing which was fragile and failed on "double ceil(double)"
+// Handles: double ceil(double), float ceilf(float), int strlen(const char* str), etc.
+inline bool extractFunctionSignatureFromString(const String& decl, FFIHeaderSignature& sig) {
+    const char* s = decl.data;
+    int len = decl.length;
+    if (len == 0) return false;
 
-    if (node.length < 2) return false;
-
-    // First child is always return type
-    Node& return_type_node = node.first();
-    if (return_type_node.name.empty()) return false;
-
-    String ret_type = return_type_node.name;
-    if (ret_type != "double" and ret_type != "float" and
-        ret_type != "int" and ret_type != "long" and
-        ret_type != "void" and not ret_type.contains("char")) {
-        return false; // Not a function declaration
+    // Find opening paren
+    int paren_start = -1;
+    for (int i = 0; i < len; i++) {
+        if (s[i] == '(') { paren_start = i; break; }
     }
-    sig.return_type = ret_type;
+    if (paren_start == -1) return false;
 
-    // Determine which pattern we have
-    if (node.length == 2) {
-        // Pattern 1: function is in second child with parameters as children
-        Node& func = node[1];
-        sig.name = func.name;
-        if (sig.name.empty()) return false;
+    // Find closing paren
+    int paren_end = -1;
+    for (int i = paren_start + 1; i < len; i++) {
+        if (s[i] == ')') { paren_end = i; break; }
+    }
+    if (paren_end == -1) return false;
 
-        // Extract parameters from func children
-        for (int i = 0; i < func.length; i++) {
-            Node& param = func[i];
-            String ptype;
-            if (param.kind == groups && param.length > 0) {
-                ptype = param.first().name;
-            } else if (i % 2 == 0) {
-                ptype = param.name;
-            } else {
-                continue; // Skip param names
-            }
-            if (not ptype.empty()) sig.param_types.add(ptype);
-        }
-    } else if (node.length == 3) {
-        // Pattern 2: function name is second child, params are in third child group
-        sig.name = node[1].name;
-        if (sig.name.empty()) return false;
+    // Extract function name (work backwards from '(' skipping whitespace)
+    int name_end = paren_start - 1;
+    while (name_end >= 0 && (s[name_end] == ' ' || s[name_end] == '\t')) name_end--;
+    if (name_end < 0) return false;
 
-        Node& param_group = node[2];
-        if (param_group.length > 0 && param_group[0].length > 0) {
-            Node& param_expr = param_group[0]; // expression like [char, *, str]
+    int name_start = name_end;
+    while (name_start > 0 && (
+        (s[name_start-1] >= 'a' && s[name_start-1] <= 'z') ||
+        (s[name_start-1] >= 'A' && s[name_start-1] <= 'Z') ||
+        (s[name_start-1] >= '0' && s[name_start-1] <= '9') ||
+        s[name_start-1] == '_')) {
+        name_start--;
+    }
 
-            // Build parameter type from expression tokens
-            String ptype;
-            for (int i = 0; i < param_expr.length; i++) {
-                String token = param_expr[i].name;
-                if (token == "*") {
-                    ptype += "*";
-                } else if (token != "str" and token != "x" and token != "y") {
-                    // It's a type name (char, int, double, etc.)
-                    if (not ptype.empty()) {
-                        sig.param_types.add(ptype);
-                        ptype = "";
+    sig.name = String((char*)(s + name_start), name_end - name_start + 1, false);
+
+    // Extract return type (everything before function name, trimmed)
+    int ret_end = name_start - 1;
+    while (ret_end >= 0 && (s[ret_end] == ' ' || s[ret_end] == '\t')) ret_end--;
+    if (ret_end < 0) return false;
+
+    int ret_start = 0;
+    while (ret_start <= ret_end && (s[ret_start] == ' ' || s[ret_start] == '\t')) ret_start++;
+
+    sig.return_type = String((char*)(s + ret_start), ret_end - ret_start + 1, false);
+
+    // Parse parameters
+    int params_start = paren_start + 1;
+    int params_len = paren_end - params_start;
+
+    // Skip if empty or just whitespace/void
+    if (params_len > 0) {
+        const char* params = s + params_start;
+
+        // Split by commas
+        int tok_start = 0;
+        for (int i = 0; i <= params_len; i++) {
+            if (i == params_len || params[i] == ',') {
+                int tok_len = i - tok_start;
+
+                // Trim whitespace
+                const char* tok = params + tok_start;
+                while (tok_len > 0 && (*tok == ' ' || *tok == '\t')) { tok++; tok_len--; }
+                while (tok_len > 0 && (tok[tok_len-1] == ' ' || tok[tok_len-1] == '\t')) tok_len--;
+
+                if (tok_len > 0) {
+                    String param_full((char*)tok, tok_len, false);
+
+                    // Skip "void"
+                    if (param_full == "void") {
+                        tok_start = i + 1;
+                        continue;
                     }
-                    ptype = token;
+
+                    // Remove "const " prefix
+                    String param_clean = param_full;
+                    if (param_full.length > 6 && param_full.data[0] == 'c' &&
+                        param_full.data[1] == 'o' && param_full.data[2] == 'n' &&
+                        param_full.data[3] == 's' && param_full.data[4] == 't' &&
+                        param_full.data[5] == ' ') {
+                        param_clean = String((char*)(param_full.data + 6), param_full.length - 6, false);
+
+                        // Trim again
+                        const char* pc = param_clean.data;
+                        int pc_len = param_clean.length;
+                        while (pc_len > 0 && (*pc == ' ' || *pc == '\t')) { pc++; pc_len--; }
+                        param_clean = String((char*)pc, pc_len, false);
+                    }
+
+                    // Extract type (handle "char*", "double", "int foo", "char* bar", etc.)
+                    String param_type;
+                    bool has_star = false;
+                    int last_star = -1;
+
+                    for (int j = 0; j < param_clean.length; j++) {
+                        if (param_clean.data[j] == '*') {
+                            has_star = true;
+                            last_star = j;
+                        }
+                    }
+
+                    if (has_star) {
+                        // Include type + pointer: "char*"
+                        param_type = String(param_clean.data, last_star + 1, false);
+                    } else {
+                        // No pointer - extract first word (the type)
+                        int word_end = 0;
+                        while (word_end < param_clean.length &&
+                               param_clean.data[word_end] != ' ' &&
+                               param_clean.data[word_end] != '\t') {
+                            word_end++;
+                        }
+                        param_type = String(param_clean.data, word_end, false);
+                    }
+
+                    if (param_type.length > 0) {
+                        sig.param_types.add(param_type);
+                    }
                 }
-            }
-            if (not ptype.empty()) {
-                sig.param_types.add(ptype);
+
+                tok_start = i + 1;
             }
         }
-    } else {
-        return false; // Unknown pattern
     }
 
     return true;
+}
+
+// OLD AST-based extraction - DEPRECATED, kept for reference
+inline bool extractFunctionSignature(Node& node, FFIHeaderSignature& sig) {
+    // AST parsing was too fragile - failed on "double ceil(double)" vs "float ceilf(float)"
+    // Now we just convert the node back to string and use string parsing
+    // TODO: Remove this once all callers use extractFunctionSignatureFromString
+    return false;
 }
 
 // Parse a C header file and extract all function signatures
