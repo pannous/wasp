@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 use netbase
 load wikidata
 results = query "all cities with population > 100000"

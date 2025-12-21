@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 combine float with float = float#1 + float#2
 combine int with int = $0 * $1
 

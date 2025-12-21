@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 // Wasp Language Sample
 a + b * 2.0
 

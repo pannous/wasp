@@ -54,6 +54,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))
         return use_required_import(&functions[name]); // prevents read_wasm("lib")
+    if (name.length > 0 && is_operator(name[0], false))  return 0; // skip operators
 #if WASM // todo: why only in wasm?
     Module &wasp = loadRuntime();
     if (wasp.functions.has(name)) {
@@ -62,44 +63,9 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         return use_required_import(&wasp.functions[name]);
     }
 #endif
-
-    // Check if a native library has been loaded for this function (before trying funclets)
-    #ifdef NATIVE_FFI
-    // Skip operators - they should not be imported as FFI functions
-    extern bool is_operator(codepoint ch, bool check_identifiers);
-    if (name.length > 0 && is_operator(name[0], false)) {
-        // Operators like +, -, *, / should not be treated as FFI imports
-        goto skip_native_ffi_1;
-    }
-    extern List<Module *> libraries;
-    for (Module *library: libraries) {
-        if (library->is_native_library) {
-            // Check if function already exists in this library
-            if (library->functions.has(name)) {
-                return use_required_import(&library->functions[name]);
-            }
-            // Try to dynamically import it
-            extern Map<String, Module *> native_libraries;
-            String lib_name = library->name;
-            Function &func = functions[name];
-            func.name = name;
-            func.is_import = true;
-            func.is_ffi = true;
-            func.ffi_library = lib_name;
-            func.is_used = true;
-            func.module = library;
-            detect_ffi_signature(name, lib_name, func.signature);
-            if (!library->functions.has(name)) {
-                library->functions.add(name, func);
-                library->export_names.add(name);
-            }
-            trace("Dynamically imported FFI function: "s + name + " from " + lib_name);
-            return use_required_import(&func);
-        }
-    }
-    skip_native_ffi_1:
-    #endif
-
+    for (Module *library: libraries)
+        if (library->functions.has(name))
+            return use_required_import(&library->functions[name]);
     if (contains(funclet_list, name.data)) {
 #if WASM and not MY_WASM
         //				todo("getWaspFunclet get library function signature from wasp");
@@ -122,59 +88,11 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         libraries.add(&loadRuntime());
     // libraries.add(&loadModule("wasp-runtime.wasm")); // on demand
 
-
-    //	if(functions.has(name))return &functions[name]; // ⚠️ returning import with different wasm_index than in Module!
-    // todo in WASM
-    for (Module *library: libraries) {
-        //} module_cache.valueList()) {
-        // todo : multiple signatures! concat(bytes, chars, …) eq(…)
-        int position = library->functions.position(name);
-        if (position >= 0) {
-            Function &func = library->functions.values[position];
-            return use_required_import(&func);
-        }
-
-        // Check if this is a native library that's been loaded via `use m` or `use c`
-        if (library->is_native_library) {
-            // Skip operators - they should not be imported as FFI functions
-            if (name.length > 0 && is_operator(name[0], false)) {
-                continue; // Skip this library, try next one
-            }
-            // Try to dynamically import the function from the native library
-            #ifdef NATIVE_FFI
-            extern Map<String, Module *> native_libraries;
-            String lib_name = library->name;
-
-            // Create FFI import for this function
-            Function &func = functions[name];
-            func.name = name;
-            func.is_import = true;
-            func.is_ffi = true;
-            func.ffi_library = lib_name;
-            func.is_used = true;
-            func.module = library;
-
-            // Detect and set function signature
-            detect_ffi_signature(name, lib_name, func.signature);
-
-            // Also add to native library module's functions map (if not already present)
-            if (!library->functions.has(name)) {
-                library->functions.add(name, func);
-                library->export_names.add(name);
-            }
-
-            trace("Dynamically imported FFI function: "s + name + " from " + lib_name);
-            return use_required_import(&func);
-            #endif
-        }
-    }
     Function *function = 0;
-    if (searchAliases) {
-        for (String alias: findAliases(name)) {
+    if (searchAliases)
+        for (String alias: findAliases(name))
             function = findLibraryFunction(alias, false);
-            //			use_required(function); // no, NOT required yet
-        }
-    }
+        //			use_required(function); // no, NOT required yet
     auto normed = normOperator(name);
     if (normed == name)
         return use_required_import(function);
@@ -522,6 +440,8 @@ void use_runtime(const char *function) {
 }
 
 
+bool is_native_library(const String & name);
+
 Module &loadModule(String name) {
     if (name == "wasp-runtime.wasm")
         return loadRuntime();
@@ -529,6 +449,10 @@ Module &loadModule(String name) {
     todow("loadModule in WASM: "s + name);
     return *new Module();
 #else // getWasmFunclet
+    if(is_native_library(name)) {
+        return *loadNativeLibrary(name);
+    }
+
     return read_wasm(name); // we need to read signatures!
 #endif
 }

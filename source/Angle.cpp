@@ -101,7 +101,6 @@ Node eval(String code) {
 }
 
 
-
 // if a then b else c == a and b or c
 // (a op c) => op(a c)
 // further right means higher prescedence/binding, gets grouped first
@@ -183,15 +182,12 @@ Node &groupIf(Node n, Function &context) {
 }
 
 
-
 bool maybeVariable(Node &node) {
     if (node.kind != reference and node.kind != key and !node.isSetter())
         return false;
     if (node.kind == strings)return false;
     return /*node.parent == 0 and*/ not node.name.empty() and node.name[0] >= 'A'; // todo;
 }
-
-
 
 
 Node &constructInstance(Node &node, Function &function);
@@ -332,7 +328,6 @@ Node &groupGlobal(Node &node, Function &function) {
 }
 
 
-
 Node &classDeclaration(Node &node, Function &function);
 
 Node &classDeclaration(Node &node, Function &function) {
@@ -348,7 +343,7 @@ Node &classDeclaration(Node &node, Function &function) {
     // If type already exists (from collectStructDeclarations), just return the existing one
     if (types.has(name)) {
         tracef("  Type '%s' already in types map (from collectStructDeclarations), returning existing\n",
-                          name.data);
+               name.data);
         return *types[name];
     }
 
@@ -390,16 +385,9 @@ Node &classDeclaration(Node &node, Function &function) {
 }
 
 
-
-
-
 // def foo(x,y) => x+y  vs  groupFunctionDeclaration foo := x+y
 
 // f x:=x*x  vs groupFunctionDefinition fun x := x*x
-
-
-
-
 
 
 // outer analysis 3 + 3  ≠ inner analysis +(3,3)
@@ -479,13 +467,10 @@ Type preEvaluateType(Node &node, Function *context0) {
 }
 
 
-
 // todo merge with groupFunctionCalls
 
 
 // todo merge with groupOperatorCall
-
-
 
 
 Node &groupForClassic2(Node &node, Function &context) {
@@ -620,7 +605,7 @@ Node &groupWhile(Node &n, Function &context) {
     if (n.length == 1 && !n.value.data)
         error("Missing block for while statement");
 
-    Node& condition = (n.length == 0) ? n : n.children[0];
+    Node &condition = (n.length == 0) ? n : n.children[0];
     Node then = (n.length > 1) ? n.children[1] : Node(); // Use explicit initialization
 
     // Handle ":", "do" grouping
@@ -702,7 +687,7 @@ void handleNativeImport(Node &node) {
     String lib_name = lib_node.length > 0 ? lib_node.first().name : lib_node.values().name;
 
     // Get or create native library Module
-    extern Map<String, Module *> native_libraries;  // Defined in Context.cpp
+    extern Map<String, Module *> native_libraries; // Defined in Context.cpp
     Module *lib_module;
     if (!native_libraries.has(lib_name)) {
         lib_module = new Module();
@@ -757,43 +742,13 @@ Node &analyze(Node &node, Function &function) {
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
     if (name.in(import_keywords) || firstName.in(import_keywords)) {
-        if(node.has("function") and node.has("library")) {
+        if (node.has("function") and node.has("library")) {
             handleNativeImport(node);
             return NUL;
         }
-
-        // Handle `use <library>` for native libraries (e.g., use math, use m)
-        if (node.length > 0) {
-            String lib_name = node.last().name;
-            // Map common library names to native library names
-            if (lib_name == "math") lib_name = "m";
-
-            // Check if it's a native library (libc="c", libm="m", raylib, SDL2, etc.)
-            if (lib_name == "m" || lib_name == "c" || lib_name == "raylib" || lib_name == "SDL2") {
-                extern Map<String, Module *> native_libraries;
-
-                // Get or create native library Module
-                Module *lib_module;
-                if (!native_libraries.has(lib_name)) {
-                    lib_module = new Module();
-                    lib_module->name = lib_name;
-                    lib_module->is_native_library = true;
-                    native_libraries.add(lib_name, lib_module);
-                } else {
-                    lib_module = native_libraries[lib_name];
-                }
-
-                // Mark library as used so its functions are available
-                extern List<Module *> libraries;
-                if (!libraries.has(lib_module)) {
-                    libraries.add(lib_module);
-                }
-
-                trace("Loaded native library: "s + lib_name);
-                return NUL;
-            }
-        }
-        //else todo ("move other import here")
+        String lib_name = node.last().name;
+        auto module0 = loadModule(lib_name);
+        return NUL;
     }
 
     if (name == "html") {
@@ -829,7 +784,6 @@ Node &analyze(Node &node, Function &function) {
     if ((type == expression and not name.empty() and not name.contains("-")))
         addLocal(function, name, int32t, false); //  todo deep type analysis x = π * fun() % 4
     if (type == key) {
-
         if (node.value.node /* i=ø has no node */) {
             Node &analyzed = analyze(*node.value.node, function);
             // Preserve struct constructor type information through cloning
@@ -933,21 +887,18 @@ Node &analyze(Node &node, Function &function) {
 }
 
 
-
-
 extern "C" int64 run_wasm_file(chars file) {
 #if RUNTIME_ONLY
     error("RUNTIME_ONLY");
     return -1;
 #else
     String found = String(file);
-    if(found.endsWith(".wat") or found.endsWith(".wast") )
+    if (found.endsWith(".wat") or found.endsWith(".wast"))
         found = compileWast(file);
     let buffer = load(found);
     return run_wasm((bytes) buffer.data, buffer.length);
 #endif
 }
-
 
 
 // emit via library merge

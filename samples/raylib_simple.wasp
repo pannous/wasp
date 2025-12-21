@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 // Raylib FFI Example - Simple static circle
 // Demonstrates basic raylib graphics without animation
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 // SDL2 Red Square Demo - Pure FFI, no compile-time dependencies
 // Run with: ./wasp samples/sdl_red_square.wasp
 

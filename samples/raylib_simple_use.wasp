@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 // Raylib FFI Example - Draw a circle in a window
 // Demonstrates using raylib graphics library via FFI
 // Note: This creates a window and displays a static circle

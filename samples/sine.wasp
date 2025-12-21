@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 real sin(real x){
   	if(x<0) return -sin(-x)
     # magical taylor constants

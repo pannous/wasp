@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 html{
   body{
     form{

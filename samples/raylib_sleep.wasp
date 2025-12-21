@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 use raylib
 InitWindow(800, 600, "Wasp Raylib  Circle Demo")
 SetTargetFPS(60)

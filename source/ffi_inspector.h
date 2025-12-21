@@ -4,6 +4,9 @@
 #include "Code.h"  // For Signature
 #include <dlfcn.h>
 
+#include "ffi_header_parser.h"
+#include "ffi_library_headers.h"
+
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 #include <mach-o/nlist.h>
@@ -14,18 +17,20 @@
 
 struct LibraryHandle {
     String name;
-    void* handle;
+    void *handle;
 };
 
 // Map library short names to their actual dynamic library paths
-inline const char* get_library_path(const String& library_name) {
+inline const char *get_library_path(const String &library_name) {
+    // todo just check common paths for lib{name}.so / .dylib !
 #ifdef __APPLE__
     // macOS .dylib paths
     if (library_name == "c") return "/usr/lib/libc.dylib";
     if (library_name == "m") return "/usr/lib/libm.dylib";
     if (library_name == "pthread") return "/usr/lib/libpthread.dylib";
     if (library_name == "SDL2") return "/opt/homebrew/lib/libSDL2.dylib";
-    if (library_name == "raylib") return "/opt/homebrew/lib/libraylib.dylib";
+    if (library_name == "raylib")
+        return "/opt/homebrew/lib/libraylib.dylib";
 #elif __linux__
     // Linux .so paths
     if (library_name == "c") return "libc.so.6";
@@ -45,12 +50,13 @@ inline const char* get_library_path(const String& library_name) {
     return buffer;
 }
 
-// Load a library and get its handle
-inline void* load_library(const String& library_name) {
-    const char* path = get_library_path(library_name);
+// Load a library and get its handle, competes with .wasm libraries
+inline void *find_native_library(const String &library_name) {
+    const char *path = get_library_path(library_name);
 
     // Try multiple loading strategies
-    void* handle = dlopen(path, RTLD_LAZY | RTLD_GLOBAL);
+    void *handle = dlopen(path, RTLD_LAZY | RTLD_GLOBAL);
+    if (handle) return handle;
 
     if (!handle) {
         // Try without path (search LD_LIBRARY_PATH)
@@ -63,23 +69,24 @@ inline void* load_library(const String& library_name) {
         handle = dlopen(lib_pattern, RTLD_LAZY | RTLD_GLOBAL);
     }
 
+    if (handle) return handle;
     if (!handle) {
         // Last resort: try just the library name
         handle = dlopen(library_name.data, RTLD_LAZY | RTLD_GLOBAL);
     }
-
     return handle;
 }
 
+
 // Get function pointer from library
-inline void* get_function_pointer(const String& library_name, const String& function_name) {
-    void* lib_handle = load_library(library_name);
+inline void *get_function_pointer(const String &library_name, const String &function_name) {
+    void *lib_handle = find_native_library(library_name);
     if (!lib_handle) {
         warn("Failed to load library: "s + library_name + " - " + dlerror());
         return nullptr;
     }
 
-    void* func_ptr = dlsym(lib_handle, function_name.data);
+    void *func_ptr = dlsym(lib_handle, function_name.data);
     if (!func_ptr) {
         trace("Failed to find function "s + function_name + " in " + library_name + ": " + dlerror());
         return nullptr;
@@ -91,8 +98,8 @@ inline void* get_function_pointer(const String& library_name, const String& func
 
 // Inspect function signature dynamically
 // This is the KEY function that eliminates hardcoded signatures!
-inline bool inspect_ffi_signature(const String& library_name, const String& function_name, Signature& sig) {
-    void* func_ptr = get_function_pointer(library_name, function_name);
+inline bool inspect_ffi_signature(const String &library_name, const String &function_name, Signature &sig) {
+    void *func_ptr = get_function_pointer(library_name, function_name);
     if (!func_ptr) {
         return false;
     }
@@ -119,9 +126,9 @@ inline bool inspect_ffi_signature(const String& library_name, const String& func
             sig.parameters.add(param);
 
             if (function_name == "strlen") {
-                sig.return_types.add(int32t);  // size_t → int32
+                sig.return_types.add(int32t); // size_t → int32
             } else {
-                sig.return_types.add(charp);   // char* → char*
+                sig.return_types.add(charp); // char* → char*
             }
             return true;
         }
@@ -175,7 +182,7 @@ inline bool inspect_ffi_signature(const String& library_name, const String& func
 }
 
 // Check if a module name indicates an FFI import
-inline bool is_ffi_module(const String& module_name) {
+inline bool is_ffi_module(const String &module_name) {
     // Strategy 1: Prefix detection "ffi:m" or "ffi:c"
     if (module_name.length > 4 &&
         module_name.data[0] == 'f' &&
@@ -199,7 +206,7 @@ inline bool is_ffi_module(const String& module_name) {
     }
 
     // Strategy 4: Try to load it as a library
-    void* handle = load_library(module_name);
+    void *handle = find_native_library(module_name);
     if (handle) {
         dlclose(handle);
         return true;
@@ -209,7 +216,7 @@ inline bool is_ffi_module(const String& module_name) {
 }
 
 // Extract library name from module name (handles "ffi:m" → "m")
-inline String extract_library_name(const String& module_name) {
+inline String extract_library_name(const String &module_name) {
     if (module_name.length > 4 &&
         module_name.data[0] == 'f' &&
         module_name.data[1] == 'f' &&
@@ -219,7 +226,7 @@ inline String extract_library_name(const String& module_name) {
         return String(module_name.data + 4, module_name.length - 4, false);
     }
 
-    return module_name;  // Already just the library name
+    return module_name; // Already just the library name
 }
 
 #ifdef __APPLE__
@@ -228,7 +235,8 @@ inline String extract_library_name(const String& module_name) {
 #include <mach-o/loader.h>
 
 // Enumerate all exported functions from a loaded library on macOS
-inline void enumerate_library_functions_macos(void* handle, Map<String, Function>& functions, const String& library_name) {
+inline void enumerate_library_functions_macos(void *handle, Map<String, Function> &functions,
+                                              const String &library_name) {
     // Get the library image index from handle
     Dl_info info;
     if (dladdr(handle, &info) == 0) {
@@ -236,19 +244,19 @@ inline void enumerate_library_functions_macos(void* handle, Map<String, Function
         return;
     }
 
-    const struct mach_header_64* header = (const struct mach_header_64*)info.dli_fbase;
+    const struct mach_header_64 *header = (const struct mach_header_64 *) info.dli_fbase;
     if (!header) return;
 
     // Parse Mach-O to find symbol table
-    struct load_command* cmd = (struct load_command*)((char*)header + sizeof(struct mach_header_64));
-    struct symtab_command* symtab = nullptr;
+    struct load_command *cmd = (struct load_command *) ((char *) header + sizeof(struct mach_header_64));
+    struct symtab_command *symtab = nullptr;
 
     for (uint32_t i = 0; i < header->ncmds; i++) {
         if (cmd->cmd == LC_SYMTAB) {
-            symtab = (struct symtab_command*)cmd;
+            symtab = (struct symtab_command *) cmd;
             break;
         }
-        cmd = (struct load_command*)((char*)cmd + cmd->cmdsize);
+        cmd = (struct load_command *) ((char *) cmd + cmd->cmdsize);
     }
 
     if (!symtab) {
@@ -257,20 +265,21 @@ inline void enumerate_library_functions_macos(void* handle, Map<String, Function
     }
 
     // Access symbol table
-    struct nlist_64* symbols = (struct nlist_64*)((char*)header + symtab->symoff);
-    char* string_table = (char*)header + symtab->stroff;
+    struct nlist_64 *symbols = (struct nlist_64 *) ((char *) header + symtab->symoff);
+    char *string_table = (char *) header + symtab->stroff;
 
     int func_count = 0;
     for (uint32_t i = 0; i < symtab->nsyms; i++) {
-        struct nlist_64* sym = &symbols[i];
+        struct nlist_64 *sym = &symbols[i];
 
         // Check if it's an external defined function symbol
-        if ((sym->n_type & N_TYPE) == N_SECT &&  // Defined in a section
-            (sym->n_type & N_EXT) &&              // External symbol
-            sym->n_value != 0) {                   // Has an address
+        if ((sym->n_type & N_TYPE) == N_SECT && // Defined in a section
+            (sym->n_type & N_EXT) && // External symbol
+            sym->n_value != 0) {
+            // Has an address
 
-            const char* name = string_table + sym->n_un.n_strx;
-            if (name && name[0] == '_') name++;  // Skip leading underscore on macOS
+            const char *name = string_table + sym->n_un.n_strx;
+            if (name && name[0] == '_') name++; // Skip leading underscore on macOS
 
             // Skip compiler-generated or internal symbols
             if (name[0] == '.' || name[0] == 'L' || name[0] == 'l') continue;
@@ -298,8 +307,9 @@ inline void enumerate_library_functions_macos(void* handle, Map<String, Function
 #include <elf.h>
 
 // Enumerate all exported functions from a loaded library on Linux
-inline void enumerate_library_functions_linux(void* handle, Map<String, Function>& functions, const String& library_name) {
-    struct link_map* map;
+inline void enumerate_library_functions_linux(void *handle, Map<String, Function> &functions,
+                                              const String &library_name) {
+    struct link_map *map;
     if (dlinfo(handle, RTLD_DI_LINKMAP, &map) != 0) {
         warn("Could not get link map for "s + library_name);
         return;
@@ -314,8 +324,8 @@ inline void enumerate_library_functions_linux(void* handle, Map<String, Function
 
 // Enumerate ALL functions from a library (called when importing entire module)
 // e.g., "import c" or "use m"
-inline void enumerate_library_functions(const String& library_name, Map<String, Function>& functions) {
-    void* handle = load_library(library_name);
+inline void enumerate_library_functions(const String &library_name, Map<String, Function> &functions) {
+    void *handle = find_native_library(library_name);
     if (!handle) {
         warn("Failed to load library for enumeration: "s + library_name);
         return;
@@ -333,4 +343,54 @@ inline void enumerate_library_functions(const String& library_name, Map<String, 
 
     // Don't close the handle - we need it for future dlsym calls
     // dlclose(handle);
+}
+
+
+inline bool is_native_library(const String &library_name) {
+    void *handle = find_native_library(library_name);
+    if (handle) {
+        dlclose(handle); // Close immediately, just checking
+        return true;
+    }
+    return false;
+}
+
+inline void add_ffi_signature(Module *modul, FFIHeaderSignature ffi_sig) {
+    if (!modul->functions.has(ffi_sig.name)) {
+        Function func;
+        func.name = ffi_sig.name;
+        func.is_ffi = true;
+        func.ffi_library = modul->name;
+        func.signature = ffi_sig.signature;
+        modul->functions.add(func.name, func);
+    } else {
+        // Merge signature info
+        Function &existing_func = modul->functions[ffi_sig.name];
+        warn("Override with header info"s % ffi_sig.name);
+        existing_func.signature = ffi_sig.signature; // Override with header info
+    }
+}
+
+inline Module *loadNativeLibrary(String library) {
+    for(Module *m:libraries)
+        if(m->name==library)
+            return m; // already loaded
+    Module *modul = new Module();
+    modul->name = library;
+    modul->is_native_library = true;
+    enumerate_library_functions(library, modul->functions); // via FFI, next via .h parsing!
+    auto headers = get_library_header_files(library);
+    for (String header: *headers) {
+        print("Parsing header file %s for library %s\n"s % header % library);
+        List<FFIHeaderSignature> sigs = parseHeaderFile(header, library);
+        for (FFIHeaderSignature &ffi_sig: sigs) {
+            print("  Found FFI signature: %s %s\n"s % ffi_sig.name % ffi_sig.raw);
+            add_ffi_signature(modul, ffi_sig);
+        }
+    }
+    libraries.add(modul);
+    // List<FFIHeaderSignature> math_sigs = parseHeaderFile("/usr/include/math.h", "m");
+    // List<FFIHeaderSignature> string_sigs = parseHeaderFile("/usr/include/string.h", "c");
+    // List<FFIHeaderSignature> stdlib_sigs = parseHeaderFile("/usr/include/stdlib.h", "c");
+    return modul;
 }

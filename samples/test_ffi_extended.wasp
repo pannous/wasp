@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 // Extended FFI Examples - Demonstrating Dynamic Wrapper System
 // All these functions work automatically with the generic dynamic wrapper
 

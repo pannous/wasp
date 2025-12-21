@@ -13,21 +13,12 @@
 #include <sys/stat.h>
 #endif
 
-// Helper: Manual string comparison (workaround for String == operator issue)
-static inline bool str_eq(const String& s, const char* literal) {
-    int len = strlen(literal);
-    if (s.length != len) return false;
-    for (int i = 0; i < len; i++) {
-        if (s.data[i] != literal[i]) return false;
-    }
-    return true;
-}
 
 #ifdef NATIVE_FFI
 // Try to detect signature from C header files
 inline bool detect_signature_from_headers(const String& func_name, const String& lib_name, Signature& sig) {
     // Get header files for this library from the mapping
-    List<String>* header_paths = get_library_headers(lib_name);
+    List<String>* header_paths = get_library_header_files(lib_name);
 
     if (!header_paths) {
         // No known headers for this library
@@ -98,31 +89,11 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
 
                         FFIHeaderSignature ffi_sig;
                         ffi_sig.library = lib_name;
-                        if (extractFunctionSignatureFromString(decl, ffi_sig) &&
-                            str_eq(ffi_sig.name, func_name.data)) {
-                            // Successfully extracted signature!
-                            sig.parameters.clear();
-                            sig.return_types.clear();
-
-                            // Convert to Signature format
-                            for (const String& param_type : ffi_sig.param_types) {
-                                if (str_eq(param_type, "void")) {
-                                    continue; // Skip void parameters (e.g., func(void))
-                                }
-                                Arg param;
-                                param.type = mapCTypeToWasp(param_type);
-                                sig.parameters.add(param);
-                            }
-
-                            Type ret_type = mapCTypeToWasp(ffi_sig.return_type);
-                            if (ret_type != nils && ret_type != voids) {
-                                sig.return_types.add(ret_type);
-                            }
-
+                        if(extractFunctionSignature(decl, ffi_sig) &&
+                            eq(ffi_sig.name, func_name.data)) {
                             file.close();
-                            return true;
+                            return true; // Deprecated AST-based extraction
                         }
-
                         // Reset for next declaration
                         in_declaration = false;
                         accumulated.clear();
@@ -169,9 +140,9 @@ inline void detect_ffi_signature(const String& function_name, const String& libr
     // Simple library-specific defaults
     if (library_name.data[0] == 'm' && library_name.length == 1) {
         // Two-parameter math functions (common fallback)
-        if (str_eq(function_name, "pow") || str_eq(function_name, "fmod") ||
-            str_eq(function_name, "fmax") || str_eq(function_name, "fmin") ||
-            str_eq(function_name, "atan2") || str_eq(function_name, "hypot")) {
+        if (eq(function_name, "pow") || eq(function_name, "fmod") ||
+            eq(function_name, "fmax") || eq(function_name, "fmin") ||
+            eq(function_name, "atan2") || eq(function_name, "hypot")) {
             add_param(float64t);
             add_param(float64t);
             sig.return_types.add(float64t);
@@ -184,13 +155,13 @@ inline void detect_ffi_signature(const String& function_name, const String& libr
     }
     else if (library_name.data[0] == 'c' && library_name.length == 1) {
         // Common string functions that take char* parameter
-        if (str_eq(function_name, "strlen") || str_eq(function_name, "atoi") ||
-            str_eq(function_name, "atof") || str_eq(function_name, "atol")) {
+        if (eq(function_name, "strlen") || eq(function_name, "atoi") ||
+            eq(function_name, "atof") || eq(function_name, "atol")) {
             add_param(charp);
-            sig.return_types.add(str_eq(function_name, "atof") ? float64t : int32t);
+            sig.return_types.add(eq(function_name, "atof") ? float64t : int32t);
         }
         // String comparison functions (two char* params)
-        else if (str_eq(function_name, "strcmp") || str_eq(function_name, "strcoll")) {
+        else if (eq(function_name, "strcmp") || eq(function_name, "strcoll")) {
             add_param(charp);
             add_param(charp);
             sig.return_types.add(int32t);
@@ -201,39 +172,39 @@ inline void detect_ffi_signature(const String& function_name, const String& libr
             sig.return_types.add(int32t);
         }
     }
-    else if (str_eq(library_name, "SDL2")) {
+    else if (eq(library_name, "SDL2")) {
         // Minimal SDL fallback signatures (header parsing should handle most)
-        if (str_eq(function_name, "SDL_Init")) {
+        if (eq(function_name, "SDL_Init")) {
             add_param(int32t); sig.return_types.add(int32t);
         }
-        else if (str_eq(function_name, "SDL_Quit")) {
+        else if (eq(function_name, "SDL_Quit")) {
             // void
         }
-        else if (str_eq(function_name, "SDL_GetTicks")) {
+        else if (eq(function_name, "SDL_GetTicks")) {
             sig.return_types.add(int32t);
         }
-        else if (str_eq(function_name, "SDL_CreateWindow")) {
+        else if (eq(function_name, "SDL_CreateWindow")) {
             add_param(charp); add_param(int32t); add_param(int32t);
             add_param(int32t); add_param(int32t); add_param(int32t);
             sig.return_types.add(i64);
         }
-        else if (str_eq(function_name, "SDL_CreateRenderer")) {
+        else if (eq(function_name, "SDL_CreateRenderer")) {
             add_param(i64); add_param(int32t); add_param(int32t);
             sig.return_types.add(i64);
         }
-        else if (str_eq(function_name, "SDL_DestroyWindow") || str_eq(function_name, "SDL_DestroyRenderer") ||
-                 str_eq(function_name, "SDL_RenderPresent")) {
+        else if (eq(function_name, "SDL_DestroyWindow") || eq(function_name, "SDL_DestroyRenderer") ||
+                 eq(function_name, "SDL_RenderPresent")) {
             add_param(i64); // void return
         }
-        else if (str_eq(function_name, "SDL_SetRenderDrawColor")) {
+        else if (eq(function_name, "SDL_SetRenderDrawColor")) {
             add_param(i64); add_param(int32t); add_param(int32t);
             add_param(int32t); add_param(int32t);
             sig.return_types.add(int32t);
         }
-        else if (str_eq(function_name, "SDL_RenderClear")) {
+        else if (eq(function_name, "SDL_RenderClear")) {
             add_param(i64); sig.return_types.add(int32t);
         }
-        else if (str_eq(function_name, "SDL_Delay")) {
+        else if (eq(function_name, "SDL_Delay")) {
             add_param(int32t); // void return
         }
         else {
@@ -242,37 +213,37 @@ inline void detect_ffi_signature(const String& function_name, const String& libr
             sig.return_types.add(int32t);
         }
     }
-    else if (str_eq(library_name, "raylib")) {
+    else if (eq(library_name, "raylib")) {
         // Minimal raylib fallbacks
-        if (str_eq(function_name, "InitWindow")) {
+        if (eq(function_name, "InitWindow")) {
             add_param(int32t); add_param(int32t); add_param(charp);
         }
-        else if (str_eq(function_name, "CloseWindow") || str_eq(function_name, "BeginDrawing") ||
-                 str_eq(function_name, "EndDrawing")) {
+        else if (eq(function_name, "CloseWindow") || eq(function_name, "BeginDrawing") ||
+                 eq(function_name, "EndDrawing")) {
             // void -> void
         }
-        else if (str_eq(function_name, "WindowShouldClose") || str_eq(function_name, "IsWindowReady")) {
+        else if (eq(function_name, "WindowShouldClose") || eq(function_name, "IsWindowReady")) {
             sig.return_types.add(int32t);
         }
-        else if (str_eq(function_name, "SetTargetFPS") || str_eq(function_name, "ClearBackground")) {
+        else if (eq(function_name, "SetTargetFPS") || eq(function_name, "ClearBackground")) {
             add_param(int32t);
         }
-        else if (str_eq(function_name, "DrawCircle")) {
+        else if (eq(function_name, "DrawCircle")) {
             // void DrawCircle(int centerX, int centerY, float radius, Color color)
             add_param(int32t); add_param(int32t); add_param(float32t); add_param(int32t);
         }
-        else if (str_eq(function_name, "DrawRectangle")) {
+        else if (eq(function_name, "DrawRectangle")) {
             // void DrawRectangle(int posX, int posY, int width, int height, Color color)
             add_param(int32t); add_param(int32t); add_param(int32t); add_param(int32t); add_param(int32t);
         }
-        else if (str_eq(function_name, "DrawText")) {
+        else if (eq(function_name, "DrawText")) {
             // void DrawText(const char *text, int posX, int posY, int fontSize, Color color)
             add_param(charp); add_param(int32t); add_param(int32t); add_param(int32t); add_param(int32t);
         }
-        else if (str_eq(function_name, "GetFrameTime")) {
+        else if (eq(function_name, "GetFrameTime")) {
             sig.return_types.add(float32t);
         }
-        else if (str_eq(function_name, "GetTime")) {
+        else if (eq(function_name, "GetTime")) {
             sig.return_types.add(float64t);
         }
         else {
