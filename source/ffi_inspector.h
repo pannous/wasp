@@ -457,14 +457,18 @@ inline void fixNativeSignatures(Module & modul) {
         modul.functions["InitWindow"s].signature.parameters[2].type = charp;
 }
 
+extern Map<int64, Module *> module_cache;
 inline Module *loadNativeLibrary(String library) {
     for(Module *m:libraries)
         if(m->name==library)
             return m; // already loaded
+    if (module_cache.has(library.hash()))
+        return module_cache[library.hash()];
     Module *modul = new Module();
     modul->name = library;
     modul->is_native_library = true;
     enumerate_library_functions(library, modul->functions); // via FFI, next via .h parsing!
+    module_cache[library.hash()] = modul;
     auto headers = get_library_header_files(library);
     for (String header: *headers) {
         if(not fileExists(header)) {
