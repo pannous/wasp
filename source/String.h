@@ -1107,7 +1107,7 @@ public:
     }
 
 
-    //    [[non-modifying]]
+    //    [[non-modifying]] == fun() const !!
     [[nodiscard("replace generates a new string to be consumed!")]]
     __attribute__((__warn_unused_result__))
     String &replace(chars string, chars with, int start = 0) {

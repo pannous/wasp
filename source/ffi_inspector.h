@@ -240,7 +240,7 @@ inline void enumerate_library_functions_macos(void *handle, Map<String, Function
     // Get the library image index from handle
     Dl_info info;
     if (dladdr(handle, &info) == 0) {
-        warn("Could not get library info for "s + library_name);
+        warn("Could not get library info for "s + library_name);// todo why not?
         return;
     }
 
@@ -355,20 +355,48 @@ inline bool is_native_library(const String &library_name) {
     return false;
 }
 
+inline Signature& convert_ffi_signature(FFIHeaderSignature &ffi_sig) {
+    Signature& sig = *new Signature();
+    sig.parameters.clear();
+    sig.return_types.clear();
+
+    for (const String &param_type: ffi_sig.param_types) {
+        if (eq(param_type, "void")) {
+            continue; // Skip void parameters (e.g., func(void))
+        }
+        Arg param;
+        param.type = mapCTypeToWasp(param_type);
+        long index = &param_type - &ffi_sig.param_types[0];
+        param.name =  ffi_sig.param_names[index];
+        // param.modifiers TODO
+        sig.parameters.add(param);
+    }
+
+    Type ret_type = mapCTypeToWasp(ffi_sig.return_type);
+    if (ret_type != nils && ret_type != voids) {
+        sig.return_types.add(ret_type);
+    }
+    return sig;
+}
+
 inline void add_ffi_signature(Module *modul, FFIHeaderSignature ffi_sig) {
     if (!modul->functions.has(ffi_sig.name)) {
         Function func;
         func.name = ffi_sig.name;
         func.is_ffi = true;
         func.ffi_library = modul->name;
-        func.signature = ffi_sig.signature;
+        func.signature = convert_ffi_signature(ffi_sig);// ffi_sig.signature;
         modul->functions.add(func.name, func);
     } else {
         // Merge signature info
         Function &existing_func = modul->functions[ffi_sig.name];
-        warn("Override with header info"s % ffi_sig.name);
-        existing_func.signature = ffi_sig.signature; // Override with header info
+        // warn("Override with header info "s % ffi_sig.name);
+        existing_func.signature =   convert_ffi_signature(ffi_sig); // ffi_sig.signature; // Override with header info
     }
+}
+
+inline void fixNativeSignatures(Module & modul) {
+    modul.functions["InitWindow"s].signature.parameters[2].type = charp;
 }
 
 inline Module *loadNativeLibrary(String library) {
@@ -388,10 +416,11 @@ inline Module *loadNativeLibrary(String library) {
         print("Parsing header file %s for library %s\n"s % header % library);
         List<FFIHeaderSignature> sigs = parseHeaderFile(header, library);
         for (FFIHeaderSignature &ffi_sig: sigs) {
-            print("  Found FFI signature: %s %s\n"s % ffi_sig.name % ffi_sig.raw);
+            // print("  Found FFI signature: %s %s\n"s % ffi_sig.name % ffi_sig.raw);
             add_ffi_signature(modul, ffi_sig);
         }
     }
+    fixNativeSignatures(*modul);
     libraries.add(modul);
     // List<FFIHeaderSignature> math_sigs = parseHeaderFile("/usr/include/math.h", "m");
     // List<FFIHeaderSignature> string_sigs = parseHeaderFile("/usr/include/string.h", "c");

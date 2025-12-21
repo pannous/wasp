@@ -15,9 +15,10 @@ struct FFIHeaderSignature {
     String name;
     String return_type;
     List<String> param_types;
+    List<String> param_names;
     String library; // "c" or "m"
     String raw; // unparsed
-    Signature signature; // Wasp function signature
+    // Signature signature; // Wasp function signature
 };
 
 // Map C type names to Wasp type names
@@ -57,53 +58,69 @@ inline String formatParamList(const List<String> &params) {
     }
     return result;
 }
+
 // Extract function signature from a C-style declaration string.
 // Handles: double ceil(double), float ceilf(float),
 //          int strlen(const char* str), void foo(void)
-inline bool extractFunctionSignatureFromString(String& decl, FFIHeaderSignature& sig) {
-    const char* s = decl.data;
-    const int   n = decl.length;
+inline bool extractFunctionSignature(String &decl, FFIHeaderSignature &sig) {
+    const char *s = decl.data;
+    const int n = decl.length;
     if (!s || n == 0) return false;
-    if(decl.contains('-')) return false;
-    if(decl.contains(';')) // remove trailing semicolon if present
+    // if(decl.contains("DrawCircle"))
+    // print("debug DrawCircle");
+    if (decl.trim().startsWith("//")) return false;
+    if (decl.trim().startsWith("/*")) return false; // todo
+    decl = decl.to("//");
+    if (decl.contains('-')) return false;
+    if (decl.contains('[')) return false;
+    if (decl.contains('#')) return false;
+    if (decl.contains(':') and not decl.contains("::")) return false;
+    if (decl.contains(';')) // remove trailing semicolon if present
         s = decl.substring(0, decl.lastIndexOf(";")).data;
 
     // ---- find parentheses ---------------------------------------------------
     int lpar = -1, rpar = -1;
     for (int i = 0; i < n; ++i) {
-        if (s[i] == '(') { lpar = i; break; }
+        if (s[i] == '(') {
+            lpar = i;
+            break;
+        }
     }
     if (lpar < 0) return false;
 
     for (int i = lpar + 1; i < n; ++i) {
-        if (s[i] == ')') { rpar = i; break; }
+        if (s[i] == ')') {
+            rpar = i;
+            break;
+        }
     }
     if (rpar < 0) return false;
 
     // ---- function name ------------------------------------------------------
     int name_end = lpar - 1;
-    while (name_end >= 0 && isspace((unsigned char)s[name_end])) name_end--;
+    while (name_end >= 0 && isspace((unsigned char) s[name_end])) name_end--;
     if (name_end < 0) return false;
 
     int name_start = name_end;
     while (name_start > 0) {
         char c = s[name_start - 1];
-        if (!(isalnum((unsigned char)c) || c == '_')) break;
+        if (!(isalnum((unsigned char) c) || c == '_')) break;
         name_start--;
     }
-    sig.name = String((char*)s + name_start,
-                      name_end - name_start + 1, false);
+    sig.name = String((char *) s + name_start, name_end - name_start + 1, false);
+    // if(sig.name!="SetTargetFPS") return false; // DEBUG!!!
+    // if(sig.name!="BeginDrawing") return false; // DEBUG!!!
 
     // ---- return type --------------------------------------------------------
     int ret_end = name_start - 1;
-    while (ret_end >= 0 && isspace((unsigned char)s[ret_end])) ret_end--;
+    while (ret_end >= 0 && isspace((unsigned char) s[ret_end])) ret_end--;
     if (ret_end < 0) return false;
 
     int ret_start = 0;
-    while (ret_start <= ret_end && isspace((unsigned char)s[ret_start]))
+    while (ret_start <= ret_end && isspace((unsigned char) s[ret_start]))
         ret_start++;
 
-    String ret((char*)s + ret_start, ret_end - ret_start + 1, false);
+    String ret((char *) s + ret_start, ret_end - ret_start + 1, false);
     ret = ret.trim();
 
     // normalize: keep base type + pointer, drop qualifiers
@@ -121,19 +138,20 @@ inline bool extractFunctionSignatureFromString(String& decl, FFIHeaderSignature&
     sig.param_types.clear();
     const int params_len = rpar - (lpar + 1);
     if (params_len <= 0) return true;
-    const char* p = s + lpar + 1;
+    const char *p = s + lpar + 1;
     int tok_start = 0;
     for (int i = 0; i <= params_len; ++i) {
         if (i < params_len && p[i] != ',') continue;
         int len = i - tok_start;
-        const char* tok = p + tok_start;
-        while (len > 0 && isspace((unsigned char)*tok)) {
-            tok++; len--;
+        const char *tok = p + tok_start;
+        while (len > 0 && isspace((unsigned char) *tok)) {
+            tok++;
+            len--;
         }
-        while (len > 0 && isspace((unsigned char)tok[len - 1])) len--;
+        while (len > 0 && isspace((unsigned char) tok[len - 1])) len--;
         tok_start = i + 1;
         if (len == 0) continue;
-        String param((char*)tok, len, false);
+        String param((char *) tok, len, false);
         param = param.trim();
         if (param == "void") continue;
         if (param.startsWith("const "))
@@ -148,48 +166,18 @@ inline bool extractFunctionSignatureFromString(String& decl, FFIHeaderSignature&
         } else {
             int k = 0;
             while (k < param.length &&
-                   !isspace((unsigned char)param.data[k]))
+                   !isspace((unsigned char) param.data[k]))
                 k++;
             type = String(param.data, k, false);
         }
         if (type.length > 0)
             sig.param_types.add(type);
+        auto param_name = param.replace(type.data, "").trim();
+        sig.param_names.add(param_name);
     }
     return true;
 }
 
-// OLD AST-based extraction - DEPRECATED, kept for reference
-inline bool extractFunctionSignature(String decl, FFIHeaderSignature &ffi_sig) {
-    // AST parsing was too fragile - failed on "double ceil(double)" vs "float ceilf(float)"
-    // Now we just convert the node back to string and use string parsing
-    // chars decl = node.toString();
-    String func_name; // to be set!
-    Signature sig;
-    if (extractFunctionSignatureFromString(decl, ffi_sig) &&
-        eq(ffi_sig.name, func_name.data)) {
-        // Successfully extracted signature!
-        sig.parameters.clear();
-        sig.return_types.clear();
-
-        // Convert to Signature format
-        for (const String &param_type: ffi_sig.param_types) {
-            if (eq(param_type, "void")) {
-                continue; // Skip void parameters (e.g., func(void))
-            }
-            Arg param;
-            param.type = mapCTypeToWasp(param_type);
-            sig.parameters.add(param);
-        }
-
-        Type ret_type = mapCTypeToWasp(ffi_sig.return_type);
-        if (ret_type != nils && ret_type != voids) {
-            sig.return_types.add(ret_type);
-        }
-
-        return true;
-    }
-    return false;
-}
 
 // Parse a C header file and extract all function signatures
 inline List<FFIHeaderSignature> parseHeaderFile(const String &header_path, const String &library) {
@@ -217,7 +205,7 @@ inline List<FFIHeaderSignature> parseHeaderFile(const String &header_path, const
         sig.library = library;
         if (extractFunctionSignature(decl, sig)) {
             signatures.add(sig);
-            print("Found FFI function: "s + sig.name);
+            // print("Found FFI function: "s + sig.name);
         }
     }
 

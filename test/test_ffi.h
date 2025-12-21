@@ -3,6 +3,7 @@
 #include "../source/ffi_dynamic_wrapper.h"
 #include "../source/ffi_loader.h"
 #include "../source/ffi_header_parser.h"
+#include "../source/ffi_inspector.h"
 
 // Comprehensive FFI Tests
 // All FFI-related tests consolidated from:
@@ -620,6 +621,10 @@ void test_ffi_raylib_simple_use_import() {
 
 static void test_ffi_raylib() {
     tests_executed++;
+    auto modul = loadNativeLibrary("raylib");
+    check(modul);
+    check(modul->functions.has("InitWindow"));
+    check(modul->functions.has("DrawCircle"));
     test_ffi_raylib_init();
     test_ffi_raylib_simple_use_import();
     // test_ffi_raylib_combined();
