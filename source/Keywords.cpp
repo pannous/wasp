@@ -202,8 +202,8 @@ void preRegisterFunctions() {
     functions["toReal"].host();
     functions["toReal"].signature.add(referencex, "id").returns(reals);
 
-    // functions["formatLong"].host();
-    // functions["formatLong"].signature.add(longs).returns(strings);
+    functions["formatLong"].host();
+    functions["formatLong"].signature.add(longs).returns(charp);
 
     functions["concat"].host(); // todo load from runtime AGAIN 2025-06-16
     functions["concat"].signature.add(charp).add(charp).returns(charp);

@@ -2972,7 +2972,6 @@ Code emitCall(Node &fun, Function &context) {
     trace(fun);
 
     Function *function = &functions[name]; // NEW context! but don't write context ref!
-    Signature &signature = function->signature;
 
     if (function->is_polymorphic) {
         Node *params = &fun.values();
@@ -2984,6 +2983,8 @@ Code emitCall(Node &fun, Function &context) {
         //     name = function->fullname;
         name = function->name; //
     }
+
+    Signature &signature = function->signature;  // Get signature AFTER potential polymorphic update
 
     int index = function->call_index;
     if (call_indices.has(name)) {

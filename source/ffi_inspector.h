@@ -144,6 +144,63 @@ inline bool inspect_ffi_signature(const String &library_name, const String &func
             sig.return_types.add(function_name == "atol" ? i64 : int32t);
             return true;
         }
+
+        // atof: char* -> double
+        if (function_name == "atof") {
+            sig.parameters.clear();
+            sig.return_types.clear();
+
+            Arg param;
+            param.type = charp;
+            sig.parameters.add(param);
+            sig.return_types.add(float64t);
+            return true;
+        }
+
+        // abs: int -> int
+        if (function_name == "abs") {
+            sig.parameters.clear();
+            sig.return_types.clear();
+
+            Arg param;
+            param.type = int32t;
+            sig.parameters.add(param);
+            sig.return_types.add(int32t);
+            return true;
+        }
+
+        // labs: long -> long
+        if (function_name == "labs") {
+            sig.parameters.clear();
+            sig.return_types.clear();
+
+            Arg param;
+            param.type = i64;
+            sig.parameters.add(param);
+            sig.return_types.add(i64);
+            return true;
+        }
+
+        // strcmp, strncmp: char*, char* -> int
+        if (function_name == "strcmp" || function_name == "strncmp") {
+            sig.parameters.clear();
+            sig.return_types.clear();
+
+            Arg param1, param2;
+            param1.type = charp;
+            param2.type = charp;
+            sig.parameters.add(param1);
+            sig.parameters.add(param2);
+
+            if (function_name == "strncmp") {
+                Arg param3;
+                param3.type = int32t;  // size_t n
+                sig.parameters.add(param3);
+            }
+
+            sig.return_types.add(int32t);
+            return true;
+        }
     }
 
     if (library_name == "m") {
