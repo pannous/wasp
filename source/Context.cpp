@@ -84,8 +84,13 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         addLibrary(&funclet_module);
         return use_required_import(&funclet);
     }
-    if (name.in(function_list) and libraries.size() == 0)
-        libraries.add(&loadRuntime());
+    if (name.in(function_list) and libraries.size() == 0) {
+        Module &runtime = loadRuntime();
+        libraries.add(&runtime);
+        // Check runtime for the function after adding it
+        if (runtime.functions.has(name))
+            return use_required_import(&runtime.functions[name]);
+    }
     // libraries.add(&loadModule("wasp-runtime.wasm")); // on demand
 
     Function *function = 0;
