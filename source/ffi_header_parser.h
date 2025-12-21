@@ -57,146 +57,104 @@ inline String formatParamList(const List<String> &params) {
     }
     return result;
 }
+// Extract function signature from a C-style declaration string.
+// Handles: double ceil(double), float ceilf(float),
+//          int strlen(const char* str), void foo(void)
+inline bool extractFunctionSignatureFromString(String& decl, FFIHeaderSignature& sig) {
+    const char* s = decl.data;
+    const int   n = decl.length;
+    if (!s || n == 0) return false;
+    if(decl.contains('-')) return false;
+    if(decl.contains(';')) // remove trailing semicolon if present
+        s = decl.substring(0, decl.lastIndexOf(";")).data;
 
-// Extract function signature directly from C declaration string
-// REPLACES AST-based parsing which was fragile and failed on "double ceil(double)"
-// Handles: double ceil(double), float ceilf(float), int strlen(const char* str), etc.
-inline bool extractFunctionSignatureFromString(const String &decl, FFIHeaderSignature &sig) {
-    const char *s = decl.data;
-    int len = decl.length;
-    if (len == 0) return false;
-
-    // Find opening paren
-    int paren_start = -1;
-    for (int i = 0; i < len; i++) {
-        if (s[i] == '(') {
-            paren_start = i;
-            break;
-        }
+    // ---- find parentheses ---------------------------------------------------
+    int lpar = -1, rpar = -1;
+    for (int i = 0; i < n; ++i) {
+        if (s[i] == '(') { lpar = i; break; }
     }
-    if (paren_start == -1) return false;
+    if (lpar < 0) return false;
 
-    // Find closing paren
-    int paren_end = -1;
-    for (int i = paren_start + 1; i < len; i++) {
-        if (s[i] == ')') {
-            paren_end = i;
-            break;
-        }
+    for (int i = lpar + 1; i < n; ++i) {
+        if (s[i] == ')') { rpar = i; break; }
     }
-    if (paren_end == -1) return false;
+    if (rpar < 0) return false;
 
-    // Extract function name (work backwards from '(' skipping whitespace)
-    int name_end = paren_start - 1;
-    while (name_end >= 0 && (s[name_end] == ' ' || s[name_end] == '\t')) name_end--;
+    // ---- function name ------------------------------------------------------
+    int name_end = lpar - 1;
+    while (name_end >= 0 && isspace((unsigned char)s[name_end])) name_end--;
     if (name_end < 0) return false;
 
     int name_start = name_end;
-    while (name_start > 0 && (
-               (s[name_start - 1] >= 'a' && s[name_start - 1] <= 'z') ||
-               (s[name_start - 1] >= 'A' && s[name_start - 1] <= 'Z') ||
-               (s[name_start - 1] >= '0' && s[name_start - 1] <= '9') ||
-               s[name_start - 1] == '_')) {
+    while (name_start > 0) {
+        char c = s[name_start - 1];
+        if (!(isalnum((unsigned char)c) || c == '_')) break;
         name_start--;
     }
+    sig.name = String((char*)s + name_start,
+                      name_end - name_start + 1, false);
 
-    sig.name = String((char *) (s + name_start), name_end - name_start + 1, false);
-
-    // Extract return type (everything before function name, trimmed)
+    // ---- return type --------------------------------------------------------
     int ret_end = name_start - 1;
-    while (ret_end >= 0 && (s[ret_end] == ' ' || s[ret_end] == '\t')) ret_end--;
+    while (ret_end >= 0 && isspace((unsigned char)s[ret_end])) ret_end--;
     if (ret_end < 0) return false;
 
     int ret_start = 0;
-    while (ret_start <= ret_end && (s[ret_start] == ' ' || s[ret_start] == '\t')) ret_start++;
+    while (ret_start <= ret_end && isspace((unsigned char)s[ret_start]))
+        ret_start++;
 
-    sig.return_type = String((char *) (s + ret_start), ret_end - ret_start + 1, false);
+    String ret((char*)s + ret_start, ret_end - ret_start + 1, false);
+    ret = ret.trim();
 
-    // Parse parameters
-    int params_start = paren_start + 1;
-    int params_len = paren_end - params_start;
-
-    // Skip if empty or just whitespace/void
-    if (params_len > 0) {
-        const char *params = s + params_start;
-
-        // Split by commas
-        int tok_start = 0;
-        for (int i = 0; i <= params_len; i++) {
-            if (i == params_len || params[i] == ',') {
-                int tok_len = i - tok_start;
-
-                // Trim whitespace
-                const char *tok = params + tok_start;
-                while (tok_len > 0 && (*tok == ' ' || *tok == '\t')) {
-                    tok++;
-                    tok_len--;
-                }
-                while (tok_len > 0 && (tok[tok_len - 1] == ' ' || tok[tok_len - 1] == '\t')) tok_len--;
-
-                if (tok_len > 0) {
-                    String param_full((char *) tok, tok_len, false);
-
-                    // Skip "void"
-                    if (param_full == "void") {
-                        tok_start = i + 1;
-                        continue;
-                    }
-
-                    // Remove "const " prefix
-                    String param_clean = param_full;
-                    if (param_full.length > 6 && param_full.data[0] == 'c' &&
-                        param_full.data[1] == 'o' && param_full.data[2] == 'n' &&
-                        param_full.data[3] == 's' && param_full.data[4] == 't' &&
-                        param_full.data[5] == ' ') {
-                        param_clean = String((char *) (param_full.data + 6), param_full.length - 6, false);
-
-                        // Trim again
-                        const char *pc = param_clean.data;
-                        int pc_len = param_clean.length;
-                        while (pc_len > 0 && (*pc == ' ' || *pc == '\t')) {
-                            pc++;
-                            pc_len--;
-                        }
-                        param_clean = String((char *) pc, pc_len, false);
-                    }
-
-                    // Extract type (handle "char*", "double", "int foo", "char* bar", etc.)
-                    String param_type;
-                    bool has_star = false;
-                    int last_star = -1;
-
-                    for (int j = 0; j < param_clean.length; j++) {
-                        if (param_clean.data[j] == '*') {
-                            has_star = true;
-                            last_star = j;
-                        }
-                    }
-
-                    if (has_star) {
-                        // Include type + pointer: "char*"
-                        param_type = String(param_clean.data, last_star + 1, false);
-                    } else {
-                        // No pointer - extract first word (the type)
-                        int word_end = 0;
-                        while (word_end < param_clean.length &&
-                               param_clean.data[word_end] != ' ' &&
-                               param_clean.data[word_end] != '\t') {
-                            word_end++;
-                        }
-                        param_type = String(param_clean.data, word_end, false);
-                    }
-
-                    if (param_type.length > 0) {
-                        sig.param_types.add(param_type);
-                    }
-                }
-
-                tok_start = i + 1;
-            }
-        }
+    // normalize: keep base type + pointer, drop qualifiers
+    if (ret.contains(" ")) {
+        auto parts = ret.split(" ");
+        String last = parts.last();
+        if (last == "*")
+            ret = parts[parts.size() - 2] + "*";
+        else
+            ret = last;
     }
+    sig.return_type = ret;
 
+    // ---- parameters ---------------------------------------------------------
+    sig.param_types.clear();
+    const int params_len = rpar - (lpar + 1);
+    if (params_len <= 0) return true;
+    const char* p = s + lpar + 1;
+    int tok_start = 0;
+    for (int i = 0; i <= params_len; ++i) {
+        if (i < params_len && p[i] != ',') continue;
+        int len = i - tok_start;
+        const char* tok = p + tok_start;
+        while (len > 0 && isspace((unsigned char)*tok)) {
+            tok++; len--;
+        }
+        while (len > 0 && isspace((unsigned char)tok[len - 1])) len--;
+        tok_start = i + 1;
+        if (len == 0) continue;
+        String param((char*)tok, len, false);
+        param = param.trim();
+        if (param == "void") continue;
+        if (param.startsWith("const "))
+            param = param.substring(6).trim();
+        // extract type (base + optional '*')
+        int last_star = -1;
+        for (int j = 0; j < param.length; ++j)
+            if (param.data[j] == '*') last_star = j;
+        String type;
+        if (last_star >= 0) {
+            type = String(param.data, last_star + 1, false);
+        } else {
+            int k = 0;
+            while (k < param.length &&
+                   !isspace((unsigned char)param.data[k]))
+                k++;
+            type = String(param.data, k, false);
+        }
+        if (type.length > 0)
+            sig.param_types.add(type);
+    }
     return true;
 }
 
@@ -205,7 +163,7 @@ inline bool extractFunctionSignature(String decl, FFIHeaderSignature &ffi_sig) {
     // AST parsing was too fragile - failed on "double ceil(double)" vs "float ceilf(float)"
     // Now we just convert the node back to string and use string parsing
     // chars decl = node.toString();
-    String func_name = ffi_sig.name;
+    String func_name; // to be set!
     Signature sig;
     if (extractFunctionSignatureFromString(decl, ffi_sig) &&
         eq(ffi_sig.name, func_name.data)) {
@@ -245,15 +203,18 @@ inline List<FFIHeaderSignature> parseHeaderFile(const String &header_path, const
     }
 
     // Parse using Wasp's parser
-    Node &root = parse(content);
+    // Node &root = parse(content);
 
     // Walk AST and extract function declarations
     // TODO: Implement tree walk to find all function declarations
     // For now, just process top-level nodes
-    for (Node &node: root) {
+    // for (Node &node: root) {
+    for (String line: content.split("\n")) {
+        String trimmed = line.trim();
+        String decl = trimmed;
+        // String decl = node.toString();
         FFIHeaderSignature sig;
         sig.library = library;
-        String decl = node.toString();
         if (extractFunctionSignature(decl, sig)) {
             signatures.add(sig);
             print("Found FFI function: "s + sig.name);
