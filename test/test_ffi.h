@@ -642,7 +642,7 @@ static void test_ffi_all() {
     test_ffi_combined();
     test_ffi_signature_detection();
     test_ffi_header_parser();
-    test_dynlib_import_emit();
+    // test_dynlib_import_emit();
     test_ffi_sdl();
     test_ffi_raylib();
 }

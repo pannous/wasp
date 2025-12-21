@@ -99,17 +99,17 @@ void add_wasmtime_memory() {
 }
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap) {
-    tracef( "Error: %s\n", message);
+    printf( "Error: %s\n", message);
     if (error != NULL) {
         wasm_byte_vec_t error_message;
         wasmtime_error_message(error, &error_message);
-        tracef( "%.*s\n", (int) error_message.size, error_message.data);
+        printf( "%.*s\n", (int) error_message.size, error_message.data);
         wasm_byte_vec_delete(&error_message);
         wasmtime_error_delete(error);
     } else if (trap != NULL) {
         wasm_byte_vec_t trap_message;
         wasm_trap_message(trap, &trap_message);
-        tracef( "%.*s\n", (int) trap_message.size, trap_message.data);
+        printf( "%.*s\n", (int) trap_message.size, trap_message.data);
         wasm_byte_vec_delete(&trap_message);
         wasm_trap_delete(trap);
     }
@@ -394,12 +394,10 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 #endif // NATIVE_FFI
 
     tracef( "Instantiating module via linker...\n");
-    fflush(stderr);
     // Instantiate module via linker so both WASI and env imports resolve.
     error = wasmtime_linker_instantiate(linker, context, module0, &instance, &trap);
     wasmtime_module_delete(module0);
     tracef( "Module instantiated\n");
-    fflush(stderr);
     if (error != NULL || trap != NULL) exit_with_error("Failed to instantiate module via linker", error, trap);
 #else
     // Legacy path: manual import array (keeps existing behavior without WASI stdio)

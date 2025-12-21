@@ -3710,9 +3710,9 @@ Code emitTypeSection() {
         }
         // Skip operators unless they're FFI imports
         Function &temp_func = functions[fun];
-        if (operator_list.has(fun.data) && !temp_func.is_ffi) {
-            todow("how did we get here?");
-            continue;
+        if (operator_list.has(fun.data)) {
+            todow("operator as function:"s + fun); // ok allow overwrite?
+            // continue;
         }
         if (fun == "abs") {
         }

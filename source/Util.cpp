@@ -67,7 +67,7 @@ int fileSize(char const *file) {
 #ifndef WASM
     FILE *ptr;
     ptr = fopen(file, "rb"); // r for read, b for binary
-    if (!ptr)
+    if (!ptr) //return -1;
         error("File not found "s + file);
     fseek(ptr, 0L, SEEK_END);
     int sz = ftell(ptr);
