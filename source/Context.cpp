@@ -84,12 +84,18 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         addLibrary(&funclet_module);
         return use_required_import(&funclet);
     }
-    if (name.in(function_list) and libraries.size() == 0) {
+    // Load runtime on-demand for runtime functions
+    // Check if runtime has the function regardless of function_list (handles mangled C++ names)
+    if (libraries.size() == 0) {
         Module &runtime = loadRuntime();
-        libraries.add(&runtime);
-        // Check runtime for the function after adding it
-        if (runtime.functions.has(name))
+        // Check if runtime has this function first
+        if (runtime.functions.has(name)) {
+            libraries.add(&runtime);
             return use_required_import(&runtime.functions[name]);
+        }
+        // Add runtime to libraries if function is in function_list (for future lookups)
+        if (name.in(function_list))
+            libraries.add(&runtime);
     }
     // libraries.add(&loadModule("wasp-runtime.wasm")); // on demand
 
