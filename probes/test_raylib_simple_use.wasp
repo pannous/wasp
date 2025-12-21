@@ -1,0 +1,36 @@
+// Test for samples/raylib_simple_use.wasp
+// This is a testable version without the infinite loop
+
+import raylib
+
+// Create window: 800x600 pixels
+InitWindow(800, 600, "Wasp Raylib - Circle Demo Test")
+SetTargetFPS(60)
+
+// Draw just 3 frames for testing (instead of infinite loop)
+BeginDrawing()
+ClearBackground(0xFFF5F5F5)  // RAYWHITE
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)  // DARKGRAY
+DrawText("Test: Frame 1/3", 300, 560, 20, 0xFF505050)
+DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON
+EndDrawing()
+
+BeginDrawing()
+ClearBackground(0xFFF5F5F5)  // RAYWHITE
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)  // DARKGRAY
+DrawText("Test: Frame 2/3", 300, 560, 20, 0xFF505050)
+DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON
+EndDrawing()
+
+BeginDrawing()
+ClearBackground(0xFFF5F5F5)  // RAYWHITE
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)  // DARKGRAY
+DrawText("Test: Frame 3/3", 300, 560, 20, 0xFF505050)
+DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON
+EndDrawing()
+
+// Clean up
+CloseWindow()
+
+// Return success code
+42
