@@ -1,3 +1,6 @@
+  This is a separate issue related to GC type handling in wasmtime. The string parameter to InitWindow is being passed as i32 (pointer) but wasmtime with GC enabled expects a reference type. This would require investigating the wasm_emitter's code generation for string literals in FFI calls.
+
+
 rune for char/codepoint
 
 in homebrew-wasp/Formula/wasp.rb

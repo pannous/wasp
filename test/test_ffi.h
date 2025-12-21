@@ -630,8 +630,13 @@ static void test_ffi_raylib() {
     check(modul);
     check(modul->functions.has("InitWindow"));
     check(modul->functions.has("DrawCircle"));
+    check(modul->functions.has("BeginDrawing"));
+
     test_ffi_raylib_init();
-    // test_ffi_raylib_simple_use_import();
+    skip(
+        test_ffi_raylib_simple_use_import(); // todo
+        assert_emit("test/wasp/ffi/raylib/raylib_init_close.wasp", 42);
+    )
     // test_ffi_raylib_combined();
 }
 
