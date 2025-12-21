@@ -710,11 +710,14 @@ void handleNativeImport(Node &node) {
     func.is_used = true;
     func.module = lib_module;
 
-    // Detect and set function signature directly (reuses existing Signature class)
-    detect_ffi_signature(func_name, lib_name, func.signature);
-
-    // Also add to native library module's functions map (if not already present)
-    if (!lib_module->functions.has(func_name)) {
+    // Check if library module already has this function with signature (from loadNativeLibrary)
+    if (lib_module->functions.has(func_name)) {
+        // Copy signature from library module (already detected by loadNativeLibrary)
+        func.signature = lib_module->functions[func_name].signature;
+    } else {
+        // Detect and set function signature directly (reuses existing Signature class)
+        detect_ffi_signature(func_name, lib_name, func.signature);
+        // Add to native library module's functions map
         lib_module->functions.add(func_name, func);
         lib_module->export_names.add(func_name);
     }
