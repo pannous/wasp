@@ -36,8 +36,8 @@ WasmEdge_Result ExternSquare(void *Data,
                              const FrameContext *CallFrameCxt,
                              const WasmEdge_Value *In, WasmEdge_Value *Out) {
     error("square should ALWAYS be liked to runtime => be never used here!");
-    auto x= WasmEdge_ValueGetI32(In[0]);
-    Out[0] = WasmEdge_ValueGenI32(x*x);
+    auto x = WasmEdge_ValueGetI32(In[0]);
+    Out[0] = WasmEdge_ValueGenI32(x * x);
     return WasmEdge_Result_Success;
 }
 
@@ -53,29 +53,29 @@ WasmEdge_Result getElementById(void *Data, const FrameContext *CallFrameCxt, con
 
 WasmEdge_Result toString(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
                          WasmEdge_Value *Out) {
-                         int offset = 0x1000; // todo!!
-    strcpy2((char *) wasm_memory+offset, "hello"); // todo dummy! (works!)
+    int offset = 0x1000; // todo!!
+    strcpy2((char *) wasm_memory + offset, "hello"); // todo dummy! (works!)
     Out[0] = WasmEdge_ValueGenI32(offset);
     return WasmEdge_Result_Success; // todo dummy!
 }
 
 
 WasmEdge_Result toLong(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
-                         WasmEdge_Value *Out) {
-    Out[0] = WasmEdge_ValueGenI64(123);  // todo dummy!
+                       WasmEdge_Value *Out) {
+    Out[0] = WasmEdge_ValueGenI64(123); // todo dummy!
     return WasmEdge_Result_Success;
 }
 
 
 WasmEdge_Result toReal(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
-                         WasmEdge_Value *Out) {
-    Out[0] = WasmEdge_ValueGenF64(123.);  // todo dummy!
+                       WasmEdge_Value *Out) {
+    Out[0] = WasmEdge_ValueGenF64(123.); // todo dummy!
     return WasmEdge_Result_Success;
 }
 
 
 WasmEdge_Result toNode(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
-                         WasmEdge_Value *Out) {
+                       WasmEdge_Value *Out) {
     error("toNode not implemented");
     return WasmEdge_Result_Success;
 }
@@ -92,15 +92,16 @@ WasmEdge_Result createHtml(void *Data, const FrameContext *CallFrameCxt, const W
 }
 
 WasmEdge_Result nop(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
-                           WasmEdge_Value *Out) {
+                    WasmEdge_Value *Out) {
     return WasmEdge_Result_Success;
 }
 
-WasmEdge_Result concat_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+WasmEdge_Result concat_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                            WasmEdge_Value *Out) {
     auto val1 = WasmEdge_ValueGetI32(In[0]);
     auto val2 = WasmEdge_ValueGetI32(In[1]);
-    if(val2 == 0){
-        Out[0]=WasmEdge_ValueGenI32((uint64_t)val1); // return pointer to result
+    if (val2 == 0) {
+        Out[0] = WasmEdge_ValueGenI32((uint64_t) val1); // return pointer to result
         return WasmEdge_Result_Success;
     }
     long wasm_memory_size = 0x1000000; // todo: get from VM!
@@ -115,10 +116,10 @@ WasmEdge_Result concat_wrap(void *Data, const FrameContext *CallFrameCxt, const 
     printf("concat_wrap  %s\n", left);
     printf("concat_wrap  %s\n", right);
     printf("concat_wrap %s + %s\n", left, right);
-    auto result=concat(left, right); // todo: concat and return new string
+    auto result = concat(left, right); // todo: concat and return new string
     int offset = 0; // todo: find free space in wasm_memory!!!
-    strcpy2((char *) wasm_memory+offset, result);
-    Out[0]=WasmEdge_ValueGenI32((uint64_t)offset); // return pointer to result
+    strcpy2((char *) wasm_memory + offset, result);
+    Out[0] = WasmEdge_ValueGenI32((uint64_t) offset); // return pointer to result
     // Out[0]=WasmEdge_ValueGenI32((uint64_t)result); // return pointer to result
     return WasmEdge_Result_Success;
 }
@@ -137,12 +138,12 @@ WasmEdge_Result download(void *Data, const FrameContext *CallFrameCxt, const Was
     // todo("host download");
     auto data = fetch(url);
     printf("downloaded %s\n", data);
-    int l=strlen(data);
+    int l = strlen(data);
     int offset = 0; // todo: find free space in wasm_memory!!!
-    strcpy2((char *) wasm_memory+offset, data);
+    strcpy2((char *) wasm_memory + offset, data);
     // if(l>0 and ((char*)wasm_memory)[offset+l-1] == '\n')
-        // ((char*)wasm_memory)[offset+l-1] = 0; // remove trailing newline HELLNO!
-    Out[0]=WasmEdge_ValueGenI32((uint64_t)offset); // return pointer to result
+    // ((char*)wasm_memory)[offset+l-1] = 0; // remove trailing newline HELLNO!
+    Out[0] = WasmEdge_ValueGenI32((uint64_t) offset); // return pointer to result
     return WasmEdge_Result_Success;
 }
 
@@ -183,10 +184,10 @@ WasmEdge_Result getExternRefPropertyValue(void *Data,
         Out[0] = WasmEdge_ValueGenI64(val);
     } else if (WasmEdge_ValTypeIsF32(fieldVal.Type)) {
         float val = WasmEdge_ValueGetF32(fieldVal);
-        Out[0] = WasmEdge_ValueGenI64((int64_t)val);
+        Out[0] = WasmEdge_ValueGenI64((int64_t) val);
     } else if (WasmEdge_ValTypeIsF64(fieldVal.Type)) {
         double val = WasmEdge_ValueGetF64(fieldVal);
-        Out[0] = WasmEdge_ValueGenI64((int64_t)val);
+        Out[0] = WasmEdge_ValueGenI64((int64_t) val);
     } else {
         warn("getExternRefPropertyValue: unsupported field type");
         Out[0] = WasmEdge_ValueGenI64(0);
@@ -198,7 +199,8 @@ WasmEdge_Result getExternRefPropertyValue(void *Data,
 
 // exit_edge removed - WASI provides proc_exit
 
-WasmEdge_Result getenv_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+WasmEdge_Result getenv_wrap(void *Data, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                            WasmEdge_Value *Out) {
     auto env_var_offset = WasmEdge_ValueGetI32(In[0]);
     auto env_var = (chars) wasm_memory + env_var_offset;
     const char *value = std::getenv(env_var);
@@ -214,9 +216,10 @@ WasmEdge_Result getenv_wrap(void *Data, const FrameContext *CallFrameCxt, const 
 }
 
 // FFI wrapper for double(double) functions
-WasmEdge_Result ffi_wrapper_f64_f64(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+WasmEdge_Result ffi_wrapper_f64_f64(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                                    WasmEdge_Value *Out) {
     typedef double (*ffi_func_t)(double);
-    ffi_func_t func = (ffi_func_t)func_ptr;
+    ffi_func_t func = (ffi_func_t) func_ptr;
     double arg = WasmEdge_ValueGetF64(In[0]);
     double c_arg = FFIMarshaller::to_c_double(arg);
     double c_result = func(c_arg);
@@ -226,9 +229,10 @@ WasmEdge_Result ffi_wrapper_f64_f64(void *func_ptr, const FrameContext *CallFram
 }
 
 // FFI wrapper for double(double, double) functions
-WasmEdge_Result ffi_wrapper_f64_f64_f64(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
+WasmEdge_Result ffi_wrapper_f64_f64_f64(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                                        WasmEdge_Value *Out) {
     typedef double (*ffi_func_t)(double, double);
-    ffi_func_t func = (ffi_func_t)func_ptr;
+    ffi_func_t func = (ffi_func_t) func_ptr;
     double arg1 = FFIMarshaller::to_c_double(WasmEdge_ValueGetF64(In[0]));
     double arg2 = FFIMarshaller::to_c_double(WasmEdge_ValueGetF64(In[1]));
     double c_result = func(arg1, arg2);
@@ -244,18 +248,17 @@ WasmEdge_Result abs_wrap(void *Data, const FrameContext *CallFrameCxt, const Was
 }
 
 // FFI wrapper for string functions: char*(char*)
-WasmEdge_Result ffi_wrapper_str_str(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In, WasmEdge_Value *Out) {
-    typedef char* (*ffi_func_t)(char*);
-    ffi_func_t func = (ffi_func_t)func_ptr;
+WasmEdge_Result ffi_wrapper_str_str(void *func_ptr, const FrameContext *CallFrameCxt, const WasmEdge_Value *In,
+                                    WasmEdge_Value *Out) {
+    typedef char * (*ffi_func_t)(char *);
+    ffi_func_t func = (ffi_func_t) func_ptr;
     int32_t offset = WasmEdge_ValueGetI32(In[0]);
-    const char* c_str = FFIMarshaller::offset_to_c_string(wasm_memory, offset);
-    char* c_result = func((char*)c_str);
+    const char *c_str = FFIMarshaller::offset_to_c_string(wasm_memory, offset);
+    char *c_result = func((char *) c_str);
     int32_t result_offset = FFIMarshaller::c_string_to_offset(wasm_memory, c_result);
     Out[0] = WasmEdge_ValueGenI32(result_offset);
     return WasmEdge_Result_Success;
 }
-
-
 
 
 // Host function to call `AddFunc` by external reference
@@ -422,114 +425,108 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
 #ifdef NATIVE_FFI
     // Add FFI imports from native library modules (Mac/Linux only)
     // WASM builds cannot load native .so/.dylib files
-    extern Map<String, Module *> native_libraries;  // Defined in Context.cpp
+    extern Map<String, Module *> native_libraries; // Defined in Context.cpp
 
     // Reconstruct native_libraries from WASM imports
     // (native_libraries is only populated during compilation, not during WASM execution)
-    for (int i = 0; i < meta.functions.size(); i++) {
-        Function& func = meta.functions.values[i];
+    for (Function &func: meta.functions) {
         if (func.is_ffi && !func.ffi_library.empty()) {
             String lib_name = func.ffi_library;
-            if (!native_libraries.has(lib_name)) {
-                Module* lib_module = new Module();
-                lib_module->name = lib_name;
-                lib_module->is_native_library = true;
-                native_libraries.add(lib_name, lib_module);
-            }
-            Module* lib_module = native_libraries[lib_name];
-            if (!lib_module->functions.has(func.name)) {
-                lib_module->functions.add(func.name, func);
-            }
+            auto modul = loadNativeLibrary(lib_name);
+            native_libraries[lib_name] = modul;
         }
     }
 
     // Iterate over native library modules (libc, libm, etc.)
     for (int i = 0; i < native_libraries.size(); i++) {
-        Module* lib_module = native_libraries.values[i];
+        Module *lib_module = native_libraries.values[i];
         if (!lib_module || !lib_module->is_native_library) continue;
-
         String lib_name = lib_module->name;
 
         // Iterate over exported functions in this native library
-        for (int j = 0; j < lib_module->functions.size(); j++) {
-            Function& func = lib_module->functions.values[j];
+        for (Function &func: lib_module->functions) {
             String func_name = func.name;
 
-            void* ffi_func = ffi_loader.get_function(lib_name, func_name);
-            if (ffi_func) {
-                // Use signature already detected during parsing
-                Signature& wasp_sig = func.signature;
-
-                // Create WasmEdge function type from signature
-                int param_count = wasp_sig.parameters.size();
-                FFIMarshaller::CType return_ctype = FFIMarshaller::get_return_ctype(wasp_sig);
-                int return_count = (return_ctype == FFIMarshaller::CType::Void) ? 0 : 1;
-
-                WasmEdge_ValType* P = param_count > 0 ? new WasmEdge_ValType[param_count] : nullptr;
-                WasmEdge_ValType* R = return_count > 0 ? new WasmEdge_ValType[return_count] : nullptr;
-
-                // Map parameter types
-                for (int k = 0; k < param_count; k++) {
-                    FFIMarshaller::CType param_ctype = FFIMarshaller::get_param_ctype(wasp_sig, k);
-                    switch (param_ctype) {
-                        case FFIMarshaller::CType::Int32:
-                        case FFIMarshaller::CType::String:  // Strings are passed as i32 offsets
-                            P[k] = WasmEdge_ValTypeGenI32();
-                            break;
-                        case FFIMarshaller::CType::Int64:
-                            P[k] = WasmEdge_ValTypeGenI64();
-                            break;
-                        case FFIMarshaller::CType::Float32:
-                            P[k] = WasmEdge_ValTypeGenF32();
-                            break;
-                        case FFIMarshaller::CType::Float64:
-                            P[k] = WasmEdge_ValTypeGenF64();
-                            break;
-                        default:
-                            P[k] = WasmEdge_ValTypeGenI32();
-                    }
-                }
-
-                // Map return type
-                if (return_count > 0) {
-                    switch (return_ctype) {
-                        case FFIMarshaller::CType::Int32:
-                            R[0] = WasmEdge_ValTypeGenI32();
-                            break;
-                        case FFIMarshaller::CType::Int64:
-                            R[0] = WasmEdge_ValTypeGenI64();
-                            break;
-                        case FFIMarshaller::CType::Float32:
-                            R[0] = WasmEdge_ValTypeGenF32();
-                            break;
-                        case FFIMarshaller::CType::Float64:
-                            R[0] = WasmEdge_ValTypeGenF64();
-                            break;
-                        default:
-                            R[0] = WasmEdge_ValTypeGenI32();
-                    }
-                }
-
-                HostFType = WasmEdge_FunctionTypeCreate(P, param_count, R, return_count);
-
-                // Create persistent FFI context for the wrapper
-                FFIMarshaller::FFIContext* ctx = create_ffi_context(&wasp_sig, ffi_func, func_name);
-
-                // Use dynamic wrapper that dispatches based on signature
-                HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ffi_dynamic_wrapper, ctx, 0);
-                WasmEdge_FunctionTypeDelete(HostFType);
-
-                if (P) delete[] P;
-                if (R) delete[] R;
-
-                HostName = WasmEdge_StringCreateByCString(func_name);
-                WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
-                WasmEdge_StringDelete(HostName);
-
-                trace("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
-            } else {
+            void *ffi_func = ffi_loader.get_function(lib_name, func_name);
+            if (!ffi_func) {
                 warn("FFI: Failed to load "s + func_name + " from " + lib_name);
+                continue;
             }
+            // Use signature already detected during parsing
+            Signature &wasp_sig = func.signature;
+
+            // Create WasmEdge function type from signature
+            int param_count = wasp_sig.parameters.size();
+            FFIMarshaller::CType return_ctype = FFIMarshaller::get_return_ctype(wasp_sig);
+            int return_count = (return_ctype == FFIMarshaller::CType::Void) ? 0 : 1;
+
+            WasmEdge_ValType *P = param_count > 0 ? new WasmEdge_ValType[param_count] : nullptr;
+            WasmEdge_ValType *R = return_count > 0 ? new WasmEdge_ValType[return_count] : nullptr;
+
+            // Map parameter types
+            for (int k = 0; k < param_count; k++) {
+            // todo just use
+                Type param_type;
+                FFIMarshaller::CType param_ctype = FFIMarshaller::get_param_ctype(wasp_sig, k);
+                switch (param_ctype) {
+                    case FFIMarshaller::CType::Int32:
+                        P[k] = WasmEdge_ValTypeGenI32();
+                        break;
+                    case FFIMarshaller::CType::String:
+                        // P[k] = WasmEdge_ValTypeGenI32(); // Strings are passed as i32 offsets
+                        P[k] = WasmEdge_ValTypeGenI64(); // Strings are passed as i64 pointers
+                        break;
+                    case FFIMarshaller::CType::Int64:
+                        P[k] = WasmEdge_ValTypeGenI64();
+                        break;
+                    case FFIMarshaller::CType::Float32:
+                        P[k] = WasmEdge_ValTypeGenF32();
+                        break;
+                    case FFIMarshaller::CType::Float64:
+                        P[k] = WasmEdge_ValTypeGenF64();
+                        break;
+                    default:
+                        P[k] = WasmEdge_ValTypeGenI32();
+                }
+            }
+
+            // Map return type
+            if (return_count > 0) {
+                switch (return_ctype) {
+                    case FFIMarshaller::CType::Int32:
+                        R[0] = WasmEdge_ValTypeGenI32();
+                        break;
+                    case FFIMarshaller::CType::Int64:
+                        R[0] = WasmEdge_ValTypeGenI64();
+                        break;
+                    case FFIMarshaller::CType::Float32:
+                        R[0] = WasmEdge_ValTypeGenF32();
+                        break;
+                    case FFIMarshaller::CType::Float64:
+                        R[0] = WasmEdge_ValTypeGenF64();
+                        break;
+                    default:
+                        R[0] = WasmEdge_ValTypeGenI32();
+                }
+            }
+
+            HostFType = WasmEdge_FunctionTypeCreate(P, param_count, R, return_count);
+
+            // Create persistent FFI context for the wrapper
+            FFIMarshaller::FFIContext *ctx = create_ffi_context(&wasp_sig, ffi_func, func_name);
+
+            // Use dynamic wrapper that dispatches based on signature
+            HostFunc = WasmEdge_FunctionInstanceCreate(HostFType, ffi_dynamic_wrapper, ctx, 0);
+            WasmEdge_FunctionTypeDelete(HostFType);
+
+            if (P) delete[] P;
+            if (R) delete[] R;
+
+            HostName = WasmEdge_StringCreateByCString(func_name);
+            WasmEdge_ModuleInstanceAddFunction(HostMod, HostName, HostFunc);
+            WasmEdge_StringDelete(HostName);
+
+            trace("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
         }
     }
 #endif // NATIVE_FFI
@@ -551,7 +548,8 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
 }
 
 
-WasmEdge_ModuleInstanceContext * duplicate_wasi_to_env(WasmEdge_VMContext *VMCxt, WasmEdge_StoreContext *store, chars name) {
+WasmEdge_ModuleInstanceContext *duplicate_wasi_to_env(WasmEdge_VMContext *VMCxt, WasmEdge_StoreContext *store,
+                                                      chars name) {
     // Try to get the WASI module and duplicate it under "env" name
     // This allows legacy WASM files that import WASI functions from "env" to work
     WasmEdge_String wasi_name = WasmEdge_StringCreateByCString("wasi_snapshot_preview1");
@@ -561,17 +559,17 @@ WasmEdge_ModuleInstanceContext * duplicate_wasi_to_env(WasmEdge_VMContext *VMCxt
     WasmEdge_ModuleInstanceContext *env_module = nullptr;
     if (wasi_module) {
         // Create a new "env" / "wasi_unstable" module and copy WASI functions into it
-        WasmEdge_String env_name = WasmEdge_StringCreateByCString(name);// env and wasi_unstable
+        WasmEdge_String env_name = WasmEdge_StringCreateByCString(name); // env and wasi_unstable
         env_module = WasmEdge_ModuleInstanceCreate(env_name);
 
         // Copy common WASI functions to env module
-        for (const char* func_name : wasi_function_list) {
+        for (const char *func_name: wasi_function_list) {
             if (!func_name) break;
             WasmEdge_String fname = WasmEdge_StringCreateByCString(func_name);
             const WasmEdge_FunctionInstanceContext *wasi_func = WasmEdge_ModuleInstanceFindFunction(wasi_module, fname);
             if (wasi_func) {
                 // Re-export the same function instance under "env" module
-                WasmEdge_ModuleInstanceAddFunction(env_module, fname, (WasmEdge_FunctionInstanceContext*)wasi_func);
+                WasmEdge_ModuleInstanceAddFunction(env_module, fname, (WasmEdge_FunctionInstanceContext *) wasi_func);
             }
             WasmEdge_StringDelete(fname);
         }
@@ -620,7 +618,7 @@ Node struct_to_node(WasmEdge_Value val) {
         }
 
         // Add field to result node (use numeric key for now)
-        result[(int)fieldIdx] = fieldNode;
+        result[(int) fieldIdx] = fieldNode;
     }
 
     trace("Reflected struct with "s + formatLong(result.size()) + " fields");
@@ -629,8 +627,8 @@ Node struct_to_node(WasmEdge_Value val) {
 }
 
 bool comp_type(WasmEdge_ValType val_type, WasmEdge_ValType type) {
-    for(int i=0; i<8; i++)
-        if(val_type.Data[i] != type.Data[i]) return false;
+    for (int i = 0; i < 8; i++)
+        if (val_type.Data[i] != type.Data[i]) return false;
     return true;
 }
 
@@ -677,8 +675,8 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     // Get the store context to access registered modules
     WasmEdge_StoreContext *store = WasmEdge_VMGetStoreContext(VMCxt);
 
-    duplicate_wasi_to_env(VMCxt, store,"env");
-    duplicate_wasi_to_env(VMCxt, store,"wasi_unstable");
+    duplicate_wasi_to_env(VMCxt, store, "env");
+    duplicate_wasi_to_env(VMCxt, store, "wasi_unstable");
 
     WasmEdge_Result Res;
     Res = WasmEdge_VMLoadWasmFromBuffer(VMCxt, buffer, buf_size);
@@ -711,23 +709,27 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
     Res = WasmEdge_VMExecute(VMCxt, FuncName, Params, 0, Returns, 1);
     WasmEdge_StringDelete(FuncName);
     if (WasmEdge_ResultOK(Res)) {
-        let a=WasmEdge_ValueGenV128(0);
+        let a = WasmEdge_ValueGenV128(0);
         let b = WasmEdge_ValueGenFuncRef(0);
-        let c =WasmEdge_ValueGenExternRef(0);
-        let d=WasmEdge_ValueGenI64(0);
+        let c = WasmEdge_ValueGenExternRef(0);
+        let d = WasmEdge_ValueGenI64(0);
         auto ret = Returns[0];
         auto val_type = ret.Type;
-        if (comp_type(val_type, a.Type)) trace("Return type is v128");
-        if (comp_type(val_type, b.Type)) trace("Return type is funcref");
-        if (comp_type(val_type, c.Type)) trace("Return type is externref");
-        if (comp_type(val_type, d.Type)) trace("Return type is i64");
+        if (comp_type(val_type, a.Type))
+            trace("Return type is v128");
+        if (comp_type(val_type, b.Type))
+            trace("Return type is funcref");
+        if (comp_type(val_type, c.Type))
+            trace("Return type is externref");
+        if (comp_type(val_type, d.Type))
+            trace("Return type is i64");
         // WasmEdge_ValueTypeGen
         // auto value_get = WasmEdge_ValueGet(Returns[0].Type);
 
         //    /* print(val_type);// 0 0 0x64 0x6b 0 0 0 0
         //        int32_t value = WasmEdge_ValueGetI32(Returns[0]);
         // Check for struct reference first (GC proposal types)
-// #ifdef WasmEdge_ValueIsStructRef
+        // #ifdef WasmEdge_ValueIsStructRef
         trace("Checking for structref...");
         if (WasmEdge_ValueIsStructRef(ret)) {
             trace("Got structref!");
@@ -736,11 +738,11 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
         } else {
             trace("Not a structref");
         }
-// #else
-//         trace("WasmEdge_ValueIsStructRef not available");
-// #endif
+        // #else
+        //         trace("WasmEdge_ValueIsStructRef not available");
+        // #endif
 
-        if(WasmEdge_ValTypeIsExternRef(val_type)) {
+        if (WasmEdge_ValTypeIsExternRef(val_type)) {
             void *ref = WasmEdge_ValueGetExternRef(ret);
             trace("Got externref (non-struct)");
             print(ref);

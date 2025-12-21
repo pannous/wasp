@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 #use lib
 puts "Hello main.wasp"
 #print "Hello main.wasp"

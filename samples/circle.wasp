@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 y=0
 j=0
 width=height=400

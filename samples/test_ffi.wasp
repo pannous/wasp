@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 // Test FFI imports
 import sqrt from "m"
 sqrt(4.0)

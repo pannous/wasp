@@ -3762,6 +3762,7 @@ void todo_done() {
     //    exit(1);
     testDataMode();
     testParams();
+    // test_const_String_comparison_bug(); // fixed in 8268c182
 }
 
 // todo: ^^ move back into tests() once they work again
@@ -4351,6 +4352,7 @@ void test_while_true_forever() {
 }
 
 void test_const_String_comparison_bug() {
+    // fixed in 8268c182 String == chars ≠> chars == chars  no more implicit cast
     const String& library_name = "raylib";
     check (library_name == "raylib");
 }
@@ -4369,8 +4371,8 @@ void testCurrent() {
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
-    todo_done();
-    // test_const_String_comparison_bug();
+    // todo_done();
+    test_ffi_raylib();
     // assert_emit("abs(0)",0);
     // assert_emit("`hello ${42}`", "hello 42"); // todo use formatLong
     // assert_emit("`hello ${1+1}`", "hello 2");

@@ -769,9 +769,11 @@ private:
         //		if (ch != '*') {
         //			parseError()("Not a block comment");
         //		}
+        String start = line;
+        int startLine = lineNumber;
         do {
             proceed();
-            if (ch == '*' or ch == '#') {
+            while (ch == '*' or ch == '#') {
                 proceed(); // closing */ or ##
                 if (ch == '/' or ch == '#') {
                     proceed();
@@ -779,7 +781,7 @@ private:
                 }
             }
         } while (ch);
-        error("Unterminated block comment");
+        error("Unterminated block comment starting at line "s + startLine + ": " + start);
     };
 
     // Parse a comment

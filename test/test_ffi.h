@@ -433,66 +433,36 @@ static void test_extract_function_signature() {
     tests_executed++;
 #if !WASM
 
-
     String c_code1 = "double sqrt(double x);";
     Node& parsed1 = parse(c_code1);
     FFIHeaderSignature sig1;
     sig1.library = "m";
-
-    if (extractFunctionSignature(parsed1, sig1)) {
-
-
-
-        for (int i = 0; i < sig1.param_types.size(); i++) {
-
-        }
-
-    } else {
-
-    }
+    extractFunctionSignature(c_code1, sig1);
+    check_is(sig1.name, "sqrt");
+    check_is(sig1.return_type, "double");
+    check_is(sig1.param_types.size(), 1);
+    check_is(sig1.param_types[0], "double");
 
     String c_code2 = "double fmin(double x, double y);";
     Node& parsed2 = parse(c_code2);
     FFIHeaderSignature sig2;
     sig2.library = "m";
-
+    extractFunctionSignature(c_code2, sig2);
+    check_is(sig2.name, "fmin");
+    check_is(sig2.return_type, "double");
+    check_is(sig2.param_types.size(), 2);
+    check_is(sig2.param_types[0], "double");
+    check_is(sig2.param_types[1], "double");
 
     String c_code3 = "int strlen(char* str);";
     Node& parsed3 = parse(c_code3);
-
-
-
-
-    for (int i = 0; i < parsed3.length; i++) {
-        Node& child = parsed3[i];
-
-        if (child.length > 0) {
-            for (int j = 0; j < child.length; j++) {
-                Node& grandchild = child[j];
-
-                if (grandchild.length > 0) {
-                    for (int k = 0; k < grandchild.length; k++) {
-
-                    }
-                }
-            }
-        }
-    }
-
     FFIHeaderSignature sig3;
-    sig3.library = "c";
+    extractFunctionSignature(c_code3, sig3);
+    check_is(sig3.name, "strlen");
+    check_is(sig3.return_type, "int");
+    check_is(sig3.param_types.size(), 1);
+    check_is(sig3.param_types[0], "char*");
 
-    if (extractFunctionSignature(parsed3, sig3)) {
-
-
-
-        for (int i = 0; i < sig3.param_types.size(); i++) {
-
-        }
-
-    } else {
-
-    }
 #endif
 }
 
@@ -643,9 +613,15 @@ static void test_ffi_raylib_combined() {
 #endif
 }
 
+void test_ffi_raylib_simple_use_import() {
+    tests_executed++;
+    assert_emit("samples/raylib_simple_use.wasp",42);
+}
+
 static void test_ffi_raylib() {
     tests_executed++;
     test_ffi_raylib_init();
+    test_ffi_raylib_simple_use_import();
     // test_ffi_raylib_combined();
 }
 

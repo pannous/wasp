@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 // Raylib FFI Demo - Multiple shapes display
 // This example creates a window and displays colorful shapes
 // Note: Displays a static frame (animation requires while loop enhancement)

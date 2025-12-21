@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 # <script id="defaultShader" type="wgsl">
 webgpu{
 struct VertexOutput {

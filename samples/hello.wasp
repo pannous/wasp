@@ -1,1 +1,2 @@
+#!/usr/bin/env wasp
 "Hello " + "🌍" + 2000+25

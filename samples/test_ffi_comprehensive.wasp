@@ -1,3 +1,4 @@
+#!/usr/bin/env wasp
 // Comprehensive FFI Test Suite
 // Demonstrates various parameter type combinations with native library imports
 

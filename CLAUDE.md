@@ -201,3 +201,6 @@ debug wasm files with hexdump if they are illformed. compare with a minimal work
 - NEVER create or modify tests in ./tests/ folder unless Explicitly instructed. Instead try to work with The existing tests or if absolutely necessary create new temporary tests in ./probes/ folder
 - use typeName() To get the name of a Kind / Type / ValueType
 - don't create random ./docs/ or .md files unless explicitly instructed
+- use const XYZ& to capture both function parameter cases XYZ or XYZ& !
+- const XYZ& and XYZ* parameters capture all cases
+- use const XYZ& instead of XYZ* or XYZ where possible
