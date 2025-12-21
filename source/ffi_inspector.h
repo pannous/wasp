@@ -381,6 +381,8 @@ inline void add_ffi_signature(Module *modul, FFIHeaderSignature ffi_sig) {
     if (!modul->functions.has(ffi_sig.name)) {
         Function func;
         func.name = ffi_sig.name;
+        if(func.name=="atof")
+            print("Debug atof\n");
         func.is_ffi = true;
         func.ffi_library = modul->name;
         func.signature = convert_ffi_signature(ffi_sig);// ffi_sig.signature;
@@ -388,7 +390,9 @@ inline void add_ffi_signature(Module *modul, FFIHeaderSignature ffi_sig) {
     } else {
         // Merge signature info
         Function &existing_func = modul->functions[ffi_sig.name];
-        // warn("Override with header info "s % ffi_sig.name);
+        if(ffi_sig.name=="atof")
+            warn("Override with header info "s % ffi_sig.name);
+            // print("Debug atof merge\n");
         existing_func.signature =   convert_ffi_signature(ffi_sig); // ffi_sig.signature; // Override with header info
     }
 }

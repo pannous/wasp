@@ -21,6 +21,8 @@ inline Map<String, List<String>*>& get_library_header_map() {
         c_headers->add("/usr/include/stdio.h");       // printf, fopen, etc.
         c_headers->add("/usr/local/include/string.h");
         c_headers->add("/usr/local/include/stdlib.h");
+        c_headers->add("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/stdlib.h");
+        c_headers->add("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_stdlib.h");
         library_headers.add("c", c_headers);
 
         // Math library
