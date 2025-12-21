@@ -407,7 +407,11 @@ Module &loadRuntime() {
     return wasp;
 #else
     // Module &wasp = read_wasm("wasp-runtime-debug.wasm");// todo unexpected opcode …!!!
-    Module &wasp = read_wasm("wasp-runtime.wasm");
+    // Use findFile to locate runtime in bin/wasm or other standard locations
+    String runtime_path = findFile("wasp-runtime.wasm", "bin/wasm");
+    if (runtime_path.empty())
+        runtime_path = "wasp-runtime.wasm"; // fallback to current dir
+    Module &wasp = read_wasm(runtime_path);
     wasp.functions["getChar"].signature.returns(codepoint1);
     // addLibrary(&wasp); // BREAKS system WHY?
     // if(!libraries.has(&wasp))
