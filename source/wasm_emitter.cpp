@@ -3706,7 +3706,6 @@ Code emitTypeSection() {
             else
                 warn("empty context creep functions[ø]");
                 // error("empty context creep functions[ø]");
-            if (fun == "abs") tracef("DEBUG emitter: abs is empty string, skipping\n");
             continue;
         }
         // Skip operators unless they're FFI imports
@@ -3714,8 +3713,6 @@ Code emitTypeSection() {
         if (operator_list.has(fun.data)) {
             todow("operator as function:"s + fun); // ok allow overwrite?
             // continue;
-        }
-        if (fun == "abs") {
         }
         if (is_operator(fun[0])) {
             // Skip operators that weren't caught by the operator_list check above
@@ -3738,7 +3735,6 @@ Code emitTypeSection() {
         if (function.is_runtime)
             continue;
         if (function.signature.is_handled) {
-            if (fun == "abs") tracef("DEBUG emitter: abs signature already handled, skipping\n");
             continue;
         }
         //		if(context.is_import) // types in import section!
