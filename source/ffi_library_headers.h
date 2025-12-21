@@ -55,10 +55,8 @@ inline Map<String, List<String>*>& get_library_header_map() {
 // Get all potential c header files for a library
 inline List<String>* get_library_header_files(const String& library_name) {
     auto& map = get_library_header_map();
-    if (map.has(library_name)) {
-        return map[library_name];
-    }
-    return nullptr;
+    if (map.has(library_name)) return map[library_name];
+    return 0;
 }
 
 // Find first existing header file for a library

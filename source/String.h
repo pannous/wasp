@@ -528,7 +528,7 @@ public:
         return data[position];
     }
 
-    int indexOf(char c, int from = 0, bool reverse = false) {
+    int indexOf(char c, int from = 0, bool reverse = false) const {
         for (int j = from; j < length and j < MAX_STRING_LENGTH; j++) {
             if (reverse and data[j] == c)return j;
             if (!reverse and data[j] == c)return j;
@@ -1074,7 +1074,7 @@ public:
     bool empty() const;
 
 
-    int indexOf(chars string, int from = 0, bool reverse = false) {
+    int indexOf(chars string, int from = 0, bool reverse = false) const {
         int l = strlen(string);
         //        if ((int64) data + l > MAX_MEM)
         //            error("corrupt string"); // let it fail / auto-grow!?
@@ -1098,11 +1098,11 @@ public:
         return indexOf(string, 0, true);
     }
 
-    bool contains(chars string) {
+    bool contains(chars string) const {
         return indexOf(string) >= 0;
     }
 
-    bool contains(char chr) {
+    bool contains(char chr) const {
         return indexOf(chr) >= 0;
     }
 

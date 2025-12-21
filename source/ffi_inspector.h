@@ -381,6 +381,10 @@ inline Module *loadNativeLibrary(String library) {
     enumerate_library_functions(library, modul->functions); // via FFI, next via .h parsing!
     auto headers = get_library_header_files(library);
     for (String header: *headers) {
+        if(not fileExists(header)) {
+            warn("Header file %s for library %s does not exist!\n"s % header % library);
+            continue;
+        }
         print("Parsing header file %s for library %s\n"s % header % library);
         List<FFIHeaderSignature> sigs = parseHeaderFile(header, library);
         for (FFIHeaderSignature &ffi_sig: sigs) {
