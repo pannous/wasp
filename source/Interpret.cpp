@@ -86,7 +86,7 @@ Node Node::interpret(bool expectOperator /* = true*/) {
     if (max == 0) {
         if (!name.empty() or length > 1) {
             breakpoint_helper // ok need not always have known operators
-            info(String("Info: No operator in : ") + serialize());
+            info((chars)(String("Info: No operator in : ") + serialize()));
             if (unknown_symbols.length > 0 and expectOperator)
                 error("unknown symbol "s + unknown_symbols.serialize());
         }

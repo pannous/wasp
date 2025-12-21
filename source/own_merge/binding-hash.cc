@@ -77,7 +77,7 @@ namespace wabt {
              ++iter) {
             auto first = std::find_if(duplicates.begin(), duplicates.end(),
                                       [iter](const value_type *x) -> bool {
-                                          return x->first == (*iter)->first;
+                                          return x->first == (*iter)->first.data;
                                       });
             if (first == iter) {
                 continue;

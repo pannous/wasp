@@ -276,7 +276,7 @@ Node &getType(Node &node) {
     if (types.has(name)) {
         auto &pNode = types[name];
         if (not pNode)
-            error1("getType: types corruption: type %s not found (NULL)", name);
+            error1((chars)("getType: types corruption: type %s not found (NULL)"s % name));
         return *pNode;
         //        typ.kind = clazz;
     }
@@ -745,7 +745,8 @@ bool isPrimitive(Node &node) {
     return false;
 }
 
-bool isKeyword(String &op) {
+bool isKeyword(String &op0) {
+    chars op = op0.data;
     if (operator_list.has(op))return true;
     if (function_operators.has(op))return true;
     if (prefixOperators.has(op))return true;
@@ -759,7 +760,7 @@ bool isKeyword(String &op) {
 
 // √π -i ++j !true … not delete(x)
 bool isPrefixOperation(Node &node, Node &lhs, Node &rhs) {
-    if (prefixOperators.has(node.name)) {
+    if (prefixOperators.has(node.name.data)) {
         //		if (infixOperators.has(node.name) or suffixOperators.has(node.name)) {
         if (lhs.kind == reference)return false; // i++
         if (isPrimitive(lhs))return false; // 3 -1

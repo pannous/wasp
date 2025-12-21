@@ -40,7 +40,7 @@ Node smartNode32(int smartPointer32) {
         // smart pointer for string
         return Node(((char *) wasm_memory) + smart_pointer);
     }
-    error1("missing smart pointer type "s + typeName(Type(smartPointer32)));
+    error1((chars)("missing smart pointer type "s + typeName(Type(smartPointer32))));
     return Node();
 }
 

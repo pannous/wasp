@@ -190,7 +190,7 @@ bool Wasp::parseAssignment(Node &actual) {
         add_to_whole_expression = true;
     if (is_operator(previous))
         add_raw = true;
-    if(previous==')' and function_keywords.has(actual.first().name)) {
+    if(previous==')' and function_keywords.has(actual.first().name.data)) {
         actual.setKind(declaration, false);
         add_raw= true;
     }
@@ -237,6 +237,8 @@ bool Wasp::parseAssignment(Node &actual) {
 
     return true;
 }
+
+class Wasp;
 
 // INDENT token
 bool Wasp::parseIndent(Node &actual) {
@@ -311,7 +313,7 @@ bool Wasp::parseMinusDot(Node &actual) {
     }
 
     if (ch == '-' and isKebabBridge())
-        parserError("kebab case should be handled in identifier");
+        error("kebab case should be handled in identifier");
 
     if (ch == '-' and next == '>') {
         next = u'⇨';
@@ -353,7 +355,7 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
     bool is_ffi_import = (node.name == "import" && node.kind == functor);
 
 #ifndef RUNTIME_ONLY
-    if (!is_ffi_import && (precedence(node) or operator_list.has(node.name))) {
+    if (!is_ffi_import && (precedence(node) or operator_list.has(node.name.data))) {
         node.kind = operators;
     }
 #endif

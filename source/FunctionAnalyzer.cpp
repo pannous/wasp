@@ -48,7 +48,7 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     if (is_operator(name[0]) and name != ":=") // todo ^^
         todo("is_operator!"s + name); // remove if it doesn't happen
 
-    if (name and not function_operators.has(name)) {
+    if (name and not function_operators.has(name.data)) {
         if (context.name != "wasp_main") {
             print("broken context");
             print(context.name);
@@ -193,7 +193,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
             }
             continue;
         } // todo danger, referenceIndices i=1 … could fall through to here:
-        if (node.kind != declaration and not declaration_operators.has(op))
+        if (node.kind != declaration and not declaration_operators.has(op.data))
             continue;
         if (op.empty())continue;
         if (op == "=" or op == ":=") continue; // handle assignment via groupOperators !
@@ -204,7 +204,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
         Node left = expression.to(node); // including public… + ARGS! :(
         Node rest = expression.from(node); // body
         String name = extractFunctionName(left);
-        if (left.length == 0 and not declaration_operators.has(node.name))
+        if (left.length == 0 and not declaration_operators.has(node.name.data))
             name = node.name; // todo: get rid of strange heuristics!
         if (node.length > 1) {
             // C style double sin(x) {…} todo: fragile criterion!! also why is body not child of sin??
@@ -212,7 +212,8 @@ Node &groupDeclarations(Node &expression, Function &context) {
             left = node.first().first(); // ARGS
             rest = node.last();
             if (rest.kind == declaration)rest = rest.values();
-            context.locals.remove(name); // not a variable!
+            String& nam = name;
+            context.locals.remove(nam); // not a variable!
         }
         ////			todo i=1 vs i:=it*2  ok ?
 

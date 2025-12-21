@@ -817,7 +817,7 @@ void Linker::WriteNamesSection() {
 
     stream_.WriteU8Enum(SectionType::Custom, "section code");
     Fixup fixup = WriteUnknownSize();
-    WriteStr(&stream_, "name"s, "custom section name"s);
+    WriteStr(&stream_, "name", "custom section name");
 
     stream_.WriteU8Enum(NameSectionSubsection::Function, "subsection code");
     Fixup fixup_subsection = WriteUnknownSize();
@@ -856,7 +856,7 @@ void Linker::WriteLinkingSection(uint32_t data_size, uint32_t data_alignment) {
     stream_.WriteU8Enum(SectionType::Custom, "section code");
     Fixup fixup = WriteUnknownSize();
 
-    WriteStr(&stream_, "linking"s, "linking section name"s);
+    WriteStr(&stream_, "linking", "linking section name");
 
     if (data_size) {
         //    WriteU32Leb128(&stream_, LinkingEntryType::DataSize, "subsection code");
@@ -966,8 +966,8 @@ struct FuncInfo {
 };
 
 template<typename Collection, typename Element>
-void remove_from_efin_vec(Collection &c, const Element &e) {
-    c.erase(std::remove(c.begin(), c.end(), e), c.end());
+void remove_from_efin_vec(Collection &c, const Element &el) {
+    c.erase(std::remove(c.begin(), c.end(), el), c.end());
 };
 
 
@@ -1198,8 +1198,8 @@ void Linker::ResolveSymbols() {
                 //				Index new_Index; // see RelocateFuncIndex(); ⚠️ we can only calculate the new index once ALL imports are collected!
                 //				import.relocated_function_index = export_number; see RelocateFuncIndex()
                 binary->active_function_imports--; // never used!?
-                char *import_name = import.name;
-                char *export_name = exported.name;
+                char *import_name = import.name.data;
+                char *export_name = exported.name.data;
 #if not RELEASE
                 trace("LINKED %s:%s import #%d %s to export #%d %s relocated_function_index %d \n"s % binary->name %
                       name.data % old_index %

@@ -113,7 +113,7 @@ static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_t
         wasm_byte_vec_delete(&trap_message);
         wasm_trap_delete(trap);
     }
-    raise("Error in Wasmtime call: "s + message);
+    error("Error in Wasmtime call: "s + message);
     // exit(1);
 }
 
@@ -262,7 +262,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         wasmtime_func_callback_t cb = (wasmtime_func_callback_t) link_import(import_name);
         if (cb) {
             wasmtime_error_t *derr = wasmtime_linker_define_func(
-                linker, "env", 3, import_name, import_name.length, own_type, cb, NULL, NULL);
+                linker, "env", 3, import_name.data, import_name.length, own_type, cb, NULL, NULL);
             if (derr) exit_with_error("define_func failed", derr, NULL);
         }
         // Note: FFI functions (with module != "env") are handled separately below
@@ -317,24 +317,25 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
             wasm_valtype_t** R = return_count > 0 ? new wasm_valtype_t*[return_count] : nullptr;
 
             // Map parameter types
-            for (int j = 0; j < param_count; j++) {
-                FFIMarshaller::CType param_ctype = FFIMarshaller::get_param_ctype(wasp_sig, j);
+                // todo check j / k indexing
+            for (int k = 0; k < param_count; k++) {
+                FFIMarshaller::CType param_ctype = FFIMarshaller::get_param_ctype(wasp_sig, k);
                 switch (param_ctype) {
                     case FFIMarshaller::CType::Int32:
                     case FFIMarshaller::CType::String:  // Strings are passed as i32 offsets
-                        P[j] = wasm_valtype_new(WASM_I32);
+                        P[k] = wasm_valtype_new(WASM_I32);
                         break;
                     case FFIMarshaller::CType::Int64:
-                        P[j] = wasm_valtype_new(WASM_I64);
+                        P[k] = wasm_valtype_new(WASM_I64);
                         break;
                     case FFIMarshaller::CType::Float32:
-                        P[j] = wasm_valtype_new(WASM_F32);
+                        P[k] = wasm_valtype_new(WASM_F32);
                         break;
                     case FFIMarshaller::CType::Float64:
-                        P[j] = wasm_valtype_new(WASM_F64);
+                        P[k] = wasm_valtype_new(WASM_F64);
                         break;
                     default:
-                        P[j] = wasm_valtype_new(WASM_I32);
+                        P[k] = wasm_valtype_new(WASM_I32);
                 }
             }
 
@@ -371,7 +372,7 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 
             // Use dynamic wrapper that dispatches based on signature
             wasmtime_error_t *derr = wasmtime_linker_define_func(
-                linker, lib_name, lib_name.length, func_name, func_name.length, ffi_type,
+                linker, lib_name.data, lib_name.length, func_name.data, func_name.length, ffi_type,
                 ffi_dynamic_wrapper_wasmtime, ctx, NULL);
 
             wasm_functype_delete(ffi_type);

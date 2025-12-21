@@ -82,7 +82,7 @@ codepoint closingBracket(codepoint bracket) {
         case u'\'':
             return u'\'';
         default:
-            error("unknown bracket "s + bracket);
+            error((chars)"unknown bracket "s + bracket);
     }
     return 0;
 }
@@ -102,7 +102,7 @@ bool is_operator(codepoint ch, bool check_identifiers /*= true*/) {
     if (ch == u'¬')return true;
     if (ch == u'＝')return true;
     if (ch == u'#') return true; // todo: # is NOT an operator, but a special symbol for size/count/length
-    if (operator_list.has(String(ch)))
+    if (operator_list.has(String(ch).data))
         return true;
 
     if (ch > 0x80)

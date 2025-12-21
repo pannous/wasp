@@ -54,7 +54,7 @@ bool fileExists(String filename) {
 #else
     trace("checking fileExists "s + filename);
     if (filename.empty())return false;
-    if (isDir(filename))return false; // only true files here!
+    if (isDir(filename.data))return false; // only true files here!
 #if WASM && !WASI
     return false; // todo
 #else
@@ -90,7 +90,7 @@ int64 file_last_modified(char *file) {
 
 float file_last_modified(String &file) {
     struct stat attr;
-    stat(file, &attr);
+    stat(file.data, &attr);
     return attr.st_mtime;
 }
 
@@ -118,6 +118,7 @@ bool isDir(const char *name) {
     return false; // -1;
 #endif
 }
+bool isDir(String name) {return isDir(name.data);}
 
 //String findNewestFile(String filename) {
 String findFile(String filename, String current_dir) {
@@ -329,6 +330,9 @@ chars concat(chars a, chars b) {
     int lb = (int) strlen(b);
     return concat(a, b, la, lb);
 }
+chars concat(const String& a, chars b) {
+    return concat(a.data, b);
+}
 
 // extern "C" byte *heap_end;
 // extern "C" byte *testHeap() {
@@ -415,7 +419,7 @@ double log2(double y) { //noexcept{
 
 String load(String file) {
     int size;
-    char *text = readFile(file, &size);
+    char *text = readFile(file.data, &size);
     return String(text, size);
 }
 
@@ -556,7 +560,7 @@ double powdi(double a, unsigned int b) {
 
 char *dropPath(char *file0) {
     auto file = String(file0);
-    return file.substring(file.lastIndexOf("/") + 1);
+    return file.substring(file.lastIndexOf("/") + 1).data;
 }
 
 String extractPath(String file) {

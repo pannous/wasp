@@ -71,7 +71,7 @@ int isalnum0(int c) {
 
 // todo put to util
 #if not WEBAPP
-[[noreturn]]
+[[noreturn]] // MUST ALWAYS throw! use raise if not throwing
 #endif
 void error1(chars message, chars file, int line) {
 #ifdef _Backtrace_
@@ -94,14 +94,20 @@ void error1(chars message, chars file, int line) {
     raise(message);
 #endif
 #if not WEBAPP
-    //	if (throwing)
+    	// if (throwing)
+            throw message; // [[noreturn]] should not return
     // throw Error(message); // [[noreturn]] should not return
-    throw message; // [[noreturn]] should not return
 #else
     proc_exit(-1);
     throw message;
 #endif
 }
+
+
+// [[noreturn]]
+// void error1(String message, chars file, int line) {
+//     error1(message.data, file, line);
+// }
 
 
 void newline() {
@@ -115,7 +121,9 @@ void info(chars msg) {
     print(msg);
 #endif
 }
-
+void info(const String& msg) {
+    info(msg.data);
+}
 void warn(chars warning) {
     print(warning);
 }
@@ -145,7 +153,9 @@ int raise(chars error) {
 #endif
     return -1;
 }
-
+// int raise(const String& error) {
+//     return raise(error.data);
+// }
 
 // todo: how to do routes in wasp? serve "/" { "hello" }   serve "/file" { "file" }
 // https://developer.fermyon.com/wasm-languages/cpp

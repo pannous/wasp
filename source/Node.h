@@ -26,7 +26,7 @@ extern bool use_wasm_structs;
 extern bool use_wasm_strings; // used to work with wasm-as but Chrome removed flag?
 extern bool use_wasm_arrays;
 
-inline bool throwing = false;
+inline bool throwing = false;// error must always throw! use raise() or assert_throws()
 inline bool panicking = false;
 
 #define MAX_NODE_CAPACITY 100000 // debug only, let it run out of memory naturally!
@@ -476,7 +476,7 @@ public:
     }
 
     Node *invoke(String function, Node *arguments) {
-        print(function);
+        print(function.data);
         print(arguments);
         todo("dynamic dispatch");
         // i32.const fun
@@ -618,7 +618,7 @@ public:
 
     Node &operator[](chars s);
 
-    //	Node &operator[](String s);
+    Node &operator[](String& s);
     Node &operator[](String *s);
 
     //	Node &operator[](String s) const;
@@ -752,7 +752,8 @@ public:
 
     chars toString() const;
 
-    String serialize() const;
+    // String serialize() const;
+    String& serialize() const;
 
     chars serializeValue(bool deep = true) const;
 

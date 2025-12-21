@@ -100,7 +100,7 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     skip_native_ffi_1:
     #endif
 
-    if (contains(funclet_list, name)) {
+    if (contains(funclet_list, name.data)) {
 #if WASM and not MY_WASM
         //				todo("getWaspFunclet get library function signature from wasp");
         warn("WASP function "s + name + " getWaspFunclet todo");

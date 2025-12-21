@@ -104,7 +104,9 @@ public: // todo careful Map<char*,…> eq
     }
 
     // returns -1 if not found
-    int position(const S &s) const {
+
+
+    int position(S &s) {
         // int position(S s){
         for (int i = 0; i < _size; i++) {
             //  or keys[i]!=0
@@ -112,11 +114,23 @@ public: // todo careful Map<char*,…> eq
             //     print(keys[i]);
             // print("cmp key[i] == s: ");
             //     print(keys[i] == s);
-            if (s == (const S &) keys[i])
+            // if (s == (const S &) keys[i])
+            // if (s == (const S) keys[i])
+            if (s == keys[i])
                 return i;
         }
         return -1;
     }
+
+    int position(const S &s0) const {
+        S s = s0;// drop const for comparison
+         for (int i = 0; i < _size; i++) {
+            if (s == keys[i])
+                return i;
+        }
+        return -1;
+    }
+
 
     // int position(S *s) {
     //     if (s >= begin() and s <= end())
@@ -368,7 +382,7 @@ public: // todo careful Map<char*,…> eq
 
     void clear() {
         if (size() == 0)return;
-          if (capacity == 0)capacity = MAP_INITIAL_CAPACITY; //tood:??
+        if (capacity == 0)capacity = MAP_INITIAL_CAPACITY; //tood:??
         free(keys); // todo  (interrupted by signal 6: SIGABRT) in WebApp why?
         free(values);
         keys = (S *) calloc(sizeof(S), capacity);

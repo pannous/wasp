@@ -2466,16 +2466,17 @@ void testErrors() {
     skip("can't catch ERROR in wasm")
     return;
 #endif
-    throwing = false;
-    result = parse("]");
-    assert(result == ERROR);
+    assert_throws("]"); // set throwing to true!!
+    // throwing = false; // error always throws
+    // result = parse("]");
+    // assert(result == ERROR);
     /*
         ln -s /me/dev/apps/wasp/samples /me/dev/apps/wasp/cmake-build-wasm/out
         ln -s /Users/me/dev/apps/wasp/samples /Users/me/dev/apps/wasp/cmake-build-default/ #out/
       */
-    breakpoint_helper
-    result = /*Wasp::*/parseFile("samples/errors.wasp");
-    throwing = true;
+    // breakpoint_helper todo
+    // result = /*Wasp::*/parseFile("samples/errors.wasp");
+    // throwing = true;
 }
 
 
@@ -3311,7 +3312,7 @@ void testNilValues() {
 #if LINUX
     return; // todo: not working on linux, why?
 #endif
-    assert(NIL.name == nil_name);
+    assert(NIL.name == nil_name.data);
     assert(NIL.isNil());
     assert_parses("{ç:null}");
     Node &node1 = result["ç"];
@@ -4368,6 +4369,7 @@ void testCurrent() {
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
+    todo_done();
     // test_const_String_comparison_bug();
     // assert_emit("abs(0)",0);
     // assert_emit("`hello ${42}`", "hello 42"); // todo use formatLong

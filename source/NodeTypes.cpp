@@ -386,7 +386,8 @@ chars typeName(Type t) {
     if (isGeneric(t)) {
         auto &kind = t.generics.kind;
         auto &type = t.generics.value_type;
-        return ""s + typeName((Kind) kind, false) + "<" + typeName((Primitive) type) + ">";
+        auto nam=""s + typeName((Kind) kind, false) + "<" + typeName((Primitive) type) + ">";
+        return nam.data;
     }
     // todo : make sure to emit Nodes at > 0x10000 …
     warn("typeName %x %d "s % t.value % t.value);
