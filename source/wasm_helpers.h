@@ -16,6 +16,8 @@ typedef unsigned char *bytes;
 [[noreturn]]
 extern void error1(chars message, chars file, int line);
 
+
+
 // there are two aspects of wasm memory: the internal memory starting at 0 and the external c-pointer *wasm_memory if the VM provides it
 // worse there is the native_runtime which may hold the wasm_runtime running in the VM!
 // todo : depends on clang_options! Sometimes it is needed sometimes it can't be there
@@ -49,6 +51,7 @@ int raise(chars error); // conflicts with signal.h if 'extern'
 #else
 extern "C" int raise(chars error); // conflicts with signal.h if 'extern'
 #endif
+
 //
 //#if WASM
 //extern "C" void *memmove(char *dest, const char *source, size_t num);

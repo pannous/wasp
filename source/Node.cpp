@@ -57,7 +57,8 @@
 //const Node NaN = Node("NaN");
 
 // must never be used in non-const references!
-const Node NIL = Node(new String(nil_name, false)).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
+const Node NIL = Node(nil_name).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
+// const Node NIL = Node(new String(nil_name, false)).setKind(nils).setValue(0); // non-existent. NOT a value, but a keyword!
 Node Unknown = Node("unknown").setKind(nils).setValue(0); // maybe-existent
 Node Undefined = Node("undefined").setKind(nils).setValue(0); // maybe-existent, maybe error
 Node Missing = Node("missing").setKind(nils).setValue(0); // existent but absent. NOT a value, but a keyword!
@@ -134,7 +135,9 @@ Node &Node::operator[](String *s) {
     return operator[](s->data);
 }
 
-//Node &Node::operator[](String s) {
+Node &Node::operator[](String& s) {
+    return (*this)[s.data];
+}
 Node &Node::operator[](chars s) {
     if (s[0] == '@') {
         return metas()[s + 1];
@@ -212,7 +215,7 @@ Node &Node::merge(Node *other) {
 }
 
 Node &Node::operator[](char c) {
-    return (*this)[String(c)];
+    return (*this)[String(c).data];
 }
 
 
@@ -334,7 +337,7 @@ bool Node::operator==(int other) {
     if (kind == codepoint1)return other == value.longy; // permissive here only!
     if (kind == key and value.node and *value.node == other)return true;
     if (kind == strings and parseLong(value.string->data) == other)return true;
-    if (parseLong(name) == other)return true;
+    if (parseLong(name.data) == other)return true;
     if (length == 1 and (isGroup(kind)))
         return last() == other;
     //	if (type == objects)return value.node->numbere()==other;// WTF
@@ -844,12 +847,12 @@ chars Node::serializeValue(bool deep) const {
             return "??";
         //            return val.node->name;
         case strings:
-            return val.data ? "\""s + val.string + "\"" : "";
+            return (chars)(val.data ? "\""s + val.string + "\"" : "");
         //		case ints:
         case errors:
-            return val.node ? val.node->name : "<ERROR>";
+            return (chars)(val.node ? val.node->name : "<ERROR>");
         case codepoint1:
-            return String((codepoint) val.longy);
+            return String((codepoint) val.longy).data;
         case flags: {
             // todo: distinguish flags class from flags variables!
             if (type) {
@@ -859,7 +862,7 @@ chars Node::serializeValue(bool deep) const {
                 for (auto &flag: *type)
                     if (val.longy && flag.value.longy)
                         flag_list = flag.name + " | ";
-                return flag_list;
+                return flag_list.data;
             }
         }
         case longs:
@@ -871,13 +874,13 @@ chars Node::serializeValue(bool deep) const {
         case nils:
             return "ø";
         case generics:
-            return deep ? "" : "<"s + val.node->name + ">"; // "<…>";
+            return (chars)(deep ? "" : "<"s + val.node->name + ">"); // "<…>";
         case structs:
         case records:
         case clazz:
         case variants:
         case enums:
-            return name;
+            return name.data;
         //            return ""s + name + "{…" + "}";// todo fields
         case objects:
             return deep ? "" : "{…}"; // useful for debugging, but later return "" for
@@ -889,14 +892,14 @@ chars Node::serializeValue(bool deep) const {
             return deep ? "" : "[…]";
         case key:
             if (deep)
-                return val.node ? val.node->serialize() : ""; // val.node->serialize();
+                return val.node ? val.node->serialize().data : ""; // val.node->serialize();
             else
-                return val.node ? val.node->name : ""; // val.node->serialize();
+                return val.node ? val.node->name.data : ""; // val.node->serialize();
 
         case reference:
-            return val.data ? val.node->name : "ø";
+            return val.data ? val.node->name.data : "ø";
         case symbol:
-            return *val.string;
+            return val.string->data;
         case bools:
             return val.longy > 0 ? "true" : "false";
         case arrays:
@@ -909,7 +912,7 @@ chars Node::serializeValue(bool deep) const {
         case functor:
         case urls:
         case modul:
-            return name; // +"!"
+            return name.data; // +"!"
         case declaration:
         case expression:
         case assignment:
@@ -935,33 +938,34 @@ chars Node::serializeValue(bool deep) const {
 }
 
 // todo: (x)=>x when root
-String Node::serialize() const {
+String& Node::serialize() const {
     //    return "serialize currently has a bug";
     // >>>>>>>>>>>> name != serializedValue <<<<<<<<<<  THIS causes BUG!
     // DON'T BE FOOLED!! CORRUPTION IN ONE PART HERE e.g. serializeValue() MAY CAUSE CORRUPTION MucH LATER!!
     // Start TRACE in RUN mode (NOT debug!!) to see AddressSanitizer output
     // DON'T BE FOOLED!! just because all tests pass now doesn't mean the bug here (in serializeValue?) is fixed!
     //    if (not this)return "";
-    if (eq(name, "html"))
+    if (eq(name.data, "html"))
         return "<html>"s + value.string + "</html>"s;
 
     String wasp = "";
     if(this->meta) {
-        for(Node& meta: *this->meta) {
-            auto val = meta.values().serialize();
-            if(meta.kind==key)val= meta.value.node->serializeValue();
+        for(Node& metax: *this->meta) {
+            auto val = metax.values().serialize();
+            if(metax.kind==key)val= metax.value.node->serializeValue();
             // wasp += "@"s + meta.serialize() + " ";// todo THIS IS THE WAY!
             // wasp += "@"s + meta.name + "(" + meta.serializeValue() + ") ";
-            wasp += "@"s + meta.name + "(" + val + ") ";
+            wasp += "@"s + metax.name + "(" + val + ") ";
         }
     }
     if (not use_polish_notation or length == 0) {
-        if (not name.empty()) wasp += name;
+        if (not name.empty()) wasp += name.data;
         //        String serializedValue=serializeValue();// todo IS THIS A GENERAL STRING BUG!? can't return "XXX" => String !?!
         //        const String &serializedValue = "";
-        const String &serializedValue = *new String(serializeValue());
+        // const String &serializedValue = *new String(serializeValue());
+        String &serializedValue = *new String(serializeValue());
         if (kind == longs or kind == reals)
-            if (not parseLong(name) and name and name.data and name.data[0] != '0')
+            if (not parseLong(name.data) and name and name.data and name.data[0] != '0')
                 return wasp + ":" + serializedValue;
         if (kind == strings and name and (name.empty() or name == value.string))
             return serializedValue; // not text:"text", just "text"
@@ -974,11 +978,11 @@ String Node::serialize() const {
         //            !eq(serializedValue, "?")
 
         // >>>>>>>>>>>> name != serializedValue <<<<<<<<<<  THIS causes BUG! (or before???)
-        if ((value.data or kind == longs) and serializedValue and not(name == serializedValue)) {
+        if ((value.data or kind == longs) and serializedValue and not(name == serializedValue.data)) {
             if (name)
                 wasp += ":";
 
-            wasp += serializedValue;
+            wasp += serializedValue.data;
             if (kind != longs) wasp += " ";
         }
     }
@@ -995,7 +999,7 @@ String Node::serialize() const {
             else if (not separator) wasp += "("; // default and not…
         }
 
-        if (use_polish_notation and not name.empty()) wasp += name;
+        if (use_polish_notation and not name.empty()) wasp += name.data;
         int i = 0;
         if (length > 0)
             if (kind == operators) wasp += " ";
@@ -1007,7 +1011,7 @@ String Node::serialize() const {
                 break; // how on earth is that possible??
             if (i++ > 0) wasp += separator ? separator : ' ';
             const String &chil = new String( child.serialize());
-            wasp += chil;
+            wasp += chil.data;
         }
 
         if (length > 0 or kind == patterns or kind == objects) {
@@ -1019,17 +1023,17 @@ String Node::serialize() const {
         }
         //        if (name == (char*)"‖") wasp += name; // THIS LINE BREAKS IT!?! impossible!
     }
-    return wasp;
+    return wasp.clone();
     //	return name.empty()? string() : name;
     //	return empty(node.name)? node.string() : node.name;
 }
 
 chars Node::toString() {
-    return serialize();
+    return serialize().data;
 }
 
 chars Node::toString() const {
-    return serialize();
+    return serialize().data;
 }
 
 String toString(Node &node) {
@@ -1165,7 +1169,7 @@ bool Node::isSetter() {
 
     if (kind == bools)return not(name == True.name.data) and not(name == False.name.data);
     if (kind == longs || kind == reals) // || kind==bools)
-        return not name.empty() and (not parseLong(name) and not name.contains('.')); // todo WTF hack
+        return not name.empty() and (not parseLong(name.data) and not name.contains('.')); // todo WTF hack
     if (kind == key and value.data) return true;
     if (kind == strings and name == value.string) return false; // todo x="x" '123'="123" redundancy bites us here
     if (kind == strings and value.data)
@@ -1452,7 +1456,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
 
     breakpoint_helper
     printf("smartPointer64 : %llx\n", (int64) smartPointer64);
-    error1("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”");
+    error1((chars)("missing smart pointer type %x "s % smart_type64 + " “" + typeName(Type(smart_type64)) + "”"));
     return new Node();
 }
 
@@ -1617,7 +1621,7 @@ Node cast(const Node &from, Type to_type) {
         if (from.value.longy > 9) return Node((codepoint) from.value.longy); // reinterpret cast
         return Node(getChar(formatLong(from.value.longy), 1));
     }
-    if (from.kind == strings and to_type.kind == codepoint1)return Node(getChar(*from.value.string, 1)); // "a" => 'a'
+    if (from.kind == strings and to_type.kind == codepoint1)return Node(getChar(from.value.string->data, 1)); // "a" => 'a'
     if (from.kind == strings and to_type.kind == bools) // "False" => false "nil" => false
         return Node(not falseKeywords.has(*from.value.string) and not nilKeywords.has(*from.value.string));
     if (from.kind == codepoint1 and to_type.kind == bools) {

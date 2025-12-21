@@ -207,7 +207,7 @@ inline List<FFIHeaderSignature> parseHeaderFile(const String& header_path, const
     List<FFIHeaderSignature> signatures;
 
     // Read header file
-    String content = readFile(header_path);
+    String content = readFile(header_path.data);
     if (content.empty()) {
         warn("Failed to read header file: "s + header_path);
         return signatures;

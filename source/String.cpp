@@ -28,7 +28,12 @@ typedef chars chars;
 class String;
 
 //char *empty_string = "";
-
+bool eq(String dest, chars src, int length) {
+    return eq(dest.data, src, length);
+}
+bool eq(String dest, String src, int length) {
+    return eq(dest.data, src.data, length);
+}
 bool eq(chars dest, chars src, int length) {
     if (!dest || !src)
         return false;
@@ -241,7 +246,7 @@ String toString(Node &node);
 
 // Implementation of itoa0()
 char *formatLongWithBase(int64 num, int base = 10) {
-    if (base == 16)return hex(num);
+    if (base == 16)return hex(num).data;
     // length 22 -> put(num)/2+2 for base 10
     static char str[23];
     //    char *str = (char *) alloc(sizeof(char), 22 + 1);// -18446744073709552000  todo: from context.names char*
@@ -670,7 +675,7 @@ void error1(String message, chars file, int line) {
 //}
 
 
-bool empty(String &s) { return s.empty(); }
+bool empty(const String &s) { return s.empty(); }
 
 bool empty(String *s) { return not s or s->empty(); }
 
@@ -747,7 +752,7 @@ void print(String *s) {
 }
 
 void print(void *s) {
-    put_chars(hex((int64) s));
+    put_chars(hex((int64) s).data);
 }
 
 void print(Type type) {

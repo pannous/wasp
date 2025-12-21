@@ -918,7 +918,7 @@ String generateSourceMap(List<String> names, const List<SourceMapping> &mappings
     sourcesContent = sourcesContent.replaceAll("\"", "\\\"");
 
     String mappings = generateMappings(mappings_data);
-    return json % names.join("\",\"") % mappings % sourcesContent;
+    return json % names.join("\",\"").data % mappings % sourcesContent;
 }
 
 List<String> readLines(const char *string) {

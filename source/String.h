@@ -117,6 +117,8 @@ String s(chars &s);
 //int ord(codepoint c);// identity!
 
 bool eq(chars dest, chars src, int length = -1);
+bool eq(String dest, chars src, int length = -1);
+bool eq(String dest, String src, int length = -1);
 
 void strcpy2(char *dest, chars src);
 
@@ -536,7 +538,7 @@ public:
 
     int find(char c, int from = 0, bool reverse = false) { return indexOf(c, from, reverse); }
 
-    int find(String c, int from = 0, bool reverse = false) { return indexOf(c, from, reverse); }
+    int find(String c, int from = 0, bool reverse = false) { return indexOf(c.data, from, reverse); }
 
     //	operator std::string() const { return "Hi"; }
 
@@ -611,7 +613,7 @@ public:
     }
 
 
-    String operator%(String &c) {
+    String operator%(const String &c) {
         if (!contains("%s"))
             return this->clone() + c;
         String b = this->clone();
@@ -758,7 +760,8 @@ public:
     //		return this;
     //	}
 
-    String *operator+=(String &c) {
+    // String *operator+=(String &c) {
+    String *operator+=(String c) {
         append(c.data, c.length);
         return this;
     }
@@ -767,6 +770,7 @@ public:
         if (c)append(c->data, c->length);
         return this;
     }
+
 
     String *operator+=(char *c) {
         append(c);
@@ -829,7 +833,7 @@ public:
         return *ok;
     }
 
-    String operator+(const char x[]) {
+    String& operator+(const char x[]) {
         return this->operator+(String((char *) x));
     }
 
@@ -901,7 +905,7 @@ public:
 
 
     bool operator==(char16_t c) {
-        return this->operator==(String(c));
+        return this->operator==(String(c).data);
     }
 
     //    bool operator==(const String s) {
@@ -910,11 +914,11 @@ public:
 
     //	check(U'牛' == "牛"s );// owh wow it works reversed
     bool operator==(char32_t c) {
-        return this->operator==(String(c));
+        return this->operator==(String(c).data);
     }
 
     bool operator==(wchar_t c) {
-        return this->operator==(String(c));
+        return this->operator==(String(c).data);
     }
 
     bool operator==(char c) {
@@ -959,11 +963,15 @@ public:
         return !eq(data, s.data, length);
     }
 
+     //   	bool operator==(String other ) {// ambiguous with 2025-12-21
+    	// 	return length == other.length && eq(data, other.data, shared_reference? length:-1);
+    	// }
+
     //	bool operator==(const String other ) {
     //		return length == other.length && eq(data, other.data, shared_reference? length:-1);
     //	}  ambiguous with
 
-    bool operator==(String &s) {
+    bool operator==(const String &s) {
         // const
         if (this->empty())return s.empty();
         if (s.empty())return this->empty();
@@ -1159,7 +1167,7 @@ public:
     explicit operator int() const { return parseLong(data); }
 
     //	MUST BE explicit, otherwise String("abc") != "abc"  : char* comparison hence false
-    //	explicit // cast // todo ^^^ HUH!?
+    explicit // cast // todo ^^^ HUH!?
     operator char *() const { return data; }
 
     explicit // if(String("0")) OK, BUT bool x=String("0") calls operator char *() !
@@ -1288,7 +1296,8 @@ String operator ""s(chars c, unsigned long);
 //#define UNEXPECT_CHAR "Unexpected character "
 
 static String EMPTY = ""; // = String('\0');
-static chars nil_name = "nil";
+static String nil_name = "nil";
+// static chars nil_name = "nil";
 
 //String operator "" s(chars c, uint64 );// wasm function signature contains illegal type
 //String operator "" _(chars c, uint64 );
@@ -1324,7 +1333,7 @@ extern "C" int puts(const char *); // int return needed for stdio compatibilty !
 short utf8_byte_count(char c);
 
 
-bool empty(String &s);
+bool empty(const String &s);
 
 bool empty(String *s);
 
@@ -1354,3 +1363,8 @@ void render(Node &node, std::stringstream *html = 0);
 codepoint getChar(chars string, int nr);
 
 typedef List<String> Strings;
+
+void print(Strings strings);
+
+[[noreturn]]
+void error1(String message, chars file, int line);

@@ -279,7 +279,7 @@ namespace wabt {
             assert(bytes.size() > 0);
 
             for (uint8_t byte: bytes) {
-                message += StringPrintf(" 0x%x", byte);
+                message += StringPrintf(" 0x%x", byte).data;
             }
 
             PrintError("%s", message.c_str());

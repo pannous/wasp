@@ -32,13 +32,13 @@ public:
         void* handle = 0;
 
         // Try as-is first
-        handle = dlopen(lib_name, RTLD_LAZY | RTLD_GLOBAL);
+        handle = dlopen(lib_name.data, RTLD_LAZY | RTLD_GLOBAL);
 
         // Try with lib prefix and platform extension
         if (!handle) {
 #ifdef __APPLE__
             String lib_path = "lib"s + lib_name + ".dylib";
-            handle = dlopen(lib_path, RTLD_LAZY | RTLD_GLOBAL);
+            handle = dlopen(lib_path.data, RTLD_LAZY | RTLD_GLOBAL);
 #else
             String lib_path = "lib"s + lib_name + ".so";
             handle = dlopen(lib_path, RTLD_LAZY | RTLD_GLOBAL);
@@ -49,7 +49,7 @@ public:
         if (!handle) {
 #ifdef __APPLE__
             String lib_path = "/usr/lib/lib"s + lib_name + ".dylib";
-            handle = dlopen(lib_path, RTLD_LAZY | RTLD_GLOBAL);
+            handle = dlopen(lib_path.data, RTLD_LAZY | RTLD_GLOBAL);
 #else
             String lib_path = "/usr/lib/lib"s + lib_name + ".so";
             handle = dlopen(lib_path, RTLD_LAZY | RTLD_GLOBAL);
@@ -60,11 +60,11 @@ public:
         if (!handle) {
 #ifdef __APPLE__
             String lib_path = "/usr/local/lib/lib"s + lib_name + ".dylib";
-            handle = dlopen(lib_path, RTLD_LAZY | RTLD_GLOBAL);
+            handle = dlopen(lib_path.data, RTLD_LAZY | RTLD_GLOBAL);
             if (!handle) {
                 // Try Homebrew ARM64 path
                 lib_path = "/opt/homebrew/lib/lib"s + lib_name + ".dylib";
-                handle = dlopen(lib_path, RTLD_LAZY | RTLD_GLOBAL);
+                handle = dlopen(lib_path.data, RTLD_LAZY | RTLD_GLOBAL);
             }
 #else
             String lib_path = "/usr/lib/x86_64-linux-gnu/lib"s + lib_name + ".so";
@@ -93,7 +93,7 @@ public:
         // Clear any existing error
         dlerror();
 
-        void* func_ptr = dlsym(lib_handle, func_name);
+        void* func_ptr = dlsym(lib_handle, func_name.data);
 
         const char* error = dlerror();
         if (error) {

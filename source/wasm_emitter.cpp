@@ -331,7 +331,7 @@ unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
 
     if (tracing)
         breakpoint_helper
-    trace("unknown or non-primitive operator %s\n"s % String(s)); // OK! not (necessarily) a problem:
+    trace((chars)("unknown or non-primitive operator %s\n"s % s)); // OK! not (necessarily) a problem:
     // can still be matched as context etc, e.g.  2^n => pow(2,n)   'a'+'b' is 'ab'
     //		error("invalid operator");
     return 0;
@@ -2021,7 +2021,7 @@ Code emitOperator(Node &node, Function &context) {
     }
 
     // >>>>>>>>>>>>>>
-    unsigned short opcode = opcodes(name, mapTypeToWasm(last_type), mapTypeToWasm(arg_type));
+    unsigned short opcode = opcodes(name.data, mapTypeToWasm(last_type), mapTypeToWasm(arg_type));
     // ^^^^^^^^^^^ GET WASM OPCODE !
 
     if (opcode >= 0x8b and opcode <= 0x98)
@@ -2358,7 +2358,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
         //				todo("FALLTHROUGH to set x=\"123\"!");
         case key: // todo i=ø
             if (name.length > 0 and name.charAt(0) >= '0' and name.charAt(0) <= '9') // if 0:3 else 4 hack
-                return emitValue(*new Node(parseLong(name)), context);
+                return emitValue(*new Node(parseLong(name.data)), context);
             if (not isVariableName(name))
                 return emitNode(node, context);
             else goto reference; // : fallthrough
@@ -2384,7 +2384,7 @@ Code emitExpression(Node &node, Function &context/*="wasp_main"*/) {
             int local_index = context.locals.position(name); // defined in block header
             if (name.startsWith("$")) {
                 // wasm style $0 = first arg
-                local_index = parseLong(name.substring(1));
+                local_index = parseLong(name.substring(1).data);
             }
             if (local_index < 0) {
                 // collected before, so can't be setter here
@@ -3421,6 +3421,11 @@ Code encodeString(chars str) {
     return code; //.push(0);
 };
 
+[[nodiscard]]
+Code encodeString(String& s) {
+    return encodeString(s.data);
+}
+
 int last_code_byte = 0;
 
 //Code cast FROM SmartPointer more difficult
@@ -3705,7 +3710,7 @@ Code emitTypeSection() {
         }
         // Skip operators unless they're FFI imports
         Function &temp_func = functions[fun];
-        if (operator_list.has(fun) && !temp_func.is_ffi) {
+        if (operator_list.has(fun.data) && !temp_func.is_ffi) {
             todow("how did we get here?");
             continue;
         }
@@ -3797,7 +3802,7 @@ Code emitImportSection() {
         String import_module = "env";
         if (function.module and not function.module->name.empty())
             import_module = function.module->name;
-        else if (contains(wasi_function_list, fun))
+        else if (contains(wasi_function_list, fun.data))
             import_module = "wasi_snapshot_preview1";
         if (function.is_import and function.is_used and not function.is_builtin) {
             if (function.call_index >= 0)
@@ -3805,11 +3810,11 @@ Code emitImportSection() {
             function.call_index = import_count++;
             if (function.module and not function.module->name.empty())
                 import_module = function.module->name;
-            else if (contains(wasi_function_list, fun))
+            else if (contains(wasi_function_list, fun.data))
                 import_module = "wasi_snapshot_preview1";
             auto type = typeMap[fun];
             import_code =
-                    import_code + encodeString(import_module) + encodeString(fun).addByte(func_export).addInt(type);
+                    import_code + encodeString(import_module.data) + encodeString(fun.data).addByte(func_export).addInt(type);
             // if (function.is_polymorphic) {
             //     for (Function *variant: function.variants) {
             //         if (!variant->is_used)continue;
@@ -4034,7 +4039,7 @@ Code emitStringSection() {
     Code strings(0); // ?
     strings.addInt(wasm_strings.size()); // count of strings
     for (auto &s: wasm_strings) {
-        strings += encodeString(s);
+        strings += encodeString(s.data);
     }
     return createSection(string_section, strings);
 }
@@ -4294,7 +4299,7 @@ Code emitNameSection() {
         // danger: utf names are NOT translated to wat env.√=√ =>  (import "env" "\e2\88\9a" (func $___ (type 3)))
         String *name = call_indices.lookup(index);
         if (not name) todo("no name for %d! bug (not enough mem?)"s % index);
-        nameMap = nameMap + Code(index) + Code(*name);
+        nameMap = nameMap + Code(index) + Code(name->data);
         usedNames += 1;
     }
 

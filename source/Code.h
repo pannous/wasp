@@ -6,7 +6,6 @@
 #include "List.h"
 // #include "Angle.h"
 
-
 //#ifndef PURE_WASM
 #include <cstdio>
 // header OK?
@@ -157,6 +156,9 @@ public:
         if (null_terminated)push((byte) 0);
         // wasm strings start with their length and do NOT end with 0 !! :(
     }
+
+    Code(String string) : Code(string.data) { }
+
 
     //	Code(char byte){
     //		data = static_cast<bytes>(alloc(sizeof(char),1));
@@ -381,7 +383,7 @@ public:
         String s;
         for (int i = length - 1000; i < length; i++) {
             //            put_chars(hex(data[i]));
-            s += hex(data[i], 1) + ", ";
+            s += hex(data[i], 1) + ", "s;
         }
         print(s);
         //        save();
@@ -1414,7 +1416,7 @@ public:
     }
 
     bool operator==(const Function &other) const {
-        return name == other.name and signature == other.signature;
+        return name == other.name.data and signature == other.signature;
     }
 
     void track(Node &node, const Code &statement, int offset = -1) {

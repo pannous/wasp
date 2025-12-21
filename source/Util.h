@@ -60,13 +60,13 @@ static int64 min(int64 a, int64 b) { return (a < b ? a : b); }
 
 //typedef int64 int64;  = 0x7E, in enum
 
-static bool I_know_what_I_am_doing = false;
+// static bool I_know_what_I_am_doing = false;
 
 #if RUNTIME_ONLY or RELEASE
 #define todo(msg) ;
 #define todow(msg) ;
 #else
-#define todo(msg) {breakpoint_helper;error1(String("TODO ") + String(msg),__FILE__,__LINE__);}
+#define todo(msg) {breakpoint_helper;error1((char*)(String("TODO ") + String(msg)),__FILE__,__LINE__);}
 #define todow(msg) {warn(String("TODO ") + String(msg));}
 //#define todow(msg) {breakpoint_helper;warn(str("TODO ") + msg);}
 #endif
@@ -92,7 +92,7 @@ static bool tracing = false; // todo not DEBUG on linux?
 #define trace(x)
 #define tracef(x, ...)
 #else
-#define trace(x) if(tracing)print(x);
+#define trace(x) if(tracing)print((x));
 // #define trace(x) ; // don't trace TODO
 // #define tracef(x, ...) if(tracing)printf(x,__VA_ARGS__);
 #define tracef(x, ...) ;
@@ -134,23 +134,22 @@ typedef byte *bytes;
 #include "smart_types.h"
 
 #if not WEBAPP
-
 [[noreturn]]
 #endif
 extern void error1(chars message, chars file = 0, int line = 0);
 
 extern void info(chars);
-
+extern void info(const String& msg);
 extern void warn(chars);
 
 extern void warning(chars);
 
 // use host fetch if available, else c++ fetch (curl)
-extern chars fetch(chars url);
 
 #if not CURL // and not MY_WASM
-
 inline extern chars fetch(chars url) { return "fetch/curl not available"; } // only 800 bytes via -lcurl !
+#else
+extern chars fetch(chars url);
 #endif
 
 int fileSize(char const *file);
@@ -158,6 +157,8 @@ int fileSize(char const *file);
 chars concat(chars a, chars b);
 
 chars concat(chars a, chars b, uint len_a, uint len_b);
+
+chars concat(const String& a, chars b);
 
 template<class S>
 // list HAS TO BE 0 terminated! Dangerous C!! ;)
@@ -229,6 +230,7 @@ String extractFuncName(const String &fun);
 String extractPath(String file);
 
 bool isDir(const char *name);
+bool isDir(String name);
 
 #define maxi(a, b) a<b?b:a
 

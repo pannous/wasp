@@ -15,7 +15,7 @@ List<String> collectOperators(Node &expression) {
         //		name = normOperator(name);// times => * aliases
         if (name.endsWith("=")) // += etc
             operators.add(name);
-        else if (prefixOperators.has(name)) {
+        else if (prefixOperators.has(name.data)) {
             if (name == "-" and is_operator(previous.codepointAt(0)))
                 operators.add(name + "…"); //  -2*7 ≠ 1-(2*7)!
             else
@@ -24,9 +24,9 @@ List<String> collectOperators(Node &expression) {
         //		WE NEED THE RIGHT PRECEDENCE NOW! -2*7 ≠ 1-(2*7)! or is it? √-i (i FIRST)  -√i √( first)
         //		else if (prefixOperators.has(op.name+"…"))// and IS_PREFIX
         //			operators.add(op.name+"…");
-        else if (suffixOperators.has(name))
+        else if (suffixOperators.has(name.data))
             operators.add(name);
-        else if (operator_list.has(name))
+        else if (operator_list.has(name.data))
             //			if (op.name.in(operator_list))
             operators.add(name);
         else if (op.kind == Kind::operators)
@@ -104,7 +104,7 @@ Node &groupOperators(Node &expression, Function &context) {
         if (op != last) last_position = 0;
         bool fromRight = rightAssociatives.has(op);
         fromRight = fromRight || isFunction(op, true);
-        fromRight = fromRight || (prefixOperators.has(op) and op != "-"); // !√!-1 == !(√(!(-1)))
+        fromRight = fromRight || (prefixOperators.has(op.data) and op != "-"); // !√!-1 == !(√(!(-1)))
         int i = expression.index(op, last_position, fromRight);
         if (i < 0) {
             if (op == "-" or op == "‖") //  or op=="?"
@@ -167,7 +167,7 @@ Node &groupOperators(Node &expression, Function &context) {
                 // findLibraryFunction("powd", false); // via pow
                 findLibraryFunction("powi", false);
             }
-            if (suffixOperators.has(op)) {
+            if (suffixOperators.has(op.data)) {
                 // x²
                 // SUFFIX Operators
                 if (op == "ⁿ") {

@@ -134,7 +134,7 @@ void parseFunctionNames(Code &payload) {
     int function_count = unsignedLEB128(payload);
     int call_index = -1;
     if (debug_reader)printf("function count: %d\n", function_count);
-    Map<String, Function> &functions = module->functions;
+    Map<String, Function> &funcs = module->functions;
     for (int i = 0; i < function_count and payload.start < payload.length; ++i) {
         call_index = unsignedLEB128(payload);
         int code_index = call_index - module->import_count;
@@ -147,17 +147,17 @@ void parseFunctionNames(Code &payload) {
         // if (debug_reader)print("ƒ%d %s\n"s % call_index % func);
         if (func.contains("ltoa"))
             print("ƒ%d %s\n"s % call_index % func);
-        bool old = functions.contains(func);
+        bool old = funcs.contains(func);
         if (old) {
             trace("function already exists: "s + func);
-            Function &function = functions[func];
+            Function &function = funcs[func];
         } else {
             Function &function = *new Function();
             if (function.code_index >= 0 and function.code_index != code_index)
                 trace("already has index: "s + func + " " + function.code_index + "≠" + code_index);
             function.code_index = code_index;
             function.name = func;
-            functions.add(func, function);
+            funcs.add(func, function);
         }
     }
     //	  (import "env" "log_chars" (func (;0;) $logs (type 0)))  export / import names != internal names
@@ -771,7 +771,7 @@ Module &read_wasm(String file) {
     if (file.contains("~"))
         file = file.replace("~", "/Users/me"); // todo $HOME
     if (file.endsWith(".wast") or file.endsWith(".wat")) {
-        file = compileWast(file);
+        file = compileWast(file.data);
     }
 
     if (!file.endsWith(".wasm"))
@@ -784,11 +784,11 @@ Module &read_wasm(String file) {
 #if not RELEASE
     printf("parsing: %s\n", file.data);
 #endif
-    size = fileSize(file);
+    size = fileSize(file.data);
     if (size <= 0)
         error("file not found: "s + file);
     buffer = (bytes) malloc(size + 4096 * 16); // do not free
-    FILE *stream = fopen(file, "rb");
+    FILE *stream = fopen(file.data, "rb");
     fread(buffer, 1, size, stream); // demands blocks of 4096!
     fclose(stream);
 #endif

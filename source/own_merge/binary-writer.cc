@@ -266,15 +266,16 @@ namespace wabt {
             List<Index> tables_;
             List<Index> globals_;
 
-            std::set<String> seen_names_;
+            List<String> seen_names_;
 
             Result EnsureUnique(const String &name) {
-                if (seen_names_.count(name)) {
-                    fprintf(stderr, "error: duplicate symbol when writing relocatable "
-                            "binary: %s\n", &name[0]);
-                    return Result::Error;
-                }
-                seen_names_.insert(name);
+                // if (seen_names_.count(name.data)) {
+                //     // fprintf(stderr, "error: duplicate symbol when writing relocatable "
+                //             // "binary: %s\n", &name[0]);
+                //     return Result::Error;
+                // }
+                // seen_names_.insert(name);
+                seen_names_.add(name);
                 return Result::Ok;
             };
 

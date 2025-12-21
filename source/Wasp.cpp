@@ -79,7 +79,6 @@ bool use_wasm_arrays = false; // array in wat
 #endif
 
 #define err(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
-#define parserError(m) err1("%s:%d\n%s"s%__FILE__%__LINE__%m)
 
 // isalpha0 moved to CharUtils.cpp
 
@@ -234,7 +233,7 @@ class Wasp {
 #define INDENT 0x0F // 	SI 	␏ 	^O 		Shift In
 #define DEDENT 0x0E //  SO 	␎ 	^N 		Shift Out
 
-    //    void parserError(String message) {
+    //    void error(String message) {
     //        String msg = message;
     //        msg += position();
     //        auto error = new SyntaxError(msg);
@@ -266,24 +265,24 @@ class Wasp {
             if (indentation_level > 0 and not indentation_by_tabs) {
                 char proceed1 = proceed();
                 if (proceed1)
-                    parserError("mixing tabs and spaces for indentation");
+                    error("mixing tabs and spaces for indentation");
             }
             indentation_by_tabs = true;
             tabs++;
             offset++;
         }
         if (tabs > 0 and text[offset] == ' ')
-            parserError("ambiguous indentation, mixing tabs and spaces");
+            error("ambiguous indentation, mixing tabs and spaces");
         while (text[offset] == ' ') {
             if (indentation_level > 0 and indentation_by_tabs)
                 if (proceed())
-                    parserError("mixing tabs and spaces for indentation");
+                    error("mixing tabs and spaces for indentation");
             indentation_by_tabs = false;
             tabs = tabs + 1. / spaces_per_tab;
             offset++;
         }
         if (tabs > 0 and text[offset] == '\t')
-            parserError("ambiguous indentation, mixing tabs and spaces");
+            error("ambiguous indentation, mixing tabs and spaces");
         //		while(next==' ' or next=='\t')proceed();// but keep last ch as INDENT!
         if (text[offset] == '\n')
             return indentation_level; // careful empty lines if next indentation == last one : just hangover spacer!
@@ -306,26 +305,26 @@ class Wasp {
     //0x241B	9243	SYMBOL FOR ESCAPE	␛
     // U+0085 <control-0085> (NEL: NEXT LINE) ␤ NewLine
     // ‘Language Tag character’ (U+E0001) + en-us …
-    bool closing(char ch, char closer) {
+    bool closing(char c, char closer) {
         if (closer == '>')
-            return ch == '>' or ch == '\n'; // nothing else closes!
-        if (closer == ' ' and ch == '>' and parserOptions.use_generics) // todo better
+            return c == '>' or c == '\n'; // nothing else closes!
+        if (closer == ' ' and c == '>' and parserOptions.use_generics) // todo better
             return true;
-        if (ch == closer)
+        if (c == closer)
             return true;
-        if (group_precedence(ch) <= group_precedence(closer))
+        if (group_precedence(c) <= group_precedence(closer))
             return true;
-        if (ch == INDENT)
+        if (c == INDENT)
             return false; // quite the opposite
-        if (ch == DEDENT and not(closer == '}' or closer == ']' or closer == ')'))
+        if (c == DEDENT and not(closer == '}' or closer == ']' or closer == ')'))
             return true;
-        if (ch == '}' or ch == ']' or ch == ')') {
+        if (c == '}' or c == ']' or c == ')') {
             // todo: ERROR if not opened before!
             //				if (ch != close and close != ' ' and close != '\t' /*???*/) // cant debug wth?
             return true;
         } // outer match unresolved so far
 
-        if (group_precedence(ch) <= group_precedence(closer))
+        if (group_precedence(c) <= group_precedence(closer))
             return true;
         return false;
     }
@@ -360,7 +359,7 @@ public:
         parserOptions = options;
         if ((source.endsWith(".wasp") or source.endsWith(".wit")) and not source.contains("")) {
             setFile(source);
-            source = readFile(findFile(source, parserOptions.current_dir));
+            source = readFile(findFile(source, parserOptions.current_dir).data);
         }
 #ifndef RELEASE
         if (not options.data_mode and options.debug) {
@@ -383,7 +382,7 @@ public:
         if (ch and ch != -1 and ch != DEDENT) {
             printf("UNEXPECTED CHAR %c", ch);
             print(position());
-            parserError("Expect end of input");
+            error("Expect end of input");
             result = ERROR;
         }
         // Mark does not support the legacy JSON reviver function todo ??
@@ -392,8 +391,8 @@ public:
     }
 
 
-    Wasp &setFile(String file) {
-        this->file = file;
+    Wasp &setFile(String file0) {
+        this->file = file0;
         parserOptions.current_dir = extractPath(file);
         return *this;
     }
@@ -438,14 +437,14 @@ private:
     String err1(String m) {
         // Call error when something is wrong.
         String msg = m;
-        msg += position();
+        msg += String(position()).data;
         auto error = new SyntaxError(msg);
         error->at = at;
         error->lineNumber = lineNumber;
         error->columnNumber = at - columnStart;
         error->file = file.data;
         if (throwing)
-            raise(msg);
+            raise(msg.data);
         else
             return msg;
         return msg;
@@ -465,13 +464,13 @@ private:
     // one char at a time, NO JUMPING OVER ' ' here!
     char proceed(char c = 0) {
         if (not ch and at >= 0) {
-            parserError("end of code");
+            error("end of code");
             return ch;
         }
         // If a c parameter is provided, verify that it matches the current character.
         if (c and c != ch) {
             // todo: debug only / who cares?
-            err(s("Expected '") + c + "' instead of " + LiteralUtils::renderChar(ch));
+            // err(s("Expected '") + c + "' instead of " + LiteralUtils::renderChar(ch));
         }
         // Get the next character. When there are no more characters, return the empty string.
         previous = ch;
@@ -510,7 +509,7 @@ private:
     String parseIdentifier() {
         // identifiers must start with a letter, _ or $.
         if (!is_identifier(ch))
-            parserError("Unexpected identifier character "s + LiteralUtils::renderChar(ch));
+            error("Unexpected identifier character "s + LiteralUtils::renderChar(ch));
         int start = at;
         // subsequent characters can contain ANYTHING except operators
         while ((proceed() and is_identifier(ch)) or isDigit(ch) or isKebabBridge())
@@ -658,7 +657,7 @@ private:
             }
         }
         if (end_of_text())
-            parserError("Unterminated string");
+            error("Unterminated string");
         proceed(); // skip ` done
         return chunks;
     }
@@ -670,7 +669,7 @@ private:
         while (ch and ch != delim and previous != '\\')
             proceed();
         if (end_of_text())
-            parserError("Unterminated string");
+            error("Unterminated string");
         String substring = text.substring(start, at);
         proceed();
         return Node(substring).setKind(strings); // DONT do "3"==3 (here or ever)!
@@ -750,7 +749,7 @@ private:
         // be the second / character in the // pair that begins this inline comment.
         // To finish the inline comment, we look for a newline or the end of the text.
         if (ch != '/' and ch != '#') {
-            parserError("Not an inline comment");
+            error("Not an inline comment");
         }
         do {
             proceed();
@@ -780,7 +779,7 @@ private:
                 }
             }
         } while (ch);
-        parserError("Unterminated block comment");
+        error("Unterminated block comment");
     };
 
     // Parse a comment
@@ -811,7 +810,7 @@ private:
             return true;
         }
         if (ch != '/')
-            parserError("Not a comment");
+            error("Not a comment");
         if (next == '/') {
             proceed('/');
             inlineComment();
@@ -906,7 +905,7 @@ private:
         if (trueKeywords.has(symbol)) return True;
         if (nilKeywords.has(symbol)) return NIL;
         //		if (node.name.in(operator_list))
-        if (operator_list.has(symbol))
+        if (operator_list.has(symbol.data))
             node.setKind(operators, false); // later: in angle!? NO! HERE: a xor {} != a xxx{}
         //		put("resolve NOT FOUND");
         //		put(symbol);
@@ -935,7 +934,7 @@ private:
             return parseOperator();
         if (is_identifier(ch))
             return *resolve(Node(parseIdentifier(), true)).clone(); // or op
-        parserError("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
+        error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
             String((char) text[at + 2]));
         return (Node &) NIL;
     }
@@ -1049,7 +1048,7 @@ private:
         //todo simplify: and not is_grouper(lastNonWhite)
     }
 
-    bool skipBorders(char ch) {
+    bool skipBorders(char c) {
         // {\n} == {}
         if (next == 0)return true;
         if (lastNonWhite == ':')return true;
@@ -1057,9 +1056,9 @@ private:
             return true; // todo: nextNonWhite
         if (lastNonWhite == '(' or next == ')')return true;
         if (lastNonWhite == '[' or next == ']')return true;
-        if (ch == ',' and next == ';')return true; // 1,2,3,; => 1,2,3;
-        if (ch == ',' and next == '\n')return true; // 1,2,3,\n => 1,2,3;
-        if (ch == ';' and next == '\n')return true; // 1,2,3,\n => 1,2,3;
+        if (c == ',' and next == ';')return true; // 1,2,3,; => 1,2,3;
+        if (c == ',' and next == '\n')return true; // 1,2,3,\n => 1,2,3;
+        if (c == ';' and next == '\n')return true; // 1,2,3,\n => 1,2,3;
         return false;
     }
 
@@ -1097,7 +1096,7 @@ private:
             case '<':
                 return generics;
         }
-        parserError("unknown bracket type "s + bracket);
+        error("unknown bracket type "s + bracket);
         return errors;
     }
 
@@ -1126,8 +1125,8 @@ private:
 
             // Create import node with dictionary-style access
             Node &import_node = *new Node("import");
-            import_node["function"] = func;
-            import_node["library"] = lib;
+            import_node["function"] = Node(func);
+            import_node["library"] = Node(lib);
 
             // Set kind to functor so it won't be flattened by parseExpression()
             import_node.kind = functor;
@@ -1254,7 +1253,7 @@ private:
                 case '}':
                 case ')':
                 case ']':
-                    parserError("wrong closing bracket");
+                    error("wrong closing bracket");
                 // case '+': // todo WHO writes +1 ? ;)
                 case '-':
                 case '.':
@@ -1316,7 +1315,7 @@ private:
             }
         }
         if (close and not isWhite(close) and close != ';' and close != ',')
-            parserError("unclosed pair "s + close); // todo remember opening pair line
+            error("unclosed pair "s + close); // todo remember opening pair line
         Node &result = actual.flat();
         return result;
     };
@@ -1392,9 +1391,9 @@ Node parseFile(String filename, ParserOptions options) {
     if (not found)
         error("file not found "s + filename);
     else
-        info("found "s + found);
+        info((chars)("found "s + found));
     if (found.endsWith("wast") or found.endsWith("wat"))
-        found = compileWast(found); // and use it:
+        found = compileWast(found.data); // and use it:
     if (found.endsWith("wasm")) {
         // handle in Angle.cpp analysis, not in valueNode
         //			read_wasm(found);
@@ -1402,7 +1401,7 @@ Node parseFile(String filename, ParserOptions options) {
         import.add(new Node(found));
         return import;
     } else if (found.endsWith("wasp"))
-        return Wasp().setFile(found).parse(readFile(found), options);
+        return Wasp().setFile(found).parse(readFile(found.data), options);
     else if (found.endsWith("wit") or found.endsWith("wai"))
         return WitReader().read(found);
     else if (not found.contains(".")) {
@@ -1520,7 +1519,7 @@ int main(int argc, char **argv) {
                 todo("linking files needs compilation with WABT_MERGE")
 #endif
             } else
-                run_wasm_file(args);
+                run_wasm_file(args.data);
         } else if (args == "test" or args == "tests")
 #if NO_TESTS
         print("wasp release compiled without tests");
@@ -1616,7 +1615,7 @@ static Wasp wasp_parser; // todo: why can't we use instances in wasm?
 Node &parse(String source, ParserOptions parserOptions) {
     if (operator_list.size() == 0)
         load_parser_initialization();
-    return wasp_parser.parse(source, parserOptions);
+    return wasp_parser.parse(source.data, parserOptions);
 }
 
 extern "C" Node *Parse(chars data) {
