@@ -4390,9 +4390,9 @@ void testCurrent() {
     // sleep(10);
     // testMergeRuntime();
     // exit(0);
-    test_dynlib_import_emit();
-    test_while_true_forever();
     test_ffi_all();
+    // test_dynlib_import_emit();
+    // test_while_true_forever();
 
     // testStructWast();
 #if WASMEDGE

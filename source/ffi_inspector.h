@@ -357,9 +357,7 @@ inline bool is_native_library(const String &library_name) {
 
 inline Signature& convert_ffi_signature(FFIHeaderSignature &ffi_sig) {
     Signature& sig = *new Signature();
-    sig.parameters.clear();
-    sig.return_types.clear();
-
+    sig.abi = ABI::native;
     for (const String &param_type: ffi_sig.param_types) {
         if (eq(param_type, "void")) {
             continue; // Skip void parameters (e.g., func(void))
@@ -396,7 +394,8 @@ inline void add_ffi_signature(Module *modul, FFIHeaderSignature ffi_sig) {
 }
 
 inline void fixNativeSignatures(Module & modul) {
-    modul.functions["InitWindow"s].signature.parameters[2].type = charp;
+    if(modul.functions.has("InitWindow"s))
+        modul.functions["InitWindow"s].signature.parameters[2].type = charp;
 }
 
 inline Module *loadNativeLibrary(String library) {
