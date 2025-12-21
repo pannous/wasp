@@ -54,7 +54,10 @@ Function *findLibraryFunction(String name, bool searchAliases) {
     if (name.empty())return 0;
     if (functions.has(name))
         return use_required_import(&functions[name]); // prevents read_wasm("lib")
-    if (name.length > 0 && is_operator(name[0], false))  return 0; // skip operators
+    // Skip operator check for mangled C++ names (they start with _Z)
+    if (name.length > 0 && is_operator(name[0], false) && !name.startsWith("_Z")) {
+        return 0; // skip operators
+    }
 #if WASM // todo: why only in wasm?
     Module &wasp = loadRuntime();
     if (wasp.functions.has(name)) {
@@ -84,19 +87,20 @@ Function *findLibraryFunction(String name, bool searchAliases) {
         addLibrary(&funclet_module);
         return use_required_import(&funclet);
     }
-    // Load runtime on-demand for runtime functions
-    // Check if runtime has the function regardless of function_list (handles mangled C++ names)
-    if (libraries.size() == 0) {
-        Module &runtime = loadRuntime();
-        // Check if runtime has this function first
-        if (runtime.functions.has(name)) {
+    // Load runtime on-demand for runtime functions (including mangled C++ names)
+    // Check runtime even if other libraries are already loaded
+    Module &runtime = loadRuntime();
+    bool runtime_already_loaded = libraries.has(&runtime);
+
+    if (runtime.functions.has(name)) {
+        if (!runtime_already_loaded)
             libraries.add(&runtime);
-            return use_required_import(&runtime.functions[name]);
-        }
-        // Add runtime to libraries if function is in function_list (for future lookups)
-        if (name.in(function_list))
-            libraries.add(&runtime);
+        return use_required_import(&runtime.functions[name]);
     }
+
+    // Add runtime to libraries if function is in function_list (for future lookups)
+    if (name.in(function_list) && !runtime_already_loaded)
+        libraries.add(&runtime);
     // libraries.add(&loadModule("wasp-runtime.wasm")); // on demand
 
     Function *function = 0;
