@@ -4349,6 +4349,11 @@ void test_while_true_forever() {
     )
 }
 
+void test_const_String_comparison_bug() {
+    const String& library_name = "raylib";
+    check (library_name == "raylib");
+}
+
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
@@ -4360,6 +4365,10 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting current tests 💡");
+#if WASM
+    print("⚠️ make sure to put all assert_emit into testRun() ");
+#endif
+    // test_const_String_comparison_bug();
     // assert_emit("abs(0)",0);
     // assert_emit("`hello ${42}`", "hello 42"); // todo use formatLong
     // assert_emit("`hello ${1+1}`", "hello 2");
@@ -4369,10 +4378,8 @@ void testCurrent() {
     // test2Def();
     // assert_emit("fun addier(x, y){ x + y }",0)
     // exit(   0);
-#if WASM
-    print("⚠️ make sure to put all assert_emit into testRun() ");
     // assert_emit("html{bold{'Hello'}}", "Hello");
-#else
+#if not WASM
     // testPing();
     // testFunctionArgumentCast();
     // test_ffi_sdl_red_square_demo();
