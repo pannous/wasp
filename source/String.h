@@ -286,7 +286,7 @@ public:
         data = datas;
         length = len;
         shared_reference = share;
-        if (!share) {
+        if (!share and len>0) {
             data = (char *) alloc(sizeof(char), length + 1); // including \0
             if (length > 0)
                 memcpy(data, datas, length);
