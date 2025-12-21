@@ -1,37 +1,25 @@
 #include "wasi.h"
 #include "wasmtime.h"
+#include "wasmtime/val.h"
 #include "wasmtime_extension.h" // wasmtime_anyref_is_struct via modified wasmtime/crates/c-api/src/ref.rs see wasmtime_modified_ref.rs
-
-
 // #include "wasmtime/wasi.h"
 // #include "wasmtime/wasi.hh"
 
-#include "wasm_reader.h"
-#include "asserts.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <wasm.h>
+
+#include <cstdio>
 #include <cstdlib>
+#include <wasm.h>
 #include <unistd.h>
-#include "Util.h"
-#include <math.h>
+#include <cmath>
 #include "ffi_loader.h"
 #include "ffi_marshaller.h"
-#include "ffi_signatures.h"
 #include "ffi_dynamic_wrapper.h"
+#include "ffi_signatures.h"
 #include "Context.h"
-#include "wasmtime/val.h"
-
-//#include <wasmtime.h>
-#include "wasmtime.h"
-#include "wasm_reader.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <wasm.h>
 #include "Util.h"
-#include <math.h>
+#include "wasm_reader.h"
+#include "asserts.h"
 
-#include "../Frameworks/wasmtime/crates/c-api/include/wasmtime/val.h"
 
 //#pragma clang diagnostic push
 //#pragma clang diagnostic ignored "-Wvla-cxx-extension"
@@ -104,24 +92,24 @@ void add_wasmtime_memory() {
     wasm_memorytype_delete(memtype);
     if (error != NULL) {
         wasmtime_error_delete(error);
-        fprintf(stderr, "Error creating Wasmtime memory\n");
+        tracef( "Error creating Wasmtime memory\n");
         exit(1);
     }
     wasm_memory = wasmtime_memory_data(context, &memory0);
 }
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap) {
-    fprintf(stderr, "Error: %s\n", message);
+    tracef( "Error: %s\n", message);
     if (error != NULL) {
         wasm_byte_vec_t error_message;
         wasmtime_error_message(error, &error_message);
-        fprintf(stderr, "%.*s\n", (int) error_message.size, error_message.data);
+        tracef( "%.*s\n", (int) error_message.size, error_message.data);
         wasm_byte_vec_delete(&error_message);
         wasmtime_error_delete(error);
     } else if (trap != NULL) {
         wasm_byte_vec_t trap_message;
         wasm_trap_message(trap, &trap_message);
-        fprintf(stderr, "%.*s\n", (int) trap_message.size, trap_message.data);
+        tracef( "%.*s\n", (int) trap_message.size, trap_message.data);
         wasm_byte_vec_delete(&trap_message);
         wasm_trap_delete(trap);
     }
@@ -404,12 +392,12 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     }
 #endif // NATIVE_FFI
 
-    fprintf(stderr, "Instantiating module via linker...\n");
+    tracef( "Instantiating module via linker...\n");
     fflush(stderr);
     // Instantiate module via linker so both WASI and env imports resolve.
     error = wasmtime_linker_instantiate(linker, context, module0, &instance, &trap);
     wasmtime_module_delete(module0);
-    fprintf(stderr, "Module instantiated\n");
+    tracef( "Module instantiated\n");
     fflush(stderr);
     if (error != NULL || trap != NULL) exit_with_error("Failed to instantiate module via linker", error, trap);
 #else
@@ -444,23 +432,23 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         exit_with_error("Failed to retrieve function export wasp_main", NULL, NULL);
     }
 
-    fprintf(stderr, "Getting memory export...\n");
+    tracef( "Getting memory export...\n");
     fflush(stderr);
     wasmtime_extern_t memory_export;
     if (wasmtime_instance_export_get(context, &instance, "memory", strlen("memory"), &memory_export)) {
         if (memory_export.kind == WASMTIME_EXTERN_MEMORY) {
             wasmtime_memory_t memory0 = memory_export.of.memory;
             wasm_memory = wasmtime_memory_data(context, &memory0);
-            fprintf(stderr, "Got memory at %p\n", wasm_memory);
+            tracef( "Got memory at %p\n", wasm_memory);
             fflush(stderr);
         }
     }
 
-    fprintf(stderr, "Calling wasp_main function...\n");
+    tracef( "Calling wasp_main function...\n");
     fflush(stderr);
     wasmtime_val_t results;
     error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, 1, &trap);
-    fprintf(stderr, "Function call returned\n");
+    tracef( "Function call returned\n");
     fflush(stderr);
     if (error != NULL || trap != NULL) exit_with_error("Failed to call function", error, trap);
     // Do not assume i64; return a best-effort integer for convenience.
@@ -836,7 +824,7 @@ static void define_func(wasmtime_linker_t *linker, const char *name, wasm_functy
     if (error) {
         wasm_name_t msg;
         wasmtime_error_message(error, &msg);
-        fprintf(stderr, "define_func error: %.*s\n", (int) msg.size, msg.data);
+        tracef( "define_func error: %.*s\n", (int) msg.size, msg.data);
     }
 }
 
@@ -949,7 +937,7 @@ wasm_wrap *link_import(String name) {
 
 //static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap) {
 ////	error(message);
-//    fprintf(stderr, "error: %s\n", message);
+//    tracef( "error: %s\n", message);
 //    wasm_byte_vec_t error_message;
 //    if (error != NULL) {
 //        wasmtime_error_message(error, &error_message);
@@ -958,7 +946,7 @@ wasm_wrap *link_import(String name) {
 //        wasm_trap_message(trap, &error_message);
 //        wasm_trap_delete(trap);
 //    }
-//    fprintf(stderr, "%.*s\n", (int) error_message.size, error_message.data);
+//    tracef( "%.*s\n", (int) error_message.size, error_message.data);
 ////    wasm_byte_vec_delete(&error_message);
 //    // let Wasp handle this :
 //    throw Error((char *) message);// todo copy sprintf error_message backtrace;
@@ -1046,7 +1034,7 @@ const wasm_functype_t *funcType(Signature &signature) {
             auto typ = signature.parameters[i].type;
             auto valtype = mapTypeToWasmtime(typ);
             param_types[i] = wasm_valtype_new(valtype);
-            // fprintf(stderr, "[SIG] param %d kind mapped to %u\n", i, (unsigned)valtype);
+            // tracef( "[SIG] param %d kind mapped to %u\n", i, (unsigned)valtype);
         }
     }
 
