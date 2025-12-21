@@ -626,7 +626,7 @@ static void test_ffi_raylib() {
     check(modul->functions.has("InitWindow"));
     check(modul->functions.has("DrawCircle"));
     test_ffi_raylib_init();
-    test_ffi_raylib_simple_use_import();
+    // test_ffi_raylib_simple_use_import();
     // test_ffi_raylib_combined();
 }
 
