@@ -2964,18 +2964,8 @@ Code emitCall(Node &fun, Function &context) {
     auto name = fun.name;
     if (not functions.has(name)) {
         auto normed = normOperator(name);
-        if (not functions.has(normed)) {
-            tracef("DEBUG emitCall: function '%s' (normed: '%s') not in functions map (size=%d)\n",
-                   name.data, normed.data, functions.size());
-            // Try to load it as a library function
-            Function *lib_func = findLibraryFunction(name, true);
-            if (lib_func) {
-                tracef("DEBUG: Loaded '%s' via findLibraryFunction\n", name.data);
-                name = lib_func->name; // Use the actual name from the library
-            } else {
-                error("unknown function "s + name + " (" + normed + ")");
-            }
-        }
+        if (not functions.has(normed))
+            error("unknown function "s + name + " (" + normed + ")");
         else name = normed;
     }
     trace("emitCall");
