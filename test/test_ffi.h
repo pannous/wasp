@@ -65,6 +65,11 @@ static void test_ffi_atof() {
     auto modul = loadNativeLibrary("c");
     check(modul);
     check(modul->functions.has("atof"));
+    // double	 atof(const char *);
+    check(modul->functions["atof"].signature.parameters.size() == 1);
+    check(modul->functions["atof"].signature.parameters[0].type == charp);
+    check(modul->functions["atof"].signature.return_types.size() == 1);
+    check(modul->functions["atof"].signature.return_types[0] == float64t);// not 32!!
     // Test: char* -> float64 (atof from libc)
     assert_emit("import atof from \"c\"\natof(\"3.14159\")", 3.14159);
     assert_emit("import atof from \"c\"\natof(\"2.71828\")", 2.71828);
@@ -633,18 +638,15 @@ static void test_ffi_raylib() {
 static void test_ffi_all() {
     tests_executed++;
     // Main comprehensive test function that runs all FFI tests
+    test_ffi_atof(); // careful this is already a built-in wasp library function
     auto modul = loadNativeLibrary("m");
     check(modul);
     check(modul->functions.has("fmin"));
-    check(modul->functions.has("fabs"));
-    check(modul->functions["fabs"].signature.parameters.size() == 1);
-
     test_ffi_fmin();
     test_ffi_fmin_wasp_file();
     test_ffi_fabs(); // careful this is already a built-in wasm operator
     test_ffi_floor(); // careful this is already a built-in wasm operator
     test_ffi_strlen(); // careful this is already a built-in wasp library function
-    test_ffi_atof(); // careful this is already a built-in wasp library function
     test_ffi_combined();
     test_ffi_signature_detection();
     test_ffi_header_parser();
