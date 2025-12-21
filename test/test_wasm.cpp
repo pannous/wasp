@@ -915,7 +915,8 @@ void testWasmRuntimeExtension() {
 #endif
 
     assert_run("43", 43);
-    assert_run("strlen('123')", 3);
+    assert_emit("strlen('123')", 3); // todo broke
+    assert_run("strlen('123')", 3); // todo broke
     skip(
         //            todo polymorphism
         assert_run("len('123')", 3);
