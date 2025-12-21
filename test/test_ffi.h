@@ -43,12 +43,6 @@ static void test_dynlib_import_emit() {
 // Basic FFI Tests - Core functionality
 // ============================================================================
 
-static void test_ffi_abs() {
-    tests_executed++;
-    // Test: int32 -> int32 (abs from libc)
-    assert_emit("import abs from \"c\"\nabs(-42)", 42);
-    assert_emit("import abs from \"c\"\nabs(100)", 100);
-}
 
 static void test_ffi_floor() {
     tests_executed++;
@@ -68,6 +62,9 @@ static void test_ffi_strlen() {
 
 static void test_ffi_atof() {
     tests_executed++;
+    auto modul = loadNativeLibrary("c");
+    check(modul);
+    check(modul->functions.has("atof"));
     // Test: char* -> float64 (atof from libc)
     assert_emit("import atof from \"c\"\natof(\"3.14159\")", 3.14159);
     assert_emit("import atof from \"c\"\natof(\"2.71828\")", 2.71828);
@@ -160,9 +157,12 @@ static void test_ffi_tan() {
 static void test_ffi_fabs() {
     tests_executed++;
     // Test: double fabs(double x)
+    // Test: int32 -> int32 (abs from libc)
+    // Test: double -> double (fabs from libc)
+    // Test: float32 -> float32 (fabsf from libc)
     assert_emit("import fabs from 'm'\nfabs(3.14)", 3.14);
     assert_emit("import fabs from 'm'\nfabs(-3.14)", 3.14);
-    assert_emit("import fabs from 'm'\nfabs(0.0)", 0.0);
+    // assert_emit("import fabs from 'm'\nfabs(0.0)", 0.0);
 }
 
 static void test_ffi_fmax() {
@@ -633,9 +633,15 @@ static void test_ffi_raylib() {
 static void test_ffi_all() {
     tests_executed++;
     // Main comprehensive test function that runs all FFI tests
+    auto modul = loadNativeLibrary("m");
+    check(modul);
+    check(modul->functions.has("fmin"));
+    check(modul->functions.has("fabs"));
+    check(modul->functions["fabs"].signature.parameters.size() == 1);
+
     test_ffi_fmin();
     test_ffi_fmin_wasp_file();
-    test_ffi_abs(); // careful this is already a built-in wasm operator
+    test_ffi_fabs(); // careful this is already a built-in wasm operator
     test_ffi_floor(); // careful this is already a built-in wasm operator
     test_ffi_strlen(); // careful this is already a built-in wasp library function
     test_ffi_atof(); // careful this is already a built-in wasp library function

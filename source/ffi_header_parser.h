@@ -66,18 +66,26 @@ inline bool extractFunctionSignature(String &decl, FFIHeaderSignature &sig) {
     const char *s = decl.data;
     const int n = decl.length;
     if (!s || n == 0) return false;
-    // if(decl.contains("DrawCircle"))
-    // print("debug DrawCircle");
-    if (decl.trim().startsWith("//")) return false;
-    if (decl.trim().startsWith("/*")) return false; // todo
+    decl = decl.trim();
+    if (decl.startsWith("//")) return false;
+    if (decl.startsWith("return")) return false;
+    if (decl.startsWith("/*")) return false; // todo
+    if (not decl.contains('(')) return false;
+    if (not decl.contains(')')) return false;
     decl = decl.to("//");
+    if (decl.startsWith("extern \"c\"")) decl = decl.substring(10).trim();
+    if (decl.startsWith("extern ")) decl = decl.substring(7).trim();
+    if (decl.startsWith("const ")) decl = decl.substring(6).trim();
+    if (decl.startsWith("static ")) decl = decl.substring(7).trim();
+    if (decl.startsWith("inline ")) decl = decl.substring(7).trim();
     if (decl.contains('-')) return false;
     if (decl.contains('[')) return false;
     if (decl.contains('#')) return false;
     if (decl.contains(':') and not decl.contains("::")) return false;
     if (decl.contains(';')) // remove trailing semicolon if present
         s = decl.substring(0, decl.lastIndexOf(";")).data;
-
+    if (decl.contains(" abs("))
+        print("debug abs");
     // ---- find parentheses ---------------------------------------------------
     int lpar = -1, rpar = -1;
     for (int i = 0; i < n; ++i) {
