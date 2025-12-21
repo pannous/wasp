@@ -123,8 +123,8 @@ public: // todo careful Map<char*,…> eq
     }
 
     int position(const S &s0) const {
-        S s = s0;// drop const for comparison
-         for (int i = 0; i < _size; i++) {
+        S s = s0; // drop const for comparison
+        for (int i = 0; i < _size; i++) {
             if (s == keys[i])
                 return i;
         }
@@ -269,7 +269,8 @@ public: // todo careful Map<char*,…> eq
 
     // MUST USE map.has(x) instead of map[x] otherwise it is created!!
     // prepare assignment a[b]=c  BAD because unknown symbols will be added!!
-    T &operator[](S key) {
+    // T &operator[](S key) {
+    T &operator[](const S &key) {
         // CREATING on access! use map.has(x) if not desired
         //        trace("map[key]");
         if (_size >= capacity)grow();
@@ -315,6 +316,10 @@ public: // todo careful Map<char*,…> eq
         _size++;
         return last();
     }
+
+    // T &operator[](const S& key) {
+    //     return operator[]((S)key);
+    // }
 
     // todo dangling intermediate which adds element only on assignment
     //    T& operator[]=(S s){}

@@ -54,6 +54,8 @@ void debug_wasm_file() {
 
 // todo: merge with emit
 Node eval(String code) {
+    if(code.endsWith(".wasp"))
+        code = readFile(code.data);
 #ifdef RUNTIME_ONLY
     return parsed; // no interpret, no emit => pure data  todo: WARN
 #else

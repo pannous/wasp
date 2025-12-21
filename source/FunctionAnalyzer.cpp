@@ -266,6 +266,7 @@ Node &parseWhileExpression(Node &node, Node &expressiona, int i, Function &conte
 Node &groupFunctionCalls(Node &expressiona, Function &context) {
     if (expressiona.kind == declaration)return expressiona; // handled before
     Function *import = findLibraryFunction(expressiona.name, false);
+    import = findLibraryFunction(expressiona.name, false);// DEBUG!
     if (import or isFunction(expressiona)) {
         expressiona.setKind(call, false);
         if (not functions.has(expressiona.name))
