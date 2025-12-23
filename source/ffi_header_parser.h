@@ -43,6 +43,10 @@ inline Type mapCTypeToWasp(String c_type) {
     if (c_type.contains("Uint32") or c_type == "uint32_t") return int32t;
     if (c_type.contains("Uint8") or c_type == "uint8_t") return int32t;
 
+    // Raylib structs passed by value (small structs <= 4 bytes passed as i32)
+    // Color: struct with 4x uint8 (r,g,b,a) = 4 bytes total
+    if (c_type == "Color") return int32t;
+
     return unknown_type;
 }
 
