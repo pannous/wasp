@@ -2,6 +2,7 @@
 #include "wasmtime.h"
 #include "wasmtime/val.h"
 #include "wasmtime_extension.h" // wasmtime_anyref_is_struct via modified wasmtime/crates/c-api/src/ref.rs see wasmtime_modified_ref.rs
+
 // #include "wasmtime/wasi.h"
 // #include "wasmtime/wasi.hh"
 
@@ -92,24 +93,24 @@ void add_wasmtime_memory() {
     wasm_memorytype_delete(memtype);
     if (error != NULL) {
         wasmtime_error_delete(error);
-        tracef( "Error creating Wasmtime memory\n");
+        tracef("Error creating Wasmtime memory\n");
         exit(1);
     }
     wasm_memory = wasmtime_memory_data(context, &memory0);
 }
 
 static void exit_with_error(const char *message, wasmtime_error_t *error, wasm_trap_t *trap) {
-    printf( "Error: %s\n", message);
+    printf("Error: %s\n", message);
     if (error != NULL) {
         wasm_byte_vec_t error_message;
         wasmtime_error_message(error, &error_message);
-        printf( "%.*s\n", (int) error_message.size, error_message.data);
+        printf("%.*s\n", (int) error_message.size, error_message.data);
         wasm_byte_vec_delete(&error_message);
         wasmtime_error_delete(error);
     } else if (trap != NULL) {
         wasm_byte_vec_t trap_message;
         wasm_trap_message(trap, &trap_message);
-        printf( "%.*s\n", (int) trap_message.size, trap_message.data);
+        printf("%.*s\n", (int) trap_message.size, trap_message.data);
         wasm_byte_vec_delete(&trap_message);
         wasm_trap_delete(trap);
     }
@@ -244,9 +245,9 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 #ifdef NATIVE_FFI
         // Skip FFI functions - they're handled by the FFI section below
         if (meta.functions.has(import_name)) {
-            Function& func = meta.functions[import_name];
+            Function &func = meta.functions[import_name];
             if (func.is_ffi && !func.ffi_library.empty()) {
-                continue;  // Will be linked under correct module in FFI section
+                continue; // Will be linked under correct module in FFI section
             }
         }
 #endif
@@ -273,18 +274,18 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     // WASM builds cannot load native .so/.dylib files
 
     // Build local map of FFI libraries from WASM imports (module name != "env")
-    Map<String, Module*> runtime_libraries{10};
+    Map<String, Module *> runtime_libraries{10};
     for (int i = 0; i < meta.functions.size(); i++) {
-        Function& func = meta.functions.values[i];
+        Function &func = meta.functions.values[i];
         if (func.is_ffi && !func.ffi_library.empty()) {
             String lib_name = func.ffi_library;
             if (!runtime_libraries.has(lib_name)) {
-                Module* lib_module = new Module();
+                Module *lib_module = new Module();
                 lib_module->name = lib_name;
                 lib_module->is_native_library = true;
                 runtime_libraries.add(lib_name, lib_module);
             }
-            Module* lib_module = runtime_libraries[lib_name];
+            Module *lib_module = runtime_libraries[lib_name];
             if (!lib_module->functions.has(func.name)) {
                 lib_module->functions.add(func.name, func);
             }
@@ -293,99 +294,99 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
 
     // Iterate over FFI library modules and link their functions
     for (int i = 0; i < runtime_libraries.size(); i++) {
-        Module* lib_module = runtime_libraries.values[i];
+        Module *lib_module = runtime_libraries.values[i];
         if (!lib_module || !lib_module->is_native_library) continue;
 
         String lib_name = lib_module->name;
 
         // Iterate over exported functions in this native library
         for (int j = 0; j < lib_module->functions.size(); j++) {
-            Function& func = lib_module->functions.values[j];
+            Function &func = lib_module->functions.values[j];
             String func_name = func.name;
 
-            void* ffi_func = ffi_loader.get_function(lib_name, func_name);
+            void *ffi_func = ffi_loader.get_function(lib_name, func_name);
             if (ffi_func) {
                 // Use signature already detected during parsing
-                Signature& wasp_sig = func.signature;
+                Signature &wasp_sig = func.signature;
 
-            // Create Wasmtime function type from signature
-            int param_count = wasp_sig.parameters.size();
-            FFIMarshaller::CType return_ctype = FFIMarshaller::get_return_ctype(wasp_sig);
-            int return_count = (return_ctype == FFIMarshaller::CType::Void) ? 0 : 1;
+                // Create Wasmtime function type from signature
+                int param_count = wasp_sig.parameters.size();
+                FFIMarshaller::CType return_ctype = FFIMarshaller::get_return_ctype(wasp_sig);
+                int return_count = (return_ctype == FFIMarshaller::CType::Void) ? 0 : 1;
 
-            wasm_valtype_t** P = param_count > 0 ? new wasm_valtype_t*[param_count] : nullptr;
-            wasm_valtype_t** R = return_count > 0 ? new wasm_valtype_t*[return_count] : nullptr;
+                wasm_valtype_t **P = param_count > 0 ? new wasm_valtype_t *[param_count] : nullptr;
+                wasm_valtype_t **R = return_count > 0 ? new wasm_valtype_t *[return_count] : nullptr;
 
-            // Map parameter types
+                // Map parameter types
                 // todo check j / k indexing
-            for (int k = 0; k < param_count; k++) {
-                FFIMarshaller::CType param_ctype = FFIMarshaller::get_param_ctype(wasp_sig, k);
-                switch (param_ctype) {
-                    case FFIMarshaller::CType::Int32:
-                    case FFIMarshaller::CType::String:  // Strings are passed as i32 offsets
-                        P[k] = wasm_valtype_new(WASM_I32);
-                        break;
-                    case FFIMarshaller::CType::Int64:
-                        P[k] = wasm_valtype_new(WASM_I64);
-                        break;
-                    case FFIMarshaller::CType::Float32:
-                        P[k] = wasm_valtype_new(WASM_F32);
-                        break;
-                    case FFIMarshaller::CType::Float64:
-                        P[k] = wasm_valtype_new(WASM_F64);
-                        break;
-                    default:
-                        P[k] = wasm_valtype_new(WASM_I32);
+                for (int k = 0; k < param_count; k++) {
+                    FFIMarshaller::CType param_ctype = FFIMarshaller::get_param_ctype(wasp_sig, k);
+                    switch (param_ctype) {
+                        case FFIMarshaller::CType::Int32:
+                        case FFIMarshaller::CType::String: // Strings are passed as i32 offsets
+                            P[k] = wasm_valtype_new(WASM_I32);
+                            break;
+                        case FFIMarshaller::CType::Int64:
+                            P[k] = wasm_valtype_new(WASM_I64);
+                            break;
+                        case FFIMarshaller::CType::Float32:
+                            P[k] = wasm_valtype_new(WASM_F32);
+                            break;
+                        case FFIMarshaller::CType::Float64:
+                            P[k] = wasm_valtype_new(WASM_F64);
+                            break;
+                        default:
+                            P[k] = wasm_valtype_new(WASM_I32);
+                    }
                 }
-            }
 
-            // Map return type
-            if (return_count > 0) {
-                switch (return_ctype) {
-                    case FFIMarshaller::CType::Int32:
-                        R[0] = wasm_valtype_new(WASM_I32);
-                        break;
-                    case FFIMarshaller::CType::Int64:
-                        R[0] = wasm_valtype_new(WASM_I64);
-                        break;
-                    case FFIMarshaller::CType::Float32:
-                        R[0] = wasm_valtype_new(WASM_F32);
-                        break;
-                    case FFIMarshaller::CType::Float64:
-                        R[0] = wasm_valtype_new(WASM_F64);
-                        break;
-                    default:
-                        R[0] = wasm_valtype_new(WASM_I32);
+                // Map return type
+                if (return_count > 0) {
+                    switch (return_ctype) {
+                        case FFIMarshaller::CType::Int32:
+                            R[0] = wasm_valtype_new(WASM_I32);
+                            break;
+                        case FFIMarshaller::CType::Int64:
+                            R[0] = wasm_valtype_new(WASM_I64);
+                            break;
+                        case FFIMarshaller::CType::Float32:
+                            R[0] = wasm_valtype_new(WASM_F32);
+                            break;
+                        case FFIMarshaller::CType::Float64:
+                            R[0] = wasm_valtype_new(WASM_F64);
+                            break;
+                        default:
+                            R[0] = wasm_valtype_new(WASM_I32);
+                    }
                 }
-            }
 
-            // Create parameter and return vectors
-            wasm_valtype_vec_t params, results;
-            wasm_valtype_vec_new(&params, param_count, P);
-            wasm_valtype_vec_new(&results, return_count, R);
+                // Create parameter and return vectors
+                wasm_valtype_vec_t params, results;
+                wasm_valtype_vec_new(&params, param_count, P);
+                wasm_valtype_vec_new(&results, return_count, R);
 
-            // Create function type
-            wasm_functype_t* ffi_type = wasm_functype_new(&params, &results);
+                // Create function type
+                wasm_functype_t *ffi_type = wasm_functype_new(&params, &results);
 
-            // Create persistent FFI context for the wrapper
-            FFIMarshaller::FFIContext* ctx = create_ffi_context(&wasp_sig, ffi_func, func_name);
+                // Create persistent FFI context for the wrapper
+                FFIMarshaller::FFIContext *ctx = create_ffi_context(&wasp_sig, ffi_func, func_name);
 
-            // Use dynamic wrapper that dispatches based on signature
-            wasmtime_error_t *derr = wasmtime_linker_define_func(
-                linker, lib_name.data, lib_name.length, func_name.data, func_name.length, ffi_type,
-                ffi_dynamic_wrapper_wasmtime, ctx, NULL);
+                // Use dynamic wrapper that dispatches based on signature
+                wasmtime_error_t *derr = wasmtime_linker_define_func(
+                    linker, lib_name.data, lib_name.length, func_name.data, func_name.length, ffi_type,
+                    ffi_dynamic_wrapper_wasmtime, ctx, NULL);
 
-            wasm_functype_delete(ffi_type);
+                wasm_functype_delete(ffi_type);
 
-            if (P) delete[] P;
-            if (R) delete[] R;
+                if (P) delete[] P;
+                if (R) delete[] R;
 
-            if (derr) {
-                trace("FFI: Failed to define "s + func_name + " from " + lib_name);
-                wasmtime_error_delete(derr);
-            } else {
-                trace("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
-            }
+                if (derr) {
+                    trace("FFI: Failed to define "s + func_name + " from " + lib_name);
+                    wasmtime_error_delete(derr);
+                } else {
+                    trace("FFI: Loaded "s + func_name + " from " + lib_name + " with signature");
+                }
             } else {
                 warn("FFI: Failed to load "s + func_name + " from " + lib_name);
             }
@@ -393,11 +394,11 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     }
 #endif // NATIVE_FFI
 
-    tracef( "Instantiating module via linker...\n");
+    tracef("Instantiating module via linker...\n");
     // Instantiate module via linker so both WASI and env imports resolve.
     error = wasmtime_linker_instantiate(linker, context, module0, &instance, &trap);
     wasmtime_module_delete(module0);
-    tracef( "Module instantiated\n");
+    tracef("Module instantiated\n");
     if (error != NULL || trap != NULL) exit_with_error("Failed to instantiate module via linker", error, trap);
 #else
     // Legacy path: manual import array (keeps existing behavior without WASI stdio)
@@ -431,23 +432,23 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         exit_with_error("Failed to retrieve function export wasp_main", NULL, NULL);
     }
 
-    tracef( "Getting memory export...\n");
+    tracef("Getting memory export...\n");
     fflush(stderr);
     wasmtime_extern_t memory_export;
     if (wasmtime_instance_export_get(context, &instance, "memory", strlen("memory"), &memory_export)) {
         if (memory_export.kind == WASMTIME_EXTERN_MEMORY) {
             wasmtime_memory_t memory0 = memory_export.of.memory;
             wasm_memory = wasmtime_memory_data(context, &memory0);
-            tracef( "Got memory at %p\n", wasm_memory);
+            tracef("Got memory at %p\n", wasm_memory);
             fflush(stderr);
         }
     }
 
-    tracef( "Calling wasp_main function...\n");
+    tracef("Calling wasp_main function...\n");
     fflush(stderr);
     wasmtime_val_t results;
     error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, 1, &trap);
-    tracef( "Function call returned\n");
+    tracef("Function call returned\n");
     fflush(stderr);
     if (error != NULL || trap != NULL) exit_with_error("Failed to call function", error, trap);
     // Do not assume i64; return a best-effort integer for convenience.
@@ -672,7 +673,7 @@ wrap(nop) {
 
 wrap(sleep) {
     int ms = args[0].of.i32;
-    usleep(ms * 1000);  // Convert milliseconds to microseconds
+    usleep(ms * 1000); // Convert milliseconds to microseconds
     return NULL;
 }
 
@@ -823,7 +824,7 @@ static void define_func(wasmtime_linker_t *linker, const char *name, wasm_functy
     if (error) {
         wasm_name_t msg;
         wasmtime_error_message(error, &msg);
-        tracef( "define_func error: %.*s\n", (int) msg.size, msg.data);
+        tracef("define_func error: %.*s\n", (int) msg.size, msg.data);
     }
 }
 
@@ -851,7 +852,7 @@ wasm_wrap *link_import(String name) {
     // todo get rid of these again!
     if (name == "_Z7consolev") return &wrap_nop;
     if (name == "getenv") return &wrap_getenv;
-    if (name == "sleep") return &wrap_sleep;  // Universal sleep function (milliseconds)
+    if (name == "sleep") return &wrap_sleep; // Universal sleep function (milliseconds)
     // fprintf is variadic and FILE*-based; until proper WASI/stdio plumbing exists,
     // route it to the simple string printer to avoid unmapped import crashes.
     if (name == "fprintf") return &wrap_puts; // TODO: implement proper WASI-backed fprintf
