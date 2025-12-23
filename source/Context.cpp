@@ -463,11 +463,9 @@ Module &loadModule(String name) {
 #if WASM and not MY_WASM
     todow("loadModule in WASM: "s + name);
     return *new Module();
-#else // getWasmFunclet
-    if(is_native_library(name)) {
+#else
+    if(is_native_library(name))
         return *loadNativeLibrary(name);
-    }
-
     return read_wasm(name); // we need to read signatures!
 #endif
 }

@@ -439,6 +439,7 @@ inline void add_ffi_signature(Module *modul, FFIHeaderSignature ffi_sig) {
         Function func;
         func.name = ffi_sig.name;
         func.is_ffi = true;
+        func.module = modul;
         func.ffi_library = modul->name;
         func.signature = convert_ffi_signature(ffi_sig);// ffi_sig.signature;
         modul->functions.add(func.name, func);
@@ -468,7 +469,6 @@ inline Module *loadNativeLibrary(String library) {
     modul->name = library;
     modul->is_native_library = true;
     enumerate_library_functions(library, modul->functions); // via FFI, next via .h parsing!
-    module_cache[library.hash()] = modul;
     auto headers = get_library_header_files(library);
     for (String header: *headers) {
         if(not fileExists(header)) {
@@ -479,13 +479,14 @@ inline Module *loadNativeLibrary(String library) {
         List<FFIHeaderSignature> sigs = parseHeaderFile(header, library);
         for (FFIHeaderSignature &ffi_sig: sigs) {
             // print("  Found FFI signature: %s %s\n"s % ffi_sig.name % ffi_sig.raw);
+            // if(ffi_sig.name=="BeginDrawing") // debug
+                // warn("Adding header signature for %s\n"s % ffi_sig.name);
             add_ffi_signature(modul, ffi_sig);
         }
     }
     fixNativeSignatures(*modul);
-    libraries.add(modul);
-    // List<FFIHeaderSignature> math_sigs = parseHeaderFile("/usr/include/math.h", "m");
-    // List<FFIHeaderSignature> string_sigs = parseHeaderFile("/usr/include/string.h", "c");
-    // List<FFIHeaderSignature> stdlib_sigs = parseHeaderFile("/usr/include/stdlib.h", "c");
+    modul->total_func_count=modul->functions.size();
+    libraries.add(modul); // current
+    module_cache[library.hash()] = modul; // cache it globally
     return modul;
 }
