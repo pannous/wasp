@@ -685,7 +685,7 @@ Node &analyze(String code) {
     return analyze(parse(code));
 }
 
-void handleNativeImport(Node &node) {
+Function& handleNativeImport(Node &node) {
     // Extract function and library from import node structure
     // ⚠️ this is partly redundant
     Node &func_node = node["function"];
@@ -695,14 +695,14 @@ void handleNativeImport(Node &node) {
 
     // Get or create native library Module
     extern Map<String, Module *> native_libraries; // Defined in Context.cpp
-    Module *lib_module;
+    Module *modul;
     if (!native_libraries.has(lib_name)) {
-        lib_module = new Module();
-        lib_module->name = lib_name;
-        lib_module->is_native_library = true;
-        native_libraries.add(lib_name, lib_module);
+        modul = new Module();
+        modul->name = lib_name;
+        modul->is_native_library = true;
+        native_libraries.add(lib_name, modul);
     } else {
-        lib_module = native_libraries[lib_name];
+        modul = native_libraries[lib_name];
     }
 
     // Register as FFI import in global functions map
@@ -712,19 +712,22 @@ void handleNativeImport(Node &node) {
     func.is_ffi = true;
     func.ffi_library = lib_name;
     func.is_used = true;
-    func.module = lib_module;
+    func.module = modul;
 
     // Check if library module already has this function with signature (from loadNativeLibrary)
-    if (lib_module->functions.has(func_name)) {
+    if (modul->functions.has(func_name)) {
         // Copy signature from library module (already detected by loadNativeLibrary)
-        func.signature = lib_module->functions[func_name].signature;
+        func.signature = modul->functions[func_name].signature;
     } else {
         // Detect and set function signature directly (reuses existing Signature class)
         detect_ffi_signature(func_name, lib_name, func.signature);
         // Add to native library module's functions map
-        lib_module->functions.add(func_name, func);
-        lib_module->export_names.add(func_name);
+        modul->functions.add(func_name, func);
+        modul->export_names.add(func_name);
     }
+    if(func_name=="InitWindow")
+        check(modul->functions["InitWindow"].signature.parameters.size() == 3);
+    return func;
 }
 
 /*
@@ -751,15 +754,18 @@ Node &analyze(Node &node, Function &function) {
     if (firstName == "data" or firstName == "quote")
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
-    if (name.in(import_keywords) || firstName.in(import_keywords)) {
+    // if (name.in(import_keywords) || firstName.in(import_keywords)) {
+    if (name.in(import_keywords)) {
         if (node.has("function") and node.has("library")) {
-            handleNativeImport(node);
+            Function& func = handleNativeImport(node);
+            use_required_import(&func);
             return NUL;
         }
         String lib_name = node.last().name;
         Module &module0 = loadModule(lib_name);
         if (not libraries.has(&module0))
             libraries.add(&module0);
+        check(module0.functions["InitWindow"].signature.parameters.size() == 3);
         return NUL;
     }
 

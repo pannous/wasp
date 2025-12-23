@@ -74,6 +74,7 @@ inline bool extractFunctionSignature(String &decl, FFIHeaderSignature &sig) {
     if (decl.startsWith("//")) return false;
     if (decl.startsWith("return")) return false;
     if (decl.startsWith("/*")) return false; // todo
+    if (decl.startsWith("*")) return false; // todo /* … */
     if (not decl.contains('(')) return false;
     if (not decl.contains(')')) return false;
     decl = decl.to("//");
@@ -88,6 +89,9 @@ inline bool extractFunctionSignature(String &decl, FFIHeaderSignature &sig) {
     if (decl.contains(':') and not decl.contains("::")) return false;
     if (decl.contains(';')) // remove trailing semicolon if present
         s = decl.substring(0, decl.lastIndexOf(";")).data;
+    if(decl.contains("SDL_Init"))
+        print("Debug SDL_Init decl: "s + decl);
+
     // ---- find parentheses ---------------------------------------------------
     int lpar = -1, rpar = -1;
     for (int i = 0; i < n; ++i) {
@@ -199,24 +203,13 @@ inline List<FFIHeaderSignature> parseHeaderFile(const String &header_path, const
         warn("Failed to read header file: "s + header_path);
         return signatures;
     }
-
-    // Parse using Wasp's parser
-    // Node &root = parse(content);
-
-    // Walk AST and extract function declarations
-    // TODO: Implement tree walk to find all function declarations
-    // For now, just process top-level nodes
-    // for (Node &node: root) {
     for (String line: content.split("\n")) {
         String trimmed = line.trim();
         String decl = trimmed;
-        // String decl = node.toString();
         FFIHeaderSignature sig;
         sig.library = library;
-        if (extractFunctionSignature(decl, sig)) {
+        if (extractFunctionSignature(decl, sig))
             signatures.add(sig);
-            // print("Found FFI function: "s + sig.name);
-        }
     }
 
     return signatures;

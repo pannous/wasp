@@ -460,6 +460,7 @@ inline void fixNativeSignatures(Module & modul) {
 
 extern Map<int64, Module *> module_cache;
 inline Module *loadNativeLibrary(String library) {
+    if(library.empty()) return 0;
     for(Module *m:libraries)
         if(m->name==library)
             return m; // already loaded

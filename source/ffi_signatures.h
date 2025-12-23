@@ -117,7 +117,16 @@ inline void detect_ffi_signature(const String& function_name, const String& libr
         return;  // Success! No need for other methods
     }
 
-    // Strategy 2: Header-based reflection
+    // Strategy 2: COMPLETE Header-based reflection
+    Module * mod = loadNativeLibrary(library_name);
+    if (mod && mod->functions.has(function_name)) {
+        sig = mod->functions[function_name].signature;
+        trace("FFI signature obtained from loaded native library module: "s + function_name + " from " + library_name);
+        return;
+    }
+    // Strategy 3: OLD redundant Header-based reflection
+    // Ensure headers are loaded
+
     bool found_in_header = detect_signature_from_headers(function_name, library_name, sig);
     trace("found %s in_header: %d\n"s % function_name % found_in_header);
 #endif

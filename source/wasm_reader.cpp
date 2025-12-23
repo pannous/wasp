@@ -229,7 +229,7 @@ void parseImportNames(Code &payload) {
         Function func = {.code_index = coi, .call_index = i, .name = function_name, .signature = signature};
 
         // Check if this is an FFI import from a native library module
-        if (library_name != "env" && library_name != "wasi_snapshot_preview1") {
+        if (library_name != "env" && library_name != "lib" && not library_name.contains("wasi")) {
             func.is_ffi = true;
             func.ffi_library = library_name;
 

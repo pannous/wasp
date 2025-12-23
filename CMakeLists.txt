@@ -268,7 +268,7 @@ endif ()
 ADD_COMPILE_FLAG("-Wformat") # essential !! print("%s",string) => memory corruption!
 ADD_COMPILE_FLAG("-Wreturn-type") # VERY USEFUL : non-void function does not return a value
 ADD_COMPILE_FLAG("-Wunused-result") # VERY USEFUL : check for nodiscard, e.g. in non-self-modifying replace()
-
+ADD_COMPILE_FLAG("-Wno-unused-but-set-variable")
 #if(APPLE)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     ADD_COMPILE_FLAG("-Wno-tautological-undefined-compare") # harmless this == 0 check
