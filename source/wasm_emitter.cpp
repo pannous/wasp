@@ -3800,15 +3800,15 @@ Code emitImportSection() {
         if (function.module and not function.module->name.empty())
             import_module = function.module->name;
         else if (contains(wasi_function_list, fun.data))
-            import_module = "wasi_snapshot_preview1";
+            import_module = "wasi_snapshot_preview1";// needed for wasmtime test.wasm
+            // import_module = "wasi_unstable";
+            // import_module = "wasi";// nice but not standard
+        if(import_module == "wasp-runtime.wasm")
+            import_module = "env"; // hack for now, "wasp" later
         if (function.is_import and function.is_used and not function.is_builtin) {
             if (function.call_index >= 0)
                 check_silent(function.call_index == import_count) // todo remove when tested
             function.call_index = import_count++;
-            if (function.module and not function.module->name.empty())
-                import_module = function.module->name;
-            else if (contains(wasi_function_list, fun.data))
-                import_module = "wasi_snapshot_preview1";
             auto type = typeMap[fun];
             import_code =
                     import_code + encodeString(import_module.data) + encodeString(fun.data).addByte(func_export).addInt(type);

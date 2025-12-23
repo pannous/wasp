@@ -747,7 +747,7 @@ public:
     Node &last();
 
     //	bool empty();// same:
-    bool isEmpty();
+    bool isEmpty() const;
 
     bool isNil() const;
 
@@ -831,7 +831,7 @@ public:
 
     List<String> &toList();
 
-    bool empty();
+    bool empty() const;
 
     void clear();
 
