@@ -4373,6 +4373,7 @@ void testCurrent() {
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
     // todo_done();
+    test_ffi_atof();
     test_ffi_raylib_simple_use_import();
     test_ffi_raylib();
     // assert_emit("abs(0)",0);

@@ -461,6 +461,7 @@ void use_runtime(const char *function) {
 bool is_native_library(const String & name);
 
 Module &loadModule(String name) {
+    /* libraries.add(&module0); todo move 3 cache HERE */
     if (name == "wasp-runtime.wasm")
         return loadRuntime();
 #if WASM and not MY_WASM

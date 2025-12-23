@@ -260,7 +260,8 @@ struct c_io_vector {
 
 //#if WASMEDGE
 // Fucking WasmEdge doesn't support wasi_unstable
-#define WASI(import) __attribute__((import_module("wasi_snapshot_preview1"), import_name(#import))) extern
+#define WASI(import) __attribute__((import_module("wasi"), import_name(#import))) extern
+// #define WASI(import) __attribute__((import_module("wasi_snapshot_preview1"), import_name(#import))) extern
 //#else
 // Fucking wasmer doesn't support wasi_snapshot_preview1
 //#define WASI(import) __attribute__((import_module("wasi_unstable"), import_name(#import))) extern "C"
