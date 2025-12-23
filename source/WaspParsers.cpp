@@ -16,14 +16,14 @@ bool Wasp::parseDollarAt(Node &actual) {
     if (ch == '@' and parserOptions.meta_attributes) {
         proceed(); // skip @
         auto meta = parseIdentifier();
-        Node* value = 0;
-        if(ch=='(') {
+        Node *value = 0;
+        if (ch == '(') {
             proceed();
             value = &valueNode(')');
         }
         auto node = valueNode();
         auto key = new Node(meta);
-        if(value) {
+        if (value) {
             key->setKind(::key);
             key->value.node = value;
         }
@@ -134,7 +134,7 @@ bool Wasp::parseBracketGroup(Node &actual, codepoint close, Node *parent) {
     else
         actual.addSmart(object);
 
-    if(bracket == '{')
+    if (bracket == '{')
         actual.last().setKind(objects, false);
     if (specialDeclaration)
         actual.kind = declaration;
@@ -190,9 +190,9 @@ bool Wasp::parseAssignment(Node &actual) {
         add_to_whole_expression = true;
     if (is_operator(previous))
         add_raw = true;
-    if(previous==')' and function_keywords.has(actual.first().name.data)) {
+    if (previous == ')' and function_keywords.has(actual.first().name.data)) {
         actual.setKind(declaration, false);
-        add_raw= true;
+        add_raw = true;
     }
 
     Node op = parseOperator();
@@ -297,6 +297,31 @@ bool Wasp::parseListSeparator(Node &actual, codepoint close, Node *parent) {
     return true;
 }
 
+Node &Wasp::directInclude(Node &node) {
+    // todo: old c-style direct include is not really what we want.
+    // todo: instead handle `use / include / import / require` in Angle.cpp analyze!
+    // especially if file.name is lib.wasm ;)
+    // import IF not in data mode
+    // parseImport(current,node);
+
+    String lib;
+    if (node.empty()) {
+        white();
+        if (ch == '"' or ch == '\'' or ch == '<')proceed(); // include "c-style" // include <cpp-style>
+        lib = (parseIdentifier());
+        if (ch == '"' or ch == '\'' or ch == '>')proceed();
+    } else
+        lib = (node.last().name);
+    if (lib == "memory")
+        return node; // todo ignore memory includes???
+    if (not file.empty() and file.endsWith(".wit")) // todo file from where ??
+        lib.replaceAllInPlace('-', '_'); // stupid kebab case!
+    if (!lib.empty()) // creates 'include' node for wasm …
+        node = parseFile(lib, parserOptions);
+    return node;
+}
+
+
 // - and . for negative numbers, arrows, or operators
 bool Wasp::parseMinusDot(Node &actual) {
     // Handle -> arrow operator
@@ -344,12 +369,11 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
 #endif
 
     // Handle imports
-    if (contains(import_keywords, (chars) node.first().name.data)) {
-        for (int i = 0; i < node.length; i++) {
-            tracef("  node[%d] = %s\n", i, node[i].serialize().data);
-        }
-        node = direct_include(actual, node);
-    }
+    if (node.first().name == "import" and node.first().length > 0)
+        node = directInclude(node);
+
+    // if (contains(import_keywords, (chars) node.first().name.data))
+    //     node = parseImport(actual, node);  do in Angle!
 
     // Don't convert FFI imports to operators - they need to stay as functors
     bool is_ffi_import = (node.name == "import" && node.kind == functor);
@@ -379,5 +403,4 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
         else
             actual.add(&node.flat());
     }
-
 }

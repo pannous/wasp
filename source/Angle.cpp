@@ -755,15 +755,12 @@ Node &analyze(Node &node, Function &function) {
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
     if (firstName.in(import_keywords)) {
-    // if (name.in(import_keywords)) {
-        if (node.has("function") and node.has("library")) {
-            Function& func = handleNativeImport(node);
-            use_required_import(&func);
-            return NUL;
-        }
         String lib_name = node.last().name;
+        if (node.has("from"))// import … from …
+            auto funcs = node.from(firstName).to("from");
+            // use_required_import(&func);
         Module &module0 = loadModule(lib_name);
-        if (not libraries.has(&module0))
+        if (!libraries.has(&module0))
             libraries.add(&module0);
         if(lib_name=="raylib")
             check(module0.functions["InitWindow"].signature.parameters.size() == 3);
