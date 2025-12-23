@@ -751,7 +751,7 @@ Node &analyze(Node &node, Function &function) {
     if (firstName == "data" or firstName == "quote")
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
-    if (name.in(import_keywords) || firstName.in(import_keywords)) {
+    if (name.in(import_keywords)){
         if (node.has("function") and node.has("library")) {
             handleNativeImport(node);
             return NUL;
