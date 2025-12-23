@@ -763,9 +763,7 @@ Node &analyze(Node &node, Function &function) {
         Module &module0 = loadModule(lib_name);
         if (!libraries.has(&module0))
             libraries.add(&module0);
-        if (lib_name == "raylib")
-            check(module0.functions["InitWindow"].signature.parameters.size() == 3);
-        return NUL;
+        return NUL; // import handled
     }
 
     if (name == "html") {
