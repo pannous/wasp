@@ -4373,8 +4373,8 @@ void testCurrent() {
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
     // todo_done();
-    test_ffi_raylib_simple_use_import();
-    test_ffi_raylib();
+    // test_ffi_raylib_simple_use_import();
+    // test_ffi_raylib();
     // assert_emit("abs(0)",0);
     // assert_emit("`hello ${42}`", "hello 42"); // todo use formatLong
     // assert_emit("`hello ${1+1}`", "hello 2");

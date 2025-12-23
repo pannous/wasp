@@ -418,6 +418,8 @@ private:
 
     bool parseMinusDot(Node &actual);
 
+    Node& directInclude(Node & node);
+
     void parseExpression(Node &actual, codepoint close);
 
     // escapee() and renderChar() moved to LiteralParser.cpp (LiteralUtils namespace)
@@ -1102,71 +1104,6 @@ private:
         return errors;
     }
 
-    Node &direct_include(Node &current, Node &node) {
-        // todo: this old c-style include is not really what we want.
-        // todo: instead handle `use / include / import / require` in Angle.cpp analyze!
-        // especially if file.name is lib.wasm ;)
-        // import IF not in data mode
-
-        for (int i = 0; i < node.length; i++)
-            tracef("  node[%d].name = %s\n", i, node[i].name.data);
-
-        // Check for FFI import pattern: import funcname from "library"
-        // Node structure at this point: [0]="import", [1]="funcname", [2]="from"
-        // The library string should be next in the input stream
-        if (node.length >= 3 && node[2].name == "from") {
-            // e.g. import abs from 'm'
-            // Get function name from already-parsed node
-            String func = node[1].name;
-
-            // Parse the library string (next in stream)
-            white();
-            if (ch == '"' or ch == '\'' or ch == '<') proceed(); // skip opening quote
-            String lib = parseIdentifier();
-            if (ch == '"' or ch == '\'' or ch == '>') proceed(); // skip closing quote
-
-            // Create import node with dictionary-style access
-            Node &import_node = *new Node("import");
-            import_node["function"] = Node(func);
-            import_node["library"] = Node(lib);
-
-            // Set kind to functor so it won't be flattened by parseExpression()
-            import_node.kind = functor;
-            // Don't try to load as a file, let Angle.cpp handle it
-            return import_node;
-        }
-
-        String lib;
-        if (node.empty()) {
-            white();
-            if (ch == '"' or ch == '\'' or ch == '<')proceed(); // include "c-style" // include <cpp-style>
-            lib = (parseIdentifier());
-            if (ch == '"' or ch == '\'' or ch == '>')proceed();
-        } else
-            lib = (node.last().name);
-        if (lib == "memory")
-            return node; // todo ignore memory includes???
-
-        // Check if it's a native library (m, c, math, raylib, SDL2)
-        String native_lib = lib;
-        if (lib == "math") native_lib = "m";
-        if (native_lib == "m" || native_lib == "c" || native_lib == "raylib" || native_lib == "SDL2") {
-            // Don't try to load as file, let Angle.cpp handle it during analysis
-            // Create a node structure that matches import keyword pattern:
-            // First child should be the keyword "use", second child is the library
-            Node &import_node = *new Node();
-            import_node.add(*new Node("use"));
-            import_node.add(*new Node(native_lib));
-            import_node.kind = groups; // groups, not functor
-            return import_node;
-        }
-
-        if (not file.empty() and file.endsWith(".wit")) // todo file from where ??
-            lib.replaceAllInPlace('-', '_'); // stupid kebab case!
-        if (!lib.empty()) // creates 'include' node for wasm …
-            node = parseFile(lib, parserOptions);
-        return node;
-    }
 
     void parseGrouping(Node &actual) {
         // overloadable grouping operators, but not builtin (){}[]

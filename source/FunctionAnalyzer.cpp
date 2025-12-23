@@ -274,7 +274,9 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         //		if (not expressiona.value.node and arity>0)error("missing args");
         functions[expressiona.name].is_used = true;
     }
-    if(expressiona.kind != expression)
+    if (expressiona.kind != expression and not isFunction(expressiona.first()) and
+        expressiona.first().name != "if" and
+        expressiona.first().name != "while")
         return expressiona;
     for (int i = 0; i < expressiona.length; ++i) {
         Node &node = expressiona.children[i];
