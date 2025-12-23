@@ -54,7 +54,7 @@ void debug_wasm_file() {
 
 // todo: merge with emit
 Node eval(String code) {
-    if(code.endsWith(".wasp"))
+    if (code.endsWith(".wasp"))
         code = readFile(code.data);
 #ifdef RUNTIME_ONLY
     return parsed; // no interpret, no emit => pure data  todo: WARN
@@ -751,13 +751,15 @@ Node &analyze(Node &node, Function &function) {
     if (firstName == "data" or firstName == "quote")
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
-    if (name.in(import_keywords)) {
+    if (name.in(import_keywords) || firstName.in(import_keywords)) {
         if (node.has("function") and node.has("library")) {
             handleNativeImport(node);
             return NUL;
         }
         String lib_name = node.last().name;
-        auto module0 = loadModule(lib_name);
+        Module &module0 = loadModule(lib_name);
+        if (not libraries.has(&module0))
+            libraries.add(&module0);
         return NUL;
     }
 

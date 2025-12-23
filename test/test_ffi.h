@@ -621,6 +621,13 @@ static void test_ffi_raylib_combined() {
 
 void test_ffi_raylib_simple_use_import() {
     tests_executed++;
+    auto modul = loadNativeLibrary("raylib");
+    check(modul);
+    check(modul->functions.has("InitWindow"));
+    check(modul->functions.has("DrawCircle"));
+    check(modul->functions["DrawCircle"].signature.parameters.size() == 4);
+    check_is(modul->functions["DrawCircle"].signature.parameters[3].type,int32t);
+
     assert_emit("samples/raylib_simple_use.wasp",42);
 }
 
