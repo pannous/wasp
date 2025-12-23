@@ -339,6 +339,9 @@ void addLibraryFunctionAsImport(Function &func) {
         import.signature.parameters = func.signature.parameters; // even if polymorph?
     }
     import.signature.type_index = -1;
+    import.module = func.module; // Preserve module pointer from library function
+    import.ffi_library = func.ffi_library; // Preserve FFI library name for native imports
+    import.is_ffi = func.is_ffi; // Preserve FFI flag
     import.is_runtime = false; // because here it is an import!
     import.is_import = true; // todo also for polymorph?
     import.is_used = true; // todo also for polymorph?
