@@ -37,7 +37,8 @@ class Code;
 #if MY_WASM
 extern "C" int64 run_wasm(bytes wasm_bytes, int len);
 #else
-extern "C" int64 run_wasm(bytes wasm_bytes, int len);
+// extern "C" int64 run_wasm(bytes wasm_bytes, int len);
+extern "C" int64_t run_wasm(unsigned char *data, int size);
 #endif
 extern "C" int64 run_wasm_file(chars wasm_path);
 
@@ -1366,8 +1367,8 @@ public:
     Node *body = 0;
     Code *code = 0;
 
-    bool is_declared = false; // only those types/functions that are declared (export) or used in call
     bool is_import = false; // not serialized in functype section, but in import section wt
+    bool is_declared = false; // only those types/functions that are declared (export) or used in call
     bool is_host = false; // todo not yet used, also what's the difference to is_import, these:
     bool is_builtin = false; // hard coded functions, tests only? todo remove
     bool is_runtime = false; // old special imports to wasm.wasm

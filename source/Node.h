@@ -263,8 +263,19 @@ public:
         //			name = String(itoa0(nr, 10)); // messes with setField contraction
     }
 
-    explicit Node(int nr) : Node((int64) nr) {
+
+    explicit
+    Node(int64 nr) {
+        value.longy = nr;
+        kind = longs;
+        if (debug)name = String(formatLong(nr)); // messes with setField contraction
     }
+
+#if LINUX
+    explicit Node(int64_t nr):Node((int64) nr)  { } // WTH??
+#endif
+
+    explicit Node(int nr) : Node((int64) nr) { }
 
     explicit Node(Kind type) : Node() { kind = type; }
 
@@ -337,14 +348,6 @@ public:
         va_end(args);
     }
 
-
-    explicit
-    Node(int64 nr) {
-        // stupild
-        value.longy = nr;
-        kind = longs;
-        if (debug)name = String(formatLong(nr)); // messes with setField contraction
-    }
 
 
     explicit // wow without explicit everything breaks WHY? because Node(void*) goes here!!!

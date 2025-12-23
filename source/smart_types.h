@@ -1,5 +1,8 @@
 #pragma once
-typedef long long int64;
+// typedef long long int64;
+typedef long long int int64; // Linux
+// typedef long long int64_t;
+
 //typedef double float64;
 //typedef int1_t bit / bool 0/1 (flag entry)
 //typedef uint2_t bine™ ;) 0…3 like in gene basepairs A:0 C:1 G:2 T:3 or A:0 G:1 C:2 T:3 AGCT≈ABCD 10 11 12 13
