@@ -685,7 +685,7 @@ Node &analyze(String code) {
     return analyze(parse(code));
 }
 
-Function& handleNativeImport(Node &node) {
+Function &handleNativeImport(Node &node) {
     // Extract function and library from import node structure
     // ⚠️ this is partly redundant
     Node &func_node = node["function"];
@@ -725,7 +725,7 @@ Function& handleNativeImport(Node &node) {
         modul->functions.add(func_name, func);
         modul->export_names.add(func_name);
     }
-    if(func_name=="InitWindow")
+    if (func_name == "InitWindow")
         check(modul->functions["InitWindow"].signature.parameters.size() == 3);
     return func;
 }
@@ -749,20 +749,21 @@ Node &analyze(Node &node, Function &function) {
 
     Kind type = node.kind;
     String &name = node.name;
-    auto firstName = node.first().name;
+    Node& first = node.first();
+    auto firstName = first.name;
 
     if (firstName == "data" or firstName == "quote")
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
     if (firstName.in(import_keywords)) {
         String lib_name = node.last().name;
-        if (node.has("from"))// import … from …
+        if (node.has("from")) // import … from …
             auto funcs = node.from(firstName).to("from");
-            // use_required_import(&func);
+        // use_required_import(&func);
         Module &module0 = loadModule(lib_name);
         if (not libraries.has(&module0))
             libraries.add(&module0);
-        if(lib_name=="raylib")
+        if (lib_name == "raylib")
             check(module0.functions["InitWindow"].signature.parameters.size() == 3);
         return NUL;
     }
@@ -779,6 +780,10 @@ Node &analyze(Node &node, Function &function) {
         return node;
     }
     if (name == "if")return groupIf(node, function);
+    // if (firstName == "if") {
+    //     auto &args = node.from("if");
+    //     node = groupIf(first.length > 0 ? first.add(args) : args, function);
+    // }
     if (name == "while")return groupWhile(node, function);
     if (name == "for" or firstName == "for")return groupFor(node, function);
     if (name == "?")return groupIf(node, function);
@@ -812,7 +817,6 @@ Node &analyze(Node &node, Function &function) {
         }
         if (node.length > 0) {
             // (double x, y)  (while x) : y
-            auto first = node.first().first();
             if (isType(first))
                 return groupTypes(node, function);
             else if (first.name == "while")
@@ -845,10 +849,10 @@ Node &analyze(Node &node, Function &function) {
     if (type == operators or type == call or isFunction(node)) //todo merge/clean
         return groupOperatorCall(node, function); // call, NOT definition
 
-    Node &groupedTypes = groupTypes(node, function);
-    Node &groupedDeclarations = groupDeclarations(groupedTypes, function);
-    Node &groupedFunctions = groupFunctionCalls(groupedDeclarations, function);
-    Node &grouped = groupOperators(groupedFunctions, function);
+    node = groupTypes(node, function);
+    node = groupDeclarations(node, function);
+    node = groupFunctionCalls(node, function);
+    auto &grouped = groupOperators(node, function);
     if (analyzed[grouped.hash()])return grouped; // done!
     analyzed.insert_or_assign(grouped.hash(), 1);
     if (grouped.kind == referencex or grouped.name.startsWith("$")) {

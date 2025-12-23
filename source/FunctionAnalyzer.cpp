@@ -36,7 +36,7 @@ void discard(Node &node) {
 
 Node &
 groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body,
-                        Function &context) {
+                         Function &context) {
     // Type return_type;
     // if(return_type0)
     //     return_type = mapType(return_type0);
@@ -212,7 +212,7 @@ Node &groupDeclarations(Node &expression, Function &context) {
             left = node.first().first(); // ARGS
             rest = node.last();
             if (rest.kind == declaration)rest = rest.values();
-            String& nam = name;
+            String &nam = name;
             context.locals.remove(nam); // not a variable!
         }
         ////			todo i=1 vs i:=it*2  ok ?
@@ -232,7 +232,6 @@ Node &groupDeclarations(Node &expression, Function &context) {
     }
     return expression;
 }
-
 
 
 Node extractReturnTypes(Node decl, Node body) {
@@ -266,7 +265,7 @@ Node &parseWhileExpression(Node &node, Node &expressiona, int i, Function &conte
 Node &groupFunctionCalls(Node &expressiona, Function &context) {
     if (expressiona.kind == declaration)return expressiona; // handled before
     Function *import = findLibraryFunction(expressiona.name, false);
-    import = findLibraryFunction(expressiona.name, false);// DEBUG!
+    import = findLibraryFunction(expressiona.name, false); // DEBUG!
     if (import or isFunction(expressiona)) {
         expressiona.setKind(call, false);
         if (not functions.has(expressiona.name))
@@ -287,16 +286,10 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         // todo: MOVE!
         if (name == "if") // kinda functor
         {
+            if(i>0)error("if should be first in expression");
             // error("if should be treated earlier");
             auto &args = expressiona.from("if");
-            Node &iff = groupIf(node.length > 0 ? node.add(args) : args, context);
-            int j = expressiona.lastIndex(iff.last().next) - 1;
-            if (i == 0 and j == expressiona.length - 1)return iff;
-            if (j > i)
-                expressiona.replace(i, j, iff); // todo figure out if a>b c d e == if(a>b)then c else d; e boundary
-            if (i == 0)
-                return expressiona;
-            continue;
+            return groupIf(node.length > 0 ? node.add(args) : args, context);
         }
         //        if (name == "for") {
         //            Node &forr = groupFor(node, context);
@@ -308,7 +301,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         if (name == "while") {
             // error("while' should be treated earlier");
             parseWhileExpression(node, expressiona, i, context);
-                continue;
+            continue;
         }
         // Check if this is a struct constructor (before checking isFunction)
         if (types.has(name) and node.length > 0) {
