@@ -16,14 +16,14 @@ bool Wasp::parseDollarAt(Node &actual) {
     if (ch == '@' and parserOptions.meta_attributes) {
         proceed(); // skip @
         auto meta = parseIdentifier();
-        Node* value = 0;
-        if(ch=='(') {
+        Node *value = 0;
+        if (ch == '(') {
             proceed();
             value = &valueNode(')');
         }
         auto node = valueNode();
         auto key = new Node(meta);
-        if(value) {
+        if (value) {
             key->setKind(::key);
             key->value.node = value;
         }
@@ -134,7 +134,7 @@ bool Wasp::parseBracketGroup(Node &actual, codepoint close, Node *parent) {
     else
         actual.addSmart(object);
 
-    if(bracket == '{')
+    if (bracket == '{')
         actual.last().setKind(objects, false);
     if (specialDeclaration)
         actual.kind = declaration;
@@ -190,9 +190,9 @@ bool Wasp::parseAssignment(Node &actual) {
         add_to_whole_expression = true;
     if (is_operator(previous))
         add_raw = true;
-    if(previous==')' and function_keywords.has(actual.first().name.data)) {
+    if (previous == ')' and function_keywords.has(actual.first().name.data)) {
         actual.setKind(declaration, false);
-        add_raw= true;
+        add_raw = true;
     }
 
     Node op = parseOperator();
@@ -403,5 +403,4 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
         else
             actual.add(&node.flat());
     }
-
 }

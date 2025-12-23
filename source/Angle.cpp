@@ -757,11 +757,11 @@ Node &analyze(Node &node, Function &function) {
 
     if (firstName.in(import_keywords)) {
         String lib_name = node.last().name;
-        if (node.has("from")) // import … from …
+        if (node.has("from"))// import … from …
             auto funcs = node.from(firstName).to("from");
-        // use_required_import(&func);
+            // use_required_import(&func);
         Module &module0 = loadModule(lib_name);
-        if (not libraries.has(&module0))
+        if (!libraries.has(&module0))
             libraries.add(&module0);
         if (lib_name == "raylib")
             check(module0.functions["InitWindow"].signature.parameters.size() == 3);

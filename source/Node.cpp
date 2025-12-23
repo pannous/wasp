@@ -809,7 +809,7 @@ Node &Node::last() {
 //	return isEmpty();
 //}
 
-bool Node::isEmpty() {
+bool Node::isEmpty() const{
     // not required here: name.empty()
     return (length == 0 and value.longy == 0) or isNil();
 }
@@ -1320,7 +1320,7 @@ List<String> &Node::toList() {
     return values;
 }
 
-bool Node::empty() {
+bool Node::empty() const {
     // we don't care about name here
     return length == 0 and value.data == 0;
 }
