@@ -67,6 +67,7 @@ void init_wasmtime() {
     static bool raylib_preloaded = false;
     if (!raylib_preloaded) {
         raylib_preloaded = true;
+        print("raylib preloading for Wasmtime FFI compatibility\n");
         dlopen("/opt/homebrew/lib/libraylib.dylib", RTLD_LAZY | RTLD_GLOBAL);
     }
 #endif

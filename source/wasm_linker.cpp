@@ -1760,7 +1760,7 @@ void Linker::ApplyRelocation(Section *section, const wabt::Reloc *r) {
     }
 
     //			data.insert(data.begin() + section->offset + r->offset, new_value);// this messes up the DATA section somehow!
-    //			List<unsigned char> neu = lebVector(new_value);//  Code((int64)new_value);
+    //			List<unsigned char> neu = lebVector(new_value);//  Code((int64_t)new_value);
     //			section->size += neu.size();
     //			section->payload_size += neu.size();
     //			data.insert(data.begin() + section->offset + r->offset, neu.begin(), neu.end());

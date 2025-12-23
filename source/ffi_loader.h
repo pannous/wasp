@@ -38,22 +38,20 @@ public:
         if (!handle) {
 #ifdef __APPLE__
             String lib_path = "lib"s + lib_name + ".dylib";
-            handle = dlopen(lib_path.data, RTLD_LAZY | RTLD_GLOBAL);
 #else
             String lib_path = "lib"s + lib_name + ".so";
-            handle = dlopen(lib_path, RTLD_LAZY | RTLD_GLOBAL);
 #endif
+            handle = dlopen(lib_path.data, RTLD_LAZY | RTLD_GLOBAL);
         }
 
         // Try system library path
         if (!handle) {
 #ifdef __APPLE__
             String lib_path = "/usr/lib/lib"s + lib_name + ".dylib";
-            handle = dlopen(lib_path.data, RTLD_LAZY | RTLD_GLOBAL);
 #else
             String lib_path = "/usr/lib/lib"s + lib_name + ".so";
-            handle = dlopen(lib_path, RTLD_LAZY | RTLD_GLOBAL);
 #endif
+            handle = dlopen(lib_path.data, RTLD_LAZY | RTLD_GLOBAL);
         }
 
         // Try Homebrew/local library path (macOS) or lib64 (Linux)
@@ -68,7 +66,7 @@ public:
             }
 #else
             String lib_path = "/usr/lib/x86_64-linux-gnu/lib"s + lib_name + ".so";
-            handle = dlopen(lib_path, RTLD_LAZY | RTLD_GLOBAL);
+            handle = dlopen(lib_path.data, RTLD_LAZY | RTLD_GLOBAL);
 #endif
         }
 

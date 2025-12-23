@@ -1403,7 +1403,7 @@ extern "C" Node *smartNode(smart_pointer_64 smartPointer64) {
     //    if (!isSmartPointer(smartPointer64))
     //        return Node(smartPointer64);
     if ((smartPointer64 & negative_mask_64) == negative_mask_64) {
-        return new Node((int64) smartPointer64);
+        return new Node((int64_t) smartPointer64);
     }
     if ((type_mask_64_word & smartPointer64) == 0) {
         int64 pure_long_60 = (int64) smartPointer64;
@@ -1489,7 +1489,7 @@ Node *reconstructArray(int *array_struct) {
         char *val = (((char *) array_struct) + stack_Item_Size * pos++);
         Node *chile;
         if (value_kind == Primitive::byte_char)chile = new Node((codepoint) *val);
-        else if (value_kind == Primitive::byte_i8)chile = new Node((int64) *val);
+        else if (value_kind == Primitive::byte_i8)chile = new Node((int64_t) *val);
         else if (value_kind == Primitive::codepoint32)chile = new Node((codepoint) *(int64 *) val);
         else if (value_kind == wasm_int32)chile = new Node(*(int *) val);
         else if (value_kind == int16t)chile = new Node(*(short *) val);
@@ -1605,7 +1605,7 @@ extern "C" Node *getField(Node *n, smart_pointer_64 field) {
 extern "C"
 Node cast(const Node &from, Type to_type) {
     if (from.kind == to_type.kind)return from;
-    if (from.kind == reals and to_type.kind == longs)return Node((int64) from.value.real); // boring, done by wasm?
+    if (from.kind == reals and to_type.kind == longs)return Node((int64_t) from.value.real); // boring, done by wasm?
     if (from.kind == longs and to_type.kind == reals)return Node((double) from.value.longy);
     if (from.kind == longs and to_type.kind == bools)return Node((bool) from.value.longy);
     // REAL CASTS "2" to '2' to 2

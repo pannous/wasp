@@ -118,7 +118,7 @@ if (NOT WASM)
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         # ⚠️ NO engine has (c-api) support for wit / component model as of 2025-03 !!! ⚠️
         # https://github.com/bytecodealliance/wasmtime/issues/6987
-#        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         set(WEBAPP 0)
         SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
@@ -405,7 +405,7 @@ if (RUNTIME_ONLY)
     message("RUNTIME_ONLY!")
     ADD_DEFINITIONS(-DRUNTIME_ONLY)
     set(INCLUDE_MERGER 0)
-    if(DEBUG) # wasp-runtime-debug.wasm test42(){return 42;}
+    if (DEBUG) # wasp-runtime-debug.wasm test42(){return 42;}
         set(SOURCE_FILES ${SOURCE_FILES} test/test_functions.h)
     endif ()
 else ()
@@ -422,7 +422,6 @@ else ()
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/WitReader.h)
     set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_reader.cpp)
 endif ()
-
 
 
 if (INCLUDE_MERGER)
@@ -899,40 +898,42 @@ elseif (WASMTIME)
 
     # Prefer the GC/anyref crates/c-api headers first to match the linked library ABI
     target_include_directories(wasp PUBLIC /opt/homebrew/opt/wasmtime/include)
-    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/include/)
-    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/c-api/include/)
-#    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/c-api/wasm-c-api/include/)
-    # WASI C API header lives here (wasmtime/wasi.h)
-#    target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/include/)
-    # Keep build output include as well
-    target_include_directories(wasp PUBLIC wasmtime)
-    # Legacy C-API headers kept last to avoid accidental selection over crates/c-api
+    if (NOT LINUX)
+        target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/include/)
+        target_include_directories(wasp PUBLIC Frameworks/wasmtime/crates/c-api/c-api/include/)
+        # WASI C API header lives here (wasmtime/wasi.h)
+    else ()
+        target_include_directories(wasp PUBLIC Frameworks/wasmtime-v40.0.0-aarch64-linux-c-api/include)
+    endif ()
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/c-api/include/)
     target_include_directories(wasp PUBLIC Frameworks/wasmtime-c-api/wasm-c-api/include/)
+    target_include_directories(wasp PUBLIC wasmtime)
 
-#    set(WASMTIME_PATCH 1)
-    ADD_DEFINITIONS(-DWASMTIME_PATCH)
-
+    #    set(WASMTIME_PATCH 1)
+    if (NOT LINUX)
+        ADD_DEFINITIONS(-DWASMTIME_PATCH)
+    endif ()
     # Link against pre-built dynamic library
     if (APPLE)
         target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/libwasmtime.dylib)
-#        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/deps/libwasmtime.dylib)
-#        target_link_libraries(wasp PUBLIC /opt/homebrew/lib/libwasmtime.dylib)
-#        target_link_libraries(wasp PUBLIC /opt/homebrew/Cellar/wasmtime/latest/lib/libwasmtime.dylib) # unpatched!
+        #        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/deps/libwasmtime.dylib)
+        #        target_link_libraries(wasp PUBLIC /opt/homebrew/lib/libwasmtime.dylib)
+        #        target_link_libraries(wasp PUBLIC /opt/homebrew/Cellar/wasmtime/latest/lib/libwasmtime.dylib) # unpatched!
         # Set rpath so the dylib can be found at runtime
         set_target_properties(wasp PROPERTIES
-            BUILD_RPATH "/opt/wasm/wasmtime/target/aarch64-apple-darwin/release"
-            INSTALL_RPATH "/opt/wasm/wasmtime/target/aarch64-apple-darwin/release"
+                BUILD_RPATH "/opt/wasm/wasmtime/target/aarch64-apple-darwin/release"
+                INSTALL_RPATH "/opt/wasm/wasmtime/target/aarch64-apple-darwin/release"
         )
     elseif (LINUX)
         target_link_libraries(wasp PUBLIC -ldl -lpthread -lm)
         # Add path to wasmtime.so if on Linux
-        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/release/libwasmtime.so)
-        set_target_properties(wasp PROPERTIES
-            BUILD_RPATH "/opt/wasm/wasmtime/target/release"
-            INSTALL_RPATH "/opt/wasm/wasmtime/target/release"
-        )
+        #        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/release/libwasmtime.so)
+        target_link_libraries(wasp PUBLIC ${CMAKE_SOURCE_DIR}/Frameworks/wasmtime-v40.0.0-aarch64-linux-c-api/lib/libwasmtime.so)
+        #        set_target_properties(wasp PROPERTIES
+        #            BUILD_RPATH "/opt/wasm/wasmtime/target/release"
+        #            INSTALL_RPATH "/opt/wasm/wasmtime/target/release"
+        #        )
     elseif (WINDOWS)
         target_link_libraries(wasp PUBLIC ws2_32.lib advapi32.lib userenv.lib ntdll.lib shell32.lib ole32.lib bcrypt.lib)
     endif ()
