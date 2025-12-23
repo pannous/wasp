@@ -754,8 +754,8 @@ Node &analyze(Node &node, Function &function) {
     if (firstName == "data" or firstName == "quote")
         return node; // data keyword leaves data completely unparsed, like lisp quote `()
 
-    // if (name.in(import_keywords) || firstName.in(import_keywords)) {
-    if (name.in(import_keywords)) {
+    if (firstName.in(import_keywords)) {
+    // if (name.in(import_keywords)) {
         if (node.has("function") and node.has("library")) {
             Function& func = handleNativeImport(node);
             use_required_import(&func);
@@ -765,7 +765,8 @@ Node &analyze(Node &node, Function &function) {
         Module &module0 = loadModule(lib_name);
         if (not libraries.has(&module0))
             libraries.add(&module0);
-        check(module0.functions["InitWindow"].signature.parameters.size() == 3);
+        if(lib_name=="raylib")
+            check(module0.functions["InitWindow"].signature.parameters.size() == 3);
         return NUL;
     }
 
@@ -846,30 +847,6 @@ Node &analyze(Node &node, Function &function) {
 
     if (type == operators or type == call or isFunction(node)) //todo merge/clean
         return groupOperatorCall(node, function); // call, NOT definition
-
-    // Handle FFI imports in expression children before grouping operators
-    if (node.kind == expression && node.length > 0) {
-        List<Node> filtered_children;
-        for (int i = 0; i < node.length; i++) {
-            Node &child = node.children[i];
-            if (child.name == "import" && child.kind == functor && child.has("function") && child.has("library")) {
-                handleNativeImport(child);
-                // Don't add import node to filtered children (skip it)
-            } else if (child.name == "\n" || child.name == " " || child.name == "\t" || child.name == "\\") {
-                // Skip whitespace/newline nodes
-            } else {
-                // Keep non-import, non-whitespace nodes
-                filtered_children.add(child);
-            }
-        }
-        // Rebuild node.children without imports and whitespace
-        if (filtered_children.size() < node.length) {
-            node.length = filtered_children.size();
-            for (int i = 0; i < filtered_children.size(); i++) {
-                node.children[i] = filtered_children[i];
-            }
-        }
-    }
 
     Node &groupedTypes = groupTypes(node, function);
     Node &groupedDeclarations = groupDeclarations(groupedTypes, function);
