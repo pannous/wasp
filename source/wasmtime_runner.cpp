@@ -15,7 +15,6 @@
 #include "ffi_loader.h"
 #include "ffi_marshaller.h"
 #include "ffi_dynamic_wrapper.h"
-#include "ffi_signatures.h"
 #include "Context.h"
 #include "Util.h"
 #include "wasm_reader.h"

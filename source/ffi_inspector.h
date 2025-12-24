@@ -97,23 +97,6 @@ inline void *get_function_pointer(const String &library_name, const String &func
     return func_ptr;
 }
 
-// Inspect function signature dynamically
-// This is the KEY function that eliminates hardcoded signatures!
-inline bool inspect_ffi_signature(const String &library_name, const String &function_name, Signature &sig) {
-    void *func_ptr = get_function_pointer(library_name, function_name);
-    if (!func_ptr) {
-        return false;
-    }
-
-    // TODO: Use libffi's ffi_prep_cif or platform-specific introspection
-    // The actual signature inspection depends on platform:
-
-    // Option 1: libffi (cross-platform but requires linking libffi)
-    // Option 2: DWARF debug info from library
-    // Option 3: Platform-specific (mach-o on Mac, ELF on Linux)
-    return false; // Placeholder until implemented, we fall back to header parsing
-}
-
 
 // Check if a module name indicates an FFI import
 inline bool is_ffi_module(const String &module_name) {
@@ -225,7 +208,8 @@ inline void enumerate_library_functions_macos(void *handle, Map<String, Function
             func.ffi_library = library_name;
 
             // Try to inspect signature
-            inspect_ffi_signature(library_name, func.name, func.signature);
+            void detect_ffi_signature(const String& function_name, const String& library_name, Signature& sig);
+            detect_ffi_signature(library_name, func.name, func.signature);
 
             functions.add(func.name, func);
             func_count++;
@@ -367,4 +351,39 @@ inline Module *loadNativeLibrary(String library) {
     libraries.add(modul); // current
     module_cache[library.hash()] = modul; // cache it globally
     return modul;
+}
+
+
+// Inspect function signature dynamically
+inline bool inspect_ffi_signature(const String &library_name, const String &function_name, Signature &sig) {
+    void *func_ptr = get_function_pointer(library_name, function_name);
+    if (!func_ptr) {
+        return false;
+    }
+    // TODO: Use libffi's ffi_prep_cif or platform-specific introspection
+    // The actual signature inspection depends on platform:
+    // Option 1: libffi (cross-platform but requires linking libffi)
+    // Option 2: DWARF debug info from library
+    // Option 3: Platform-specific (mach-o on Mac, ELF on Linux)
+    return false; // Placeholder until implemented, we fall back to header parsing
+}
+
+
+
+// Detect function signature based on function name and library
+// Populates the provided Signature object with parameter and return types
+inline void detect_ffi_signature(const String& function_name, const String& library_name, Signature& sig) {
+    // Strategy 1: Dynamic inspection via dlsym (BEST - uses actual library!)
+    // Placeholder until implemented, we fall back to header parsing
+    if (inspect_ffi_signature(library_name, function_name, sig)) {
+        trace("FFI signature detected via dynamic inspection: "s + function_name + " from " + library_name);
+        return;  // Success! No need for other methods
+    }
+
+    // Strategy 2: COMPLETE Header-based reflection
+    Module * mod = loadNativeLibrary(library_name);
+    if (mod && mod->functions.has(function_name)) {
+        sig = mod->functions[function_name].signature;
+        trace("FFI signature for: "s + function_name + " obtained from header files of module " + library_name);
+    }
 }

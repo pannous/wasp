@@ -8,12 +8,10 @@
 #include "CharUtils.h"
 #include "Map.h"
 #include "Code.h"
+#include "ffi_inspector.h"
 #include "Keywords.h"
 #include "wasm_reader.h"
 
-#ifdef NATIVE_FFI
-#include "ffi_signatures.h"
-#endif
 
 String &normOperator(String &alias);
 

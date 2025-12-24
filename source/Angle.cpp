@@ -13,11 +13,11 @@
 #include "CharUtils.h"
 #include "Keywords.h"
 #include "Context.h" // AST Analysis Context (shared with wasm_emitter.cpp)
+#include "ffi_inspector.h"
 #include "wasm_emitter.h" // to do put all dependencies into the context
 #include "WitReader.h"
 #include "FunctionAnalyzer.h"
 #include "OperatorAnalyzer.h"
-#include "ffi_signatures.h"
 
 #if INCLUDE_MERGER and not RUNTIME_ONLY
 #include "wasm_merger.h"
