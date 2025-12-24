@@ -808,26 +808,12 @@ Node &analyze(Node &node, Function &function) {
     if ((type == expression and not name.empty() and not name.contains("-")))
         addLocal(function, name, int32t, false); //  todo deep type analysis x = π * fun() % 4
     if (type == key) {
-        if (node.value.node /* i=ø has no node */) {
-            Node &analyzed = analyze(*node.value.node, function);
-            // Preserve struct constructor type information through cloning
-            Node *cloned = analyzed.clone();
-            if (debug && cloned->type != analyzed.type) {
-                printf("WARNING: clone lost type! analyzed.type=%p, cloned->type=%p\n",
-                       (void *) analyzed.type, (void *) cloned->type);
-            }
-            node.value.node = cloned;
-        }
+        if (node.value.node /* i=ø has no node */)
+            node.value.node = analyze(*node.value.node, function).clone();
         if (node.length > 0) {
             // (double x, y)  (while x) : y
             if (isType(first))
                 return groupTypes(node, function);
-            else if (first.name == "while")
-                return groupWhile(node, function);
-            else if (first.name == "for")
-                return groupFor(node, function);
-            else if (first.name == "if")
-                return groupIf(node, function);
             else if (node.length > 1)
                 error("unknown key expression: "s + node.serialize());
         }
