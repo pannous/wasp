@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <cxxabi.h> // for abi::__cxa_demangle
 #include "wasm_reader.h"
+
+#include "ffi_inspector.h"
 #include "Util.h"
-#include "ffi_signatures.h"
 //#include "wasm_emitter.h"
 // compare with wasm-objdump -h
 
@@ -242,6 +243,7 @@ void parseImportNames(Code &payload) {
     }
     info("imports DONE");
 }
+
 
 // Signatures to be consumed in export section
 void parse_type_data(Code &payload) {
