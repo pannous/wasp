@@ -232,13 +232,8 @@ void parseImportNames(Code &payload) {
         if (library_name != "env" && library_name != "lib" && not library_name.contains("wasi")) {
             func.is_ffi = true;
             func.ffi_library = library_name;
-
             // Re-detect signature from library/function name
             // (WASM loses type info like charp -> i32, so we need to restore it)
-
-            // ⚠️  CRITICAL: Arguments MUST be (function_name, library_name) NOT (library, function)!
-            // ⚠️  This has broken 3+ times. Test with strlen before committing!
-            // ⚠️  See docs/ffi-strlen-bug-guide.md for details
             detect_ffi_signature(function_name, library_name, func.signature);
         }
 

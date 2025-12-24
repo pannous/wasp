@@ -2,6 +2,7 @@
 
 #include "String.h"
 #include "Code.h"  // For Signature
+#include "Context.h" // for Module
 #include <dlfcn.h>
 
 #include "ffi_header_parser.h"

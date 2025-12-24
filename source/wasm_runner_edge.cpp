@@ -426,6 +426,7 @@ WasmEdge_ModuleInstanceContext *CreateExternModule(WasmEdge_ModuleInstanceContex
     // Add FFI imports from native library modules (Mac/Linux only)
     // WASM builds cannot load native .so/.dylib files
     extern Map<String, Module *> native_libraries; // Defined in Context.cpp
+    Module &meta = loadModule()
 
     // Reconstruct native_libraries from WASM imports
     // (native_libraries is only populated during compilation, not during WASM execution)

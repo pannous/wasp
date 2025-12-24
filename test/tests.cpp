@@ -4365,6 +4365,7 @@ void test_const_String_comparison_bug() {
 // 2022-12-28 : 3 sec WITH runtime_emit, wasmedge on M1 WOW ALL TESTS PASSING
 // 2025-03-23 : <5 sec WITH runtime_emit, WASMTIME/WAMR/WASMEDGE on M1, 45 sec in Chrome (because print?)
 // ⚠️ CANNOT USE assert_emit in WASM! ONLY via void testRun();
+// 2025-12-23 : 10 sec WITH runtime_emit, wasmtime 4.0 on M2
 void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
