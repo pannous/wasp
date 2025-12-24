@@ -106,138 +106,14 @@ inline bool inspect_ffi_signature(const String &library_name, const String &func
     }
 
     // TODO: Use libffi's ffi_prep_cif or platform-specific introspection
-    // For now, we've proven we CAN get the function pointer
     // The actual signature inspection depends on platform:
 
     // Option 1: libffi (cross-platform but requires linking libffi)
     // Option 2: DWARF debug info from library
     // Option 3: Platform-specific (mach-o on Mac, ELF on Linux)
-    // Option 4: Fallback to type deduction from known function patterns
-
-    // For common C library functions, we can deduce types:
-    if (library_name == "c") {
-        // String functions - all take char* (charp)
-        if (function_name == "strlen" || function_name == "strdup" ||
-            function_name == "strcat" || function_name == "strcpy") {
-            sig.parameters.clear();
-            sig.return_types.clear();
-
-            Arg param;
-            param.type = charp;
-            sig.parameters.add(param);
-
-            if (function_name == "strlen") {
-                sig.return_types.add(int32t); // size_t → int32
-            } else {
-                sig.return_types.add(charp); // char* → char*
-            }
-            return true;
-        }
-
-        // atoi family
-        if (function_name == "atoi" || function_name == "atol") {
-            sig.parameters.clear();
-            sig.return_types.clear();
-
-            Arg param;
-            param.type = charp;
-            sig.parameters.add(param);
-            sig.return_types.add(function_name == "atol" ? i64 : int32t);
-            return true;
-        }
-
-        // atof: char* -> double
-        if (function_name == "atof") {
-            sig.parameters.clear();
-            sig.return_types.clear();
-
-            Arg param;
-            param.type = charp;
-            sig.parameters.add(param);
-            sig.return_types.add(float64t);
-            return true;
-        }
-
-        // abs: int -> int
-        if (function_name == "abs") {
-            sig.parameters.clear();
-            sig.return_types.clear();
-
-            Arg param;
-            param.type = int32t;
-            sig.parameters.add(param);
-            sig.return_types.add(int32t);
-            return true;
-        }
-
-        // labs: long -> long
-        if (function_name == "labs") {
-            sig.parameters.clear();
-            sig.return_types.clear();
-
-            Arg param;
-            param.type = i64;
-            sig.parameters.add(param);
-            sig.return_types.add(i64);
-            return true;
-        }
-
-        // strcmp, strncmp: char*, char* -> int
-        if (function_name == "strcmp" || function_name == "strncmp") {
-            sig.parameters.clear();
-            sig.return_types.clear();
-
-            Arg param1, param2;
-            param1.type = charp;
-            param2.type = charp;
-            sig.parameters.add(param1);
-            sig.parameters.add(param2);
-
-            if (function_name == "strncmp") {
-                Arg param3;
-                param3.type = int32t;  // size_t n
-                sig.parameters.add(param3);
-            }
-
-            sig.return_types.add(int32t);
-            return true;
-        }
-    }
-
-    if (library_name == "m") {
-        // Math functions - most are double→double
-        if (function_name == "sin" || function_name == "cos" || function_name == "tan" ||
-            function_name == "sqrt" || function_name == "log" || function_name == "exp" ||
-            function_name == "ceil" || function_name == "floor" || function_name == "fabs") {
-            sig.parameters.clear();
-            sig.return_types.clear();
-
-            Arg param;
-            param.type = float64t;
-            sig.parameters.add(param);
-            sig.return_types.add(float64t);
-            return true;
-        }
-
-        // Two-parameter math functions
-        if (function_name == "pow" || function_name == "atan2" || function_name == "fmod") {
-            sig.parameters.clear();
-            sig.return_types.clear();
-
-            Arg param1, param2;
-            param1.type = float64t;
-            param2.type = float64t;
-            sig.parameters.add(param1);
-            sig.parameters.add(param2);
-            sig.return_types.add(float64t);
-            return true;
-        }
-    }
-
-    // We found the function but couldn't deduce signature
-    // This is where libffi or DWARF inspection would help
-    return false;
+    return false; // Placeholder until implemented, we fall back to header parsing
 }
+
 
 // Check if a module name indicates an FFI import
 inline bool is_ffi_module(const String &module_name) {
