@@ -730,6 +730,17 @@ Function &handleNativeImport(Node &node) {
     return func;
 }
 
+void useHostDollar() {
+    // external reference, e.g. html $id
+    useFunction("getElementById");
+    useFunction("toNode"); // todo get rid of these:
+    useFunction("toString");
+    useFunction("toLong");
+    useFunction("toReal");
+    // useFunction("toInt");
+    // useFunction("toReal");
+}
+
 /*
  * ☢️ ⚛ Nuclear Core ⚠️ 🚧
  * turning some knobs might yield some great powers
@@ -786,8 +797,8 @@ Node &analyze(Node &node, Function &function) {
     }
     if (name == "while")return groupWhile(node, function);
     if (firstName == "while") {
-            // node = parseWhileExpression(first, node, 0, context);
-        }
+        // node = parseWhileExpression(first, node, 0, context);
+    }
     if (name == "for" or firstName == "for")return groupFor(node, function);
     if (name == "?")return groupIf(node, function);
     if (name == "module") {
@@ -838,36 +849,21 @@ Node &analyze(Node &node, Function &function) {
     if (type == operators or type == call or isFunction(node)) //todo merge/clean
         return groupOperatorCall(node, function); // call, NOT definition
 
+    if (not firstName.empty() and wit_keywords.contains(firstName) and first.kind != strings /* TODO … */) {
+        WitReader witReader;
+        return witReader.analyzeWit(node); // can't MOVE there: todo why not?
+    }
+
     node = groupTypes(node, function);
     node = groupDeclarations(node, function);
     node = groupFunctionCalls(node, function);
     auto &grouped = groupOperators(node, function);
     if (analyzed[grouped.hash()])return grouped; // done!
     analyzed.insert_or_assign(grouped.hash(), 1);
-    if (grouped.kind == referencex or grouped.name.startsWith("$")) {
-        // external reference, e.g. html $id
-        useFunction("getElementById");
-        useFunction("toNode"); // todo get rid of these:
-        useFunction("toString");
-        useFunction("toLong");
-        useFunction("toReal");
-        // useFunction("toInt");
-        // useFunction("toReal");
-    }
-    //    Node& last;
-    if (isGroup(type)) {
-        // handle lists, arrays, objects, … (statements)
-        if (grouped.length > 0)
-            for (Node &child: grouped) {
-                // children of lists analyzed individually
-                if (!child.name.empty() and wit_keywords.contains(child.name) and child.kind != strings /* TODO … */) {
-                    WitReader witReader;
-                    return witReader.analyzeWit(node); // can't MOVE there:
-                }
-                child = analyze(child, function); // REPLACE ref with their ast ok?
-                //                last.next = child;
-            }
-    }
+    if (grouped.kind == referencex or grouped.name.startsWith("$")) useHostDollar();
+    if (isGroup(type) and grouped.length > 0) // handle lists, arrays, objects, … (statements)
+        for (Node &child: grouped) // children of lists analyzed individually
+            child = analyze(child, function); // REPLACE ref with their ast ok?
     return grouped;
 }
 
