@@ -749,7 +749,7 @@ Node &analyze(Node &node, Function &function) {
 
     Kind type = node.kind;
     String &name = node.name;
-    Node& first = node.first();
+    Node &first = node.first();
     auto firstName = first.name;
 
     if (firstName == "data" or firstName == "quote")
@@ -757,9 +757,9 @@ Node &analyze(Node &node, Function &function) {
 
     if (firstName.in(import_keywords)) {
         String lib_name = node.last().name;
-        if (node.has("from"))// import … from …
+        if (node.has("from")) // import … from …
             auto funcs = node.from(firstName).to("from");
-            // use_required_import(&func);
+        // use_required_import(&func);
         Module &module0 = loadModule(lib_name);
         if (!libraries.has(&module0))
             libraries.add(&module0);
@@ -778,11 +778,16 @@ Node &analyze(Node &node, Function &function) {
         return node;
     }
     if (name == "if")return groupIf(node, function);
-    // if (firstName == "if") {
-    //     auto &args = node.from("if");
-    //     node = groupIf(first.length > 0 ? first.add(args) : args, function);
-    // }
+    if (firstName == "if") {
+        Node &node0 = node.children[0];
+        check_is(node0, first);
+        auto &args = node.from("if");
+        // node = groupIf(first.length > 0 ? first.add(args) : args, function);
+    }
     if (name == "while")return groupWhile(node, function);
+    if (firstName == "while") {
+            // node = parseWhileExpression(first, node, 0, context);
+        }
     if (name == "for" or firstName == "for")return groupFor(node, function);
     if (name == "?")return groupIf(node, function);
     if (name == "module") {

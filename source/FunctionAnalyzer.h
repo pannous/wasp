@@ -21,7 +21,7 @@ Node &groupFunctionDefinition(Node &expression, Function &context);
 
 Node &groupDeclarations(Node &expression, Function &context);
 
-Node &groupFunctionCalls(Node &expressiona, Function &context);
+Node &groupFunctionCalls(Node &node, Function &context);
 
 Node extractModifiers(Node &expression);
 

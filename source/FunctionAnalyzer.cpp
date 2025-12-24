@@ -262,62 +262,53 @@ Node &parseWhileExpression(Node &node, Node &expressiona, int i, Function &conte
 }
 
 // todo this function needs some serious refactor namely get rid of the "if" matching …
-Node &groupFunctionCalls(Node &expressiona, Function &context) {
-    if (expressiona.kind == declaration)return expressiona; // handled before
-    Function *import = findLibraryFunction(expressiona.name, false);
-    import = findLibraryFunction(expressiona.name, false); // DEBUG!
-    if (import or isFunction(expressiona)) {
-        expressiona.setKind(call, false);
-        if (not functions.has(expressiona.name))
-            error("! missing import for function "s + expressiona.name);
+Node &groupFunctionCalls(Node &node, Function &context) {
+    if (node.kind == declaration)return node; // handled before
+    Function *import = findLibraryFunction(node.name, false);
+    import = findLibraryFunction(node.name, false); // DEBUG!
+    if (import or isFunction(node)) {
+        node.setKind(call, false);
+        if (not functions.has(node.name))
+            error("! missing import for function "s + node.name);
         //		if (not expressiona.value.node and arity>0)error("missing args");
-        functions[expressiona.name].is_used = true;
+        functions[node.name].is_used = true;
     }
-    if (expressiona.kind != expression and not isFunction(expressiona.first()) and
-        expressiona.first().name != "if" and
-        expressiona.first().name != "while")
-        return expressiona;
-    for (int i = 0; i < expressiona.length; ++i) {
-        Node &node = expressiona.children[i];
-        String &name = node.name;
-
-        // if (debug) printf("  child[%d]: name=%s, kind=%s (%d), length=%d, serialize=%s\n", i, name.data, typeName(node.kind), node.kind, node.length, node.serialize().data);
-
+    if (node.kind != expression and not isFunction(node.first()) and
+        node.first().name != "if" and
+        node.first().name != "while")
+        return node;
+    for (int i = 0; i < node.length; ++i) {
+        Node &child = node.children[i];
+        String &name = child.name;
         // todo: MOVE!
         if (name == "if") // kinda functor
         {
             if(i>0)error("if should be first in expression");
             // error("if should be treated earlier");
-            auto &args = expressiona.from("if");
-            return groupIf(node.length > 0 ? node.add(args) : args, context);
+            auto &args = node.from("if");
+            return groupIf(child.length > 0 ? child.add(args) : args, context);
         }
-        //        if (name == "for") {
-        //            Node &forr = groupFor(node, context);
-        //            int j = expressiona.lastIndex(forr.last().next) - 1;
-        //            if (j > i)
-        //                expressiona.replace(i, j, forr);
-        //            continue;
-        //        }
-        if (name == "while") {
+        if (name == "while") {// ok different:
+            // i=1;while(i<9)i++;i+1 has leftovers!!
             // error("while' should be treated earlier");
-            parseWhileExpression(node, expressiona, i, context);
+            parseWhileExpression(child, node, i, context);
             continue;
         }
         // Check if this is a struct constructor (before checking isFunction)
-        if (types.has(name) and node.length > 0) {
+        if (types.has(name) and child.length > 0) {
             Node &type = *types[name];
             if (type.kind == clazz) {
                 // This is a struct constructor, not a function call
                 if (debug) printf("Detected struct constructor: %s\n", name.data);
-                node = constructInstance(node, context);
+                child = constructInstance(child, context);
                 continue; // Skip function processing for constructors
             }
         }
 
-        if (isFunction(node)) // needs preparsing of declarations!
-            node.kind = call;
+        if (isFunction(child)) // needs preparsing of declarations!
+            child.kind = call;
 
-        if (node.kind != call)
+        if (child.kind != call)
             continue;
 
         Function *ok = findLibraryFunction(name, true);
@@ -327,7 +318,7 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         function.name = name; // hack shut've Never Been Lost
         Signature &signature = function.signature;
         if (function.is_polymorphic) {
-            auto &params0 = expressiona.from(i + 1);
+            auto &params0 = node.from(i + 1);
             auto &params = analyze(params0, context);
             int variantNr = findBestVariant(function, *wrap(params), &context);
             Function *variant = function.variants[variantNr];
@@ -338,8 +329,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
             addLibraryFunctionAsImport(*variant);
             print("matching function variant "s + variantNr + " of " + function.name + " with "s + signature.
                   serialize());
-            node.add(params); // todo: this is all duplication of code below:
-            expressiona.remove(i + 1, -1); // todo
+            child.add(params); // todo: this is all duplication of code below:
+            node.remove(i + 1, -1); // todo
             // expressiona.replace(i+1, -1, params);// todo
             // expressiona.replace(i+1, i + params.length, params);// todo
         }
@@ -350,27 +341,27 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         int minArity = signature.size(); // todo: default args!
         int maxArity = signature.size();
 
-        if (node.length > 0) {
+        if (child.length > 0) {
             //			if minArity == …
-            node = analyze(node.flat(), context); //  f(1,2,3) vs f([1,2,3]) ?
+            child = analyze(child.flat(), context); //  f(1,2,3) vs f([1,2,3]) ?
             continue; // already done how
         }
         if (minArity == 0)continue;
         if (maxArity < 0)continue; // todo
         Node rest;
-        if (i < expressiona.length - 1 and expressiona[i + 1].kind == groups) {
+        if (i < node.length - 1 and node[i + 1].kind == groups) {
             // f(x)
             // todo f (x) (y) (z)
             // todo expressiona[i+1].length>=minArity
-            rest = expressiona[i + 1];
+            rest = node[i + 1];
             if (rest.length > 1)
                 rest.setKind(expression);
             Node args = analyze(rest, context);
-            node.add(args);
-            expressiona.remove(i + 1, i + 1);
+            child.add(args);
+            node.remove(i + 1, i + 1);
             continue;
         }
-        rest = expressiona.from(i + 1);
+        rest = node.from(i + 1);
         int arg_length = rest.length;
         if (not arg_length and rest.kind == urls) arg_length = 1;
         if (not arg_length and rest.kind == reference) arg_length = 1;
@@ -393,8 +384,8 @@ Node &groupFunctionCalls(Node &expressiona, Function &context) {
         } else if (arg_length == 0 and minArity > 0)
             error("missing arguments for function %s, or to pass function pointer use func keyword"s % name);
         Node &args = analyze(rest, context); // todo: could contain another call!
-        node.add(args);
-        expressiona.remove(i + 1, i + arg_length);
+        child.add(args);
+        node.remove(i + 1, i + arg_length);
     }
-    return expressiona;
+    return node;
 }
