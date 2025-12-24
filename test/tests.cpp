@@ -359,12 +359,12 @@ void testExp() {
 
 void testConstructorCast() {
     tests_executed++;
-    assert_run("int('123')", 123);
-    assert_run("str(123)", "123");
-    assert_run("'a'", 'a');
-    assert_run("char(0x41)", 'a');
-    assert_run("string(123)", "123");
-    assert_run("String(123)", "123");
+    assert_emit("int('123')", 123);
+    assert_emit("str(123)", "123");
+    assert_emit("'a'", 'a');
+    assert_emit("char(0x41)", 'a');
+    assert_emit("string(123)", "123");
+    assert_emit("String(123)", "123");
 }
 
 #if WASMEDGE and 0
@@ -1142,7 +1142,7 @@ void test_fd_write() {
     //    assert_emit("puts 'ok';proc_exit(1)\nputs 'no'", (int64) 0);
     //    assert_emit("quit",0);
     assert_emit("x='hello';fd_write(1,x,1,8)", (int64) 0); // &x+4 {char*,len}
-    //    assert_run("len('123')", 3); // Map::len
+    //    assert_emit("len('123')", 3); // Map::len
     //    quit()
     assert_emit("puts 'ok'", (int64) 0); // connect to wasi fd_write
     loadModule("wasp");
@@ -1588,7 +1588,7 @@ void testLeaks() {
         //
         printf("\n\n    ===========================================\n%d\n\n\n", i);
         //		assert_emit("i=-9;√-i", 3);// SIGKILL after about 3000 emits OK'ish ;)
-        assert_run("i=-9;√-i", 3); // SIGKILL after about 120 runs … can be optimized ;)
+        assert_emit("i=-9;√-i", 3); // SIGKILL after about 120 runs … can be optimized ;)
     }
 }
 
@@ -3099,12 +3099,12 @@ void testEval() {
 
 void testLengthOperator() {
     tests_executed++;
-    assert_run("#'0123'", 4); // todo at compile?
-    assert_run("#[0 1 2 3]", 4);
-    assert_run("#[a b c d]", 4);
-    assert_run("len('0123')", 4); // todo at compile?
-    assert_run("len([0 1 2 3])", 4);
-    assert_run("size([a b c d])", 4);
+    assert_emit("#'0123'", 4); // todo at compile?
+    assert_emit("#[0 1 2 3]", 4);
+    assert_emit("#[a b c d]", 4);
+    assert_emit("len('0123')", 4); // todo at compile?
+    assert_emit("len([0 1 2 3])", 4);
+    assert_emit("size([a b c d])", 4);
     assert_is("#{a b c}", 3);
     assert_is("#(a b c)", 3); // todo: groups
 }
@@ -3747,10 +3747,11 @@ void testNodeEmit() {
     assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
 }
 
-void todo_done() {
-    tests_executed++;
-    // moved from todo() back into tests() once they work again
+void todo_done() { // GOOD!
+    tests_executed++; // moved from todo() back into tests() once they work again
+    testFunctionArgumentCast();
     testWrong0Termination();
+    assert_emit("fun addier(x, y){ x + y }; addier(3,4)",7);
     testErrors(); // error: failed to call function   wasm trap: integer divide by zero
 
     read_wasm("lib/stdio.wasm");
@@ -3765,11 +3766,14 @@ void todo_done() {
     testParams();
     // test_const_String_comparison_bug(); // fixed in 8268c182
 }
+void test_done() {
+    todo_done();
+}
 
 // todo: ^^ move back into tests() once they work again
 void todos() {
     tests_executed++;
-    testConstructorCast();
+
     skip( // unskip to test!!
         testKitchensink();
         testNodeEmit();
@@ -3785,7 +3789,7 @@ void todos() {
 
 #if not TRACE
     println("parseLong fails in trace mode WHY?");
-    assert_run("parseLong('123000')+parseLong('456')", 123456);
+    assert_emit("parseLong('123000')+parseLong('456')", 123456);
 #endif
 
     test_sinus_wasp_import();
@@ -3815,6 +3819,7 @@ void todos() {
                   Node("1", "2", 0)); // 1+2 => 1:2  stupid border case because 1 not group (1)
     assert_is((char *) "{a b c}#2", "b"); // ok, but not for patterns:
     assert_is((char *) "[a b c]#2", "b"); // patterns
+    assert_emit("abs(0)",0);
     assert_is("i=3;i--", 2); // todo bring variables to interpreter
     assert_is("i=3.7;.3+i", 4); // todo bring variables to interpreter
     assert_is("i=3;i*-1", -3); // todo bring variables to interpreter
@@ -3822,6 +3827,14 @@ void todos() {
     //	print("OK %s %d"s % ("WASM",1));// only 1 handed over
     //    print(" OK %d %d"s % (2, 1));// error: expression result unused [-Werror,-Wunused-value] OK
     assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
+    test2Def();
+    testConstructorCast();
+    assert_emit("html{bold{'Hello'}}", "Hello"); // in wasmtime
+}
+
+void test_todos() {
+    todos();
+    // move to test_done() once done!
 }
 
 //int dump_nr = 1;
@@ -4374,40 +4387,32 @@ void testCurrent() {
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
     // todo_done();
-    test_ffi_atof();
-    test_ffi_raylib_simple_use_import();
-    test_ffi_raylib();
-    // assert_emit("abs(0)",0);
-    // assert_emit("`hello ${42}`", "hello 42"); // todo use formatLong
-    // assert_emit("`hello ${1+1}`", "hello 2");
-    // assert_emit("fib := it < 2 ? it : fib(it - 1) + fib(it - 2)\nfib(10)", 55);
-    // assert_emit("k=(1,2,3);i=1;k#i=4;k#1", 4) // fails linking _ZdlPvm operator delete(void*, unsigned long)
-    // assert_emit("i=1;k='hi';k#i", 'h'); // BUT IT WORKS BEFORE!?! be careful with i64 smarty return!
-    // test2Def();
-    // assert_emit("fun addier(x, y){ x + y }",0)
+    // test_ffi_raylib_simple_use_import();
+    // test_ffi_raylib();
+    skip(
+        todos(); // WIP and BUGs
+    )
+    todo_done();
     // exit(   0);
-    // assert_emit("html{bold{'Hello'}}", "Hello");
 #if not WASM
-    // testPing();
-    // testFunctionArgumentCast();
+    testPing();
     // test_ffi_sdl_red_square_demo();
     // sleep(10);
-    // testMergeRuntime();
+    testMergeRuntime();
     // exit(0);
     test_ffi_all();
     // test_dynlib_import_emit();
-    // test_while_true_forever();
-
-    // testStructWast();
+    test_while_true_forever();
+    testStructWast();
 #if WASMEDGE
     testStruct(); // no wasmtime yet
 #endif
-    // test_wasm_node_struct();
-    // test_wasm_structs();
+    test_wasm_node_struct();
+    test_wasm_structs();
 
 // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
-    // test_ffi_sdl();
+    test_ffi_sdl();
     // SDL tests temporarily disabled - debugging type mismatches
     // test_ffi_sdl_init();
     // test_ffi_sdl_window();
