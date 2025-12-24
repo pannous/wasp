@@ -16,7 +16,7 @@
 
 #ifdef NATIVE_FFI
 // Try to detect signature from C header files
-inline bool detect_signature_from_headers(const String& func_name, const String& lib_name, Signature& sig) {
+inline bool old_detect_signature_from_headers(const String& func_name, const String& lib_name, Signature& sig) {
     // Get header files for this library from the mapping
     List<String>* header_paths = get_library_header_files(lib_name);
 
@@ -112,6 +112,7 @@ inline bool detect_signature_from_headers(const String& func_name, const String&
 inline void detect_ffi_signature(const String& function_name, const String& library_name, Signature& sig) {
 #ifdef NATIVE_FFI
     // Strategy 1: Dynamic inspection via dlsym (BEST - uses actual library!)
+    // Placeholder until implemented, we fall back to header parsing
     if (inspect_ffi_signature(library_name, function_name, sig)) {
         trace("FFI signature detected via dynamic inspection: "s + function_name + " from " + library_name);
         return;  // Success! No need for other methods
@@ -126,8 +127,7 @@ inline void detect_ffi_signature(const String& function_name, const String& libr
     }
     // Strategy 3: OLD redundant Header-based reflection
     // Ensure headers are loaded
-
-    bool found_in_header = detect_signature_from_headers(function_name, library_name, sig);
-    trace("found %s in_header: %d\n"s % function_name % found_in_header);
+    // bool found_in_header = old_detect_signature_from_headers(function_name, library_name, sig);
+    // trace("found %s in_header: %d\n"s % function_name % found_in_header);
 #endif
 }
