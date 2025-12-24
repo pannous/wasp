@@ -61,12 +61,77 @@ void testAutoType() {
     assert_emit("-1÷6",-1/6.); // Auto-promote int/int division to float
 }
 
+
+void test_while_true_forever() {
+    todow("test_while_true_forever");
+
+    skip(
+    assert_emit("def stop():{0};while !stop() : {}", 0); // should hang forever ;)
+    assert_emit("def goo():{1};while goo() : {}", 0); // should hang forever ;)
+
+    auto node = parse("1:2");
+    print(node.serialize());
+    check(node.serialize() == "1:2");
+    check(node.values().value.longy == 2);
+    check(node.kind == pair or node.kind == key);
+    check(node.value.longy == 1);
+    assert_emit("while True : 2", 0); // should hang forever ;)
+    // assert_emit("while 1 : 2", 0); // should hang forever ;)
+    )
+}
+
+
 void testTypeSynonyms() {
     tests_executed++;
     // check_is(Type("i32"s),Type("int32"s));
     // check_is(Type("i32"s),Type("int"s));
     // check_is(Type("f32"s),Type("float32"s));
     // check_is(Type("f32"s),Type("float"s));
+}
+
+
+void testWaspRuntimeModule() {
+    tests_executed++;
+    print("sizeof(Module)");
+    print(sizeof(Module));
+    print("sizeof(Function)");
+    print(sizeof(Function));
+    Module &wasp = loadRuntime();
+    // print(wasp);
+    // check_is(wasp.name, "wasp");
+    check(wasp.name.contains("wasp")); // wasp-runtime.wasm in system 'wasp' in js!
+    // addLibrary(wasp);
+#if WASM
+    // check(libraries.size()>0);
+    // if it breaks then in WASM too!?
+#endif
+    check(wasp.code_count>400);
+    check(wasp.data_segments_count>5);
+    check(wasp.export_count>wasp.code_count-10);
+    check(wasp.import_count<40);
+    // check(wasp.export_names.has("memory")); // type memory
+    // check(wasp.export_names.has("strlen")); // type func export "C"
+    // check(wasp.export_names.has("_Z4powiij")); // type func mangled for overload
+    // check(wasp.import_names.has("proc_exit")); // not important but todo broken in wasm!
+    // wasp.signatures
+    check(wasp.functions.size() > 100);
+    // check(wasp.functions.has("_Z4powiij"));// extern "C"'ed
+    check(wasp.functions.has("powi")); // ok if not WASM
+    check(wasp.functions.has("powd")); // ok if not WASM
+    // todo load wasp-runtime-debug.wasm for:
+    // check(wasp.functions.has("test42"));
+    check(wasp.functions.has("modulo_float"));
+    check(wasp.functions.has("modulo_double"));
+    check(wasp.functions.has("square"));
+    check(wasp.functions["square"].is_polymorphic);
+    check_is(wasp.functions["square"].variants.size(), 2);
+    check_is(wasp.functions["square"].name, "square"); // or mangled
+    check_is(wasp.functions["square"].variants[0]->name, "_Z6squarei");
+    check_is(wasp.functions["square"].variants[0]->signature.parameters.size(), 1);
+    check_is(wasp.functions["square"].variants[0]->signature.parameters[0].type, ints);
+    check_is(wasp.functions["square"].variants[1]->name, "_Z6squared");
+    check_is(wasp.functions["square"].variants[1]->signature.parameters.size(), 1);
+    check_is(wasp.functions["square"].variants[1]->signature.parameters[0].type, reals);
 }
 
 
@@ -3749,6 +3814,42 @@ void testNodeEmit() {
 
 void todo_done() { // GOOD!
     tests_executed++; // moved from todo() back into tests() once they work again
+
+// #if not WASMTIME and not LINUX // todo why
+    // assert_emit("n=3;2ⁿ", 8);
+    test_ffi_sdl();
+    // SDL tests temporarily disabled - debugging type mismatches
+    // test_ffi_sdl_init();
+    // test_ffi_sdl_window();
+    // test_ffi_sdl_version();
+    // test_ffi_sdl_combined();
+    // test_ffi_sdl_red_square_demo();
+    testMapOfStrings();
+    testMapOfStringValues();
+    testMaps();
+
+    testAutoType();
+    testTypeSynonyms();
+    testFetch();
+    testWGSL();
+    testFunctionDeclaration();
+    testReturnTypes();
+    testRecentRandomBugs();
+    // exit(0); // todo: remove this once all tests are passing
+    testStringInterpolation();
+    // we already have a working syntax so this has low priority?
+    // testFunctionDeclaration();
+    // testFibonacci(); // much TODO!
+    // testSinus();
+
+    testWaspRuntimeModule();
+
+    testPing();
+    test_while_true_forever();
+    testStructWast();
+    test_wasm_node_struct();
+    test_ffi_all();
+    testMergeRuntime();
     testFunctionArgumentCast();
     testWrong0Termination();
     assert_emit("fun addier(x, y){ x + y }; addier(3,4)",7);
@@ -3775,6 +3876,8 @@ void todos() {
     tests_executed++;
 
     skip( // unskip to test!!
+    test_wasm_structs();
+
         testKitchensink();
         testNodeEmit();
         testLengthOperator();
@@ -4303,68 +4406,6 @@ void print(Module &m) {
     // print(m.import_names);
 }
 
-void testWaspRuntimeModule() {
-    tests_executed++;
-    print("sizeof(Module)");
-    print(sizeof(Module));
-    print("sizeof(Function)");
-    print(sizeof(Function));
-    Module &wasp = loadRuntime();
-    print(wasp);
-    // check_is(wasp.name, "wasp");
-    check(wasp.name.contains("wasp")); // wasp-runtime.wasm in system 'wasp' in js!
-    // addLibrary(wasp);
-#if WASM
-    // check(libraries.size()>0);
-    // if it breaks then in WASM too!?
-#endif
-    check(wasp.code_count>400);
-    check(wasp.data_segments_count>5);
-    check(wasp.export_count>wasp.code_count-10);
-    check(wasp.import_count<40);
-    // check(wasp.export_names.has("memory")); // type memory
-    // check(wasp.export_names.has("strlen")); // type func export "C"
-    // check(wasp.export_names.has("_Z4powiij")); // type func mangled for overload
-    // check(wasp.import_names.has("proc_exit")); // not important but todo broken in wasm!
-    // wasp.signatures
-    check(wasp.functions.size() > 100);
-    // check(wasp.functions.has("_Z4powiij"));// extern "C"'ed
-    check(wasp.functions.has("powi")); // ok if not WASM
-    check(wasp.functions.has("powd")); // ok if not WASM
-    // todo load wasp-runtime-debug.wasm for:
-    // check(wasp.functions.has("test42"));
-    check(wasp.functions.has("modulo_float"));
-    check(wasp.functions.has("modulo_double"));
-    check(wasp.functions.has("square"));
-    check(wasp.functions["square"].is_polymorphic);
-    check_is(wasp.functions["square"].variants.size(), 2);
-    check_is(wasp.functions["square"].name, "square"); // or mangled
-    check_is(wasp.functions["square"].variants[0]->name, "_Z6squarei");
-    check_is(wasp.functions["square"].variants[0]->signature.parameters.size(), 1);
-    check_is(wasp.functions["square"].variants[0]->signature.parameters[0].type, ints);
-    check_is(wasp.functions["square"].variants[1]->name, "_Z6squared");
-    check_is(wasp.functions["square"].variants[1]->signature.parameters.size(), 1);
-    check_is(wasp.functions["square"].variants[1]->signature.parameters[0].type, reals);
-}
-
-void test_while_true_forever() {
-    todow("test_while_true_forever");
-
-    skip(
-    assert_emit("def stop():{0};while !stop() : {}", 0); // should hang forever ;)
-    assert_emit("def goo():{1};while goo() : {}", 0); // should hang forever ;)
-
-    auto node = parse("1:2");
-    print(node.serialize());
-    check(node.serialize() == "1:2");
-    check(node.values().value.longy == 2);
-    check(node.kind == pair or node.kind == key);
-    check(node.value.longy == 1);
-    assert_emit("while True : 2", 0); // should hang forever ;)
-    // assert_emit("while 1 : 2", 0); // should hang forever ;)
-    )
-}
-
 void test_const_String_comparison_bug() {
     // fixed in 8268c182 String == chars ≠> chars == chars  no more implicit cast
     const String& library_name = "raylib";
@@ -4394,51 +4435,14 @@ void testCurrent() {
     )
     todo_done();
     // exit(   0);
-#if not WASM
-    testPing();
+
     // test_ffi_sdl_red_square_demo();
     // sleep(10);
-    testMergeRuntime();
     // exit(0);
-    test_ffi_all();
     // test_dynlib_import_emit();
-    test_while_true_forever();
-    testStructWast();
 #if WASMEDGE
     testStruct(); // no wasmtime yet
 #endif
-    test_wasm_node_struct();
-    test_wasm_structs();
-
-// #if not WASMTIME and not LINUX // todo why
-    // assert_emit("n=3;2ⁿ", 8);
-    test_ffi_sdl();
-    // SDL tests temporarily disabled - debugging type mismatches
-    // test_ffi_sdl_init();
-    // test_ffi_sdl_window();
-    // test_ffi_sdl_version();
-    // test_ffi_sdl_combined();
-    // test_ffi_sdl_red_square_demo();
-    testMapOfStrings();
-    testMapOfStringValues();
-    testMaps();
-
-    testAutoType();
-    testTypeSynonyms();
-    testFetch();
-    testWGSL();
-    testFunctionDeclaration();
-    testReturnTypes();
-    testRecentRandomBugs();
-    // exit(0); // todo: remove this once all tests are passing
-    testStringInterpolation();
-#endif
-    // we already have a working syntax so this has low priority?
-    // testFunctionDeclaration();
-    // testFibonacci(); // much TODO!
-    // testSinus();
-
-    testWaspRuntimeModule();
 
     skip( // TODO!
         test_new();
