@@ -141,7 +141,7 @@ void preRegisterFunctions() {
     functions["proc_exit"].host();
     functions["proc_exit"].signature.add(int32t, "exit_code"); // file descriptor
     //	wasp-runtime.wasm needs to be recompiled too!
-#if WASMEDGE
+#if WASMEDGE or WASMTIME
     functions["proc_exit"].module = new Module{.name = "wasi_snapshot_preview1"};
 #else
     functions["proc_exit"].module = new Module{.name="wasi_unstable"};

@@ -267,3 +267,7 @@ bool contains(bytes list, bytes match, int len, int match_len);
 // char *demangle(String &fun); // implemented in wasm_reader.cpp
 
 String compileWast(chars file);
+
+bool file_exists(chars filename);
+bool file_exists(String filename);
+List<String> ls(String path);

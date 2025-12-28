@@ -3799,7 +3799,7 @@ Code emitImportSection() {
         String import_module = "env";
         if (function.module and not function.module->name.empty())
             import_module = function.module->name;
-        else if (contains(wasi_function_list, fun.data))
+        else if (contains(wasi_functions, fun.data))
             import_module = "wasi_snapshot_preview1";// needed for wasmtime test.wasm
             // import_module = "wasi_unstable";
             // import_module = "wasi";// nice but not standard

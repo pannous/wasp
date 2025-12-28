@@ -61,7 +61,9 @@ extern chars function_list[];
 // extern chars functor_list[];// takes blocks … parse differently?
 
 //chars runtime_function_list[]={};
-static chars wasi_function_list[] = {"proc_exit", "fd_write", "args_sizes_get", "args_get","fclose","fgetc","exit","fprintf","fopen","getenv", 0};
+// static chars wasi_functions[] = {"proc_exit", "fd_write", "args_sizes_get", "args_get","fclose","fgetc","exit","fprintf","fopen","getenv", 0};
+static chars wasi_functions[] = {"args_get","args_sizes_get","environ_get","environ_sizes_get","clock_res_get","clock_time_get","fd_advise","fd_allocate","fd_close","fd_datasync","fd_fdstat_get","fd_fdstat_set_flags","fd_fdstat_set_rights","fd_filestat_set_size","fd_filestat_set_times","fd_pread","fd_prestat_get","fd_prestat_dir_name","fd_pwrite","fd_read","fd_readdir","fd_renumber","fd_seek","fd_sync","fd_tell","fd_write","path_create_directory","path_filestat_get","path_filestat_set_times","path_link","path_open","path_readlink","path_remove_directory","path_rename","path_symlink","path_filestat_set_size","path_unlink_file","poll_oneoff","proc_exit","proc_raise","random_get","sched_yield","sock_accept","sock_recv","sock_send","sock_shutdown", 0};
+
 
 // a funclet is a (tiny) wasm function stored in its own little file, e.g. pow.wasm for Math.power
 // they get automatically linked when used without requiring the wasp runtime
@@ -73,7 +75,7 @@ static chars funclet_list[] = {"pow", "powi", "pow_long", "log", "log10", "log2"
 static chars functor_list[] = {"if", "while", "for", "go", "do", "until", 0}; // MUST END WITH 0, else BUG
 
 
-extern chars wasi_function_list[];
+extern chars wasi_functions[];
 
 extern "C" void registerWasmFunction(chars name, chars mangled);
 

@@ -109,6 +109,14 @@ bool isDir(const char *name) {
     return false;
 #else
     DIR *directory = opendir(name);
+    // allow symlinks to directories
+    if (directory == NULL && errno == ENOENT) {
+        // Check if it's a symlink
+        struct stat statbuf;
+        if (lstat(name, &statbuf) == 0 && S_ISLNK(statbuf.st_mode)) {
+            return true;
+        }
+    }
     if (directory != NULL) {
         closedir(directory);
         return true;
@@ -625,4 +633,37 @@ String compileWast(chars file) {
             error("FAILED compiling wast dependencty "s + file);
 #endif
         return String(file).replace(".wast", ".wasm");
+}
+
+bool file_exists(chars filename) {
+    FILE *file = fopen(filename, "r");
+    if (file) {
+        fclose(file);
+        return true;
+    }
+    return false;
+}
+bool file_exists(String filename) {
+    return file_exists(filename.data);
+}
+List<String> ls(String path) {
+    List<String> files;
+#ifndef WASM
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir(path.data)) != NULL) {
+        // print("ls "s + path + "\n");
+        while ((ent = readdir(dir)) != NULL) {
+            String name = String(ent->d_name);
+            if (name != "." and name != "..")
+                files.add(name);
+            // print(" found "s + name + "\n");
+        }
+        closedir(dir);
+    } else {
+        // perror(("could not open directory "s + path).data);
+        warn(("could not open directory "s + path).data);
+    }
+#endif
+    return files;
 }

@@ -4430,22 +4430,26 @@ void testCurrent() {
     // todo_done();
     // test_ffi_raylib_simple_use_import();
     // test_ffi_raylib();
+    // test_ffi_sdl_debug();
+    // test_ffi_sdl_red_square_demo();
+    // exit(   0);
+
     skip(
         todos(); // WIP and BUGs
     )
     todo_done();
-    // exit(   0);
 
-    // test_ffi_sdl_red_square_demo();
     // sleep(10);
     // exit(0);
     // test_dynlib_import_emit();
 #if WASMEDGE
     testStruct(); // no wasmtime yet
 #endif
-
     skip( // TODO!
         test_new();
+    testMergeGlobal();//
+    testRenameWasmFunction();
+
         testExp(); // todo!
         testKebabCase(); // needed later …
         assert_is("2+1/2", 2.5);
@@ -4482,8 +4486,6 @@ void testCurrent() {
 #if not WASM
     // ⚠️ in WASM these tests are called via async trick
     testAngle(); // fails in WASM why?
-    testMergeGlobal();
-    testRenameWasmFunction();
     testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
     testAllWasm();
     // ALL tests up to here take only 1 sec !

@@ -395,7 +395,7 @@ chars typeName(Type t) {
     //    warn("Node pointers don't fit in 32 bit Type!")
     todo("Node pointers don't fit in 32 bit Type!");
 #else
-    if (t.value > 0x10000)return ((Node*)t.address)->name;
+    if (t.value > 0x10000)return ((Node*)t.address)->name.data;
 #endif
     error("MISSING Type name mapping "s + typeName(t));
     return "ƒ";
