@@ -4,16 +4,16 @@
 // Note: This creates a window and displays a static circle
 
 // Import raylib functions
-#import raylib // preloads/offers ALL including:
-import InitWindow from "raylib"
-import CloseWindow from "raylib"
-import BeginDrawing from "raylib"
-import EndDrawing from "raylib"
-import ClearBackground from "raylib"
-import DrawCircle from "raylib"
-import DrawText from "raylib"
-import SetTargetFPS from "raylib"
-import GetTime from "raylib"
+import raylib // preloads/offers ALL including:
+#import InitWindow from "raylib"
+#import CloseWindow from "raylib"
+#import BeginDrawing from "raylib"
+#import EndDrawing from "raylib"
+#import ClearBackground from "raylib"
+#import DrawCircle from "raylib"
+#import DrawText from "raylib"
+#import SetTargetFPS from "raylib"
+#import GetTime from "raylib"
 
 // Color constants (RGBA packed as i32, little endian: 0xAABBGGRR)
 // NOTE: Using direct hex values due to variable assignment bug - will fix later
@@ -26,11 +26,11 @@ SetTargetFPS(60)
 // Draw a few frames to keep window responsive (no spinning cursor)
 // NOTE: Full event loops with while(!WindowShouldClose()) don't work yet due to WASM compiler issue
 // Simple approach: draw a few frames with small delays between them
-while(1>0){
+#while(1>0){
+while(!WindowShouldClose()){
     BeginDrawing()
     ClearBackground(0xFFF5F5F5)  // RAYWHITE
     DrawText("Wasp Raylib FFI Demo", 250, 20, 30, 0xFF505050)  // DARKGRAY
-    DrawText("Press Ctrl+C to close", 260, 560, 20, 0xFF505050)  // DARKGRAY
     DrawCircle(400, 300, 80.0, 0xFF2E1990)  // MAROON
     EndDrawing()
     sleep(500)

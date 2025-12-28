@@ -305,7 +305,6 @@ static void test_ffi_math_pipeline() {
 
 static void test_ffi_signature_detection() {
     tests_executed++;
-#if !WASM
     List<FFIMarshaller::CType> params1(1);
     params1.add(FFIMarshaller::CType::Int32);
     String wrapper1 = FFIMarshaller::detect_wrapper_name(params1, FFIMarshaller::CType::Int32);
@@ -334,12 +333,10 @@ static void test_ffi_signature_detection() {
 
     String sig_format = FFIMarshaller::format_signature(params5, FFIMarshaller::CType::Float64);
     check_is(sig_format, "float64 (float64, float64)");
-#endif
 }
 
 static void test_ffi_signature_coverage() {
     tests_executed++;
-#if !WASM
     List<FFIMarshaller::CType> params_strcmp(2);
     params_strcmp.add(FFIMarshaller::CType::String);
     params_strcmp.add(FFIMarshaller::CType::String);
@@ -357,7 +354,6 @@ static void test_ffi_signature_coverage() {
     FFIMarshaller::CType ret_trig = FFIMarshaller::CType::Float64;
     String sig_trig = FFIMarshaller::format_signature(params_trig, ret_trig);
     check_is(sig_trig, "float64 (float64)");
-#endif
 }
 
 // ============================================================================
@@ -366,7 +362,6 @@ static void test_ffi_signature_coverage() {
 
 static void test_import_from_pattern_parse() {
     tests_executed++;
-#if !WASM
     String code1 = "import abs from \"c\"";
     Node parsed1 = parse(code1);
 
@@ -377,7 +372,6 @@ static void test_import_from_pattern_parse() {
     Node parsed2 = parse(code2);
 
 
-#endif
 }
 
 static void test_import_from_pattern_emit() {
@@ -391,61 +385,18 @@ static void test_import_from_pattern_emit() {
 
 static void test_import_from_vs_include() {
     tests_executed++;
-#if !WASM
     String ffi_import = "import abs from \"c\"";
     Node ffi_node = parse(ffi_import);
 
 
-#endif
 }
 
 // ============================================================================
 // C Header Parser Tests
 // ============================================================================
 
-static void test_parse_c_function_declaration() {
-    tests_executed++;
-#if !WASM
-    String c_code1 = "double sqrt(double x);";
-    Node& parsed1 = parse(c_code1);
-
-
-
-
-
-
-    if (parsed1.length > 0) {
-
-
-    }
-
-    if (parsed1.length > 1) {
-
-
-
-    }
-
-    String c_code2 = "double fmin(double x, double y);";
-    Node& parsed2 = parse(c_code2);
-
-
-
-    String c_code3 = "int strlen(char* str);";
-    Node& parsed3 = parse(c_code3);
-
-
-
-    String c_code4 = "extern double floor(double x);";
-    Node& parsed4 = parse(c_code4);
-
-
-#endif
-}
-
 static void test_extract_function_signature() {
     tests_executed++;
-#if !WASM
-
     String c_code1 = "double sqrt(double x);";
     Node& parsed1 = parse(c_code1);
     FFIHeaderSignature sig1;
@@ -476,12 +427,10 @@ static void test_extract_function_signature() {
     check_is(sig3.param_types.size(), 1);
     check_is(sig3.param_types[0], "char*");
 
-#endif
 }
 
 static void test_c_type_mapping() {
     tests_executed++;
-#if !WASM
     check((int)mapCTypeToWasp("double") == (int)float64t);
     check((int)mapCTypeToWasp("float") == (int)float32t);
     check((int)mapCTypeToWasp("int") == (int)int32t);
@@ -489,8 +438,6 @@ static void test_c_type_mapping() {
     check((int)mapCTypeToWasp("char*") == (int)charp);
     check((int)mapCTypeToWasp("const char*") == (int)charp);
     check((int)mapCTypeToWasp("void") == (int)nils);
-
-#endif
 }
 
 // ============================================================================
@@ -525,8 +472,6 @@ static void test_ffi_import_pattern() {
 
 static void test_ffi_header_parser() {
     tests_executed++;
-
-    test_parse_c_function_declaration();
     test_extract_function_signature();
     test_c_type_mapping();
 }
@@ -536,7 +481,6 @@ static void test_ffi_header_parser() {
 // ============================================================================
 
 static void test_ffi_sdl_init() {
-#ifdef NATIVE_FFI
     tests_executed++;
     // Test: SDL_Init - Initialize SDL with timer subsystem (works headless)
     // SDL_INIT_TIMER = 0x00000001 (doesn't require display)
@@ -545,35 +489,25 @@ static void test_ffi_sdl_init() {
 
     // Test: SDL_Quit - Clean up SDL
     assert_emit("import SDL_Quit from 'SDL2'\nSDL_Quit()\n42", 42);
-#endif
 }
 
 static void test_ffi_sdl_window() {
     tests_executed++;
-#ifdef NATIVE_FFI
-    // Test: SDL library loading and basic function calls
-    // Just verify we can import and call SDL functions via FFI
-    // Don't actually create windows in headless test environment
     assert_emit("test/wasp/ffi/sdl/sdl_init_quit.wasp", 1);
-#endif
 }
 
 static void test_ffi_sdl_version() {
     tests_executed++;
-#ifdef NATIVE_FFI
     // Test: SDL_GetVersion - Get SDL version info
     // This tests struct parameter passing via FFI
     assert_emit("test/wasp/ffi/sdl/sdl_init_quit.wasp", 1);
-#endif
 }
 
 static void test_ffi_sdl_combined() {
     tests_executed++;
-#ifdef NATIVE_FFI
     // Combined test: Multiple SDL function imports
     // Tests that we can import multiple SDL functions in one program
     assert_emit("test/wasp/ffi/sdl/sdl_get_ticks.wasp", 100);
-#endif
 }
 
 
@@ -585,11 +519,9 @@ static void test_ffi_sdl_debug() {
 
 static void test_ffi_sdl_red_square_demo() {
     tests_executed++;
-#ifdef NATIVE_FFI
     // DEMO: Display a red square using SDL2 via FFI
     // This will show an actual window with graphics
     assert_emit("test/wasp/ffi/sdl/sdl_red_square_demo.wasp", 1);
-#endif
 }
 
 static void test_ffi_sdl() {
@@ -605,20 +537,9 @@ static void test_ffi_sdl() {
 // Raylib Graphics FFI Tests
 // ============================================================================
 
-static void test_ffi_raylib_init() {
-#ifdef NATIVE_FFI
-    tests_executed++;
-    // Test: Basic raylib initialization and cleanup
-    // InitWindow creates a window, CloseWindow cleans up
-    // stalls tests!! only as demo!
-    // assert_emit("test/wasp/ffi/raylib/raylib_init.wasp", 42);
-#endif
-}
-
 
 static void test_ffi_raylib_combined() {
     tests_executed++;
-#ifdef NATIVE_FFI
     // Test: Multiple raylib imports in one program
     assert_emit(
         "import InitWindow from 'raylib'\n"
@@ -630,7 +551,6 @@ static void test_ffi_raylib_combined() {
         "100",
         100
     );
-#endif
 }
 
 void test_ffi_raylib_simple_use_import() {
@@ -654,8 +574,7 @@ static void test_ffi_raylib() {
     check(modul->functions.has("InitWindow"));
     check(modul->functions.has("DrawCircle"));
     check(modul->functions.has("BeginDrawing"));
-
-    test_ffi_raylib_init();
+    test_ffi_raylib_combined();
     skip(
         test_ffi_raylib_simple_use_import(); // todo
         assert_emit("test/wasp/ffi/raylib/raylib_init_close.wasp", 42);

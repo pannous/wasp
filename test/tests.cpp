@@ -57,8 +57,8 @@ void testAutoType() {
     assert_emit("0/0", Nan);
     assert_emit("0÷0", Nan);
     assert_emit("-1/6.", -1/6.);
-    assert_emit("-1/6",-1/6.); // Auto-promote int/int division to float
-    assert_emit("-1÷6",-1/6.); // Auto-promote int/int division to float
+    assert_emit("-1/6", -1/6.); // Auto-promote int/int division to float
+    assert_emit("-1÷6", -1/6.); // Auto-promote int/int division to float
 }
 
 
@@ -66,17 +66,17 @@ void test_while_true_forever() {
     todow("test_while_true_forever");
 
     skip(
-    assert_emit("def stop():{0};while !stop() : {}", 0); // should hang forever ;)
-    assert_emit("def goo():{1};while goo() : {}", 0); // should hang forever ;)
+        assert_emit("def stop():{0};while !stop() : {}", 0); // should hang forever ;)
+        assert_emit("def goo():{1};while goo() : {}", 0); // should hang forever ;)
 
-    auto node = parse("1:2");
-    print(node.serialize());
-    check(node.serialize() == "1:2");
-    check(node.values().value.longy == 2);
-    check(node.kind == pair or node.kind == key);
-    check(node.value.longy == 1);
-    assert_emit("while True : 2", 0); // should hang forever ;)
-    // assert_emit("while 1 : 2", 0); // should hang forever ;)
+        auto node = parse("1:2");
+        print(node.serialize());
+        check(node.serialize() == "1:2");
+        check(node.values().value.longy == 2);
+        check(node.kind == pair or node.kind == key);
+        check(node.value.longy == 1);
+        assert_emit("while True : 2", 0); // should hang forever ;)
+        // assert_emit("while 1 : 2", 0); // should hang forever ;)
     )
 }
 
@@ -3634,7 +3634,7 @@ void testNodeConversions() {
     Node a = Node(1);
     check(a.kind == longs);
     check(a.value.longy == 1);
-    Node a0 = Node((int64_t)10ll);
+    Node a0 = Node((int64_t) 10ll);
     check(a0.kind == longs);
     check(a0.value.longy == 10);
     Node a1 = Node(1.1);
@@ -3812,17 +3812,15 @@ void testNodeEmit() {
     assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
 }
 
-void todo_done() { // GOOD!
+void todo_done() {
+    // GOOD!
     tests_executed++; // moved from todo() back into tests() once they work again
-
-// #if not WASMTIME and not LINUX // todo why
+    assert_is("2+1/2", 2.5);
+    assert_emit("a = [1, 2, 3]; a[2]", 3);
+    // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
     test_ffi_sdl();
     // SDL tests temporarily disabled - debugging type mismatches
-    // test_ffi_sdl_init();
-    // test_ffi_sdl_window();
-    // test_ffi_sdl_version();
-    // test_ffi_sdl_combined();
     // test_ffi_sdl_red_square_demo();
     testMapOfStrings();
     testMapOfStringValues();
@@ -3852,7 +3850,7 @@ void todo_done() { // GOOD!
     testMergeRuntime();
     testFunctionArgumentCast();
     testWrong0Termination();
-    assert_emit("fun addier(x, y){ x + y }; addier(3,4)",7);
+    assert_emit("fun addier(x, y){ x + y }; addier(3,4)", 7);
     testErrors(); // error: failed to call function   wasm trap: integer divide by zero
 
     read_wasm("lib/stdio.wasm");
@@ -3867,6 +3865,7 @@ void todo_done() { // GOOD!
     testParams();
     // test_const_String_comparison_bug(); // fixed in 8268c182
 }
+
 void test_done() {
     todo_done();
 }
@@ -3876,7 +3875,7 @@ void todos() {
     tests_executed++;
 
     skip( // unskip to test!!
-    test_wasm_structs();
+        test_wasm_structs();
 
         testKitchensink();
         testNodeEmit();
@@ -3922,7 +3921,7 @@ void todos() {
                   Node("1", "2", 0)); // 1+2 => 1:2  stupid border case because 1 not group (1)
     assert_is((char *) "{a b c}#2", "b"); // ok, but not for patterns:
     assert_is((char *) "[a b c]#2", "b"); // patterns
-    assert_emit("abs(0)",0);
+    assert_emit("abs(0)", 0);
     assert_is("i=3;i--", 2); // todo bring variables to interpreter
     assert_is("i=3.7;.3+i", 4); // todo bring variables to interpreter
     assert_is("i=3;i*-1", -3); // todo bring variables to interpreter
@@ -4408,8 +4407,8 @@ void print(Module &m) {
 
 void test_const_String_comparison_bug() {
     // fixed in 8268c182 String == chars ≠> chars == chars  no more implicit cast
-    const String& library_name = "raylib";
-    check (library_name == "raylib");
+    const String &library_name = "raylib";
+    check(library_name == "raylib");
 }
 
 // 2021-10 : 40 sec for Wasm3
@@ -4445,21 +4444,19 @@ void testCurrent() {
 #if WASMEDGE
     testStruct(); // no wasmtime yet
 #endif
+
     skip( // TODO!
         test_new();
-    testMergeGlobal();//
-    testRenameWasmFunction();
+        assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
 
+        testMergeGlobal(); //
+        testRenameWasmFunction();
         testExp(); // todo!
         testKebabCase(); // needed later …
-        assert_is("2+1/2", 2.5);
-        assert_emit("x=3;y=4;c=1;r=5;(‖(x-c)^2+(y-c)^2‖<r)?10:255", 255);
         testStruct();
         todos();
         assert_is("(1 4 3)#2", 4); //
-        assert_throws("0/0");
-        todos();
-        testKebabCase();
+        assert_throws("0/0"); // now NaN OK
         testPolymorphism2();
         testPolymorphism3();
         testVectorShim(); // use GPU even before wasm vector extension is available
@@ -4468,15 +4465,14 @@ void testCurrent() {
         testNamedDataSections();
         testHostDownload();
         testHostIntegration();
-
-    ) //
+        testJS();
+    testHtmlWasp();
+    )
     // testListGrowth<const int&>();// pointer to a reference error
 
     // todo print as general dispatch depending on smarttype
     //    assert_emit("for i in 1 to 5 : {print i};i", 6);
-    //    assert_emit("a = [1, 2, 3]; a[2]", 3);
-    // testJS();
-    // testHtmlWasp();
+
     testSourceMap();
     //	testDwarf();
 
@@ -4488,7 +4484,6 @@ void testCurrent() {
     testAngle(); // fails in WASM why?
     testAssertRun(); // separate because they take longer (≈10 sec as of 2022.12)
     testAllWasm();
-    // ALL tests up to here take only 1 sec !
     //    todos();// those not passing yet (skip)
 #endif
     print(tests_executed);
