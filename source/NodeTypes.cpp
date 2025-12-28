@@ -473,7 +473,26 @@ Primitive mapTypeToPrimitive(Node &n) {
         return smarti64;// Primitive::stringp; // todo: string_ref?
     if (n.kind == flags)
         return Primitive::wasm_int64; // Kind::flags;
-    else if (mapType(n.name, false) != unknown_type)
+
+    // Handle literal value nodes
+    if (n.kind == longs)
+        return Primitive::wasm_int64;
+    if (n.kind == reals or n.kind == realsF)
+        return Primitive::wasm_float64;
+    if (n.kind == bools)
+        return Primitive::byte_i8;
+
+    // Handle blocks/groups by inferring from last element
+    if (n.kind == objects or n.kind == groups) {
+        if (n.length > 0) {
+            Node &last = n.last();
+            if (&last != &n) // Avoid infinite recursion
+                return mapTypeToPrimitive(last);
+        }
+        return Primitive::wasm_int32; // Default for empty blocks
+    }
+
+    if (mapType(n.name, false) != unknown_type)
         return mapType(n.name, false).type;
     //    else error1("mapTypeToPrimitive "s + n.serialize());
     else
