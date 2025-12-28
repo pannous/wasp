@@ -645,9 +645,8 @@ Node &groupWhile(Node &n, Function &context) {
         //     }
         // }
     }
-    if(condition.kind == groups || condition.kind == objects) {
+    if(condition.kind == groups || condition.kind == objects || condition.kind == key) // while (x):{…}
         condition.kind = expression;
-    }
     // Create and structure the "while" node
     Node *whilo = new Node("while");
     Node &ef = *whilo;
@@ -822,13 +821,15 @@ Node &analyze(Node &node, Function &function) {
 
 
     // add: func(a: float32, b: float32) -> float32
-    if (node.kind == key and node.values().name == "func") // todo move edge case to witReader
+    if (node.kind == key and node.value.data and node.values().name == "func") // todo move edge case to witReader
         return funcDeclaration(node.name, node.values(), NUL /* no body here */ , 0, function.module);
     //        return witReader.analyzeWit(node);
 
     if (type == expression and not name.empty() and not name.contains("-")) {
-        addLocal(function, name, int32t, false); //  todo deep type analysis x = π * fun() % 4
-        return node.setKind(reference,false ); // already/now known local variable
+        if(not isFunction(name)) { // handle in groupFunctionCalls
+            addLocal(function, name, int32t, false); //  todo deep type analysis x = π * fun() % 4
+            return node.setKind(reference,false ); // already/now known local variable
+        }
     }
     if (type == key) {
         if (node.value.node /* i=ø has no node */)
