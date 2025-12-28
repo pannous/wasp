@@ -156,6 +156,19 @@ Node &groupOperators(Node &expression, Function &context) {
                 findLibraryFunction("getChar", false);
 
             prev = analyze(prev, context);
+
+            // Warn when comparison operators are applied to 'not' without parentheses
+            if ((op == "==" or op == "!=" or op == "<" or op == ">" or op == "<=" or op == ">=" or
+                 op == "is" or op == "equals") and prev.kind == Kind::operators) {
+                String prev_op = prev.name;
+                if (prev_op == "not" or prev_op == "!" or prev_op == "¬") {
+                    warn("Ambiguous: 'not "s + prev.first().serialize() + " " + op + " " + next.serialize() +
+                         "' parsed as '(not " + prev.first().serialize() + ") " + op + " " + next.serialize() +
+                         "'. Use parentheses for clarity: 'not (" + prev.first().serialize() + " " + op + " " +
+                         next.serialize() + ")'");
+                }
+            }
+
             auto lhs_type = preEvaluateType(prev, context);
             if (op == "+" and (lhs_type == Primitive::charp or lhs_type == Primitive::stringp or lhs_type == strings)) {
                 findLibraryFunction("concat", true);

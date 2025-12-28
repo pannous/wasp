@@ -62,6 +62,71 @@ void testAutoType() {
 }
 
 
+void testNotTruthyFalsy() {
+    assert_emit("not ''", 1);
+    assert_emit("not \"\"", 1);
+}
+void testNotNegation2() {// just aliases for 'not'
+       assert_emit("!0", 1);
+    assert_emit("!0.0", 1);
+    assert_emit("!1", 0);
+    assert_emit("!1.1", 0);
+    assert_emit("!2", 0);
+    assert_emit("!2.1", 0);
+    assert_emit("! 0", 1);
+    assert_emit("! 0.0", 1);
+    assert_emit("! 1", 0);
+    assert_emit("! 1.1", 0);
+    assert_emit("! 2", 0);
+    assert_emit("! 2.1", 0);
+    assert_emit("¬0", 1);
+    assert_emit("¬0.0", 1);
+    assert_emit("¬1", 0);
+    assert_emit("¬1.1", 0);
+    assert_emit("¬2", 0);
+    assert_emit("¬2.1", 0);
+}
+
+void testNotNegation() {
+    // testNotNegation2(); // just aliases for 'not'
+    assert_emit("not 0", 1);
+    assert_emit("not 0.0", 1);
+    assert_emit("not true", 0);
+    assert_emit("not True", 0);
+    assert_emit("not false", 1);
+    assert_emit("not False", 1);
+    assert_emit("not 1", 0);
+    assert_emit("not 1.1", 0);
+    assert_emit("not 2", 0);
+    assert_emit("not 2.1", 0);
+    assert_emit("not (1==1)", 0);
+    assert_emit("not (1==2)", 1);
+    assert_emit("i=2;not (i==3)", 1);
+    assert_emit("i=2;not (i==3)", 1);
+    assert_emit("i=2;not (i==2)", 0);
+    assert_emit("i=3;not (i==3)", 0);
+    assert_emit("i=3;not (i==2)", 1);
+}
+
+void testWhileNot() {
+    tests_executed++;
+    assert_emit("i=2;while !1:i++;i", 2);
+    assert_emit("i=2;while i!=3:i++;i", 3);
+    assert_emit("i=2;while i!=3:i++;i", 3);
+    assert_emit("i=2;while i!=3:i++;i", 3);
+    assert_emit("i=2;while i!=3:i++;i", 3);
+    assert_emit("i=2;while i!=3:i++;i", 3);
+    assert_emit("i=2;while i<=3:i++;i", 4);
+    assert_emit("i=2;while not 1:i++;i", 2);
+    assert_emit("i=2;while i<=3:i++;i", 4);
+    // TODO: Fix WASM generation for these tests
+    // assert_emit("stop=1;while !stop:0;42", 42);
+    // assert_emit("def stop=1;while !stop() : {0};42", 42);
+    // assert_emit("def stop():{1};while !stop() : {0};42", 42);
+    // assert_emit("def stop():{0};while !stop() : {0};42", 42);
+}
+
+
 void test_while_true_forever() {
     todow("test_while_true_forever");
 
@@ -4411,6 +4476,7 @@ void test_const_String_comparison_bug() {
     check(library_name == "raylib");
 }
 
+
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
@@ -4423,11 +4489,19 @@ void testCurrent() {
     // print("testCurrent DEACTIVATED");
     // return;
     print("💡 starting current tests 💡");
+    // testTruthiness();
+    assert_emit("not (1==2)", 1);
+    assert_emit("not (2==2)", 0);
+    assert_emit("(not 1)==0", 1);
+    assert_emit("(not 0)==1", 1);
+    assert_emit("(not 1)==1", 0);
+    assert_emit("(not 0)==0", 0);
+    testNotNegation();
+    testWhileNot();
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
-    // todo_done();
-    // test_ffi_raylib_simple_use_import();
+    test_ffi_raylib_simple_use_import();
     // test_ffi_raylib();
     // test_ffi_sdl_debug();
     // test_ffi_sdl_red_square_demo();
@@ -4466,7 +4540,7 @@ void testCurrent() {
         testHostDownload();
         testHostIntegration();
         testJS();
-    testHtmlWasp();
+        testHtmlWasp();
     )
     // testListGrowth<const int&>();// pointer to a reference error
 
