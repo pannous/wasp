@@ -646,6 +646,7 @@ Type preEvaluateType(Node &node, Function *context0);
 
 static bool compatibleTypes(Type type1, Type type2) {
     if (type1 == type2)return true;
+    if (type1 == longs and type2 == int32t)return true; // downcast
     if (type1 == longs and type2 == strings)return false; // upcast
     if (type1 == string_struct and type2 == strings)return true;
     if (type1 == stringp and type2 == strings)return true;

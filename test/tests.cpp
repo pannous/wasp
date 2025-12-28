@@ -137,11 +137,11 @@ void testWhileNotCall() {
 
     // Simpler working alternatives:
     // TODO: These tests are temporarily disabled - investigating parser structure
+    assert_emit("goon=0;while(goon){goon+=1};goon+2", 2); // Variable instead of call
     assert_emit("goon=0;while goon{goon+=1};goon+2", 2); // Variable instead of call
-    // assert_emit("goon=0;while goon:{goon+=1};goon+2", 2); // Variable instead of call
-    // assert_emit("goon=0;while(goon){goon+=1};goon+2", 2); // Variable instead of call
+    assert_emit("goon=0;while goon:{goon+=1};goon+2", 2); // Variable instead of call
     // assert_emit("goon=0;while(goon):{goon+=1};goon+2", 2); // Variable instead of call
-    // assert_emit("stop=1;while not stop:{stop++};stop", 1); // Variable with not
+    assert_emit("stop=1;while not stop:{stop++};stop", 1); // Variable with not
 }
 
 

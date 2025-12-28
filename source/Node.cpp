@@ -1288,6 +1288,7 @@ Node &Node::setKind(Kind kin, bool check) {
     // todo remove these check = false hacks and call setType() with check = false !
     if (kind == codepoint1 and kin == operators)check = false; // and name==(codepoint)value.longy
     if (kind == groups and (kin == expression or kin == functor))check = false;
+    if (kind == functor and kin == key)check = false; // while(goon):{goon+=1}
     if (kind == reference and kin == key)check = false;
     if (kind == referencex and kin == key)check = false; // careful we lose $ semantics!
     if (kind == groups and kin == key)check = false;
