@@ -559,8 +559,13 @@ void test_ffi_raylib_simple_use_import() {
     check(modul);
     check(modul->functions.has("InitWindow"));
     check(modul->functions.has("DrawCircle"));
+    check(modul->functions.has("WindowShouldClose"));
     check(modul->functions["InitWindow"].signature.parameters.size() == 3);
     check(modul->functions["DrawCircle"].signature.parameters.size() == 4);
+    check(modul->functions["WindowShouldClose"].signature.parameters.size() == 0);
+    check(modul->functions["WindowShouldClose"].signature.return_types.size() == 1);
+    check_is(modul->functions["WindowShouldClose"].signature.return_types[0],bools); // bool as int32
+
     check_is(modul->functions["DrawCircle"].signature.parameters[3].type,int32t);
 
     // assert_emit("samples/raylib_simple.wasp",0);

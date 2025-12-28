@@ -62,7 +62,27 @@ extern chars function_list[];
 
 //chars runtime_function_list[]={};
 // static chars wasi_functions[] = {"proc_exit", "fd_write", "args_sizes_get", "args_get","fclose","fgetc","exit","fprintf","fopen","getenv", 0};
-static chars wasi_functions[] = {"args_get","args_sizes_get","environ_get","environ_sizes_get","clock_res_get","clock_time_get","fd_advise","fd_allocate","fd_close","fd_datasync","fd_fdstat_get","fd_fdstat_set_flags","fd_fdstat_set_rights","fd_filestat_set_size","fd_filestat_set_times","fd_pread","fd_prestat_get","fd_prestat_dir_name","fd_pwrite","fd_read","fd_readdir","fd_renumber","fd_seek","fd_sync","fd_tell","fd_write","path_create_directory","path_filestat_get","path_filestat_set_times","path_link","path_open","path_readlink","path_remove_directory","path_rename","path_symlink","path_filestat_set_size","path_unlink_file","poll_oneoff","proc_exit","proc_raise","random_get","sched_yield","sock_accept","sock_recv","sock_send","sock_shutdown", 0};
+static chars wasi_functions[] = {"args_get","args_sizes_get","environ_get","environ_sizes_get","clock_res_get","clock_time_get","fd_advise","fd_allocate","fd_close","fd_datasync","fd_fdstat_get","fd_fdstat_set_flags","fd_fdstat_set_rights","fd_filestat_set_size","fd_filestat_set_times","fd_pread","fd_prestat_get","fd_prestat_dir_name","fd_pwrite","fd_read","fd_readdir","fd_renumber","fd_seek","fd_sync","fd_tell","fd_write","path_create_directory","path_filestat_get","path_filestat_set_times","path_link","path_open","path_readlink","path_remove_directory","path_rename","path_symlink","path_filestat_set_size","path_unlink_file","poll_oneoff","proc_exit","proc_raise","random_get","sched_yield","sock_accept","sock_recv","sock_send","sock_shutdown",
+// ⚠️ NOT wasi but stdio/stdlib functions:
+//
+    0};
+
+static chars stdio_functions[] = {"fopen", "fclose", "getenv", "fprintf", "exit", "fgetc",0}; // minimal set for now
+
+
+// static chars stdio_functions[] = { "fopen", "fclose", "fprintf", "printf", "snprintf", "fgetc", "fgets", "fputc", "fputs", "fflush", "feof", "ferror", "rewind", "ftell", "fseek", "stdin", "stdout", "stderr", 0};
+
+// static chars stdlib_functions[] = {"malloc", "calloc", "realloc", "free", "exit", "abort", "abs", "labs", "div", "ldiv", "qsort", "bsearch", 0};
+//
+// static chars math_functions[] = { "sin", "cos", "tan", "asin", "acos", "atan", "atan2", "sinh", "cosh", "tanh", "exp", "exp2", "exp10", "expm1", "log", "log2", "log10", "log1p", "pow", "sqrt", "cbrt", "hypot", "ceil", "floor", "trunc", "round", "fabs", "abs", "fmod", "remainder", "modf", "ldexp", "frexp", "nan", "copysign", 0};
+//
+// static chars string_functions[] = {"strlen", "strcpy", "strncpy", "strcat", "strncat", "strcmp", "strncmp", "strchr", "strrchr", "strstr", "sprintf", "snprintf", "vsprintf", "vsnprintf", "memcpy", "memmove", "memset", "memcmp", 0};
+//
+// static chars conversion_functions[] = {"atoi", "atol", "atof", "strtol", "strtoul", "strtod", 0};
+//
+// static chars random_functions[] = {"rand", "srand", 0};
+
+
 
 
 // a funclet is a (tiny) wasm function stored in its own little file, e.g. pow.wasm for Math.power

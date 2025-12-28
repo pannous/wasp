@@ -101,7 +101,12 @@ void testNotNegation() {
     assert_emit("not 2.1", 0);
     assert_emit("not (1==1)", 0);
     assert_emit("not (1==2)", 1);
-    assert_emit("i=2;not (i==3)", 1);
+    assert_emit("not (1==2)", 1);
+    assert_emit("not (2==2)", 0);
+    assert_emit("(not 1)==0", 1);
+    assert_emit("(not 0)==1", 1);
+    assert_emit("(not 1)==1", 0);
+    assert_emit("(not 0)==0", 0);
     assert_emit("i=2;not (i==3)", 1);
     assert_emit("i=2;not (i==2)", 0);
     assert_emit("i=3;not (i==3)", 0);
@@ -119,11 +124,15 @@ void testWhileNot() {
     assert_emit("i=2;while i<=3:i++;i", 4);
     assert_emit("i=2;while not 1:i++;i", 2);
     assert_emit("i=2;while i<=3:i++;i", 4);
+}
+void testWhileNotCall() {
     // TODO: Fix WASM generation for these tests
-    // assert_emit("stop=1;while !stop:0;42", 42);
+    assert_emit("def goon():0;;while goon() : {0};42", 42);
+    assert_emit("def goon():{0};while goon() : {0};42", 42);
+    assert_emit("def stop():1;;while !stop() : {0};42", 42);
+    assert_emit("def stop():{1};while !stop() : {0};42", 42);
+    // assert_emit("stop=1;while !stop:0   ;42", 42);
     // assert_emit("def stop=1;while !stop() : {0};42", 42);
-    // assert_emit("def stop():{1};while !stop() : {0};42", 42);
-    // assert_emit("def stop():{0};while !stop() : {0};42", 42);
 }
 
 
@@ -4490,12 +4499,7 @@ void testCurrent() {
     // return;
     print("💡 starting current tests 💡");
     // testTruthiness();
-    assert_emit("not (1==2)", 1);
-    assert_emit("not (2==2)", 0);
-    assert_emit("(not 1)==0", 1);
-    assert_emit("(not 0)==1", 1);
-    assert_emit("(not 1)==1", 0);
-    assert_emit("(not 0)==0", 0);
+    testWhileNotCall();
     testNotNegation();
     testWhileNot();
 #if WASM
