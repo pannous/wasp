@@ -24,9 +24,13 @@ struct FFIHeaderSignature {
 // Map C type names to Wasp type names
 inline Type mapCTypeToWasp(String c_type) {
     // Handle basic types
+    if (c_type == "") return voids;
+    if (c_type == "typedef") return errors; // error
+    if (c_type == "unsigned") return errors; // todo
     if (c_type == "double") return float64t;
     if (c_type == "float") return float32t;
     if (c_type == "int") return int32t;
+    if (c_type == "bool") return bools;
     if (c_type == "long") return i64;
     if (c_type == "void") return nils;
 
@@ -46,7 +50,9 @@ inline Type mapCTypeToWasp(String c_type) {
     // Raylib structs passed by value (small structs <= 4 bytes passed as i32)
     // Color: struct with 4x uint8 (r,g,b,a) = 4 bytes total
     if (c_type == "Color") return int32t;
-
+    // Vector3 Wave Texture2D Camera AudioCallback AudioStream todo get struct before!
+    // warn("Unknown C type mapping for FFI: "s + c_type);
+    // error("Unknown C type mapping for FFI: "s + c_type);
     return unknown_type;
 }
 
@@ -89,8 +95,8 @@ inline bool extractFunctionSignature(String &decl, FFIHeaderSignature &sig) {
     if (decl.contains(':') and not decl.contains("::")) return false;
     if (decl.contains(';')) // remove trailing semicolon if present
         s = decl.substring(0, decl.lastIndexOf(";")).data;
-    if(decl.contains("SDL_Init"))
-        print("Debug SDL_Init decl: "s + decl);
+    if(decl.contains("WindowShouldClose"))
+        print("Debug decl: "s + decl);
 
     // ---- find parentheses ---------------------------------------------------
     int lpar = -1, rpar = -1;

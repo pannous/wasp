@@ -296,6 +296,9 @@ inline Signature &convert_ffi_signature(FFIHeaderSignature &ffi_sig) {
 }
 
 inline void add_ffi_signature(Module *modul, FFIHeaderSignature ffi_sig) {
+    if(ffi_sig.name.empty()) return;
+    // if(ffi_sig.name.contains("WindowShouldClose"))
+        // print("Debug adding WindowShouldClose\n");
     if (!modul->functions.has(ffi_sig.name)) {
         Function func;
         func.name = ffi_sig.name;
@@ -317,6 +320,8 @@ inline void add_ffi_signature(Module *modul, FFIHeaderSignature ffi_sig) {
 inline void fixNativeSignatures(Module &modul) {
     if (modul.functions.has("InitWindow"s))
         modul.functions["InitWindow"s].signature.parameters[2].type = charp;
+    // if (modul.functions.has("WindowShouldClose"s))
+        // modul.functions["WindowShouldClose"s].signature.returns(int32t);// bools
 }
 
 extern Map<int64, Module *> module_cache;
