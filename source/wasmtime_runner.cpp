@@ -19,6 +19,7 @@
 #include "Util.h"
 #include "wasm_reader.h"
 #include "asserts.h"
+#include "Keywords.h"
 
 
 //#pragma clang diagnostic push
@@ -70,6 +71,13 @@ void init_wasmtime() {
         dlopen("/opt/homebrew/lib/libraylib.dylib", RTLD_LAZY | RTLD_GLOBAL);
     }
 #endif
+    // SDL2 preload to avoid conflicts
+    static bool sdl2_preloaded = false;
+    if (!sdl2_preloaded) {
+        sdl2_preloaded = true;
+        print("SDL2 preloading for Wasmtime FFI compatibility\n");
+        dlopen("/opt/homebrew/lib/libSDL2.dylib", RTLD_LAZY | RTLD_GLOBAL);
+    }
 
     // Create config and enable GC proposal
     wasm_config_t *config = wasm_config_new();
@@ -202,6 +210,28 @@ int64 read_ref(const wasmtime_val_t &results) {
 }
 #endif
 
+
+// makes the test 3X SLOWER!!! FIND OUT WHY and avoid similar overhead in real use!
+void copy_wasi_alias(wasmtime_linker_t *linker, wasmtime_error_t *&werr) {
+    //  wasi_snapshot_preview1 to wasi_unstable
+    // Alias common WASI functions to wasi_unstable for compatibility with older WASM modules
+
+    for (int i = 0; i < sizeof(wasi_functions) / sizeof(wasi_functions[0]); i++) {
+        const char *fname = wasi_functions[i];
+        wasmtime_extern_t item;
+        if (wasmtime_linker_get(linker, context, "wasi_snapshot_preview1", strlen("wasi_snapshot_preview1"),
+                                fname, strlen(fname), &item)) {
+            if (item.kind == WASMTIME_EXTERN_FUNC) {
+                werr = wasmtime_linker_define(linker, context, "wasi_unstable", strlen("wasi_unstable"),
+                                              fname, strlen(fname), &item);
+                if (werr != NULL) {
+                    wasmtime_error_delete(werr); // Ignore errors for individual functions
+                }
+            }
+        }
+    }
+}
+
 extern "C" int64_t run_wasm(unsigned char *data, int size) {
     if (!initialized) init_wasmtime();
 
@@ -235,18 +265,18 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     werr = wasmtime_linker_define_wasi(linker);
     if (werr != NULL) exit_with_error("Failed to define WASI on linker", werr, NULL);
 
+    // copy_wasi_alias(linker, werr); //  wasi_snapshot_preview1 to wasi_unstable
+
     // Define our custom host functions into the linker under module "env".
     for (String &import_name: meta.import_names) {
         if (import_name.empty()) break;
         // Skip WASI-provided imports so our mock versions don't shadow them.
-        if (import_name == "fd_write" || import_name == "args_get" || import_name == "args_sizes_get") continue;
-        // todo ALL wasi imports
-
+        if (import_name.in(wasi_functions)) continue;
 #ifdef NATIVE_FFI
         // Skip FFI functions - they're handled by the FFI section below
         if (meta.functions.has(import_name)) {
             Function &func = meta.functions[import_name];
-            if (func.is_ffi && !func.ffi_library.empty()) {
+            if (func.is_ffi && !func.ffi_library.empty()) { // todo set is_ffi in read_wasm or here?
                 continue; // Will be linked under correct module in FFI section
             }
         }
@@ -262,9 +292,13 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         wasm_functype_t *own_type = (wasm_functype_t *) type0; // API expects non-const
         wasmtime_func_callback_t cb = (wasmtime_func_callback_t) link_import(import_name);
         if (cb) {
-            wasmtime_error_t *derr = wasmtime_linker_define_func(
-                linker, "env", 3, import_name.data, import_name.length, own_type, cb, NULL, NULL);
+            wasmtime_error_t *derr = wasmtime_linker_define_func( linker, "env", 3, import_name.data, import_name.length, own_type, cb, NULL, NULL);
             if (derr) exit_with_error("define_func failed", derr, NULL);
+            // derr = wasmtime_linker_define_func( linker, "wasi", 4, import_name.data, import_name.length, own_type, cb, NULL, NULL);
+            // if (derr) exit_with_error("define_func failed", derr, NULL);
+            // derr = wasmtime_linker_define_func( linker, "wasi_unstable", 13, import_name.data, import_name.length, own_type, cb, NULL, NULL);
+            // if (derr) exit_with_error("define_func failed", derr, NULL);
+
         }
         // Note: FFI functions (with module != "env") are handled separately below
     }

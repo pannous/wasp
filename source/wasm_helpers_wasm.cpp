@@ -589,7 +589,7 @@ extern "C" int64 run_wasm(bytes buffer, int buf_size) {
 
 extern "C" char *serialize(Node *n) {
     if (!n)return 0;
-    return n->serialize();
+    return n->serialize().data;
 }
 
 extern "C" int size_of_node() {
@@ -639,8 +639,8 @@ void operator delete(void* p, unsigned long sz) noexcept {
 
 #if !MY_WASM
 // see wasm_helpers.cpp line ≈ 170
-extern "C" char *run(chars code) {
-    return eval(code).serialize(); // can't return cause async wasp.js tests
+extern "C" char* run(chars code) {
+    return eval(code).serialize().data; // can't return cause async wasp.js tests
 }
 #endif
 

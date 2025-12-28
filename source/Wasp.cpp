@@ -1414,7 +1414,7 @@ int main(int argc, char **argv) {
     try {
         if (argc == 1) {
             // no args, just program name
-#ifndef PURE_WASM
+#if not WASM
             // Check if stdin is a pipe (not a terminal)
             if (!isatty(STDIN_FILENO)) {
                 // Read from stdin and evaluate

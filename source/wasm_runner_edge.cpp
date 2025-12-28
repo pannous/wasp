@@ -565,7 +565,7 @@ WasmEdge_ModuleInstanceContext *duplicate_wasi_to_env(WasmEdge_VMContext *VMCxt,
         env_module = WasmEdge_ModuleInstanceCreate(env_name);
 
         // Copy common WASI functions to env module
-        for (const char *func_name: wasi_function_list) {
+        for (const char *func_name: wasi_functions) {
             if (!func_name) break;
             WasmEdge_String fname = WasmEdge_StringCreateByCString(func_name);
             const WasmEdge_FunctionInstanceContext *wasi_func = WasmEdge_ModuleInstanceFindFunction(wasi_module, fname);

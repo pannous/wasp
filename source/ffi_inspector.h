@@ -29,7 +29,10 @@ inline const char *get_library_path(const String &library_name) {
     if (library_name == "c") return "/usr/lib/libc.dylib";
     if (library_name == "m") return "/usr/lib/libm.dylib";
     if (library_name == "pthread") return "/usr/lib/libpthread.dylib";
+    if (library_name == "SDL")
+        error("choose SDL2 or SDL3 instead of SDL");
     if (library_name == "SDL2") return "/opt/homebrew/lib/libSDL2.dylib";
+    if (library_name == "SDL3") return "/opt/homebrew/lib/libSDL3.dylib";
     if (library_name == "raylib")
         return "/opt/homebrew/lib/libraylib.dylib";
 #elif __linux__
@@ -41,14 +44,15 @@ inline const char *get_library_path(const String &library_name) {
     if (library_name == "raylib") return "libraylib.so";
 #endif
 
-    // Try generic pattern: "lib{name}.dylib" or "lib{name}.so"
-    static char buffer[256];
-#ifdef __APPLE__
-    snprintf(buffer, sizeof(buffer), "/usr/local/lib/lib%s.dylib", library_name.data);
-#else
-    snprintf(buffer, sizeof(buffer), "lib%s.so", library_name.data);
-#endif
-    return buffer;
+    List<String> root_paths = {"", "./lib/", "/usr/lib/", "/usr/local/lib/", "/opt/homebrew/lib/"};
+    for (auto &root_path: root_paths) {
+        String mac_path = root_path + "/lib%s.dylib"s % library_name.data;
+        if (file_exists(mac_path))return mac_path.data;
+        String linux_path = root_path + "/lib%s.so"s % library_name.data;
+        if (file_exists(linux_path))return linux_path.data;
+    }
+    warn("Could not find standard path for library "s + library_name + ", trying to load by name only.");
+    return 0;
 }
 
 // Load a library and get its handle, competes with .wasm libraries
@@ -100,17 +104,13 @@ inline void *get_function_pointer(const String &library_name, const String &func
 
 // Check if a module name indicates an FFI import
 inline bool is_ffi_module(const String &module_name) {
-    // Strategy 1: Prefix detection "ffi:m" or "ffi:c"
-    if (module_name.length > 4 &&
-        module_name.data[0] == 'f' &&
-        module_name.data[1] == 'f' &&
-        module_name.data[2] == 'i' &&
-        module_name.data[3] == ':') {
+    // Strategy 1: Prefix detection "ffi:m" or "ffi::math" or "ffi.c"
+    if (module_name.startsWith("ffi")) {
         return true;
     }
 
     // Strategy 2: Known library names (not "env" or "wasi")
-    if (module_name == "env" || module_name == "wasi_snapshot_preview1") {
+    if (module_name == "env" || module_name.startsWith("wasi")) {
         return false;
     }
 
@@ -122,7 +122,10 @@ inline bool is_ffi_module(const String &module_name) {
         return true;
     }
 
-    // Strategy 4: Try to load it as a library
+    // Strategy 4: Load @custom wasm ffi meta section (not implemented yet)
+    // todo
+
+    // Strategy 5: Try to load it as a library
     void *handle = find_native_library(module_name);
     if (handle) {
         dlclose(handle);
@@ -132,17 +135,14 @@ inline bool is_ffi_module(const String &module_name) {
     return false;
 }
 
-// Extract library name from module name (handles "ffi:m" → "m")
+// Extract library name from module name (handles "ffi:m" → "m" …)
 inline String extract_library_name(const String &module_name) {
-    if (module_name.length > 4 &&
-        module_name.data[0] == 'f' &&
-        module_name.data[1] == 'f' &&
-        module_name.data[2] == 'i' &&
-        module_name.data[3] == ':') {
-        // "ffi:m" → "m"
+    if (module_name.startsWith("ffi::")) // "ffi::m" → "m"
+        return String(module_name.data + 5, module_name.length - 4, false);
+    if (module_name.startsWith("ffi:")) // "ffi:m" → "m"
         return String(module_name.data + 4, module_name.length - 4, false);
-    }
-
+    if (module_name.startsWith("ffi.")) // "ffi.m" → "m"
+        return String(module_name.data + 4, module_name.length - 4, false);
     return module_name; // Already just the library name
 }
 
@@ -157,7 +157,7 @@ inline void enumerate_library_functions_macos(void *handle, Map<String, Function
     // Get the library image index from handle
     Dl_info info;
     if (dladdr(handle, &info) == 0) {
-        warn("Could not get library info for "s + library_name);// todo why not?
+        warn("Could not get library info for "s + library_name); // todo why not?
         return;
     }
 
@@ -208,7 +208,7 @@ inline void enumerate_library_functions_macos(void *handle, Map<String, Function
             func.ffi_library = library_name;
 
             // Try to inspect signature
-            void detect_ffi_signature(const String& function_name, const String& library_name, Signature& sig);
+            void detect_ffi_signature(const String &function_name, const String &library_name, Signature &sig);
             detect_ffi_signature(library_name, func.name, func.signature);
 
             functions.add(func.name, func);
@@ -273,8 +273,8 @@ inline bool is_native_library(const String &library_name) {
     return false;
 }
 
-inline Signature& convert_ffi_signature(FFIHeaderSignature &ffi_sig) {
-    Signature& sig = *new Signature();
+inline Signature &convert_ffi_signature(FFIHeaderSignature &ffi_sig) {
+    Signature &sig = *new Signature();
     sig.abi = ABI::native;
     for (const String &param_type: ffi_sig.param_types) {
         if (eq(param_type, "void")) {
@@ -283,7 +283,7 @@ inline Signature& convert_ffi_signature(FFIHeaderSignature &ffi_sig) {
         Arg param;
         param.type = mapCTypeToWasp(param_type);
         long index = &param_type - &ffi_sig.param_types[0];
-        param.name =  ffi_sig.param_names[index];
+        param.name = ffi_sig.param_names[index];
         // param.modifiers TODO
         sig.parameters.add(param);
     }
@@ -302,28 +302,30 @@ inline void add_ffi_signature(Module *modul, FFIHeaderSignature ffi_sig) {
         func.is_ffi = true;
         func.module = modul;
         func.ffi_library = modul->name;
-        func.signature = convert_ffi_signature(ffi_sig);// ffi_sig.signature;
+        func.signature = convert_ffi_signature(ffi_sig); // ffi_sig.signature;
         modul->functions.add(func.name, func);
     } else {
         // Merge signature info
         Function &existing_func = modul->functions[ffi_sig.name];
-        if(ffi_sig.name=="atof")
+        if (ffi_sig.name == "atof")
             warn("Override with header info "s % ffi_sig.name);
-            // print("Debug atof merge\n");
-        existing_func.signature =   convert_ffi_signature(ffi_sig); // ffi_sig.signature; // Override with header info
+        // print("Debug atof merge\n");
+        existing_func.signature = convert_ffi_signature(ffi_sig); // ffi_sig.signature; // Override with header info
     }
 }
 
-inline void fixNativeSignatures(Module & modul) {
-    if(modul.functions.has("InitWindow"s))
+inline void fixNativeSignatures(Module &modul) {
+    if (modul.functions.has("InitWindow"s))
         modul.functions["InitWindow"s].signature.parameters[2].type = charp;
 }
 
 extern Map<int64, Module *> module_cache;
+
 inline Module *loadNativeLibrary(String library) {
-    if(library.empty()) return 0;
-    for(Module *m:libraries)
-        if(m->name==library)
+    if (library.empty()) return 0;
+    if (library.endsWith("wasm")) return 0;// not a native library we are a wendy's for .dynlib loading
+    for (Module *m: libraries)
+        if (m->name == library)
             return m; // already loaded
     if (module_cache.has(library.hash()))
         return module_cache[library.hash()];
@@ -332,8 +334,10 @@ inline Module *loadNativeLibrary(String library) {
     modul->is_native_library = true;
     enumerate_library_functions(library, modul->functions); // via FFI, next via .h parsing!
     auto headers = get_library_header_files(library);
+    if (not headers or headers->size() <= 0)
+        error("No header files found for native library %s\n"s % library);
     for (String header: *headers) {
-        if(not fileExists(header)) {
+        if (not fileExists(header)) {
             warn("Header file %s for library %s does not exist!\n"s % header % library);
             continue;
         }
@@ -342,12 +346,12 @@ inline Module *loadNativeLibrary(String library) {
         for (FFIHeaderSignature &ffi_sig: sigs) {
             // print("  Found FFI signature: %s %s\n"s % ffi_sig.name % ffi_sig.raw);
             // if(ffi_sig.name=="BeginDrawing") // debug
-                // warn("Adding header signature for %s\n"s % ffi_sig.name);
+            // warn("Adding header signature for %s\n"s % ffi_sig.name);
             add_ffi_signature(modul, ffi_sig);
         }
     }
     fixNativeSignatures(*modul);
-    modul->total_func_count=modul->functions.size();
+    modul->total_func_count = modul->functions.size();
     libraries.add(modul); // current
     module_cache[library.hash()] = modul; // cache it globally
     return modul;
@@ -369,19 +373,18 @@ inline bool inspect_ffi_signature(const String &library_name, const String &func
 }
 
 
-
 // Detect function signature based on function name and library
 // Populates the provided Signature object with parameter and return types
-inline void detect_ffi_signature(const String& function_name, const String& library_name, Signature& sig) {
+inline void detect_ffi_signature(const String &function_name, const String &library_name, Signature &sig) {
     // Strategy 1: Dynamic inspection via dlsym (BEST - uses actual library!)
     // Placeholder until implemented, we fall back to header parsing
     if (inspect_ffi_signature(library_name, function_name, sig)) {
         trace("FFI signature detected via dynamic inspection: "s + function_name + " from " + library_name);
-        return;  // Success! No need for other methods
+        return; // Success! No need for other methods
     }
 
     // Strategy 2: COMPLETE Header-based reflection
-    Module * mod = loadNativeLibrary(library_name);
+    Module *mod = loadNativeLibrary(library_name);
     if (mod && mod->functions.has(function_name)) {
         sig = mod->functions[function_name].signature;
         trace("FFI signature for: "s + function_name + " obtained from header files of module " + library_name);

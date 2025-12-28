@@ -692,11 +692,10 @@ if (WASM) # OR WASI)
     endif ()
     #    add_library(wasp SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
     if (RUNTIME_ONLY AND RELEASE) # not tests, compiler, ... 100kb as of 2024-04
-        add_executable(wasp-runtime ${SOURCE_FILES}
-                ../../../wasp/source/wasmtime_runner.cpp) # same as add_library, with or without --export-all
+        add_executable(wasp-runtime ${SOURCE_FILES} ) # same as add_library, with or without --export-all
         # Add these commands after your main target definitions
         add_custom_command(TARGET wasp-runtime POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/cmake-build-test/"
+#                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/cmake-build-test/"
                 COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/source/"
                 COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/bin/wasm/"
                 COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/docs/assets/"

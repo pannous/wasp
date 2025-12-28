@@ -576,6 +576,13 @@ static void test_ffi_sdl_combined() {
 #endif
 }
 
+
+static void test_ffi_sdl_debug() {
+    tests_executed++;
+    // print results of SDL functions to debug FFI
+    assert_emit("test/wasp/ffi/sdl/sdl_debug.wasp", 1);
+}
+
 static void test_ffi_sdl_red_square_demo() {
     tests_executed++;
 #ifdef NATIVE_FFI

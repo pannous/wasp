@@ -1210,7 +1210,7 @@ void Linker::ResolveSymbols() {
                 // link unexported functions, because clang -Wl,--relocatable,--export-all DOES NOT preserve EXPORT wth
                 Index func_index = func_map.FindIndex(name);
                 if (func_index == kInvalidIndex) {
-                    if (not contains(wasi_function_list, name.data)) {
+                    if (not contains(wasi_functions, name.data)) {
                         if (name.data)
                             warn("unresolved import: %s  ( keep in case it's used inside binary) "s % name);
                         else

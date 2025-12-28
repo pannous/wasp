@@ -17,6 +17,7 @@ SDL_Init(0x00000020)
 
 // Create a 400x400 window
 window = SDL_CreateWindow("Red Square Demo - FFI", 100, 100, 400, 400, 0)
+#putl(window)
 
 // Create renderer
 renderer = SDL_CreateRenderer(window, -1, 0)
@@ -35,8 +36,8 @@ SDL_Delay(3000)
 
 // Cleanup
 SDL_DestroyRenderer(renderer)
-SDL_DestroyWindow(window)
-SDL_Quit()
+#SDL_DestroyWindow(window)
+#SDL_Quit()
 
 print("Demo complete!")
 1
