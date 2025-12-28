@@ -6,7 +6,7 @@ const char metadata_payload[] = "name=Wasp-Runtime;author=Pannous;license=MIT;";
 // wasm-opt input.wasm -o output.wasm --custom-section=metadata='{"author":"Pannous","license":"MIT"}'
 #endif
 
-static chars wasp_version = "0.1.1709";
+static chars wasp_version = "0.1.1764";
 
 static bool multi_return_values = false;
 

@@ -640,22 +640,6 @@ Node &groupWhile(Node &n, Function &context) {
                 break;
             }
         }
-        // Handle flattened case: parser lost the block structure
-        // e.g., "while goon:{goon+=1}" becomes node(name='goon', children=[goon, +=, 1])
-        // Check: n.name matches condition AND first child also matches (redundant reference)
-        if (!found_block && n.name.data && n.length > 1 && n.name == condition.name &&
-            n.children[0].kind == reference && n.children[0].name == n.name) {
-            // Condition is the name as a reference
-            Node *cond_ref = new Node();
-            cond_ref->name = n.name;
-            cond_ref->kind = reference;
-            cond_ref->value.node = 0; // Ensure clean state
-            condition = *cond_ref;
-            // Body is the children expression
-            then = n;
-            then.name = String(); // Clear name
-            then.setKind(expression); // Mark as expression for proper analysis
-        }
     }
     // Create and structure the "while" node
     Node *whilo = new Node("while");
