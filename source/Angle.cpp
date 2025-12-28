@@ -611,8 +611,9 @@ Node &groupWhile(Node &n, Function &context) {
     if (n.length == 1 && !n.value.data)
         error("Missing block for while statement");
 
+    // Node &condition = (n.length == 0) ? n : n.values();
     Node &condition = (n.length == 0) ? n : n.children[0];
-    Node then = (n.length > 1) ? n.children[1] : Node(); // Use explicit initialization
+    Node then = (n.length > 1) ? n.children[1] : n.values(); // Use explicit initialization
 
     // Handle ":", "do" grouping
     if (n.has(":")) {
@@ -623,9 +624,8 @@ Node &groupWhile(Node &n, Function &context) {
         condition = n.to("do");
         then = n.from("do");
     }
-
-    // Handle standalone conditions and alternative grouping cases
     else if (condition.value.data && !condition.next) {
+    // Handle standalone conditions and alternative grouping cases
         then = condition.values();
         condition.value.data = 0; // Clear value to avoid confusion
         condition.length = 0;
@@ -644,6 +644,9 @@ Node &groupWhile(Node &n, Function &context) {
         //         break;
         //     }
         // }
+    }
+    if(condition.kind == groups || condition.kind == objects) {
+        condition.kind = expression;
     }
     // Create and structure the "while" node
     Node *whilo = new Node("while");
@@ -823,8 +826,10 @@ Node &analyze(Node &node, Function &function) {
         return funcDeclaration(node.name, node.values(), NUL /* no body here */ , 0, function.module);
     //        return witReader.analyzeWit(node);
 
-    if ((type == expression and not name.empty() and not name.contains("-")))
+    if (type == expression and not name.empty() and not name.contains("-")) {
         addLocal(function, name, int32t, false); //  todo deep type analysis x = π * fun() % 4
+        return node.setKind(reference,false ); // already/now known local variable
+    }
     if (type == key) {
         if (node.value.node /* i=ø has no node */)
             node.value.node = analyze(*node.value.node, function).clone();
