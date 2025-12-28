@@ -253,7 +253,7 @@ Node &parseWhileExpression(Node &node, Node &expressiona, int i, Function &conte
         expressiona.remove(i + 1, i + remaining);
         return node;
     }
-    Node n = expressiona.from("while");
+    Node n = expressiona.from("while"s);
     Node &iff = groupWhile(n, context); // todo: sketchy!
     int j = expressiona.lastIndex(iff.last().next) - 1; // huh?
     if (j > i)

@@ -1582,7 +1582,8 @@ Code emitValue(Node &node, Function &context) {
                 Node &value = *node.value.node;
                 tracef("emitCode: About to call emitSetter via node.value.node path, value.kind=%d, value.type=%p\n",
                                  value.kind, (void*)value.type);
-                warn("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!"); // todo FIX!!
+                // warn("HOLUP! x:42 is a reference? then *node.value.node makes no sense!!!"); // todo FIX!!
+                // x+=1 => x = x + 1;  x:{x+1} setter ok
                 code.add(emitSetter(node, value, context));
             } else {
             emit_getter_block:
@@ -2859,6 +2860,10 @@ Code emitWhile(Node &node, Function &context) {
     code.addByte(loop_type);
 
     code = code + emitExpression(condition, context); // condition
+    if(last_type==i64) { // todo set loop_type before?
+        code.addByte(i64_eqz);// (x == 0) == 0 pseudo truthy test
+        code.addByte(i32_eqz);
+    }
     code.addByte(if_i);
     code.addByte(none); // type:void_block
     //	code.addByte(int32);
