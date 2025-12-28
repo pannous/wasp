@@ -28,3 +28,5 @@ Node extractModifiers(Node &expression);
 Node extractReturnTypes(Node decl, Node body);
 
 void discard(Node &node);
+
+Node &parseWhileExpression(Node &node, Node &expressiona, int i, Function &context);

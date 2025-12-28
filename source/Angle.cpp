@@ -619,27 +619,31 @@ Node &groupWhile(Node &n, Function &context) {
         condition = n.to(":");
         then = n.from(":");
     }
-    if (n.has("do")) {
+    else if (n.has("do")) {
         condition = n.to("do");
         then = n.from("do");
     }
 
     // Handle standalone conditions and alternative grouping cases
-    if (condition.value.data && !condition.next) {
+    else if (condition.value.data && !condition.next) {
         then = condition.values();
         condition.value.data = 0; // Clear value to avoid confusion
+        condition.length = 0;
     }
-    if (condition.kind == reference) {
-        bool found_block = false;
-        for (int i = 0; i < n.length; i++) {
-            Node &child = n.children[i];
-            if (child.kind == groups || child.kind == objects) {
-                condition = n.to(child);
-                then = child;
-                found_block = true;
-                break;
-            }
-        }
+    else if (condition.kind == reference) {
+        then = n.values(); // while x{y}
+        condition.value.data = 0; // Clear value to avoid confusion
+        condition.length = 0;
+        // bool found_block = false;
+        // for (int i = 0; i < n.length; i++) {
+        //     Node &child = n.children[i];
+        //     if (child.kind == groups || child.kind == objects) {
+        //         condition = n.to(child);
+        //         then = child;
+        //         found_block = true;
+        //         break;
+        //     }
+        // }
     }
     // Create and structure the "while" node
     Node *whilo = new Node("while");
@@ -798,10 +802,10 @@ Node &analyze(Node &node, Function &function) {
         auto &args = node.from("if");
         // node = groupIf(first.length > 0 ? first.add(args) : args, function);
     }
-    if (name == "while")return groupWhile(node, function);
-    if (firstName == "while") {
-        // node = parseWhileExpression(first, node, 0, context);
-    }
+    if (name == "while")
+        return groupWhile(node, function);
+    // if (firstName == "while")// can't put here because of while x {…} needs full context? see groupFunctionCalls :(
+    //     node = parseWhileExpression(first, node, 0, function);
     if (name == "for" or firstName == "for")return groupFor(node, function);
     if (name == "?")return groupIf(node, function);
     if (name == "module") {
