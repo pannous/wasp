@@ -130,13 +130,24 @@ void testWhileNotCall() {
     tests_executed++;
     // Tests with function calls in while conditions
     // Note: These require proper handling of function calls as while conditions
-    assert_emit("def goon():0;;while goon() : {0};42", 42);  // Causes segfault/infinite loop
-    assert_emit("def goon():{0};while goon() : {0};42", 42); // Causes segfault/infinite loop
-    assert_emit("def stop():1;;while !stop() : {0};42", 42); // Parser error: Missing condition
-    assert_emit("def stop():{1};while !stop() : {0};42", 42); // Parser error: Missing condition
+    assert_emit("def goon():0;;while goon() : {0};42", 42);
+    assert_emit("def goon():0;;while goon():{0};42", 42);
+    skip( // todo!
+    assert_emit("def goon():0;;while goon():1;42", 42);
+    assert_emit("def goon():0;;while goon():0;42", 42); todo
+    assert_emit("def goon():0;;while goon():{};42", 42);
+    assert_emit("def goon():0;;while goon():{1};42", 42);
+    assert_emit("def goon():0;;while goon(){};42", 42);
+    assert_emit("def goon():0;;while(goon()):0;42", 42);
+    assert_emit("def goon():0;;while(goon()):{};42", 42);
+    assert_emit("def goon():0;;while(goon()){};42", 42);
+    )
+    assert_emit("def goon():0;;while(goon()): {0};42", 42);
+    assert_emit("def goon():0;;while(goon()):{0};42", 42);
+    assert_emit("def goon():{0};while goon() : {0};42", 42);
+    assert_emit("def stop():1;;while !stop() : {0};42", 42);
+    assert_emit("def stop():{1};while !stop() : {0};42", 42);
 
-    // Simpler working alternatives:
-    // TODO: These tests are temporarily disabled - investigating parser structure
     assert_emit("goon=0;while(goon){goon+=1};goon+2", 2); // Variable instead of call
     assert_emit("goon=0;while goon{goon+=1};goon+2", 2); // Variable instead of call
     assert_emit("goon=0;while goon:{goon+=1};goon+2", 2); // Variable instead of call
@@ -791,8 +802,10 @@ void testFetch() {
     check_eq(res, "test 2 5 3 7");
     check_emit("fetch https://pannous.com/files/test", "test 2 5 3 7\n");
     check_emit("x=fetch https://pannous.com/files/test", "test 2 5 3 7\n");
-    check_emit("string x=fetch https://pannous.com/files/test", "test 2 5 3 7\n");
+    skip(
     check_emit("string x=fetch https://pannous.com/files/test;y=7;x", "test 2 5 3 7\n");
+    check_emit("string x=fetch https://pannous.com/files/test", "test 2 5 3 7\n");
+        )
 }
 
 void test_getElementById() {

@@ -726,6 +726,7 @@ void initTypes() {
 
 bool isPrimitive(Node &node) {
     // should never be cloned so always compare by reference ok?
+    // if(isFunction(node))return false;
     if (&node == NULL)return false;
     if (&node == &IntegerType)return true;
     if (&node == &BoolType)return true;
