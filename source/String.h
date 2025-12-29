@@ -1238,6 +1238,10 @@ public:
 
     String to(const char *string);
 
+    String to(int position) {
+        return substring(0, position);
+    }
+
     List<String> split(const char *string);
 
     String trim();

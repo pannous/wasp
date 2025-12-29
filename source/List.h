@@ -364,6 +364,14 @@ public:
         return false;
     }
 
+    S* any(List<S> members) {
+        for (auto &m: members)
+            if (has(m))
+                return &m;
+        return 0;
+    }
+
+
     // All: returns true if all elements match predicate
     template<typename Pred>
     bool all(Pred predicate) {

@@ -4556,7 +4556,8 @@ void testCurrent() {
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
     // eval("./samples/raylib_mouse_circle.wasp");
-    // testIfCallZero();
+    assert_emit("\"Hello \" + \"🌍\" + (2000+25)","Hello 🌍2025");
+    testIfCallZero();
     // testIf();
     // test_ffi_all();
 

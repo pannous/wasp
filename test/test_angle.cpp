@@ -139,10 +139,10 @@ void testIf() {
 
 void testIfCallZero() {
     tests_executed++;
-    assert_emit("def zero(){0};zero()", 0);
-    assert_emit("def zero(){0};2+zero()", 2);
     assert_emit("def six(){6};six()", 6);
     assert_emit("def six(){6};2+six()", 8);
+    assert_emit("def zero(){0};zero()", 0);
+    assert_emit("def zero(){0};2+zero()", 2);
     assert_emit("def zero(){0};if(2):{3}", 3);
     assert_emit("def zero(){0};if 2 : 3 else 4", 3);
 

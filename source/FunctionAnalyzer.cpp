@@ -35,24 +35,9 @@ void discard(Node &node) {
 }
 
 Node &
-groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body,
-                         Function &context) {
-    // Type return_type;
-    // if(return_type0)
-    //     return_type = mapType(return_type0);
-    // else
-    //     return_type = preEvaluateType(body, context);
-    //	String &name = fun.name;
-    //	silent_assert(not is_operator(name[0]));
-    //	trace_assert(not is_operator(name[0]));
-    if (is_operator(name[0]) and name != ":=") // todo ^^
-        todo("is_operator!"s + name); // remove if it doesn't happen
-
+groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body, Function &context) {
     if (name and not function_operators.has(name.data)) {
-        if (context.name != "wasp_main") {
-            print("broken context");
-            print(context.name);
-        }
+        check (context.name == "wasp_main")
         if (not functions.has(name)) {
             Function fun{.name = name};
             functions.add(name, fun);
@@ -62,7 +47,6 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     function.name = name;
     function.is_declared = true;
     function.is_import = false;
-
 
     Signature &signature = groupFunctionArgs(function, arguments);
     if (signature.size() == 0 and function.locals.size() == 0 and body.has("it", false, 100)) {
@@ -88,12 +72,11 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
 
 Node extractModifiers(Node &expression) {
     Node modifieres;
-    for (auto &child: expression) {
+    for (auto &child: expression)
         if (function_modifiers.contains(child.name)) {
             modifieres.add(child);
             expression.remove(child);
         }
-    }
     return modifieres;
 }
 
@@ -140,7 +123,9 @@ Node &groupFunctionDeclaration(Node &expression, Function &context) {
     return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
 }
 
+
 Node &groupDeclarations(Node &expression, Function &context) {
+    // if(expression.kind == declaration and expression["params"]) {} no extra logic in Wasp.cpp !
     if (expression.kind == groups) // handle later!
         return expression;
     //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
