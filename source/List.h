@@ -326,6 +326,80 @@ public:
         size_--;
     }
 
+    // Remove all elements where predicate returns true
+    void remove(bool (*predicate)(S &)) {
+        int write = 0;
+        for (int read = 0; read < size_; read++) {
+            if (!predicate(items[read])) {
+                if (write != read)
+                    items[write] = items[read];
+                write++;
+            }
+        }
+        size_ = write;
+    }
+
+    // Remove all elements where predicate returns true (pointer version)
+    void remove(bool (*predicate)(S *)) {
+        int write = 0;
+        for (int read = 0; read < size_; read++) {
+            if (!predicate(&items[read])) {
+                if (write != read)
+                    items[write] = items[read];
+                write++;
+            }
+        }
+        size_ = write;
+    }
+
+    // Filter: return new list with elements where predicate returns true
+    List<S> filter(bool (*predicate)(S &)) {
+        List<S> result;
+        for (int i = 0; i < size_; i++) {
+            if (predicate(items[i]))
+                result.add(items[i]);
+        }
+        return result;
+    }
+
+    // Filter: pointer version
+    List<S> filter(bool (*predicate)(S *)) {
+        List<S> result;
+        for (int i = 0; i < size_; i++) {
+            if (predicate(&items[i]))
+                result.add(items[i]);
+        }
+        return result;
+    }
+
+    // Any: returns true if any element matches predicate
+    bool any(bool (*predicate)(S &)) {
+        for (int i = 0; i < size_; i++) {
+            if (predicate(items[i]))
+                return true;
+        }
+        return false;
+    }
+
+    // All: returns true if all elements match predicate
+    bool all(bool (*predicate)(S &)) {
+        for (int i = 0; i < size_; i++) {
+            if (!predicate(items[i]))
+                return false;
+        }
+        return true;
+    }
+
+    // Count: returns number of elements matching predicate
+    int count(bool (*predicate)(S &)) {
+        int c = 0;
+        for (int i = 0; i < size_; i++) {
+            if (predicate(items[i]))
+                c++;
+        }
+        return c;
+    }
+
     bool remove(short position) {
         if (position < 0 or size_ <= 0 or position >= size_)return false;
         if (position < size_ - 1)
