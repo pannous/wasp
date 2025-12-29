@@ -1,15 +1,22 @@
 #!/usr/bin/env wasp
-// Raylib FFI Example - Draw a circle in a window
-// Demonstrates using raylib graphics library via FFI
+// Raylib FFI Example - Circle follows mouse cursor
+// Demonstrates using raylib graphics library via FFI with mouse input
 
-import raylib 
-InitWindow(800, 600, "Wasp Raylib - Circle Demo")
-BeginDrawing()
-RAYWHITE=0xFFF5F5F5
-ClearBackground(RAYWHITE)  
-DARKGRAY=0xFF505050
-MAROON=0xFF2E1990
-DrawText("Wasp Raylib FFI Demo", 250, 20, 30, DARKGRAY)  
-DrawCircle(400, 300, 80.0, MAROON)  
-EndDrawing()
-sleep(500)
+import raylib
+
+InitWindow(800, 600, "Wasp Raylib - Mouse Circle Demo")
+SetTargetFPS(60)
+
+while(!WindowShouldClose()){
+    mouseX = GetMouseX()
+    mouseY = GetMouseY()
+
+    BeginDrawing()
+    ClearBackground(0xFFF5F5F5)
+    DrawText("Move your mouse!", 250, 20, 30, 0xFF505050)
+    DrawCircle(mouseX, mouseY, 40.0, 0xFF2E1990)
+    EndDrawing()
+}
+
+CloseWindow()
+1
