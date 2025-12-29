@@ -3059,6 +3059,8 @@ Code cast(Valtype from, Valtype to) {
     last_type = to; // danger: hides last_type in caller!
     if (from == 0 and to == i32t)return nop; // nil or false ok as int? otherwise add const 0!
     if (from == i32t and (Type) to == reference)return nop; // should be reference pointer, RIHGT??
+    if (from == i32t and (Type) to == bools)return nop;
+    if ((Kind)from == bools and (Type) to == i32t)return nop;
     if (from == anyref and (Type) to == i64)return nop; // todo call $$ ref.value()
     if (from == i32 and to == externref)return nop; // ref ≈ void* ≈ i64 so ok?
     if (from == i64 and to == externref)return nop; // ref ≈ void* ≈ i64 so ok?
@@ -3338,18 +3340,21 @@ Code zeroConst(Type returnType) {
     Code code;
     if (returnType == int32t)
         code.addConst32(0);
-    if (returnType == float32t) {
+    else if (returnType == i64)
+        code.addConst64(0);
+    else if (returnType == float32t) {
+        todo("f32 zeroConst");
         code.add(f32_const);
-        code.push((bytes) malloc(4), 4);
+        code.push(0);
+        // code.push((bytes) malloc(4), 4);
     }
-    if (returnType == float64t) {
+    else if (returnType == float64t) {
+        todo("f64 zeroConst");
         code.add(f64_const);
-        code.push((bytes) malloc(8), 8);
+        code.push(0);
+        // code.push((bytes) malloc(8), 8);
     }
-    if (returnType == i64) {
-        code.add(i64_const);
-        code.push((bytes) malloc(8), 8);
-    }
+    else error("zeroConst for returnType %s not implemented"_s % typeName(returnType));
     return code;
 }
 

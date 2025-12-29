@@ -427,7 +427,9 @@ void consumeCustomSection() {
     } else if (type == "target_features")
     //	https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md#target-features-section
     // 	atomics bulk-memory exception-handling multivalue mutable-globals nontrapping-fpoint sign-ext simd128 tail-call
-        todow("target_features detection not yet supported") else if (type == "linking")
+        ; // ignore for now since we use ALL
+        // todow("target_features detection not yet supported")
+    else if (type == "linking")
         // see https://github.com/WebAssembly/tool-conventions/blob/main/Linking.md
         consumeLinkingSection(payload);
     else if (type == "dylink.0")
