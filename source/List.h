@@ -35,12 +35,12 @@ void heapSort(S arr[], int n);
 template<class S>
 class List {
 public:
-    int header = array_header_32;// wasn't this moved down ?
-    Type _type{};// reflection on template class S
+    int header = array_header_32; // wasn't this moved down ?
+    Type _type{}; // reflection on template class S
     int size_ = 0;
-    int capacity = LIST_DEFAULT_CAPACITY;// grow() by factor 2 internally on demand
+    int capacity = LIST_DEFAULT_CAPACITY; // grow() by factor 2 internally on demand
     // previous entries must be aligned to int64!
-    S *items = 0;// 32bit pointers in wasm! In C++ References cannot be put into an array, if you try you get
+    S *items = 0; // 32bit pointers in wasm! In C++ References cannot be put into an array, if you try you get
     // List<int&> error: 'items' declared as a pointer to a reference of type
 
     // todo item references are UNSAFE after grow()
@@ -97,10 +97,10 @@ public:
 
     List(Array_Header a) {
         if (a.length == 0xA0000000)
-            error1("double header");// todo: just shift by 4 bytes
+            error1("double header"); // todo: just shift by 4 bytes
         size_ = a.length;
         capacity = a.length; //!
-        items = (S *) &a.data;// ok? copy data?
+        items = (S *) &a.data; // ok? copy data?
         //		todo("a.typ");
     }
 
@@ -124,9 +124,9 @@ public:
         while (item_count >= capacity)grow();
         for (const S &s: inis) {
             if (item_count-- < 0)
-                break;// superfluous
+                break; // superfluous
             if (&s == nullptr)
-                continue;// superfluous
+                continue; // superfluous
             items[size_++] = s;
         }
     }
@@ -150,7 +150,8 @@ public:
     }
 
 
-    List(S *data, S *end, bool share = true) : List(data, (end - data) / sizeof(S), share) {}
+    List(S *data, S *end, bool share = true) : List(data, (end - data) / sizeof(S), share) {
+    }
 
     size_t size() const { return size_; }
 
@@ -164,7 +165,7 @@ public:
 
     void grow() {
         capacity *= 2;
-//        printf("grow %d\n", capacity);
+        //        printf("grow %d\n", capacity);
 #if not WASM
         items = static_cast<S *>(realloc(items, capacity * sizeof(S)));
 #else
@@ -175,7 +176,7 @@ public:
     }
 
     S &add(S s) {
-//        if(!items)grow();// how?
+        //        if(!items)grow();// how?
         items[size_++] = s;
         if (size_ >= capacity - 1)grow();
         return items[size_ - 1];
@@ -187,19 +188,19 @@ public:
         return items[size_ - 1];
     }
 
-//	S &add(S s) {// vector compatible
-//		add(s)
-//	}
+    //	S &add(S s) {// vector compatible
+    //		add(s)
+    //	}
 
     // list after 1 element
-//	List &&operator++() {
-//		return List(items + 1);
-//	}
+    //	List &&operator++() {
+    //		return List(items + 1);
+    //	}
 
     // list FROM index, e.g. [1,2,3]>>1 == [2, 3]
-//	List &&operator>>(short index) {
-//		return List(items + index);
-//	}
+    //	List &&operator>>(short index) {
+    //		return List(items + index);
+    //	}
 
 
     S &operator[](uint64 index) const {
@@ -209,26 +210,26 @@ public:
     }
 
 
-//    S &operator[](uint64 index) {
-//        if (index == size_)size_++;// allow indexing one after end? todo ok?
-//        bool auto_grow= false;
-//        if (auto_grow and size_ > capacity)grow();
-////        if (index >= capacity)grow();
-//        if (index < 0 or index >= size_) { /* and not auto_grow*/
-//            if (index >= capacity)
-//                error("index out of range : %d > %d"s % (int64) index % size_);
-//            else size_ = index + 1;
-//        }
-//        return items[index];
-//    }
+    //    S &operator[](uint64 index) {
+    //        if (index == size_)size_++;// allow indexing one after end? todo ok?
+    //        bool auto_grow= false;
+    //        if (auto_grow and size_ > capacity)grow();
+    ////        if (index >= capacity)grow();
+    //        if (index < 0 or index >= size_) { /* and not auto_grow*/
+    //            if (index >= capacity)
+    //                error("index out of range : %d > %d"s % (int64) index % size_);
+    //            else size_ = index + 1;
+    //        }
+    //        return items[index];
+    //    }
 
-//	S &operator[](S& key) {
-//		for (int i = 0; i < _size; ++i) {
-//			if (items[i] == key)return items[i];
-//		}
-//        if (_size >= capacity - 1)grow();
-//		return items[_size++];// create new!
-//	}
+    //	S &operator[](S& key) {
+    //		for (int i = 0; i < _size; ++i) {
+    //			if (items[i] == key)return items[i];
+    //		}
+    //        if (_size >= capacity - 1)grow();
+    //		return items[_size++];// create new!
+    //	}
 
 
     bool operator==(List<S> other) const {
@@ -251,25 +252,25 @@ public:
     int position(S s) {
         for (int i = 0; i < size_; ++i) {
             if (items[i] == s)return i;
-            if (eq(items[i], s))return i;// needs to be defined for all S
+            if (eq(items[i], s))return i; // needs to be defined for all S
         }
         return -1;
     }
 
 
     int position(S *s) {
-        if (!s)return -1;// don't allow null pointer!
+        if (!s)return -1; // don't allow null pointer!
         for (int i = 0; i < size_; ++i)
             if (&items[i] == s)return i;
         return -1;
     }
 
-//
-//    int position(S& s) {
-//        for (int i = 0; i < _size; ++i)
-//            if (&items[i] == s)return i;
-//        return -1;
-//    }
+    //
+    //    int position(S& s) {
+    //        for (int i = 0; i < _size; ++i)
+    //            if (&items[i] == s)return i;
+    //        return -1;
+    //    }
 
     void sort(bool (comparator)(S a, S b)) {
         heapSort(items, size_, comparator);
@@ -295,9 +296,9 @@ public:
         return position(item) >= 0;
     }
 
-//	bool has(S &item) {
-//		return position(item) >= 0;
-//	}
+    //	bool has(S &item) {
+    //		return position(item) >= 0;
+    //	}
     bool has(S item) {
         return position(item) >= 0;
     }
@@ -392,12 +393,12 @@ public:
         return true;
     }
 
-//	List<S>& clone() { // todo just create all return lists with new List() OR return List<> objects (no references) copy by value ok!!
-//		List &neu = *new List<S>();
-//		neu._size=_size;
-//		neu.items=items;
-//		return  neu;
-//	}
+    //	List<S>& clone() { // todo just create all return lists with new List() OR return List<> objects (no references) copy by value ok!!
+    //		List &neu = *new List<S>();
+    //		neu._size=_size;
+    //		neu.items=items;
+    //		return  neu;
+    //	}
     bool empty() const {
         return size_ == 0 or items == 0;
     }
@@ -418,9 +419,20 @@ public:
             lambda(s);
     }
 
+    //    list.map(+[](Function *f) { return f->name; });
+    // ⚠️ note the + in "+[]" to make it a lambda!
+    template<class T>
+    List<T> map(T (*lambda)(S)) {
+        List<T> neu;
+        for (auto &s: *this) {
+            neu.add(lambda(s));
+        }
+        return neu;
+    }
+
     // e.g. list.map([](Function *f) { return f->name; });
-    template<typename Func>
-    auto map(Func lambda) -> List<decltype(lambda(items[0]))> {
+    template<typename T, typename Func>
+    auto map(Func lambda) -> List<T> {
         List<decltype(lambda(items[0]))> result;
         for (auto &s: *this)
             result.add(lambda(s));
@@ -457,13 +469,16 @@ public:
         return s;
     }
 
-    S &back() {// same as last()
-        if (size_ <= 0)error("no back() in empty list.");
+    S &back() {
+        // same as last()
+        if (size_ <= 0)
+            error("no back() in empty list.");
         return items[size_ - 1];
     }
 
     S &last() {
-        if (size_ < 1) error("empty list");
+        if (size_ < 1)
+            error("empty list");
         return items[size_ - 1];
     }
 
@@ -496,33 +511,35 @@ public:
         size_ += len;
     }
 
-//    void insert(S *position, S *value, S *end) {
-//        size_t len = end - value;
-//        if (_size + len >= capacity){
-//            grow();
-//            position = &last();
-//        }
-//        memcpy(position, value, len);
-//        _size += len;
-//    }
+    //    void insert(S *position, S *value, S *end) {
+    //        size_t len = end - value;
+    //        if (_size + len >= capacity){
+    //            grow();
+    //            position = &last();
+    //        }
+    //        memcpy(position, value, len);
+    //        _size += len;
+    //    }
 
     S *data() const {
         return items;
     }
 
     S &first() {
-        if (size_ < 1) error("empty list");
+        if (size_ < 1)
+            error("empty list");
         return items[0];
     }
 
-    int length(){
+    int length() {
         return size_;
     }
 
     bool shared = false;
 
     S &at(int i) {
-        if (i < 0 or i >= size_)error("out of bounds");
+        if (i < 0 or i >= size_)
+            error("out of bounds");
         return items[i];
     }
 
@@ -531,7 +548,7 @@ public:
     }
 
     void push(S &item) {
-//        insert(item);
+        //        insert(item);
         add(item);
     }
 };
@@ -564,20 +581,22 @@ enum ListBaseKind {
 
 template<typename T>
 struct ListBase {
-    explicit ListBase(ListBaseKind k) : _kind(k) {}
+    explicit ListBase(ListBaseKind k) : _kind(k) {
+    }
 
     ListBaseKind _kind;
 };
 
 template<typename T>
 struct EmptyList : ListBase<T> {
-    EmptyList() : ListBase<T>(Empty) {}
+    EmptyList() : ListBase<T>(Empty) {
+    }
 };
 
 template<typename T>
 struct ListNode : ListBase<T> {
-    ListNode(T const &t, ListBase<T> &next) :
-            ListBase<T>(ListBaseKind::LinkedListNode), _value(t), _next(next) {}
+    ListNode(T const &t, ListBase<T> &next) : ListBase<T>(ListBaseKind::LinkedListNode), _value(t), _next(next) {
+    }
 
     T _value;
     ListBase<T> &_next;
@@ -591,17 +610,15 @@ struct LinkedList : ListNode<T> {
 //bool eq(int i,int j){return i==j;}// for List.has => eq
 
 
-
-
 //inline
 template<class S>
 void swap2(S *a, S *b) {
     // todo!!!
-//#if SORTING
+    //#if SORTING
     S c = *a;
     *a = *b;
     *b = c;
-//#endif
+    //#endif
 }
 
 

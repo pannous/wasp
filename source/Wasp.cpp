@@ -1400,6 +1400,7 @@ int main(int argc, char **argv) {
     String args;
     for (int i = 1; i < argc; ++i) args += i > 1 ? String(" ") + argv[i] : String(argv[i]);
     String path = argv[0];
+    executable_path = path;
     //   String arg=extractArg(argv,argc);
 
 #if WASM
