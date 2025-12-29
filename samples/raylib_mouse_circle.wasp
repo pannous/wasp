@@ -1,0 +1,15 @@
+#!/usr/bin/env wasp
+// Raylib FFI Example - Draw a circle in a window
+// Demonstrates using raylib graphics library via FFI
+
+import raylib 
+InitWindow(800, 600, "Wasp Raylib - Circle Demo")
+BeginDrawing()
+RAYWHITE=0xFFF5F5F5
+ClearBackground(RAYWHITE)  
+DARKGRAY=0xFF505050
+MAROON=0xFF2E1990
+DrawText("Wasp Raylib FFI Demo", 250, 20, 30, DARKGRAY)  
+DrawCircle(400, 300, 80.0, MAROON)  
+EndDrawing()
+sleep(500)
