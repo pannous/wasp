@@ -341,7 +341,8 @@ inline Module *loadNativeLibrary(String library) {
     auto headers = get_library_header_files(library);
     if (not headers or headers->size() <= 0)
         error("No header files found for native library %s\n"s % library);
-    for (String header: *headers) {
+
+    for (String header: headers->filter(fileExists)) {
         if (not fileExists(header)) {
             warn("Header file %s for library %s does not exist!\n"s % header % library);
             continue;
