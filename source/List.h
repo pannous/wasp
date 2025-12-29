@@ -353,7 +353,17 @@ public:
     }
 
     // Filter: return new list with elements where predicate returns true
-    List<S> filter(bool (*predicate)(S &)) {
+    List<S> filter(bool (*predicate)(const S &)) {
+        List<S> result;
+        for (int i = 0; i < size_; i++) {
+            if (predicate(items[i]))
+                result.add(items[i]);
+        }
+        return result;
+    }
+
+    // Filter: by-value version (for compatibility with functions like fileExists(String))
+    List<S> filter(bool (*predicate)(S)) {
         List<S> result;
         for (int i = 0; i < size_; i++) {
             if (predicate(items[i]))
@@ -391,6 +401,7 @@ public:
     }
 
     // Count: returns number of elements matching predicate
+    // e.g. nums.count(+[](int &x) { return x < 0; });
     int count(bool (*predicate)(S &)) {
         int c = 0;
         for (int i = 0; i < size_; i++) {
@@ -439,24 +450,26 @@ public:
     template<class T>
     List<T> map(T (*lambda)(S)) {
         List<T> neu;
-        for (auto &s: *this) {
+        for (auto &s: *this)
             neu.add(lambda(s));
-        }
         return neu;
     }
 
-    S *find(bool (*lambda)(S &)) {
+    // e.g. nums.find(+[](int &x) { return x < 0; });
+    S *find_first(bool (*lambda)(const S &)) {
         for (S *s: *this)
             if (lambda(s))return s;
         return 0;
     }
 
-
-    S *find(bool (*lambda)(S *)) {
-        for (S *s: *this)
-            if (lambda(s))return s;
-        return 0;
+    List<S> find_all(bool (*lambda)(S &)) {
+        return filter(lambda);
     }
+
+    List<S> select(bool (*lambda)(S &)) {
+        return filter(lambda);
+    }
+
 
     String join(String string) {
         String s;
@@ -524,6 +537,10 @@ public:
     S &first() {
         if (size_ < 1) error("empty list");
         return items[0];
+    }
+
+    int length(){
+        return size_;
     }
 
     bool shared = false;
