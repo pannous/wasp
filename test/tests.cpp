@@ -66,8 +66,10 @@ void testNotTruthyFalsy() {
     assert_emit("not ''", 1);
     assert_emit("not \"\"", 1);
 }
-void testNotNegation2() {// just aliases for 'not'
-       assert_emit("!0", 1);
+
+void testNotNegation2() {
+    // just aliases for 'not'
+    assert_emit("!0", 1);
     assert_emit("!0.0", 1);
     assert_emit("!1", 0);
     assert_emit("!1.1", 0);
@@ -133,14 +135,14 @@ void testWhileNotCall() {
     assert_emit("def goon():0;;while goon() : {0};42", 42);
     assert_emit("def goon():0;;while goon():{0};42", 42);
     skip( // todo!
-    assert_emit("def goon():0;;while goon():1;42", 42);
-    assert_emit("def goon():0;;while goon():0;42", 42); todo
-    assert_emit("def goon():0;;while goon():{};42", 42);
-    assert_emit("def goon():0;;while goon():{1};42", 42);
-    assert_emit("def goon():0;;while goon(){};42", 42);
-    assert_emit("def goon():0;;while(goon()):0;42", 42);
-    assert_emit("def goon():0;;while(goon()):{};42", 42);
-    assert_emit("def goon():0;;while(goon()){};42", 42);
+        assert_emit("def goon():0;;while goon():1;42", 42);
+        assert_emit("def goon():0;;while goon():0;42", 42); todo
+        assert_emit("def goon():0;;while goon():{};42", 42);
+        assert_emit("def goon():0;;while goon():{1};42", 42);
+        assert_emit("def goon():0;;while goon(){};42", 42);
+        assert_emit("def goon():0;;while(goon()):0;42", 42);
+        assert_emit("def goon():0;;while(goon()):{};42", 42);
+        assert_emit("def goon():0;;while(goon()){};42", 42);
     )
     assert_emit("def goon():0;;while(goon()): {0};42", 42);
     assert_emit("def goon():0;;while(goon()):{0};42", 42);
@@ -803,9 +805,9 @@ void testFetch() {
     check_emit("fetch https://pannous.com/files/test", "test 2 5 3 7\n");
     check_emit("x=fetch https://pannous.com/files/test", "test 2 5 3 7\n");
     skip(
-    check_emit("string x=fetch https://pannous.com/files/test;y=7;x", "test 2 5 3 7\n");
-    check_emit("string x=fetch https://pannous.com/files/test", "test 2 5 3 7\n");
-        )
+        check_emit("string x=fetch https://pannous.com/files/test;y=7;x", "test 2 5 3 7\n");
+        check_emit("string x=fetch https://pannous.com/files/test", "test 2 5 3 7\n");
+    )
 }
 
 void test_getElementById() {
@@ -3908,133 +3910,6 @@ void testNodeEmit() {
     assert_emit("y={x:{z:1}};y", true); // emitData( node! ) emitNode()
 }
 
-void todo_done() {
-    // GOOD!
-    tests_executed++; // moved from todo() back into tests() once they work again
-    assert_is("2+1/2", 2.5);
-    assert_emit("a = [1, 2, 3]; a[2]", 3);
-    // #if not WASMTIME and not LINUX // todo why
-    // assert_emit("n=3;2ⁿ", 8);
-    test_ffi_sdl();
-    // SDL tests temporarily disabled - debugging type mismatches
-    // test_ffi_sdl_red_square_demo();
-    testMapOfStrings();
-    testMapOfStringValues();
-    testMaps();
-
-    testAutoType();
-    testTypeSynonyms();
-    testFetch();
-    testWGSL();
-    testFunctionDeclaration();
-    testReturnTypes();
-    testRecentRandomBugs();
-    // exit(0); // todo: remove this once all tests are passing
-    testStringInterpolation();
-    // we already have a working syntax so this has low priority?
-    // testFunctionDeclaration();
-    // testFibonacci(); // much TODO!
-    // testSinus();
-
-    testWaspRuntimeModule();
-
-    testPing();
-    test_while_true_forever();
-    testStructWast();
-    test_wasm_node_struct();
-    test_ffi_all();
-    testMergeRuntime();
-    testFunctionArgumentCast();
-    testWrong0Termination();
-    assert_emit("fun addier(x, y){ x + y }; addier(3,4)", 7);
-    testErrors(); // error: failed to call function   wasm trap: integer divide by zero
-
-    read_wasm("lib/stdio.wasm");
-    //    testStruct();
-
-    testWit();
-    testColonImmediateBinding();
-    testWasmRuntimeExtension();
-    testUpperLowerCase();
-    //    exit(1);
-    testDataMode();
-    testParams();
-    // test_const_String_comparison_bug(); // fixed in 8268c182
-}
-
-void test_done() {
-    todo_done();
-}
-
-// todo: ^^ move back into tests() once they work again
-void todos() {
-    tests_executed++;
-
-    skip( // unskip to test!!
-        test_wasm_structs();
-
-        testKitchensink();
-        testNodeEmit();
-        testLengthOperator();
-        testEmitCast();
-        assert_emit("2,4 == 2,4", 1);
-        assert_emit("(2,4) == (2,4)", 1); // todo: array creation/ comparison
-        assert_emit("‖-2^2 - -2^3‖", 4); // Too many args for operator ‖,   a - b not grouped!
-        assert_emit("1 +1 == [1 1]", 1);
-        assert_emit("1 +1 ≠ 1 + 1", 1);
-        testWasmTypedGlobals();
-    )
-
-#if not TRACE
-    println("parseLong fails in trace mode WHY?");
-    assert_emit("parseLong('123000')+parseLong('456')", 123456);
-#endif
-
-    test_sinus_wasp_import();
-    testSinus(); // todo FRAGILE fails before!
-    //    testSinus2();
-    //    run("circle.wasp");
-
-
-    // while without body
-    //    Missing condition for while statement
-    skip(
-        assert_emit("i=0;while(i++ <10001);i", 10000) // parsed wrongly! while(  <( ++ i 10001) i)
-    )
-
-    assert_emit("use math;⅓ ≈ .3333333 ", 1);
-    assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
-    assert_throws("i*=3"); // well:
-    assert_emit("i*=3", (int64) 0);
-    // todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
-    assert_throws("ceiling 3.7");
-    // default bug!
-    //    	subtract(other complex) := re -= other.re; im -= other.im
-    // := is terminated by \n, not by ;!
-    assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
-    assert_emit("if(0):{3}", false); // 0:3 messy node
-    assert_equals(Node("1", 0) + Node("2"_s),
-                  Node("1", "2", 0)); // 1+2 => 1:2  stupid border case because 1 not group (1)
-    assert_is((char *) "{a b c}#2", "b"); // ok, but not for patterns:
-    assert_is((char *) "[a b c]#2", "b"); // patterns
-    assert_emit("abs(0)", 0);
-    assert_is("i=3;i--", 2); // todo bring variables to interpreter
-    assert_is("i=3.7;.3+i", 4); // todo bring variables to interpreter
-    assert_is("i=3;i*-1", -3); // todo bring variables to interpreter
-    assert_is("one plus two times three", 7);
-    //	print("OK %s %d"s % ("WASM",1));// only 1 handed over
-    //    print(" OK %d %d"s % (2, 1));// error: expression result unused [-Werror,-Wunused-value] OK
-    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
-    test2Def();
-    testConstructorCast();
-    assert_emit("html{bold{'Hello'}}", "Hello"); // in wasmtime
-}
-
-void test_todos() {
-    todos();
-    // move to test_done() once done!
-}
-
 //int dump_nr = 1;
 //void dumpMemory(){
 // tests_executed++;
@@ -4508,6 +4383,137 @@ void test_const_String_comparison_bug() {
 }
 
 
+void todo_done() {
+    tests_executed++; // moved from todo()
+    // GOOD! move to tests() once they work again but avoid redundant test executions
+    assert_is("2+1/2", 2.5);
+    assert_emit("a = [1, 2, 3]; a[2]", 3);
+    // #if not WASMTIME and not LINUX // todo why
+    // assert_emit("n=3;2ⁿ", 8);
+    test_ffi_sdl();
+    // SDL tests temporarily disabled - debugging type mismatches
+    // test_ffi_sdl_red_square_demo();
+    testMapOfStrings();
+    testMapOfStringValues();
+    testMaps();
+    testWhileNotCall();
+    testNotNegation();
+    testWhileNot();
+    testAutoType();
+    testTypeSynonyms();
+    testFetch();
+    testWGSL();
+    testFunctionDeclaration();
+    testReturnTypes();
+    testRecentRandomBugs();
+    // exit(0); // todo: remove this once all tests are passing
+    testStringInterpolation();
+    // we already have a working syntax so this has low priority?
+    // testFunctionDeclaration();
+    // testFibonacci(); // much TODO!
+    // testSinus();
+
+    testWaspRuntimeModule();
+
+    testPing();
+    test_while_true_forever();
+    testStructWast();
+    test_wasm_node_struct();
+    test_ffi_all();
+    testMergeRuntime();
+    testFunctionArgumentCast();
+    testWrong0Termination();
+    assert_emit("fun addier(x, y){ x + y }; addier(3,4)", 7);
+    testErrors(); // error: failed to call function   wasm trap: integer divide by zero
+
+    read_wasm("lib/stdio.wasm");
+    //    testStruct();
+
+    testWit();
+    testColonImmediateBinding();
+    testWasmRuntimeExtension();
+    testUpperLowerCase();
+    //    exit(1);
+    testDataMode();
+    testParams();
+    // test_const_String_comparison_bug(); // fixed in 8268c182
+}
+
+void test_done() {
+    todo_done();
+}
+
+// todo: ^^ move back into tests() once they work again
+void todos() {
+    tests_executed++;
+
+    skip( // unskip to test!!
+        test_wasm_structs();
+
+        testKitchensink();
+        testNodeEmit();
+        testLengthOperator();
+        testEmitCast();
+        assert_emit("2,4 == 2,4", 1);
+        assert_emit("(2,4) == (2,4)", 1); // todo: array creation/ comparison
+        assert_emit("‖-2^2 - -2^3‖", 4); // Too many args for operator ‖,   a - b not grouped!
+        assert_emit("1 +1 == [1 1]", 1);
+        assert_emit("1 +1 ≠ 1 + 1", 1);
+        testWasmTypedGlobals();
+    )
+
+#if not TRACE
+    println("parseLong fails in trace mode WHY?");
+    assert_emit("parseLong('123000')+parseLong('456')", 123456);
+#endif
+
+    test_sinus_wasp_import();
+    testSinus(); // todo FRAGILE fails before!
+    //    testSinus2();
+    //    run("circle.wasp");
+
+
+    // while without body
+    //    Missing condition for while statement
+    skip(
+        assert_emit("i=0;while(i++ <10001);i", 10000) // parsed wrongly! while(  <( ++ i 10001) i)
+    )
+
+    assert_emit("use math;⅓ ≈ .3333333 ", 1);
+    assert_emit("precision = 3 digits; ⅓ ≈ .333 ", 1);
+    assert_throws("i*=3"); // well:
+    assert_emit("i*=3", (int64) 0);
+    // todo: ERRORS when cogs don't match! e.g. remove ¬ from prefixOperators!
+    assert_throws("ceiling 3.7");
+    // default bug!
+    //    	subtract(other complex) := re -= other.re; im -= other.im
+    // := is terminated by \n, not by ;!
+    assert_throws("xyz 3.7"); // todo SHOULD THROW unknown symbol!
+    assert_emit("if(0):{3}", false); // 0:3 messy node
+    assert_equals(Node("1", 0) + Node("2"_s),
+                  Node("1", "2", 0)); // 1+2 => 1:2  stupid border case because 1 not group (1)
+    assert_is((char *) "{a b c}#2", "b"); // ok, but not for patterns:
+    assert_is((char *) "[a b c]#2", "b"); // patterns
+    assert_emit("abs(0)", 0);
+    assert_is("i=3;i--", 2); // todo bring variables to interpreter
+    assert_is("i=3.7;.3+i", 4); // todo bring variables to interpreter
+    assert_is("i=3;i*-1", -3); // todo bring variables to interpreter
+    assert_is("one plus two times three", 7);
+    //	print("OK %s %d"s % ("WASM",1));// only 1 handed over
+    //    print(" OK %d %d"s % (2, 1));// error: expression result unused [-Werror,-Wunused-value] OK
+    assert_emit("use wasp;use lowerCaseUTF;a='ÂÊÎÔÛ';lowerCaseUTF(a);a", "âêîôû")
+    test2Def();
+    testConstructorCast();
+    assert_emit("html{bold{'Hello'}}", "Hello"); // in wasmtime
+}
+
+void test_todos() {
+    todos();
+    // move to test_done() once done!
+}
+
+
+
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
 // 2022-12-03 : 2 sec WITHOUT runtime_emit, wasmtime 4.0 X86 on M1
@@ -4521,23 +4527,18 @@ void testCurrent() {
     // return;
     print("💡 starting current tests 💡");
     // testTruthiness();
-    testWhileNotCall();
-    testNotNegation();
-    testWhileNot();
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
-    test_ffi_raylib_simple_use_import();
+    // test_ffi_raylib_simple_use_import();
     // test_ffi_raylib();
     // test_ffi_sdl_debug();
     // test_ffi_sdl_red_square_demo();
     // exit(   0);
-
     skip(
         todos(); // WIP and BUGs
     )
     todo_done();
-
     // sleep(10);
     // exit(0);
     // test_dynlib_import_emit();

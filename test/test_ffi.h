@@ -570,8 +570,10 @@ void test_ffi_raylib_simple_use_import() {
 
     check_is(modul->functions["DrawCircle"].signature.parameters[3].type,int32t);
 
+    assert_emit("samples/raylib_circle.wasp",0);
     // assert_emit("samples/raylib_simple.wasp",0);
-    assert_emit("samples/raylib_simple_use.wasp",0);
+
+    // assert_emit("samples/raylib_simple_use.wasp",0);
 }
 
 static void test_ffi_raylib() {
