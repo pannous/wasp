@@ -327,7 +327,9 @@ public:
     }
 
     // Remove all elements where predicate returns true
-    void remove(bool (*predicate)(S &)) {
+    // e.g. list.remove([](int x) { return x < 0; });
+    template<typename Pred>
+    void remove(Pred predicate) {
         int write = 0;
         for (int read = 0; read < size_; read++) {
             if (!predicate(items[read])) {
@@ -339,51 +341,21 @@ public:
         size_ = write;
     }
 
-    // Remove all elements where predicate returns true (pointer version)
-    void remove(bool (*predicate)(S *)) {
-        int write = 0;
-        for (int read = 0; read < size_; read++) {
-            if (!predicate(&items[read])) {
-                if (write != read)
-                    items[write] = items[read];
-                write++;
-            }
-        }
-        size_ = write;
-    }
-
     // Filter: return new list with elements where predicate returns true
-    List<S> filter(bool (*predicate)(const S &)) {
+    // e.g. auto evens = list.filter([](int x) { return x % 2 == 0; });
+    template<typename Pred>
+    List<S> filter(Pred predicate) {
         List<S> result;
         for (int i = 0; i < size_; i++) {
             if (predicate(items[i]))
-                result.add(items[i]);
-        }
-        return result;
-    }
-
-    // Filter: by-value version (for compatibility with functions like fileExists(String))
-    List<S> filter(bool (*predicate)(S)) {
-        List<S> result;
-        for (int i = 0; i < size_; i++) {
-            if (predicate(items[i]))
-                result.add(items[i]);
-        }
-        return result;
-    }
-
-    // Filter: pointer version
-    List<S> filter(bool (*predicate)(S *)) {
-        List<S> result;
-        for (int i = 0; i < size_; i++) {
-            if (predicate(&items[i]))
                 result.add(items[i]);
         }
         return result;
     }
 
     // Any: returns true if any element matches predicate
-    bool any(bool (*predicate)(S &)) {
+    template<typename Pred>
+    bool any(Pred predicate) {
         for (int i = 0; i < size_; i++) {
             if (predicate(items[i]))
                 return true;
@@ -392,7 +364,8 @@ public:
     }
 
     // All: returns true if all elements match predicate
-    bool all(bool (*predicate)(S &)) {
+    template<typename Pred>
+    bool all(Pred predicate) {
         for (int i = 0; i < size_; i++) {
             if (!predicate(items[i]))
                 return false;
@@ -401,8 +374,8 @@ public:
     }
 
     // Count: returns number of elements matching predicate
-    // e.g. nums.count(+[](int &x) { return x < 0; });
-    int count(bool (*predicate)(S &)) {
+    template<typename Pred>
+    int count(Pred predicate) {
         int c = 0;
         for (int i = 0; i < size_; i++) {
             if (predicate(items[i]))
@@ -439,35 +412,38 @@ public:
             add(s);
     }
 
-    void each(void (*lambda)(S)) {
-        for (auto &s: *this) {
-            lambda(s);
-        }
-    }
-
-//    list.map(+[](Function *f) { return f->name; });
-// ⚠️ note the + in "+[]" to make it a lambda!
-    template<class T>
-    List<T> map(T (*lambda)(S)) {
-        List<T> neu;
+    template<typename Func>
+    void each(Func lambda) {
         for (auto &s: *this)
-            neu.add(lambda(s));
-        return neu;
+            lambda(s);
     }
 
-    // e.g. nums.find(+[](int &x) { return x < 0; });
-    S *find_first(bool (*lambda)(const S &)) {
-        for (S *s: *this)
-            if (lambda(s))return s;
+    // e.g. list.map([](Function *f) { return f->name; });
+    template<typename Func>
+    auto map(Func lambda) -> List<decltype(lambda(items[0]))> {
+        List<decltype(lambda(items[0]))> result;
+        for (auto &s: *this)
+            result.add(lambda(s));
+        return result;
+    }
+
+    // e.g. nums.find_first([](int x) { return x < 0; });
+    template<typename Pred>
+    S *find_first(Pred predicate) {
+        for (int i = 0; i < size_; i++)
+            if (predicate(items[i]))
+                return &items[i];
         return 0;
     }
 
-    List<S> find_all(bool (*lambda)(S &)) {
-        return filter(lambda);
+    template<typename Pred>
+    List<S> find_all(Pred predicate) {
+        return filter(predicate);
     }
 
-    List<S> select(bool (*lambda)(S &)) {
-        return filter(lambda);
+    template<typename Pred>
+    List<S> select(Pred predicate) {
+        return filter(predicate);
     }
 
 
