@@ -1,20 +1,35 @@
 #!/usr/bin/env wasp
-// Raylib FFI Example - Circle follows mouse cursor
-// Demonstrates using raylib graphics library via FFI with mouse input
+// Raylib FFI Example - Draw persistent trace with mouse
+// Demonstrates using raylib graphics library via FFI with mouse drawing
 
 import raylib
 
-InitWindow(800, 600, "Wasp Raylib - Mouse Circle Demo")
+InitWindow(800, 600, "Wasp Raylib - Paint Demo")
 SetTargetFPS(60)
+
+needsClear = 1
 
 while(!WindowShouldClose()){
     mouseX = GetMouseX()
     mouseY = GetMouseY()
 
     BeginDrawing()
-    ClearBackground(0xFFF5F5F5)
-    DrawText("Move your mouse!", 250, 20, 30, 0xFF505050)
-    DrawCircle(mouseX, mouseY, 40.0, 0xFF2E1990)
+
+    if(needsClear){
+        ClearBackground(0xFFF5F5F5)
+        needsClear = 0
+    }
+
+    if(IsMouseButtonDown(2)){
+        ClearBackground(0xFFF5F5F5)
+    }
+
+    if(IsMouseButtonDown(0)){
+        DrawCircle(mouseX, mouseY, 8.0, 0xFF2E1990)
+    }
+
+    DrawText("Left click to draw, Right click to clear", 180, 20, 20, 0xFF505050)
+    DrawCircle(mouseX, mouseY, 4.0, 0xFF808080)
     EndDrawing()
 }
 
