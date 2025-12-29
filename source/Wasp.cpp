@@ -41,6 +41,7 @@ bool isnumber(char c) { return c >= '0' and c <= '9'; }
 #endif
 
 #include "WitReader.h"
+#include "lsp_server.h"
 
 int __force_link_parser_globals = 1; // put this in other .cpp files to force linking parser globals:
 // extern int __force_link_parser_globals;
@@ -377,7 +378,7 @@ public:
         while (empty(ch) and (ch or at < 0))
             proceed(); // at=0
         previous = 0;
-        Node &result = valueNode(); // <<
+        Node &result = parseNode(); // <<
         white();
         if (ch and ch != -1 and ch != DEDENT) {
             printf("UNEXPECTED CHAR %c", ch);
@@ -643,7 +644,7 @@ private:
                 if (next == '{') {
                     proceed(); // skip $
                     proceed(); // skip {
-                    auto nodes = valueNode('}');
+                    auto nodes = parseNode('}');
                     chunks.add(nodes); //.setKind(expression)); // ${1+2}
                 } else {
                     chunks.add(Node(parseIdentifier().clone()).setKind(referencex)); // $test
@@ -927,7 +928,7 @@ private:
             return numbero();
         if (ch == u'‖') {
             proceed(); // todo: better ;)
-            return (*new Node("‖")).add(valueNode(u'‖').clone()).setKind(operators, false);
+            return (*new Node("‖")).add(parseNode(u'‖').clone()).setKind(operators, false);
             //			return (*new Node("abs")).setType(Kind::call, false);
         }
         if (ch == '$' and parserOptions.dollar_names and is_identifier(next)) {
@@ -938,7 +939,7 @@ private:
             return parseOperator();
         if (is_identifier(ch))
             return *resolve(Node(parseIdentifier(), true)).clone(); // or op
-        error("Unexpected symbol character "s + String((char) text[at]) + String((char) text[at + 1]) +
+        error("Unexpected symbol character ‘"s + String((char) text[at]) + "’" + String((char) text[at + 1]) +
             String((char) text[at + 2]));
         return (Node &) NIL;
     }
@@ -971,6 +972,8 @@ private:
 
     Node &expressione(codepoint closer) {
         Node &node = symbol();
+        if(function_keywords.has(node.name.data))
+            return parseDeclaration(closer);
         if (lookahead_ambiguity())
             return node;
         // {a:1 b:2} vs { x = add 1 2 }
@@ -1109,7 +1112,7 @@ private:
         // overloadable grouping operators, but not builtin (){}[]
         let grouper = ch;
         proceed();
-        auto &body = valueNode(closingBracket(grouper));
+        auto &body = parseNode(closingBracket(grouper));
         Node group(grouper);
         group.setKind(operators, false); // name==« (without »)
         group.add(body);
@@ -1126,7 +1129,7 @@ private:
     // significant whitespace a {} == a,{}{}
     // todo a:[1,2] ≠ a[1,2] but a{x}=a:{x}? OR better a{x}=a({x}) !? but html{...}
     // reason for strange name is better IDE findability, todo rename to readNode() or parseNode()?
-    Node &valueNode(codepoint close = 0, Node *parent = 0) {
+    Node &parseNode(codepoint close = 0, Node *parent = 0) {
         Node &actual = *new Node(); // current already used in super context
         actual.parent = parent;
         actual.setKind(groups);
@@ -1258,6 +1261,47 @@ private:
         Node &result = actual.flat();
         return result;
     };
+
+
+    Node& parseDeclaration(codepoint closer) {
+        proceed();
+        Node &fun = symbol();
+        fun.setKind(declaration, false);
+        Node args=NIL;
+        List<chars> block_markers={":",":=","=","is","be","do","\n"};//," of "," as "," in "," is "," like "}; "then" for if
+        if(ch=='(') {
+            proceed('(');
+            args=parseNode(')');
+        }else {
+            int first_pos = line.length;
+            chars first_marker;
+            for(chars block_marker : block_markers) {
+                int pos = line.indexOf(block_marker, at);
+                if(pos!=-1 and pos<first_pos) {
+                    first_pos=pos;
+                    first_marker = block_marker;
+                }
+            }
+            // if(not first_marker)first_marker="\n";
+            String argString = line.to(first_pos).trim();
+            at += argString.length;
+            if(first_marker)parseOperator();
+            // proceed(); // to skip space or marker
+            args = parse(argString.data,parserOptions);
+            args = parseNode(first_marker[0]); // until first block marker
+        }
+        if(ch=='{') {
+            proceed('{');
+            closer = '}';
+        }
+        // Node block=parseBlock();
+        Node block=parseNode(closer);
+        fun["params"]=args;
+        fun["body"]=block;
+        return fun;
+    }
+
+
 
     bool isKebabBridge() {
         // isHyphen(Bridge) e.g. a-b in special ids like in component model
@@ -1504,6 +1548,8 @@ int main(int argc, char **argv) {
             else
                 print("Wasp compiled without server OR no program given!");
 #endif
+        } else if (args == "lsp") {
+            return lsp_main();
         } else if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
         else if (args.contains("compile") or args.contains("build") or args.contains("link")) {
