@@ -139,7 +139,9 @@ unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
         return nop_;
     if ((Type) kind == unknown_type)
         error("unknown type should be inferred by now");
-    if (kind == voids or kind == void_block or kind == i32t) {
+    // if((Kind)kind == bools) {
+    // }
+    if (kind == voids or kind == void_block or kind == i32t or (Kind)kind == bools) {
         // INT32
         if (eq(s, "+"))return i32_add; // i32.add
         //		if (eq(s, "-") and previous==none)return sign_flip; *-1
@@ -3781,6 +3783,7 @@ Code emitTypeSection() {
 
 Valtype fixValtype(Valtype valtype) {
     if (valtype == (Valtype) charp) return int32t;
+    if (valtype == (Valtype) bools) return int32t;
     if (valtype == void_block or valtype == none or valtype == (Valtype)0x40)
         error("void_block/none (0x40) cannot be used as function parameter or return type");
     if ((int) valtype >= node)

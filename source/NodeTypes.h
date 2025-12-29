@@ -219,6 +219,7 @@ enum Primitive /*32*/ {
 
     //    Kind::undefined = 0 ==
     unknown_type = 0, // defaults to int64!
+    // booli = 0x20,
     missing_type = 0x40, // well defined
     nulls = 0x40, // ≠ undefined
     wasm_type = 0x6b, /* ⚠️ PLUS stuct type ID! */
@@ -627,7 +628,7 @@ Type mapType(String &arg, bool throws = false);
 Type mapType(Node &arg);
 
 //Type mapType(Node *arg,bool throws=false);
-Type mapType(Node *arg);
+Type mapType(Node *arg); // also see fixValtype
 
 chars typeName(Valtype t, bool fail = true);
 

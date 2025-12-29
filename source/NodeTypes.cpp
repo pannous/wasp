@@ -127,6 +127,7 @@ Type mapType(Node *arg) {
 }
 
 Type mapType(String& arg, bool throws) {
+// also see fixValtype
     if (arg.startsWith("const ")) // todo modifiers!
         return mapType(arg.substring(6).clone(), throws); // remove const
     //	if(arg=="const char*")return charp;
@@ -448,6 +449,7 @@ Valtype mapTypeToWasm(Type t) {
     return Valtype::int32t;
 }
 
+// also see fixValtype
 Primitive mapTypeToPrimitive(Node &n) {
     if (n == IntegerType)
         return Primitive::wasm_int32;
@@ -729,6 +731,7 @@ Valtype mapTypeToWasm(Primitive p) {
             return Valtype::float32t;
         case wasm_int64:
             return Valtype::i64;
+        // case booli:
         case wasm_int32:
             return Valtype::int32t;
         case type32:
