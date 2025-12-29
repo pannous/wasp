@@ -137,6 +137,79 @@ void testIf() {
     )
 }
 
+void testIfCallZero() {
+    tests_executed++;
+    assert_emit("def zero(){0};zero()", 0);
+    assert_emit("def zero(){0};2+zero()", 2);
+    assert_emit("def six(){6};six()", 6);
+    assert_emit("def six(){6};2+six()", 8);
+    assert_emit("def zero(){0};if(2):{3}", 3);
+    assert_emit("def zero(){0};if 2 : 3 else 4", 3);
+
+    assert_emit("def zero(){0};if zero():3", false);
+    assert_emit("def zero(){0};if(zero()):{3}", false);
+    assert_emit("def zero(){0};if(zero()):{3} else {4}", 4);
+    assert_emit("def zero(){0};if(zero()):{3} else 4", 4);
+    assert_emit("def zero(){0};if zero():3 else {4}", 4);
+    assert_emit("def zero(){0};if {zero()}:3 else 4", 4);
+    assert_emit("def zero(){0};if zero():3 else 4", 4);
+    assert_emit("def zero(){0};if zero():{3} else 4", 4);
+    assert_emit("def zero(){0};if zero():{3} else 4", 4);
+    assert_emit("def zero(){0};if zero() {3} else {4}", 4);
+    assert_emit("def zero(){0};if(zero()){3} else 4", 4);
+    assert_emit("def zero(){0};if 2 {3} else {4}", 3);
+    assert_emit("def zero(){0};if (2) {3} else 4", 3);
+    assert_emit("def zero(){0};if(2){3} else 4", 3);
+    assert_emit("def zero(){0};if zero() {3} else {4}", 4);
+    assert_emit("def zero(){0};if(zero()){3} else {4}", 4);
+    assert_emit("def zero(){0};if (zero()) {3} else {4}", 4);
+    assert_emit("def zero(){0};if (zero()) {3}", false);
+    assert_emit("def zero(){0};if (zero()) {3} else 4", 4);
+    assert_emit("def zero(){0};1 and zero() or 4", 4);
+    assert_emit("def zero(){0};if 1 then zero() else 4", (int64) 0);
+    assert_emit("def zero(){0};if zero() {3}", false);
+    assert_emit("def zero(){0};if(zero()){3}", false);
+    assert_emit("def zero(){0};if zero() {3} else 4", 4);
+}
+
+void testIfTwo() {
+    assert_emit("def two(){2};if (two()) {3} else {4}", 3);
+    assert_emit("def two(){2};if(two()){3} else {4}", 3);
+    assert_emit("def two(){2};if(two()):{3} else 4", 3);
+    assert_emit("def two(){2};if(two()):{3} else {4}", 3);
+    assert_emit("def two(){2};if two():{3} else 4", 3);
+    assert_emit("def two(){2};if two():3 else 4", 3);
+    assert_emit("def two(){2};if two():{3} else {4}", 3);
+    assert_emit("def two(){2};if two():3 else {4}", 3);
+    assert_emit("def two(){2};if two() {3}", 3);
+    assert_emit("def two(){2};if (two()) {3}", 3);
+    assert_emit("def two(){2};if(two()){3}", 3);
+    assert_emit("def two(){2};if two():{3}", 3);
+    assert_emit("def two(){2};if two():3", 3);
+    assert_emit("def two(){2};if two() {3} else 4", 3);
+    assert_emit("def two(){2};if{two() , 3 , 4}", 3); // lisp nonsense!
+    assert_emit("def two(){2};if two() then 3 else 4", 3);
+    assert_emit("def two(){2};if(two(),3,4)", 3);
+    assert_emit("def two(){2};if({two()},{3},{4})", 3);
+    assert_emit("def two(){2};if (two()) {two()} else {4}", 2);
+    assert_emit("def two(){2};if(two()){two()} else {4}", 2);
+    assert_emit("def two(){2};if(two()):{two()} else 4", 2);
+    assert_emit("def two(){2};if(two()):{two()} else {4}", 2);
+    assert_emit("def two(){2};if two():{two()} else 4", 2);
+    assert_emit("def two(){2};if two():two() else 4", 2);
+    assert_emit("def two(){2};if two():{two()} else {4}", 2);
+    assert_emit("def two(){2};if two():two() else {4}", 2);
+    assert_emit("def two(){2};if two() {two()}", 2);
+    assert_emit("def two(){2};if (two()) {two()}", 2);
+    assert_emit("def two(){2};if(two()){two()}", 2);
+    assert_emit("def two(){2};if two():{two()}", 2);
+    assert_emit("def two(){2};if two():two()", 2);
+    assert_emit("def two(){2};if two() {two()} else 4", 2);
+    assert_emit("def two(){2};if{two() , two() , 4}", 2);
+    assert_emit("def two(){2};if two() then two() else 4", 2);
+    assert_emit("def two(){2};if(two(),two(),4)", 2);
+    assert_emit("def two(){2};if({two()},{two()},{4})", 2);
+}
 
 void testIfMath() {
     tests_executed++;
