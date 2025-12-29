@@ -3343,16 +3343,14 @@ Code zeroConst(Type returnType) {
     else if (returnType == i64)
         code.addConst64(0);
     else if (returnType == float32t) {
-        todo("f32 zeroConst");
+        // todow("f32 zeroConst");
         code.add(f32_const);
-        code.push(0);
-        // code.push((bytes) malloc(4), 4);
+        code.push((bytes) malloc(4), 4);
     }
     else if (returnType == float64t) {
-        todo("f64 zeroConst");
+        // todow("f64 zeroConst"); works?
         code.add(f64_const);
-        code.push(0);
-        // code.push((bytes) malloc(8), 8);
+        code.push((bytes) malloc(8), 8);
     }
     else error("zeroConst for returnType %s not implemented"_s % typeName(returnType));
     return code;
