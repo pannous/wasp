@@ -173,7 +173,7 @@ Node &groupIf(Node n, Function &context) {
     ef.kind = expression;
     //	ef.kind = ifStatement;
     if (condition.length > 0)condition.setKind(expression); // so far treated as group!
-    if (then.length > 0)then.setKind(expression);
+    if (then.length > 0 and then.kind!=reference)then.setKind(expression);
     if (otherwise.length > 0)otherwise.setKind(expression);
 
     ef["condition"] = analyze(condition, context);

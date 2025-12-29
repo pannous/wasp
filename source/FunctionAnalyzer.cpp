@@ -280,7 +280,7 @@ Node &groupFunctionCalls(Node &node, Function &context) {
     for (int i = 0; i < node.length; ++i) {
         Node &child = node.children[i];
         String &name = child.name;
-        // todo: MOVE!
+        // todo: MOVE to analyze()!
         if (name == "if") // kinda functor
         {
             if(i>0)error("if should be first in expression");
@@ -289,7 +289,9 @@ Node &groupFunctionCalls(Node &node, Function &context) {
             return groupIf(child.length > 0 ? child.add(args) : args, context);
         }
         if (name == "while") {// ok different:
-            // i=1;while(i<9)i++;i+1 has leftovers!!
+        // todo: MOVE to analyze()!
+            // i=1;while(i<9)i++;i+1 has leftovers!! IGNORE EDGE CASE! or use condition.next
+            // i=1;while i<10 do {i++};i
             // error("while' should be treated earlier");
             parseWhileExpression(child, node, i, context);
             continue;

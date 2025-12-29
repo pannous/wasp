@@ -4552,6 +4552,7 @@ void testCurrent() {
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
+    eval("./samples/raylib_mouse_circle.wasp");
     test_list_lambdas();
     // test_ffi_raylib_simple_use_import();
     // test_ffi_raylib();

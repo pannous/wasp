@@ -700,13 +700,13 @@ chars typeName(Valtype t, bool fail) {
         //            return "unknown";// internal
         default: {
             chars s = typeName((Primitive) t);
-            if (s)return s;
+            if (s and s!="?")return s;
             s = typeName((Kind) t);
-            if (s)return s;
+            if (s and s!="?")return s;
             s = typeName((Valtype) t);
-            if (s)return s;
+            if (s and s!="?")return s;
             s = typeName((Type) t);
-            if (s)return s;
+            if (s and s!="?")return s;
             //			if (t==30)return "BUG!";// hide bug lol
             if (fail)
                 error("missing name for Valtype %x "s % t + t);
