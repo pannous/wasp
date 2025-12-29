@@ -1,0 +1,14 @@
+#!/usr/bin/env wasp
+// Test if condition with variable
+
+flag = 1
+
+if(flag){
+    puti(42)
+}
+
+if(flag == 1){
+    puti(43)
+}
+
+1
