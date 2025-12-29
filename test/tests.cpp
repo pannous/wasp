@@ -4553,6 +4553,10 @@ void testCurrent() {
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
     // eval("./samples/raylib_mouse_circle.wasp");
+    // testIfCallZero();
+    // testIf();
+    test_ffi_all();
+
     testSinus();
     test_list_lambdas();
     // test_ffi_raylib_simple_use_import();

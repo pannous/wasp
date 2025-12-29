@@ -371,7 +371,6 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
     // Handle imports
     if (node.first().name == "import" and node.first().length > 0)
         node = directInclude(node);
-
     // if (contains(import_keywords, (chars) node.first().name.data))
     //     node = parseImport(actual, node);  do in Angle!
 

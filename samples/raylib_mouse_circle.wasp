@@ -20,11 +20,11 @@ while(!WindowShouldClose()){
         needsClear = 0
     }
 
-    if(IsMouseButtonDown(2)){
+    if(IsMouseButtonDown(2)==1){
         ClearBackground(0xFFF5F5F5)
     }
 
-    if(IsMouseButtonDown(0)){
+    if(IsMouseButtonDown(0)==1){
         DrawCircle(mouseX, mouseY, 8.0, 0xFF2E1990)
     }
 
