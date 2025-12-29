@@ -7,6 +7,8 @@
 #ifndef WASM
 // ok as wasi?
 #include "unistd.h"
+#include <mach-o/dyld.h>  // for _NSGetExecutablePath
+#include <limits.h>       // for PATH_MAX
 #include "NodeTypes.h"
 #include "List.h"
 #include "Angle.h"
@@ -136,6 +138,20 @@ String findFile(String filename, String current_dir) {
     return "";
 #else
     if (fileExists(filename))return filename;
+
+    // Check in executable's directory (e.g., /opt/homebrew/bin/)
+    char exe_path[PATH_MAX];
+    uint32_t size = sizeof(exe_path);
+    if (_NSGetExecutablePath(exe_path, &size) == 0) {
+        String exe_dir = String(exe_path);
+        int last_slash = exe_dir.lastIndexOf("/");
+        if (last_slash >= 0) {
+            exe_dir = exe_dir.substring(0, last_slash);
+            String exe_file_path = exe_dir + "/" + filename;
+            if (fileExists(exe_file_path))return exe_file_path;
+        }
+    }
+
     if (fileExists(current_dir + "/" + filename))return current_dir + "/" + filename;
     List<String> extensions = {"", ".wit", ".wasm", ".wast", ".wasp", ".witx"};
     List<String> folders = {"", "lib", "src", "wasp", "source", "include", "sample", "samples", "test", "tests"};
