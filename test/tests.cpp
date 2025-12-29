@@ -230,6 +230,28 @@ void testWaspRuntimeModule() {
     check_is(wasp.functions["square"].variants[1]->signature.parameters[0].type, reals);
 }
 
+void test_list_lambdas() {
+    tests_executed++;
+    List<int> nums = {1, -2, 3, -4, 5};
+    int negCount2 = nums.count(+[](int &x) { return x < 0; });
+    check(negCount2 == 2);
+
+    // Remove negatives in-place
+    nums.remove(+[](int &x) { return x < 0; }); // [1, 3, 5]
+    check(nums.length() == 3);
+
+    // Filter to new list
+    auto positives = nums.filter(+[](int &x) { return x > 0; });
+    check(positives.length() == 3);
+
+    // Check conditions
+    bool hasNeg = nums.any(+[](int &x) { return x < 0; });
+    bool allPos = nums.all(+[](int &x) { return x > 0; });
+    int negCount = nums.count(+[](int &x) { return x < 0; });
+    check(negCount == 0);
+    check(!hasNeg);
+    check(allPos);
+}
 
 void testMetaField() {
     tests_executed++;
@@ -4393,6 +4415,8 @@ void todo_done() {
     test_ffi_sdl();
     // SDL tests temporarily disabled - debugging type mismatches
     // test_ffi_sdl_red_square_demo();
+    test_list_lambdas();
+
     testMapOfStrings();
     testMapOfStringValues();
     testMaps();
@@ -4513,28 +4537,7 @@ void test_todos() {
 }
 
 
-void test_list_lambdas() {
-    tests_executed++;
-    List<int> nums = {1, -2, 3, -4, 5};
-    int negCount2 = nums.count(+[](int &x) { return x < 0; });
-    check(negCount2 == 2);
 
-    // Remove negatives in-place
-    nums.remove(+[](int &x) { return x < 0; }); // [1, 3, 5]
-    check(nums.length() == 3);
-
-    // Filter to new list
-    auto positives = nums.filter(+[](int &x) { return x > 0; });
-    check(positives.length() == 3);
-
-    // Check conditions
-    bool hasNeg = nums.any(+[](int &x) { return x < 0; });
-    bool allPos = nums.all(+[](int &x) { return x > 0; });
-    int negCount = nums.count(+[](int &x) { return x < 0; });
-    check(negCount == 0);
-    check(!hasNeg);
-    check(allPos);
-}
 
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
@@ -4555,10 +4558,9 @@ void testCurrent() {
     // eval("./samples/raylib_mouse_circle.wasp");
     // testIfCallZero();
     // testIf();
-    test_ffi_all();
+    // test_ffi_all();
 
-    testSinus();
-    test_list_lambdas();
+    // testSinus();
     // test_ffi_raylib_simple_use_import();
     // test_ffi_raylib();
     // test_ffi_sdl_debug();

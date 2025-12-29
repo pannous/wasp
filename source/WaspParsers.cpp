@@ -368,19 +368,14 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
     node.line = &line;
 #endif
 
-    // Handle imports
     if (node.first().name == "import" and node.first().length > 0)
         node = directInclude(node);
     // if (contains(import_keywords, (chars) node.first().name.data))
     //     node = parseImport(actual, node);  do in Angle!
 
-    // Don't convert FFI imports to operators - they need to stay as functors
-    bool is_ffi_import = (node.name == "import" && node.kind == functor);
-
 #ifndef RUNTIME_ONLY
-    if (!is_ffi_import && (precedence(node) or operator_list.has(node.name.data))) {
+    if ((precedence(node) or operator_list.has(node.name.data)))
         node.kind = operators;
-    }
 #endif
 
     if (node.kind == operators and ch != ':') {
@@ -389,11 +384,7 @@ void Wasp::parseExpression(Node &actual, codepoint close) {
         else actual.kind = expression;
     }
 
-    // FFI imports need to be added directly without flattening
-    if (is_ffi_import) {
-        // Add import node directly without flattening
-        actual.add(&node);
-    } else if (node.length > 1 and addFlat) {
+    if (node.length > 1 and addFlat) {
         for (Node arg: node)actual.add(arg);
         actual.kind = node.kind;
     } else {
