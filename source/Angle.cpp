@@ -809,6 +809,8 @@ Node &analyze(Node &node, Function &function) {
     // if (firstName == "while")// can't put here because of while x {…} needs full context? see groupFunctionCalls :(
     //     node = parseWhileExpression(first, node, 0, function);
     if (name == "for" or firstName == "for")return groupFor(node, function);
+    if( node.kind == declaration ) return groupDeclarations(node, function);
+
     if (name == "?")return groupIf(node, function);
     if (name == "module") {
         if (!module)module = new Module();

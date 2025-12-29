@@ -38,18 +38,20 @@ List<String> collectOperators(Node &expression) {
     return operators;
 }
 
-void checkRequiredCasts(String &op, const Node &lhs, Node &rhs, Function &context) {
+void checkRequiredCasts(String &op, Node &lhs, Node &rhs, Function &context) {
     // todo maybe add cast node here instead of in emit?
     Type left_kind = lhs.kind;
     Type right_kind = rhs.kind;
     if (right_kind == operators or right_kind == expression or right_kind == reference or right_kind == call)
         right_kind = preEvaluateType(rhs, context); // todo: use preEvaluateType for all rhs?
+    if(left_kind == operators or left_kind == expression or left_kind == reference or left_kind == call)
+        left_kind = preEvaluateType(lhs, context);
 
     if (op == "+" and left_kind == strings)
         useFunction("toString"); // todo ALL polymorphic variants! => get rid of these:
-    if (op == "+" and left_kind == strings and right_kind == longs)
+    if (op == "+" and (left_kind == strings or left_kind == stringp) and right_kind == longs)
         useFunction("formatLong");
-    if (op == "+" and left_kind == strings and (right_kind == reals or right_kind == realsF))
+    if (op == "+" and (left_kind == strings or left_kind == stringp) and (right_kind == reals or right_kind == realsF))
         useFunction("formatReal");
 }
 
