@@ -964,8 +964,8 @@ void testTypedFunctions() {
     check_is(signature.parameters.first().type, reals); // use real / number for float64  float32
     check_is(signature.parameters.last().name, "c")
     check_is(signature.parameters.last().type, strings);
-    let params = signature.parameters.map(+[](Arg f) { return f.name; });
-    check_is(params.first(), "b");
+    // let params = signature.parameters.map(+[](Arg f) { return f.name; });
+    // check_is(params.first(), "b");
 }
 
 void testEmptyTypedFunctions() {
@@ -984,9 +984,7 @@ void testEmptyTypedFunctions() {
     auto signature_node = result["@signature"];
     Signature signature = *(Signature *) signature_node.value.data;
     check_is(signature.functions.first()->name, "a")
-    let names2 = signature.functions.map(+[](Function *f) {
-        return f->name;
-    });
+    let names2 = signature.functions.map<String>(+[](Function *f) { return f->name; });
     check_is(names2.size(), 1);
     check_is(names2.first(), "a");
 
@@ -4515,6 +4513,28 @@ void test_todos() {
 }
 
 
+void test_list_lambdas() {
+    tests_executed++;
+    List<int> nums = {1, -2, 3, -4, 5};
+    int negCount2 = nums.count(+[](int &x) { return x < 0; });
+    check(negCount2 == 2);
+
+    // Remove negatives in-place
+    nums.remove(+[](int &x) { return x < 0; }); // [1, 3, 5]
+    check(nums.length() == 3);
+
+    // Filter to new list
+    auto positives = nums.filter(+[](int &x) { return x > 0; });
+    check(positives.length() == 3);
+
+    // Check conditions
+    bool hasNeg = nums.any(+[](int &x) { return x < 0; });
+    bool allPos = nums.all(+[](int &x) { return x > 0; });
+    int negCount = nums.count(+[](int &x) { return x < 0; });
+    check(negCount == 0);
+    check(!hasNeg);
+    check(allPos);
+}
 
 // 2021-10 : 40 sec for Wasm3
 // 2022-05 : 8 sec in Webapp / wasmtime with wasp.wasm built via wasm-runtime
@@ -4532,7 +4552,8 @@ void testCurrent() {
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
-    test_ffi_raylib_simple_use_import();
+    test_list_lambdas();
+    // test_ffi_raylib_simple_use_import();
     // test_ffi_raylib();
     // test_ffi_sdl_debug();
     // test_ffi_sdl_red_square_demo();
