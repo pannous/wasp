@@ -95,8 +95,8 @@ inline bool extractFunctionSignature(String &decl, FFIHeaderSignature &sig) {
     if (decl.contains(':') and not decl.contains("::")) return false;
     if (decl.contains(';')) // remove trailing semicolon if present
         s = decl.substring(0, decl.lastIndexOf(";")).data;
-    if(decl.contains("WindowShouldClose"))
-        print("Debug decl: "s + decl);
+    // if(decl.contains("WindowShouldClose"))
+        // print("Debug decl: "s + decl);
 
     // ---- find parentheses ---------------------------------------------------
     int lpar = -1, rpar = -1;

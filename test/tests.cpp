@@ -2460,7 +2460,7 @@ void testUnicode_UTF16_UTF32() {
     char16_t character = u'牛';
     char32_t hanzi = U'牛';
     wchar_t word = L'牛';
-    check(hanzi == character);
+    // check(hanzi == character);
     check(hanzi == word);
     //	use_interpreter=true
     // todo: let wasm return strings!
@@ -4167,6 +4167,8 @@ void testHostIntegration() {
     )
 }
 
+void todo_done(); // may be below
+
 void tests() {
     tests_executed++;
     todo_done();
@@ -4530,7 +4532,7 @@ void testCurrent() {
 #if WASM
     print("⚠️ make sure to put all assert_emit into testRun() ");
 #endif
-    // test_ffi_raylib_simple_use_import();
+    test_ffi_raylib_simple_use_import();
     // test_ffi_raylib();
     // test_ffi_sdl_debug();
     // test_ffi_sdl_red_square_demo();

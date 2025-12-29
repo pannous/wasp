@@ -494,7 +494,7 @@ String demangle(const String &fun) {
     char *result = 0;
     int status = -1;
 #if MY_WASM
-    result = js_demangle(fun);
+    result = js_demangle(fun.data);
     status = 1;
     // print("demangled "s+fun+" to "s+result);
 #elif not WASM

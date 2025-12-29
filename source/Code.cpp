@@ -111,7 +111,7 @@ String sectionName(Sections section) {
             return "string";
         default:
             error("INVALID SECTION #%d\nprevious section must have been corrupted\n"s % section);
-            return "INVALID";
+            // return "INVALID";
     }
 }
 

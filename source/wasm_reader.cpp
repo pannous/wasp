@@ -492,7 +492,7 @@ void fixupGenerics(char *s, int len) {
 char *demangle(String &fun) {
     char *string = 0;
 #if MY_WASM
-    string = js_demangle(fun); // https://github.com/kripken/cxx_demangle/blob/master/demangle.js
+    string = js_demangle(fun.data); // https://github.com/kripken/cxx_demangle/blob/master/demangle.js
     return string;
 #else
     int status;
@@ -761,7 +761,7 @@ Module &read_wasm(String file) {
     bytes buffer;
 #if MY_WASM
     size_t size = 0;
-    buffer = getWasmFunclet(file,&size);// load from host
+    buffer = getWasmFunclet(file.data,&size);// load from host
 #elif WASM
     return *new Module();
 #else

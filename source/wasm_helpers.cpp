@@ -249,7 +249,7 @@ extern "C" char *run(chars x) {
 	if (smartNode) {
 		auto pNode = reconstructWasmNode(smartNode);
 		if (pNode)
-			return pNode->serialize();
+			return pNode->serialize().data;
 	}
 	return (char *) "need asyncify for result";
 }
