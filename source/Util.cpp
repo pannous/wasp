@@ -4,11 +4,11 @@
 #include "Util.h"
 #include "Code.h"
 
+String executable_path; // set from argv[0] in main()
+
 #ifndef WASM
 // ok as wasi?
 #include "unistd.h"
-#include <mach-o/dyld.h>  // for _NSGetExecutablePath
-#include <limits.h>       // for PATH_MAX
 #include "NodeTypes.h"
 #include "List.h"
 #include "Angle.h"
@@ -140,13 +140,10 @@ String findFile(String filename, String current_dir) {
     if (fileExists(filename))return filename;
 
     // Check in executable's directory (e.g., /opt/homebrew/bin/)
-    char exe_path[PATH_MAX];
-    uint32_t size = sizeof(exe_path);
-    if (_NSGetExecutablePath(exe_path, &size) == 0) {
-        String exe_dir = String(exe_path);
-        int last_slash = exe_dir.lastIndexOf("/");
+    if (executable_path.length > 0) {
+        int last_slash = executable_path.lastIndexOf("/");
         if (last_slash >= 0) {
-            exe_dir = exe_dir.substring(0, last_slash);
+            String exe_dir = executable_path.substring(0, last_slash);
             String exe_file_path = exe_dir + "/" + filename;
             if (fileExists(exe_file_path))return exe_file_path;
         }

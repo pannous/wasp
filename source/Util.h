@@ -142,6 +142,8 @@ extern void info(chars);
 extern void info(const String& msg);
 extern void warn(chars);
 
+extern String executable_path; // set from argv[0] in main()
+
 extern void warning(chars);
 
 // use host fetch if available, else c++ fetch (curl)
