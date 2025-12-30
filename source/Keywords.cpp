@@ -85,8 +85,8 @@ List<chars> setter_operators = {"="};
 List<chars> return_keywords = {"return", "yield", "as", "=>", ":", "->"}; // "convert … to " vs "to print(){}"
 List<chars> function_operators = {":="}; //, "=>", "->" ,"<-"};
 List<chars> function_keywords = {
-    "def", "defn", "define", "to", "ƒ", "fn", "fun", "func", "function", "method",
-    "proc", "procedure"
+    "def", "defn", "define", "ƒ", "fn", "fun", "func", "function", "method",
+    "proc", "procedure" // todo "to", versus 1 to 10 range !
 };
 List<String> function_modifiers = {
     "public", "static", "export", "import", "extern", "external", "C", "global",

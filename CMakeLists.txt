@@ -365,7 +365,7 @@ endif ()
 # COMMON FOR ALL
 set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/String.cpp ${SOURCE}/Node.cpp ${SOURCE}/Map.cpp ${SOURCE}/Util.cpp ${SOURCE}/List.cpp
         ${SOURCE}/CharUtils.cpp ${SOURCE}/LiteralParser.cpp
-        ${SOURCE}/Wasp.cpp ${SOURCE}/lsp_server.cpp ${SOURCE}/wasm_helpers.cpp ${SOURCE}/Code.cpp ${SOURCE}/NodeTypes.cpp ${SOURCE}/smart_types.cpp
+        ${SOURCE}/Wasp.cpp ${SOURCE}/wasm_helpers.cpp ${SOURCE}/Code.cpp ${SOURCE}/NodeTypes.cpp ${SOURCE}/smart_types.cpp
         ${SOURCE}/Runtime.cpp
 )
 # NOTE: WaspParsers.cpp is #included in Wasp.cpp, not compiled separately
@@ -385,6 +385,7 @@ endif ()
 if (WASM)
     #elseif (MY_WASM)
 else ()
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/lsp_server.cpp)
     set(CURL 1)  # only 800 bytes via -lcurl !
 endif ()
 

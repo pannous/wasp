@@ -15,7 +15,7 @@ Node &funcDeclaration(String name, Node &node, Node &body, Node *returns, Module
 Node &groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node &arguments, Node &body,
                                Function &context);
 
-Node &groupFunctionDeclaration(Node &expression, Function &context);
+Node &groupFunctionDeclaration(Node &node, Function &context);
 
 Node &groupFunctionDefinition(Node &expression, Function &context);
 
@@ -25,7 +25,7 @@ Node &groupFunctionCalls(Node &node, Function &context);
 
 Node extractModifiers(Node &expression);
 
-Node extractReturnTypes(Node decl, Node body);
+Type extractReturnTypes(Node decl, Node body, Function *context = 0);
 
 void discard(Node &node);
 

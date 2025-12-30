@@ -122,6 +122,9 @@ Code Call(char *symbol); //Node* args
 // * ∗ ⋅ ⋆ ✕ ×  …
 unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
     //	previous is lhs in binops!
+    if (eq(s, "and")) {
+        printf("opcodes AND called with kind=%d\n", kind);
+    }
     if (kind == string_ref or previous == string_ref) {
         if (eq(s, "+"))return string_concat;
         if (eq(s, " "))return string_concat;
@@ -239,7 +242,8 @@ unsigned short opcodes(chars s, Valtype kind, Valtype previous = none) {
         if (eq(s, "¬"))return i64_eqz; // i64.eqz
         if (eq(s, "!"))return i64_eqz; // i64.eqz
     } else if (kind == f64t) {
-        if (eq(s, "not"))return f64_eqz; // f64.eqz  // HACK: no such thing!
+        // if (eq(s, "and"))return i64_and; // i64.and // HACK: no such thing! for truthy!
+        if (eq(s, "not"))return f64_eqz; // f64.eqz  // HACK: no such thing! todo: general truthy function!
         if (eq(s, "¬"))return f64_eqz; // f64.eqz  // HACK: no such thing!
         if (eq(s, "!"))return f64_eqz; // f64.eqz  // HACK: no such thing!
         if (eq(s, "+"))return f64_add; // f64.add
@@ -414,7 +418,97 @@ Code emitSimilar(Node &node, Function &context) {
     Code code;
     // a ≈ b <> | a - b | < ε
     //    code.add(emitCall("similar", context));
-    todow("emitSimilar a ≈ b <> | a - b | < ε    e.g. π≈3.14159");
+    // todo this is already handled somewhere else and can be removed
+    todo("emitSimilar a ≈ b <> | a - b | < ε    e.g. π≈3.14159");
+    return code;
+}
+
+Code emitTruthyAnd(Node &node, Function &context) {
+    // a && b => truthy(a) ? b : a
+    Code code;
+    Node &left = node[0];
+    Node &right = node[1];
+
+    // Emit left operand
+    code = code + emitExpression(left, context);
+    Type left_type = last_type;
+
+    // Allocate temporary local to store left value (auto-generated name to avoid conflicts)
+    int temp_local = context.allocateLocal();  // Auto-generates "local_N"
+    String temp_name = "local_"s + temp_local;
+    context.locals[temp_name].type = left_type;
+
+    // Store left in local (tee_local leaves value on stack)
+    code.addByte(tee_local);
+    code.add(temp_local);
+
+    // Cast to i32 for truthiness test
+    code.add(cast(left_type, int32t));
+
+    // if (truthy(left))
+    code.addByte(if_i);
+
+    // Generate then block (right operand) to determine result type
+    auto then_code = emitExpression(right, context);
+    Type result_type = last_type;
+
+    // Add result type and then block
+    code.addByte(mapTypeToWasm(result_type));
+    code = code + then_code;
+
+    // else: return left (cast to match result type)
+    code.addByte(else_);
+    code.addByte(get_local);
+    code.add(temp_local);
+    code.add(cast(left_type, result_type));
+
+    code.addByte(end_block);
+    last_type = result_type;
+    context.track(node, code, 0);
+    return code;
+}
+
+
+Code emitTruthyOr(Node &node, Function &context) {
+    // a || b => truthy(a) ? a : b
+    Code code;
+    Node &left = node[0];
+    Node &right = node[1];
+
+    // Emit left operand
+    code = code + emitExpression(left, context);
+    Type left_type = last_type;
+
+    // Allocate temporary local to store left value (auto-generated name to avoid conflicts)
+    int temp_local = context.allocateLocal();  // Auto-generates "local_N"
+    String temp_name = "local_"s + temp_local;
+    context.locals[temp_name].type = left_type;
+
+    // Store left in local (tee_local leaves value on stack)
+    code.addByte(tee_local);
+    code.add(temp_local);
+
+    // Cast to i32 for truthiness test
+    code.add(cast(left_type, int32t));
+
+    // if (truthy(left))
+    code.addByte(if_i);
+
+    // then: return left
+    Type result_type = left_type;
+    code.addByte(mapTypeToWasm(result_type));
+    code.addByte(get_local);
+    code.add(temp_local);
+
+    // else: emit right
+    code.addByte(else_);
+    auto else_code = emitExpression(right, context);
+    result_type = last_type;
+    code = code + else_code;
+
+    code.addByte(end_block);
+    last_type = result_type;
+    context.track(node, code, 0);
     return code;
 }
 
@@ -2141,6 +2235,10 @@ Code emitOperator(Node &node, Function &context) {
         return emitIf(node, context);
     } else if (name == "≈") {
         return emitSimilar(node, context);
+    } else if (name == "and" or name == "&&") {
+        return emitTruthyAnd(node, context);
+    } else if (name == "or" or name == "||") {
+        return emitTruthyOr(node, context);
     } else if (name == "ⁿ") {
         if (node.length == 1) {
             code.add(cast(last_type, float64t)); // todo all casts should be auto-cast (in emitCall) now, right?
@@ -3531,6 +3629,9 @@ Code emitBlock(Node &node, Function &context) {
     Code inner_code_data = emitExpression(node, context);
 
     // locals can still be updated in emitExpression
+    // Recalculate locals_count to account for any locals added during emitExpression
+    locals_count = context.locals.size() - argument_count;
+    if (locals_count < 0) locals_count = 0;
 
     /// 1. Emit block type header
     block.addByte(locals_count);
@@ -3569,6 +3670,8 @@ Code emitBlock(Node &node, Function &context) {
 
     // 3. force / cast last type to return type
     auto returnTypes = context.signature.return_types;
+    if(returnTypes.empty())
+        returnTypes.add(voids);
     //	for(Valtype return_type: returnTypes) uh, casting should have happened before for  multi-value
     auto abi = wasp_smart_pointers; // context.abi;
     Valtype return_type = mapTypeToWasm(returnTypes[0]);

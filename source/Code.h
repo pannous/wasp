@@ -1222,6 +1222,8 @@ public:
                 return_types.add(valtype);
             else if (valtype == externref)
                 return_types.add(valtype);
+            else if ((Primitive)valtype == stringp)
+                return_types.add(smarti64);
             else
                 error("UNKNOWN Valtype mapping "s + typeName(valtype));
 #if DEBUG and not WASM

@@ -1256,6 +1256,8 @@ private:
                     break;
             }
         }
+        if(close == ':')
+            error("':' as close");
         if (close and not isWhite(close) and close != ';' and close != ',')
             error("unclosed pair "s + close); // todo remember opening pair line
         Node &result = actual.flat();
@@ -1294,11 +1296,20 @@ private:
             proceed('{');
             closer = '}';
         }
+        if(ch==':' or ch=='=') {
+            proceed();
+            closer = ';';
+        }
+        if(ch=='\n') {
+            proceed();
+            closer = DEDENT;
+        }
         // Node block=parseBlock();
         Node block=parseNode(closer);
         fun["params"]=args;
         fun["body"]=block;
         return fun;
+        // return *fun.clone();
     }
 
 
@@ -1439,27 +1450,21 @@ void merge_files(int argc, char **argv);
 
 #if not CTESTS
 int main(int argc, char **argv) {
+    executable_path = argv[0];
     if (getenv("SERVER_SOFTWARE"))
         printf("Content-Type: text/plain\n\n"); // todo html
     String args;
     for (int i = 1; i < argc; ++i) args += i > 1 ? String(" ") + argv[i] : String(argv[i]);
-    String path = argv[0];
-    executable_path = path;
     //   String arg=extractArg(argv,argc);
-
 #if WASM
     initSymbols(); // todo still necessary ??
-    // String args((char*)alloc(1,1));// hack: written to by wasmx todo ??
-    // heap_end += strlen(args)+1; // todo WHAT IS THIS??
 #endif
-
 #if ErrorHandler
     register_global_signal_exception_handler();
 #endif
     try {
-        if (argc == 1) {
-            // no args, just program name
-#if not WASM
+        if (argc == 1) { // no args, just program name
+#if not WASM // todo but wasi pipes?
             // Check if stdin is a pipe (not a terminal)
             if (!isatty(STDIN_FILENO)) {
                 // Read from stdin and evaluate
