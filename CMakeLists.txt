@@ -118,7 +118,7 @@ if (NOT WASM)
         # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
         # ⚠️ NO engine has (c-api) support for wit / component model as of 2025-03 !!! ⚠️
         # https://github.com/bytecodealliance/wasmtime/issues/6987
-#        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
         set(WEBAPP 0)
         SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
         #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
@@ -693,10 +693,10 @@ if (WASM) # OR WASI)
     endif ()
     #    add_library(wasp SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
     if (RUNTIME_ONLY AND RELEASE) # not tests, compiler, ... 100kb as of 2024-04
-        add_executable(wasp-runtime ${SOURCE_FILES} ) # same as add_library, with or without --export-all
+        add_executable(wasp-runtime ${SOURCE_FILES}) # same as add_library, with or without --export-all
         # Add these commands after your main target definitions
         add_custom_command(TARGET wasp-runtime POST_BUILD
-#                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/cmake-build-test/"
+                #                COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/cmake-build-test/"
                 COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/source/"
                 COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/bin/wasm/"
                 COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/wasp-runtime.wasm" "${CMAKE_SOURCE_DIR}/docs/assets/"
@@ -912,14 +912,14 @@ elseif (WASMTIME)
 
     #    set(WASMTIME_PATCH 1)
     if (NOT LINUX)
-        ADD_DEFINITIONS(-DWASMTIME_PATCH)
+        #        ADD_DEFINITIONS(-DWASMTIME_PATCH)
     endif ()
     # Link against pre-built dynamic library
     if (APPLE)
-        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/libwasmtime.dylib)
-        #        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/deps/libwasmtime.dylib)
-        #        target_link_libraries(wasp PUBLIC /opt/homebrew/lib/libwasmtime.dylib)
+        target_link_libraries(wasp PUBLIC /opt/homebrew/lib/libwasmtime.dylib) # unpatched auto latest
         #        target_link_libraries(wasp PUBLIC /opt/homebrew/Cellar/wasmtime/latest/lib/libwasmtime.dylib) # unpatched!
+        #        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/libwasmtime.dylib)
+        #        target_link_libraries(wasp PUBLIC /opt/wasm/wasmtime/target/aarch64-apple-darwin/release/deps/libwasmtime.dylib)
         # Set rpath so the dylib can be found at runtime
         set_target_properties(wasp PROPERTIES
                 BUILD_RPATH "/opt/wasm/wasmtime/target/aarch64-apple-darwin/release"

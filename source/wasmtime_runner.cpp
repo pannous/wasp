@@ -1,7 +1,9 @@
 #include "wasi.h"
 #include "wasmtime.h"
 #include "wasmtime/val.h"
+#if WASMTIME_PATCH
 #include "wasmtime_extension.h" // wasmtime_anyref_is_struct via modified wasmtime/crates/c-api/src/ref.rs see wasmtime_modified_ref.rs
+#endif
 
 // #include "wasmtime/wasi.h"
 // #include "wasmtime/wasi.hh"
@@ -118,6 +120,7 @@ wasm_wrap *link_import(String name);
 int64 read_struct_field(const wasmtime_anyref_t &anyref, int field) {
     // Get field (e.g. the 'num' field with value 42)
     wasmtime_val_t field_val;
+
     if (wasmtime_anyref_struct_get_field(context, &anyref, field, &field_val)) {
         if (field_val.kind == WASMTIME_I32) {
             printf("Field %d value: %d\n", field, field_val.of.i32);
@@ -195,7 +198,7 @@ int64 read_ref(const wasmtime_val_t &results) {
 
 
 // makes the test 3X SLOWER!!! FIND OUT WHY and avoid similar overhead in real use!
-void copy_wasi_alias(wasmtime_linker_t *linker, wasmtime_error_t *&werr) {
+void copy_wasi_alias(wasmtime_linker_t *linker, wasmtime_error_t *&werr){
     //  wasi_snapshot_preview1 to wasi_unstable
     // Alias common WASI functions to wasi_unstable for compatibility with older WASM modules
 
