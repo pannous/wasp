@@ -73,6 +73,13 @@ public:
     void file(const char *string);
 
     void save(const char *file);
+
+    bool uses_native_library() {
+        for (int i = 0; i < functions.size(); i++)
+            if (functions.values[i].is_ffi) // && !func.ffi_library.empty()) {
+                return true;
+        return false;
+    }
 };
 
 

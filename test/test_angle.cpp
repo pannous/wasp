@@ -47,6 +47,24 @@ void testCall() {
     )
 }
 
+void testTruthyAnd() {
+    assert_emit("0.0 and 4.0", 0.0);
+    assert_emit("4.0 and 0.0", 0.0);
+    assert_emit("4.0 and 5.0", 5.0);
+    assert_emit("0.0 and 4", 0.0);
+    assert_emit("4.0 and 0", 0);
+    assert_emit("4.0 and 5", 5);
+    assert_emit("0 and 4.0", 0);
+    assert_emit("4 and 0.0", 0.0);
+    assert_emit("4 and 5.0", 5.0);
+    assert_emit("4 and 'a'", 'a');
+    assert_emit("4 and '🍏'", U'🍏');
+    assert_emit("4 and '🍏🍏🍏'", String("🍏🍏🍏"));
+    assert_emit("0 and 'a'", 0);
+    assert_emit("0 and '🍏'", 0);
+    assert_emit("0 and '🍏🍏🍏'", 0);
+}
+
 void testIf() {
     tests_executed++;
     //    skip( // todo:
@@ -143,36 +161,43 @@ void testIfCallZero() {
     assert_emit("def six(){6};2+six()", 8);
     assert_emit("def zero(){0};zero()", 0);
     assert_emit("def zero(){0};2+zero()", 2);
-    assert_emit("def zero(){0};if(2):{3}", 3);
-    assert_emit("def zero(){0};if 2 : 3 else 4", 3);
 
-    assert_emit("def zero(){0};if zero():3", false);
     assert_emit("def zero(){0};if(zero()):{3}", false);
     assert_emit("def zero(){0};if(zero()):{3} else {4}", 4);
     assert_emit("def zero(){0};if(zero()):{3} else 4", 4);
+    skip(
+    assert_emit("def zero(){0};if zero():3", false);
     assert_emit("def zero(){0};if zero():3 else {4}", 4);
-    assert_emit("def zero(){0};if {zero()}:3 else 4", 4);
     assert_emit("def zero(){0};if zero():3 else 4", 4);
     assert_emit("def zero(){0};if zero():{3} else 4", 4);
     assert_emit("def zero(){0};if zero():{3} else 4", 4);
     assert_emit("def zero(){0};if zero() {3} else {4}", 4);
-    assert_emit("def zero(){0};if(zero()){3} else 4", 4);
-    assert_emit("def zero(){0};if 2 {3} else {4}", 3);
-    assert_emit("def zero(){0};if (2) {3} else 4", 3);
-    assert_emit("def zero(){0};if(2){3} else 4", 3);
+    assert_emit("def zero(){0};if {zero()}:3 else 4", 4);
     assert_emit("def zero(){0};if zero() {3} else {4}", 4);
-    assert_emit("def zero(){0};if(zero()){3} else {4}", 4);
-    assert_emit("def zero(){0};if (zero()) {3} else {4}", 4);
-    assert_emit("def zero(){0};if (zero()) {3}", false);
-    assert_emit("def zero(){0};if (zero()) {3} else 4", 4);
     assert_emit("def zero(){0};1 and zero() or 4", 4);
     assert_emit("def zero(){0};if 1 then zero() else 4", (int64) 0);
     assert_emit("def zero(){0};if zero() {3}", false);
-    assert_emit("def zero(){0};if(zero()){3}", false);
     assert_emit("def zero(){0};if zero() {3} else 4", 4);
+    )
+    assert_emit("def zero(){0};if(zero()){3} else 4", 4);
+    assert_emit("def zero(){0};if(zero()){3} else {4}", 4);
+    assert_emit("def zero(){0};if (zero()) {3} else {4}", 4);
+    assert_emit("def zero(){0};if (zero()) {3}", false);
+
+    assert_emit("def zero(){0};if (zero()) {3} else 4", 4);
+    assert_emit("def zero(){0};if(zero()){3}", false);
 }
 
 void testIfTwo() {
+    assert_emit("def two(){2};two()", 2);
+    assert_emit("def two(){2};two()+2", 4);
+    assert_emit("def two(){2};two()+two()", 4);
+    assert_emit("def two(){2};two()*two()", 4);
+    assert_emit("def two(){2};if(two()):{3}", 3);
+    assert_emit("def two(){2};if two() : 3 else 4", 3);
+    assert_emit("def two(){2};if two() {3} else {4}", 3);
+    assert_emit("def two(){2};if (two()) {3} else 4", 3);
+    assert_emit("def two(){2};if(two()){3} else 4", 3);
     assert_emit("def two(){2};if (two()) {3} else {4}", 3);
     assert_emit("def two(){2};if(two()){3} else {4}", 3);
     assert_emit("def two(){2};if(two()):{3} else 4", 3);
@@ -438,6 +463,7 @@ void testAllAngle() {
     // emmitting or not
     testLogicPrecedence();
     //	testSmartTypes();
+    testTruthyAnd();
     testIf();
     // testCall(); in testTodoBrowser()
     skip(

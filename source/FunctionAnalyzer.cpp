@@ -46,7 +46,7 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     Function &function = functions[name]; // different from context!
     function.name = name;
     function.is_declared = true;
-    function.is_import = false;
+    function.is_import = false; // todo check modiferes for 'extern' or 'import'!
 
     Signature &signature = groupFunctionArgs(function, arguments);
     if (signature.size() == 0 and function.locals.size() == 0 and body.has("it", false, 100)) {
@@ -55,8 +55,8 @@ groupFunctionDeclaration(String &name, Node *return_type, Node modifieres, Node 
     }
     body = analyze(body, function); // has to come after arg analysis!
     if (!return_type)
-        return_type = extractReturnTypes(arguments, body).clone();
-    if (return_type)
+        signature.returns(extractReturnTypes(arguments, body));
+    else
         signature.returns(mapType(return_type)); // explicit double sin(){} // todo other syntaxes+ multi
     Node &decl = *new Node(name); //node.name+":={…}");
     decl.setKind(declaration);
@@ -114,18 +114,26 @@ Node &groupFunctionDefinition(Node &expression, Function &context) {
 }
 
 // f x:=x*x  vs groupFunctionDefinition fun x := x*x
-Node &groupFunctionDeclaration(Node &expression, Function &context) {
-    Node modifieres = extractModifiers(expression);
-    auto op = expression.containsAny(function_operators);
-    auto &left = expression.to(op);
-    auto &rest = expression.from(op);
-    auto fun = left.first();
-    return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
+Node &groupFunctionDeclaration(Node &node, Function &context) {
+    Node modifieres = extractModifiers(node);
+    auto op = node.containsAny(function_operators);
+    if(op) {
+        auto &left = node.to(op);
+        auto &rest = node.from(op);
+        auto fun = left.first();
+        return groupFunctionDeclaration(fun.name, 0, left, left, rest, context);
+    }else {
+        auto& params = node["params"];
+        auto& body = node["body"];
+        auto& fun = node;
+        return groupFunctionDeclaration(fun.name, 0, NIL, params, body, context);
+    }
 }
 
 
 Node &groupDeclarations(Node &expression, Function &context) {
-    // if(expression.kind == declaration and expression["params"]) {} no extra logic in Wasp.cpp !
+    if(expression.kind == declaration and expression.has("body"))
+        return groupFunctionDeclaration(expression, context);
     if (expression.kind == groups) // handle later!
         return expression;
     //    if (expression.kind != Kind::expression)return expression;// 2022-19 sure??
@@ -219,8 +227,13 @@ Node &groupDeclarations(Node &expression, Function &context) {
 }
 
 
-Node extractReturnTypes(Node decl, Node body) {
-    return DoubleType; // LongType;// todo
+Type extractReturnTypes(Node decl, Node body, Function *context) {
+    Type returnType = preEvaluateType(body, context);
+    if(returnType==stringp)
+        returnType = smarti64;// strings;
+    if(returnType==unknown)
+        returnType = smarti64;
+    return returnType;
 }
 
 Node &parseWhileExpression(Node &node, Node &expressiona, int i, Function &context) {

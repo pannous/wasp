@@ -62,23 +62,6 @@ static inline void set_result_null_externref(wasmtime_val_t *out) {
 void init_wasmtime() {
     if (initialized) return; // Prevent re-initialization
 
-#ifdef NATIVE_FFI
-    // Preload raylib BEFORE wasmtime initialization (wasmtime breaks GLFW/graphics)
-    static bool raylib_preloaded = false;
-    if (!raylib_preloaded) {
-        raylib_preloaded = true;
-        print("raylib preloading for Wasmtime FFI compatibility\n");
-        dlopen("/opt/homebrew/lib/libraylib.dylib", RTLD_LAZY | RTLD_GLOBAL);
-    }
-#endif
-    // SDL2 preload to avoid conflicts
-    static bool sdl2_preloaded = false;
-    if (!sdl2_preloaded) {
-        sdl2_preloaded = true;
-        print("SDL2 preloading for Wasmtime FFI compatibility\n");
-        dlopen("/opt/homebrew/lib/libSDL2.dylib", RTLD_LAZY | RTLD_GLOBAL);
-    }
-
     // Create config and enable GC proposal
     wasm_config_t *config = wasm_config_new();
     wasmtime_config_wasm_gc_set(config, true);
@@ -191,7 +174,7 @@ Node struct_to_node_wasmtime(const wasmtime_anyref_t &anyref) {
     }
 
     trace("Reflected struct with "s + formatLong(result.size()) + " fields");
-    print(result);
+    trace(result);
     return result;
 }
 
@@ -232,7 +215,31 @@ void copy_wasi_alias(wasmtime_linker_t *linker, wasmtime_error_t *&werr) {
     }
 }
 
+void preload_ffi() {
+
+#ifdef NATIVE_FFI
+    // Preload raylib BEFORE wasmtime initialization (wasmtime breaks GLFW/graphics)
+    static bool raylib_preloaded = false;
+    if (!raylib_preloaded) {
+        raylib_preloaded = true;
+        trace("raylib preloading for Wasmtime FFI compatibility\n");
+        dlopen("/opt/homebrew/lib/libraylib.dylib", RTLD_LAZY | RTLD_GLOBAL);
+    }
+#endif
+    // SDL2 preload to avoid conflicts
+    static bool sdl2_preloaded = false;
+    if (!sdl2_preloaded) {
+        sdl2_preloaded = true;
+        trace("SDL2 preloading for Wasmtime FFI compatibility\n");
+        dlopen("/opt/homebrew/lib/libSDL2.dylib", RTLD_LAZY | RTLD_GLOBAL);
+    }
+
+}
+
 extern "C" int64_t run_wasm(unsigned char *data, int size) {
+    Module &meta = read_wasm(data, size);
+    if(meta.is_native_library) preload_ffi();
+    if(meta.uses_native_library()) preload_ffi();
     if (!initialized) init_wasmtime();
 
     wasmtime_module_t *module0 = NULL;
@@ -240,7 +247,6 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
     wasmtime_error_t *error = wasmtime_module_new(engine, data, size, &module0);
     if (error != NULL) exit_with_error("Failed to compile module", error, NULL);
 
-    Module &meta = read_wasm(data, size);
     wasmtime_instance_t instance;
     wasm_trap_t *trap = NULL;
 
@@ -444,8 +450,8 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         if (import_name.empty()) break;
         wasmtime_func_t func;
         Signature &signature = meta.functions[import_name].signature;
-        print(import_name);
-        print(signature.format());
+        trace(import_name);
+        trace(signature.format());
         const wasm_functype_t *type0 = funcType(signature);
         wasmtime_func_new(context, type0, link_import(import_name), NULL, NULL, &func);
         wasmtime_extern_t import = {.kind = WASMTIME_EXTERN_FUNC, .of.func = func};
@@ -726,12 +732,12 @@ wrap(getenv) {
 }
 
 wrap(todos) {
-    print("TODO implement wasmtime func …");
+    trace("TODO implement wasmtime func …");
     return NULL;
 }
 
 wrap(toLong) {
-    print("toLong!!");
+    trace("toLong!!");
     // int n = args[0].of.i32;
     // results[0].of.i64 = parseLong((chars) ((char *) wasm_memory) + n);
     results[0].kind = WASMTIME_I64;
@@ -759,14 +765,14 @@ wrap(toString) {
 }
 
 wrap(toReal) {
-    print("toReal!!");
+    trace("toReal!!");
     results[0].kind = WASMTIME_F64;
     results[0].of.f64 = 123.0; // dummy
     return NULL;
 }
 
 wrap(formatLong) {
-    print("formatLong!!");
+    trace("formatLong!!");
     int64 i = args[0].of.i64;
     int32_t offset = 2000;
     char *dest = (char *) wasm_memory + offset; // todo HEAP_END
@@ -777,7 +783,7 @@ wrap(formatLong) {
 }
 
 wrap(fprintf) {
-    print("fprintf!!");
+    trace("fprintf!!");
     int offset = args[0].of.i32;
     char *arg = (char *) memory + offset;
     printf("%s", arg);
@@ -785,7 +791,7 @@ wrap(fprintf) {
 }
 
 wrap(getElementById) {
-    print("getElementById!!");
+    trace("getElementById!!");
     // Return a null externref for now; ensure both kind and value are set.
     results[0].kind = WASMTIME_EXTERNREF;
     set_result_null_externref(&results[0]);
@@ -842,7 +848,7 @@ wrap(absf) {
 
 
 void test_lambda() {
-    print("requestAnimationFrame lambda");
+    trace("requestAnimationFrame lambda");
 };
 
 //wrap_any(requestAnimationFrame);
@@ -1047,7 +1053,7 @@ const wasm_functype_t *funcType(Signature &signature) {
 
     if (signature.functions.size() > 1) {
         auto n = signature.functions.first()->name;
-        print(n);
+        trace(n);
     }
 
     // Map return type
