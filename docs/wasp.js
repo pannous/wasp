@@ -367,6 +367,12 @@ let imports = {
     __cxa_guard_acquire: nop,
     __cxa_guard_release: nop,
     _ZSt9terminatev: nop, // std::terminate() stub
+
+    // TODO: The following stubs are TEMPORARY workarounds for the current wasp-hosted.wasm (Dec 29, 2024)
+    // These functions should be provided by the C++ runtime in wasm_helpers_host.cpp or by WASI libc.
+    // When wasp-hosted.wasm is rebuilt with updated wasm_helpers_host.cpp, most of these can be removed.
+    // Only browser-specific functions (like download, getWasmFunclet, etc.) should remain in JavaScript.
+
     // Math functions - pass through to JavaScript Math
     sin: Math.sin,
     cos: Math.cos,
