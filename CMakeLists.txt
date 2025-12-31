@@ -888,7 +888,7 @@ elseif (WASMTIME)
     if (ENABLE_WASI_STDIO)
         add_compile_definitions(ENABLE_WASI_STDIO)
     endif ()
-    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasmtime_runner.cpp)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasmtime_runner.cpp ${SOURCE}/wasmtime_ffi.cpp ${SOURCE}/wasmtime_host_functions.cpp)
     add_executable(wasp ${SOURCE_FILES})
 
     # Use pre-built dynamic library instead of building from source
