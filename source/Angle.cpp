@@ -13,7 +13,9 @@
 #include "CharUtils.h"
 #include "Keywords.h"
 #include "Context.h" // AST Analysis Context (shared with wasm_emitter.cpp)
+#ifdef NATIVE_FFI
 #include "ffi_inspector.h"
+#endif
 #include "wasm_emitter.h" // to do put all dependencies into the context
 #include "WitReader.h"
 #include "FunctionAnalyzer.h"
@@ -729,7 +731,11 @@ Function &handleNativeImport(Node &node) {
         func.signature = modul->functions[func_name].signature;
     } else {
         // Detect and set function signature directly (reuses existing Signature class)
+#ifdef NATIVE_FFI
         detect_ffi_signature(func_name, lib_name, func.signature);
+#else
+        warn("FFI signature detection not available - NATIVE_FFI disabled");
+#endif
         // Add to native library module's functions map
         modul->functions.add(func_name, func);
         modul->export_names.add(func_name);

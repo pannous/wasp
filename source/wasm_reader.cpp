@@ -4,7 +4,9 @@
 #include <cxxabi.h> // for abi::__cxa_demangle
 #include "wasm_reader.h"
 
+#ifdef NATIVE_FFI
 #include "ffi_inspector.h"
+#endif
 #include "Util.h"
 //#include "wasm_emitter.h"
 // compare with wasm-objdump -h
@@ -235,7 +237,9 @@ void parseImportNames(Code &payload) {
             func.ffi_library = library_name;
             // Re-detect signature from library/function name
             // (WASM loses type info like charp -> i32, so we need to restore it)
+#ifdef NATIVE_FFI
             detect_ffi_signature(function_name, library_name, func.signature);
+#endif
         }
 
         module->functions.add(function_name, func);
