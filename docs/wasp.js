@@ -361,6 +361,11 @@ let imports = {
     _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEED1Ev: getRidOfDependency,
     _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE9push_backEc: getRidOfDependency,
     _ZNSt3__212basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEE6appendEPKc: getRidOfDependency,
+    // C++ exception handling stubs - needed for WASM modules compiled with C++
+    __cxa_begin_catch: x => x, // Simple stub - just return exception object
+    __cxa_end_catch: nop, // No-op stub
+    __cxa_guard_acquire: nop,
+    __cxa_guard_release: nop,
     // the above dependencies only appear when using the linker!!
 
     /* run_wasm: async (x, y) => { */ // Cannot convert [object Promise] to a BigInt
