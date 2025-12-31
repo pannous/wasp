@@ -162,3 +162,24 @@ extern "C" ExternRef createElement(ExternRef parent /*0*/, chars tag);
 // _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void* __p, std::size_t __sz) _NOEXCEPT;
 // void operator delete(void*,int){}
 // _LIBCPP_OVERRIDABLE_FUNC_VIS void operator delete(void* __p, std::size_t __sz, std::align_val_t) _NOEXCEPT{}
+
+// C++ exception handling stubs for WASM environments without full C++ runtime
+// These are needed when WASM modules are compiled with C++ but don't actually use exceptions
+extern "C" void* __cxa_begin_catch(void* exceptionObject) {
+    return exceptionObject; // Simple stub - just return the exception object
+}
+
+extern "C" void __cxa_end_catch() {
+    // No-op stub
+}
+
+extern "C" void _ZSt9terminatev() {
+    // std::terminate() stub
+    panic();
+}
+
+// Note: operator delete must use C++ linkage, not extern "C"
+void operator delete(void* ptr, unsigned long size) noexcept {
+    // operator delete(void*, unsigned long) stub
+    if (ptr) free(ptr);
+}
