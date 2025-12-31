@@ -366,6 +366,36 @@ let imports = {
     __cxa_end_catch: nop, // No-op stub
     __cxa_guard_acquire: nop,
     __cxa_guard_release: nop,
+    _ZSt9terminatev: nop, // std::terminate() stub
+    // Math functions - pass through to JavaScript Math
+    sin: Math.sin,
+    cos: Math.cos,
+    tan: Math.tan,
+    asin: Math.asin,
+    acos: Math.acos,
+    atan: Math.atan,
+    atan2: Math.atan2,
+    exp: Math.exp,
+    log: Math.log,
+    sqrt: Math.sqrt,
+    pow: Math.pow,
+    floor: Math.floor,
+    ceil: Math.ceil,
+    abs: Math.abs,
+    // Dynamic linking stubs - not supported in browser WASM
+    dlopen: () => 0,
+    dlsym: () => 0,
+    dlerror: () => 0,
+    dlclose: nop,
+    // C library character classification functions
+    isspace: (c) => c == 32 || (c >= 9 && c <= 13),
+    isdigit: (c) => c >= 48 && c <= 57,
+    isalpha: (c) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122),
+    isalnum: (c) => (c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122),
+    isupper: (c) => c >= 65 && c <= 90,
+    islower: (c) => c >= 97 && c <= 122,
+    tolower: (c) => (c >= 65 && c <= 90) ? c + 32 : c,
+    toupper: (c) => (c >= 97 && c <= 122) ? c - 32 : c,
     // the above dependencies only appear when using the linker!!
 
     /* run_wasm: async (x, y) => { */ // Cannot convert [object Promise] to a BigInt
