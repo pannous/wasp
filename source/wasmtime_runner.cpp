@@ -487,10 +487,32 @@ extern "C" int64_t run_wasm(unsigned char *data, int size) {
         }
     }
 
-    tracef("Calling wasp_main function...\n");
+    // Check function signature to determine if it expects argc/argv arguments
+    wasm_functype_t *func_type = wasmtime_func_type(context, &run.of.func);
+    const wasm_valtype_vec_t *params = wasm_functype_params(func_type);
+    size_t param_count = params->size;
+
+    tracef("Calling wasp_main function with %zu parameters...\n", param_count);
     fflush(stderr);
+
+    // Prepare arguments if the function expects them
+    wasmtime_val_t args[2];
+    wasmtime_val_t *args_ptr = NULL;
+
+    if (param_count == 2) {
+        // Standard main(argc, argv) signature - pass argc=0, argv=0
+        args[0].kind = WASMTIME_I32;
+        args[0].of.i32 = 0; // argc = 0
+        args[1].kind = WASMTIME_I32;
+        args[1].of.i32 = 0; // argv = NULL (or 0 offset in linear memory)
+        args_ptr = args;
+    } else if (param_count > 0) {
+        warn("Unexpected parameter count for main function: "s + formatLong(param_count));
+    }
+
     wasmtime_val_t results;
-    error = wasmtime_func_call(context, &run.of.func, NULL, 0, &results, 1, &trap);
+    error = wasmtime_func_call(context, &run.of.func, args_ptr, param_count, &results, 1, &trap);
+    wasm_functype_delete(func_type);
     tracef("Function call returned\n");
     fflush(stderr);
     if (error != NULL || trap != NULL) exit_with_error("Failed to call function", error, trap);
