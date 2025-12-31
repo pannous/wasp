@@ -1507,8 +1507,10 @@ int main(int argc, char **argv) {
 #else
                 todo("linking files needs compilation with WABT_MERGE")
 #endif
-            } else
-                run_wasm_file(args.data);
+            } else {
+                int64 result = run_wasm_file(args.data);
+                print(result);
+            }
         } else if (args == "test" or args == "tests")
 #if NO_TESTS
         print("wasp release compiled without tests");
@@ -1554,7 +1556,9 @@ int main(int argc, char **argv) {
                 print("Wasp compiled without server OR no program given!");
 #endif
         } else if (args == "lsp") {
-            return lsp_main();
+#if not WASM
+            return lsp_main(); // maybe later ;)
+#endif
         } else if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
         else if (args.contains("compile") or args.contains("build") or args.contains("link")) {
