@@ -1561,6 +1561,8 @@ int main(int argc, char **argv) {
 #endif
         } else if (args.contains("help"))
             print("detailed documentation can be found at https://github.com/pannous/wasp/wiki ");
+        else if (args == "version" or args == "--version" or args == "-v")
+            print("Wasp 🐝 "s + wasp_version);
         else if (args.contains("compile") or args.contains("build") or args.contains("link")) {
             Node results = eval(args.from(" ")); // todo: dont run, just compile!
             // Code &binary = compile(args.from(" "), true);
