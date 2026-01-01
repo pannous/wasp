@@ -9,7 +9,7 @@ double sin(double x){
   S5  = -2.50507602534068634195e-08, /* 0xBE5AE5E6, 0x8A2B9CEB */
   S6  =  1.58969099521155010221e-10  /* 0x3DE5D93A, 0x5ACFD57C */
   tau =  6.283185307179586 // 2π
-  if(x >= pi) return -sin(modulo_double(x,pi))
+  if(x >= PI) return -sin(modulo_double(x,PI))
   double r = S2 + z*(S3 + z*S4) + z*w*(S5 + z*S6)
   return x + z*x*(S1 + z*r)
 }
