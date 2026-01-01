@@ -9,7 +9,7 @@ string name = "Hello World"
 array numbers = [1, 2, 3]
 map data = {"key": "value"}
 map data = {key: "value"}
-float64 pi = 3.14159// Wasp Language Sample
+float64 PI = 3.14159// Wasp Language Sample
 
 /* Types */
 int x = 42
@@ -17,7 +17,7 @@ string name = "Hello World"
 array numbers = [1, 2, 3]
 tuple numbers = (1, 2, 3)
 map data = {"key":(1,2)}
-float64 pi = 3.14159
+float64 PI = 3.14159
 bool flag = true
 
 /* Functions */
