@@ -2,5 +2,5 @@
 #use lib
 puts "Hello main.wasp"
 #print "Hello main.wasp"
-
 #fun doub(float a):int{return a*2}
+42
