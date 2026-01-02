@@ -16,6 +16,8 @@
 // FFI Function Inspector - Dynamically inspects actual function signatures from loaded libraries
 // This ELIMINATES the need for hardcoded signatures or header parsing!
 
+bool is_native_library(const String & name);
+
 struct LibraryHandle {
     String name;
     void *handle;

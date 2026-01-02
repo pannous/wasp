@@ -41,7 +41,9 @@ int tests_executed = 0;
 #include "../source/asserts.h"
 
 // OTHER TESTS
+#ifdef NATIVE_FFI
 #include "test_ffi.h"
+#endif
 
 //==============================================================================
 // TYPE SYSTEM TESTS (see type_tests.h for declarations)
@@ -4273,9 +4275,11 @@ void todo_done() {
     assert_emit("a = [1, 2, 3]; a[2]", 3);
     // #if not WASMTIME and not LINUX // todo why
     // assert_emit("n=3;2ⁿ", 8);
+#ifdef NATIVE_FFI
     test_ffi_sdl();
     // SDL tests temporarily disabled - debugging type mismatches
     // test_ffi_sdl_red_square_demo();
+#endif
     test_list_lambdas();
 
     testMapOfStrings();
@@ -4303,7 +4307,9 @@ void todo_done() {
     test_while_true_forever();
     testStructWast();
     test_wasm_node_struct();
+#ifdef NATIVE_FFI
     test_ffi_all();
+#endif
     testMergeRuntime();
     testFunctionArgumentCast();
     testWrong0Termination();

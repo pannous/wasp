@@ -1,6 +1,11 @@
 {
   "temp-session-id": {
-    "permissionMode": "default",
+    "permissionMode": "bypassPermissions",
+    "backendVersion": "1.2.0",
+    "cwd": "/Users/me/wasp"
+  },
+  "6a66171c-b467-4054-9032-2096f5d61249": {
+    "permissionMode": "bypassPermissions",
     "backendVersion": "1.2.0",
     "cwd": "/Users/me/wasp"
   }

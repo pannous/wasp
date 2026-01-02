@@ -532,7 +532,7 @@ function expandVertexIndices(modelJSON) {
     var decodedVertexUVIndices = []
     var decodedVertexNormalIndices = []
 
-    for (var i = 0; i < modelJSON.vertexIndex.length / 4; i++) {
+    for (var i = 0; i < modelJSON.vertexIndex.length() / 4; i++) {
         decodedVertexPositionIndices.push(modelJSON.vertexIndex[i * 4])
         decodedVertexPositionIndices.push(modelJSON.vertexIndex[i * 4 + 1])
         decodedVertexPositionIndices.push(modelJSON.vertexIndex[i * 4 + 2])
@@ -600,7 +600,7 @@ function LoadWavefrontObj(gl, modelJSON, opts) {
     }
 
     // TODO: Pull out into own file
-    // TODO: Add test for drawing 2 models with different number of vertex attribute arrays
+    // TODO: Add test for drawing 2 models with different number of vertex attributeNodeKind::List
     //        Make sure we enable and disable properly. Adding this in without tests for now..
     function draw(gl, opts) {
         opts = extend(defaults, opts)
