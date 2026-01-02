@@ -1,11 +1,11 @@
 // NEEDS http-server to serve files! FF and chrome no longer support local development without server
 
-var canvas = document.createElement('canvas')
+const canvas = document.createElement('canvas');
 canvas.width = 500
 canvas.height = 500
 document.body.appendChild(canvas)
 
-var gl = canvas.getContext('webgl')
+const gl = canvas.getContext('webgl');
 gl.clearColor(1, 1, 1, 1) // background white
 gl.enable(gl.DEPTH_TEST) // occlusion
 
@@ -23,11 +23,11 @@ fetch(model).then(response => response.text().then(obj => {
 // }))
 
 
-var loaded3dModel
+let loaded3dModel;
 
 function load(modelJSON) {
     console.log(modelJSON);
-    var image = new window.Image()
+    const image = new window.Image();
     image.crossOrigin = 'anonymous'
     // Once our image downloads we buffer our 3d model data for the GPU
     image.onload = x => {
@@ -39,7 +39,7 @@ function load(modelJSON) {
 }
 
 // // Our model's x-axis rotation in radians
-var xRotation = 0
+let xRotation = 0;
 
 function draw(dt) {
     gl.viewport(0, 0, canvas.width, canvas.height)
@@ -59,28 +59,28 @@ function draw(dt) {
 
 
 // Map .obj vertex info line names to our returned property names
-var vertexInfoNameMap = {v: 'vertex', vt: 'uv', vn: 'normal'}
+const vertexInfoNameMap = {v: 'vertex', vt: 'uv', vn: 'normal'};
 // The returned properties that we will populate
-var parsedProperties = ['normal', 'uv', 'vertex', 'normalIndex', 'uvIndex', 'vertexIndex']
+const parsedProperties = ['normal', 'uv', 'vertex', 'normalIndex', 'uvIndex', 'vertexIndex'];
 
 function parseWavefrontObj(wavefrontString) {
-    var parsedJSON = {normal: [], uv: [], vertex: [], normalIndex: [], uvIndex: [], vertexIndex: []}
+    const parsedJSON = {normal: [], uv: [], vertex: [], normalIndex: [], uvIndex: [], vertexIndex: []};
 
-    var linesInWavefrontObj = wavefrontString.split('\n')
+    const linesInWavefrontObj = wavefrontString.split('\n');
 
     // Loop through and parse every line in our .obj file
     linesInWavefrontObj.forEach(function (currentLine) {
         // Tokenize our current line
-        var currentLineTokens = currentLine.split(' ')
+        const currentLineTokens = currentLine.split(' ');
         // vertex position, vertex texture, or vertex normal
-        var vertexInfoType = vertexInfoNameMap[currentLineTokens[0]]
+        const vertexInfoType = vertexInfoNameMap[currentLineTokens[0]];
         if (vertexInfoType) {
             parsedJSON[vertexInfoType] = parsedJSON[vertexInfoType].concat(currentLineTokens.slice(1))
             return
         }
         if (currentLineTokens[0] === 'f') {
             // Get our 4 sets of vertex, uv, and normal indices for this face
-            for (var i = 1; i < 5; i++) {
+            for (let i = 1; i < 5; i++) {
                 // If there is no fourth face entry then this is specifying a triangle
                 // in this case we push `-1`
                 // Consumers of this module should check for `-1` before expanding face data
@@ -89,7 +89,7 @@ function parseWavefrontObj(wavefrontString) {
                     parsedJSON.uvIndex.push(-1)
                     parsedJSON.normalIndex.push(-1)
                 } else {
-                    var indices = currentLineTokens[i].split('/')
+                    const indices = currentLineTokens[i].split('/');
                     parsedJSON.vertexIndex.push(Number(indices[0]) - 1) // We zero index
                     parsedJSON.uvIndex.push(Number(indices[1]) - 1) // our face indices
                     parsedJSON.normalIndex.push(Number(indices[2]) - 1) // by subtracting 1
@@ -117,31 +117,31 @@ function parseWavefrontObj(wavefrontString) {
  * @returns {mat3} out
  */
 function normalFromMat4(out, a) {
-    var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3]
-    var a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7]
-    var a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11]
-    var a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15]
+    const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+    const a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+    const a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+    const a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
 
-    var b00 = a00 * a11 - a01 * a10
-    var b01 = a00 * a12 - a02 * a10
-    var b02 = a00 * a13 - a03 * a10
-    var b03 = a01 * a12 - a02 * a11
-    var b04 = a01 * a13 - a03 * a11
-    var b05 = a02 * a13 - a03 * a12
-    var b06 = a20 * a31 - a21 * a30
-    var b07 = a20 * a32 - a22 * a30
-    var b08 = a20 * a33 - a23 * a30
-    var b09 = a21 * a32 - a22 * a31
-    var b10 = a21 * a33 - a23 * a31
-    var b11 = a22 * a33 - a23 * a32
+    const b00 = a00 * a11 - a01 * a10;
+    const b01 = a00 * a12 - a02 * a10;
+    const b02 = a00 * a13 - a03 * a10;
+    const b03 = a01 * a12 - a02 * a11;
+    const b04 = a01 * a13 - a03 * a11;
+    const b05 = a02 * a13 - a03 * a12;
+    const b06 = a20 * a31 - a21 * a30;
+    const b07 = a20 * a32 - a22 * a30;
+    const b08 = a20 * a33 - a23 * a30;
+    const b09 = a21 * a32 - a22 * a31;
+    const b10 = a21 * a33 - a23 * a31;
+    const b11 = a22 * a33 - a23 * a32;
 
     // Calculate the determinant
-    var det = b00 * b11
+    let det = b00 * b11
         - b01 * b10
         + b02 * b09
         + b03 * b08
         - b04 * b07
-        + b05 * b06
+        + b05 * b06;
 
     if (!det) return null
     det = 1.0 / det
@@ -167,7 +167,7 @@ function normalFromMat4(out, a) {
  * @returns {mat4} a new 4x4 matrix
  */
 function create() {
-    var out = new Float32Array(16);
+    const out = new Float32Array(16);
     out[0] = 1;
     out[1] = 0;
     out[2] = 0;
@@ -197,13 +197,13 @@ function create() {
  * @returns {mat4} out
  */
 function multiply(out, a, b) {
-    var a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
+    const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3],
         a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7],
         a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11],
         a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
 
     // Cache only the current line of the second matrix
-    var b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+    let b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
     out[0] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30;
     out[1] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31;
     out[2] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32;
@@ -250,7 +250,7 @@ function multiply(out, a, b) {
  * @returns {mat4} out
  */
 function perspective(out, fovy, aspect, near, far) {
-    var f = 1.0 / Math.tan(fovy / 2),
+    const f = 1.0 / Math.tan(fovy / 2),
         nf = 1 / (near - far);
     out[0] = f / aspect;
     out[1] = 0;
@@ -281,7 +281,7 @@ function perspective(out, fovy, aspect, near, far) {
  * @returns {mat4} out
  */
 function rotateX(out, a, rad) {
-    var s = Math.sin(rad),
+    const s = Math.sin(rad),
         c = Math.cos(rad),
         a10 = a[4],
         a11 = a[5],
@@ -325,7 +325,7 @@ function rotateX(out, a, rad) {
  * @returns {mat4} out
  */
 function rotateY(out, a, rad) {
-    var s = Math.sin(rad),
+    const s = Math.sin(rad),
         c = Math.cos(rad),
         a00 = a[0],
         a01 = a[1],
@@ -369,7 +369,7 @@ function rotateY(out, a, rad) {
  * @returns {mat4} out
  */
 function rotateZ(out, a, rad) {
-    var s = Math.sin(rad),
+    const s = Math.sin(rad),
         c = Math.cos(rad),
         a00 = a[0],
         a01 = a[1],
@@ -413,8 +413,8 @@ function rotateZ(out, a, rad) {
  * @returns {mat4} out
  */
 function translate(out, a, v) {
-    var x = v[0], y = v[1], z = v[2],
-        a00, a01, a02, a03,
+    const x = v[0], y = v[1], z = v[2];
+    let a00, a01, a02, a03,
         a10, a11, a12, a13,
         a20, a21, a22, a23;
 
@@ -468,14 +468,14 @@ function translate(out, a, v) {
 // Dedupe vertex indices and duplicate the associated position / uv / normal data
 // Since we can't have multiple VBO indexes we need to expand out our indexed data
 function dedupeVertexIndices(modelJSON) {
-    var expandedVertexPositions = modelJSON.vertex
-    var expandedVertexUVs = []
-    var expandedVertexNormals = []
-    var expandedVertexPositionIndices = []
-    var encounteredIndices = {}
-    var largestPositionIndex = 0
+    const expandedVertexPositions = modelJSON.vertex;
+    const expandedVertexUVs = [];
+    const expandedVertexNormals = [];
+    const expandedVertexPositionIndices = [];
+    const encounteredIndices = {};
+    let largestPositionIndex = 0;
 
-    var decodedIndices = expandVertexIndices(modelJSON)
+    const decodedIndices = expandVertexIndices(modelJSON);
 
     decodedIndices.decodedPositionIndices.forEach(function (vertexIndex, counter) {
         largestPositionIndex = Math.max(largestPositionIndex, vertexIndex)
@@ -484,7 +484,7 @@ function dedupeVertexIndices(modelJSON) {
         if (!encounteredIndices[vertexIndex]) {
             expandedVertexPositionIndices[counter] = vertexIndex
             // Push the appropriate UV coordinates
-            for (var i = 0; i < 3; i++) {
+            for (let i = 0; i < 3; i++) {
                 if (i < 2) {
                     expandedVertexUVs[vertexIndex * 2 + i] = modelJSON.uv[decodedIndices.decodedUVIndices[counter] * 2 + i]
                 }
@@ -497,7 +497,7 @@ function dedupeVertexIndices(modelJSON) {
         // Add all of the duplicate indices that we skipped over above
         if (encounteredIndices[vertexIndex]) {
             expandedVertexPositionIndices[counter] = ++largestPositionIndex
-            for (var i = 0; i < 3; i++) {
+            for (let i = 0; i < 3; i++) {
                 if (i < 2) {
                     expandedVertexUVs[largestPositionIndex * 2 + i] = modelJSON.uv[decodedIndices.decodedUVIndices[counter] * 2 + i]
                 }
@@ -528,11 +528,11 @@ function dedupeVertexIndices(modelJSON) {
 // function ExpandVertexPositionIndices (modelJSON) {
 function expandVertexIndices(modelJSON) {
 
-    var decodedVertexPositionIndices = []
-    var decodedVertexUVIndices = []
-    var decodedVertexNormalIndices = []
+    const decodedVertexPositionIndices = [];
+    const decodedVertexUVIndices = [];
+    const decodedVertexNormalIndices = [];
 
-    for (var i = 0; i < modelJSON.vertexIndex.length() / 4; i++) {
+    for (let i = 0; i < modelJSON.vertexIndex.length() / 4; i++) {
         decodedVertexPositionIndices.push(modelJSON.vertexIndex[i * 4])
         decodedVertexPositionIndices.push(modelJSON.vertexIndex[i * 4 + 1])
         decodedVertexPositionIndices.push(modelJSON.vertexIndex[i * 4 + 2])
@@ -563,28 +563,28 @@ function expandVertexIndices(modelJSON) {
 }
 
 
-var mat4Create = create
-var mat4Multiply = multiply
-var mat4RotateX = rotateX
-var mat4RotateY = rotateY
-var mat4RotateZ = rotateZ
-var mat4Translate = translate
-var mat4Perspective = perspective
-var mat3NormalFromMat4 = normalFromMat4
+const mat4Create = create;
+const mat4Multiply = multiply;
+const mat4RotateX = rotateX;
+const mat4RotateY = rotateY;
+const mat4RotateZ = rotateZ;
+const mat4Translate = translate;
+const mat4Perspective = perspective;
+const mat3NormalFromMat4 = normalFromMat4;
 
 function LoadWavefrontObj(gl, modelJSON, opts) {
-    var expandedVertexData = dedupeVertexIndices(modelJSON)
-    var vertexPositionBuffer = createBuffer(gl, 'ARRAY_BUFFER', Float32Array, expandedVertexData.positions)
-    var vertexPositionIndexBuffer = createBuffer(gl, 'ELEMENT_ARRAY_BUFFER', Uint16Array, expandedVertexData.positionIndices)
-    var vertexTextureBuffer = createBuffer(gl, 'ARRAY_BUFFER', Float32Array, expandedVertexData.uvs)
-    var vertexNormalBuffer = createBuffer(gl, 'ARRAY_BUFFER', Float32Array, expandedVertexData.normals)
+    const expandedVertexData = dedupeVertexIndices(modelJSON);
+    const vertexPositionBuffer = createBuffer(gl, 'ARRAY_BUFFER', Float32Array, expandedVertexData.positions);
+    const vertexPositionIndexBuffer = createBuffer(gl, 'ELEMENT_ARRAY_BUFFER', Uint16Array, expandedVertexData.positionIndices);
+    const vertexTextureBuffer = createBuffer(gl, 'ARRAY_BUFFER', Float32Array, expandedVertexData.uvs);
+    const vertexNormalBuffer = createBuffer(gl, 'ARRAY_BUFFER', Float32Array, expandedVertexData.normals);
 
-    var numIndices = expandedVertexData.positionIndices.length
+    const numIndices = expandedVertexData.positionIndices.length;
 
-    var shaderObj = initShader(gl)
-    var modelTexture = initTexture(gl, opts)
+    const shaderObj = initShader(gl);
+    const modelTexture = initTexture(gl, opts);
 
-    var defaults = {
+    const defaults = {
         ambient: [1.0, 1.0, 1.0],
         perspective: mat4Perspective([], Math.PI / 4, 256 / 256, 0.1, 100),
         position: [0.0, 0.0, -5.0],
@@ -593,7 +593,7 @@ function LoadWavefrontObj(gl, modelJSON, opts) {
         rotateY: 0.0,
         rotateZ: 0.0,
         viewMatrix: mat4Create()
-    }
+    };
 
     return {
         draw: draw.bind(null, gl)
@@ -605,7 +605,7 @@ function LoadWavefrontObj(gl, modelJSON, opts) {
     function draw(gl, opts) {
         opts = extend(defaults, opts)
 
-        var modelMatrix = mat4Create()
+        const modelMatrix = mat4Create();
         mat4Translate(modelMatrix, modelMatrix, opts.position)
 
         // We rotate the model in place. If you want to rotate it about an axis
@@ -638,7 +638,7 @@ function LoadWavefrontObj(gl, modelJSON, opts) {
         gl.enableVertexAttribArray(shaderObj.vertexNormalAttribute)
         gl.vertexAttribPointer(shaderObj.vertexNormalAttribute, 3, gl.FLOAT, false, 0, 0)
 
-        var normalMatrix = []
+        const normalMatrix = [];
         mat3NormalFromMat4(normalMatrix, modelMatrix)
         gl.uniformMatrix3fv(shaderObj.nMatrixUniform, false, normalMatrix)
 
@@ -661,7 +661,7 @@ function LoadWavefrontObj(gl, modelJSON, opts) {
 }
 
 function createBuffer(gl, bufferType, DataType, data) {
-    var buffer = gl.createBuffer()
+    const buffer = gl.createBuffer();
     gl.bindBuffer(gl[bufferType], buffer)
     gl.bufferData(gl[bufferType], new DataType(data), gl.STATIC_DRAW)
     return buffer
@@ -712,15 +712,15 @@ function createVertexShader(opts) {
 
 // TODO: Pull out into separate, tested shader generator repository
 function initShader(gl, opts) {
-    var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(fragmentShader, createFragmentShader(opts))
     gl.compileShader(fragmentShader)
 
-    var vertexShader = gl.createShader(gl.VERTEX_SHADER)
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertexShader, createVertexShader(opts))
     gl.compileShader(vertexShader)
 
-    var shaderProgram = gl.createProgram()
+    const shaderProgram = gl.createProgram();
     gl.attachShader(shaderProgram, fragmentShader)
     gl.attachShader(shaderProgram, vertexShader)
     gl.linkProgram(shaderProgram)
@@ -740,7 +740,7 @@ function initShader(gl, opts) {
 }
 
 function initTexture(gl, opts) {
-    var modelTexture = gl.createTexture()
+    const modelTexture = gl.createTexture();
     handleLoadedTexture(gl, modelTexture, opts.textureImage)
 
     return modelTexture
@@ -764,13 +764,13 @@ function initTexture(gl, opts) {
     }
 }
 
-var hasOwnProperty = Object.prototype.hasOwnProperty;
+const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 function extend() {
-    var target = {}
-    for (var i = 0; i < arguments.length; i++) {
-        var source = arguments[i]
-        for (var key in source)
+    const target = {};
+    for (let i = 0; i < arguments.length; i++) {
+        const source = arguments[i];
+        for (let key in source)
             if (hasOwnProperty.call(source, key))
                 target[key] = source[key]
     }
