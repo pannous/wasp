@@ -1,12 +1,11 @@
-//#include <v8>
+// V8 WebAssembly Runner - uses V8's native JavaScript WebAssembly API
+// This avoids the need for wasm-c-api which requires V8 internals
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-
-#include "wasm.h"
-
+#include <sstream>
 
 #define V8_COMPRESS_POINTERS 1
 
@@ -17,579 +16,264 @@
 #include "v8-local-handle.h"
 #include "v8-primitive.h"
 #include "v8-script.h"
-
-#define own
-
-bool done = 0;
-wasm_engine_t *engine;
-wasm_store_t *store;
-//wasm_context_t *context;
-
-void init_wasm() {
-    printf("Initializing V8 Wasm engine ...\n");
-    engine = wasm_engine_new();
-    assert(engine != NULL);
-    store = wasm_store_new(engine);
-    assert(store != NULL);
-    done = 1;
-}
+#include "v8-array-buffer.h"
 
 typedef unsigned char *bytes;
 typedef long long int64;
 
-#if TEST_V8_JAVASCRIPT
-int test_V8_cpp_Javascript() {
-	// Initialize V8.
-	const char *path = "";
-	v8::V8::InitializeICUDefaultLocation(path);
-	v8::V8::InitializeExternalStartupData(path);
-	v8::Platform *platform = v8::platform::NewDefaultPlatform().release();
-	v8::V8::InitializePlatform(platform);
-	v8::V8::Initialize();
+static bool v8_initialized = false;
+static v8::Isolate* global_isolate = nullptr;
+static v8::ArrayBuffer::Allocator* array_buffer_allocator = nullptr;
+static std::unique_ptr<v8::Platform> platform;
 
-	// Create a new Isolate and make it the current one.
-	v8::Isolate::CreateParams create_params;
-	create_params.array_buffer_allocator =
-			v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-	v8::Isolate *isolate = v8::Isolate::New(create_params);
-	{
-		v8::Isolate::Scope isolate_scope(isolate);
+void init_v8() {
+    if (v8_initialized) return;
 
-		// Create a stack-allocated handle scope.
-		v8::HandleScope handle_scope(isolate);
+    printf("Initializing V8 engine...\n");
 
-		// Create a new context.
-		v8::Local<v8::Context> context = v8::Context::New(isolate);
+    const char *path = "";
+    v8::V8::InitializeICUDefaultLocation(path);
+    v8::V8::InitializeExternalStartupData(path);
+    platform = v8::platform::NewDefaultPlatform();
+    v8::V8::InitializePlatform(platform.get());
+    v8::V8::Initialize();
 
-		// Enter the context for compiling and running the hello world script.
-		v8::Context::Scope context_scope(context);
+    v8::Isolate::CreateParams create_params;
+    array_buffer_allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
+    create_params.array_buffer_allocator = array_buffer_allocator;
+    global_isolate = v8::Isolate::New(create_params);
 
-		{
-			// Create a string containing the JavaScript source code.
-			v8::Local<v8::String> source = v8::String::NewFromUtf8Literal(isolate, "'Hello' + ', World!'");
+    v8_initialized = true;
+    printf("V8 initialized.\n");
+}
 
-			// Compile the source code.
-			v8::Local<v8::Script> script = v8::Script::Compile(context, source).ToLocalChecked();
+void shutdown_v8() {
+    if (!v8_initialized) return;
 
-			// Run the script to get the result.
-			v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
+    global_isolate->Dispose();
+    v8::V8::Dispose();
+    v8::V8::DisposePlatform();
+    delete array_buffer_allocator;
 
-			// Convert the result to an UTF8 string and print it.
-			v8::String::Utf8Value utf8(isolate, result);
-			printf("%s\n", *utf8);
-		}
+    v8_initialized = false;
+    global_isolate = nullptr;
+}
 
-		{
-			// WTF!!!!??
+// Convert WASM bytes to a JavaScript Uint8Array literal string
+static std::string bytes_to_js_array(const unsigned char* data, int size) {
+    std::ostringstream oss;
+    oss << "new Uint8Array([";
+    for (int i = 0; i < size; i++) {
+        if (i > 0) oss << ",";
+        oss << (int)data[i];
+    }
+    oss << "])";
+    return oss.str();
+}
 
-			// Use the JavaScript API to generate a WebAssembly module.
-			//
-			// |bytes| contains the binary format for the following module:
-			//
-			//     (func (export "add") (param i32 i32) (result i32)
-			//       get_local 0
-			//       get_local 1
-			//       i32.add)
-			//
-			const char csource[] = R"(
+extern "C" int64 run_wasm(bytes data, int size) {
+    init_v8();
+
+    v8::Isolate::Scope isolate_scope(global_isolate);
+    v8::HandleScope handle_scope(global_isolate);
+    v8::Local<v8::Context> context = v8::Context::New(global_isolate);
+    v8::Context::Scope context_scope(context);
+
+    // Build JavaScript code to instantiate and run the WASM module
+    std::string bytes_array = bytes_to_js_array(data, size);
+
+    // JavaScript code that:
+    // 1. Creates a WebAssembly.Module from the bytes
+    // 2. Creates an instance with empty imports (or basic imports)
+    // 3. Calls main/wasp_main and returns the result
+    std::string js_code = R"(
+        (function() {
+            try {
+                let bytes = )" + bytes_array + R"(;
+                let module = new WebAssembly.Module(bytes);
+
+                // Get required imports from module
+                let importObject = WebAssembly.Module.imports(module);
+
+                // Create basic import object for common imports
+                let memory = new WebAssembly.Memory({ initial: 256 });
+                let imports = {
+                    env: {
+                        memory: memory,
+                        put: function(x) { return x; },
+                        puti: function(x) { return x; },
+                        puts: function(ptr) { return 0; },
+                        putc: function(c) { return c; },
+                        panic: function(msg) { return 0; },
+                        log: function(x) { return x; },
+                        printi: function(x) { return x; },
+                        printf: function(x) { return x; },
+                    },
+                    wasi_snapshot_preview1: {
+                        fd_write: function(fd, iovs, iovs_len, nwritten) { return 0; },
+                        fd_read: function(fd, iovs, iovs_len, nread) { return 0; },
+                        fd_close: function(fd) { return 0; },
+                        fd_seek: function(fd, offset, whence, newoffset) { return 0; },
+                        environ_sizes_get: function(count, buf_size) { return 0; },
+                        environ_get: function(environ, environ_buf) { return 0; },
+                        args_sizes_get: function(argc, argv_buf_size) { return 0; },
+                        args_get: function(argv, argv_buf) { return 0; },
+                        proc_exit: function(code) { return 0; },
+                        clock_time_get: function(id, precision, time) { return 0; },
+                        random_get: function(buf, buf_len) { return 0; },
+                    }
+                };
+
+                // Add missing imports dynamically
+                for (let imp of importObject) {
+                    if (!imports[imp.module]) {
+                        imports[imp.module] = {};
+                    }
+                    if (!imports[imp.module][imp.name]) {
+                        if (imp.kind === 'function') {
+                            imports[imp.module][imp.name] = function() { return 0; };
+                        } else if (imp.kind === 'memory') {
+                            imports[imp.module][imp.name] = memory;
+                        } else if (imp.kind === 'global') {
+                            imports[imp.module][imp.name] = new WebAssembly.Global({value: 'i32', mutable: true}, 0);
+                        } else if (imp.kind === 'table') {
+                            imports[imp.module][imp.name] = new WebAssembly.Table({initial: 1, element: 'anyfunc'});
+                        }
+                    }
+                }
+
+                let instance = new WebAssembly.Instance(module, imports);
+
+                // Debug: list exports
+                let exportNames = Object.keys(instance.exports);
+
+                // Try to find and call main function
+                let result = 0;
+
+                if (instance.exports.wasp_main) {
+                    result = instance.exports.wasp_main();
+                } else if (instance.exports.main) {
+                    result = instance.exports.main();
+                } else if (instance.exports._start) {
+                    instance.exports._start();
+                    result = 0;
+                } else {
+                    // No main found, return export count as debug info
+                    return -(1000 + exportNames.length);
+                }
+
+                // If result is BigInt, convert to number
+                if (typeof result === 'bigint') {
+                    return Number(result);
+                }
+                // Debug: if not a number, return type info encoded
+                if (typeof result !== 'number') {
+                    // Return -2000 - type code
+                    let typeCode = 0;
+                    if (result === undefined) typeCode = 1;
+                    else if (result === null) typeCode = 2;
+                    else if (typeof result === 'boolean') typeCode = 3;
+                    else if (typeof result === 'string') typeCode = 4;
+                    else if (typeof result === 'object') typeCode = 5;
+                    else if (typeof result === 'function') typeCode = 6;
+                    return -(2000 + typeCode);
+                }
+                return result;
+            } catch (e) {
+                // Return -3000 for exceptions
+                return -3000;
+            }
+        })()
+    )";
+
+    v8::Local<v8::String> source = v8::String::NewFromUtf8(
+        global_isolate, js_code.c_str(), v8::NewStringType::kNormal).ToLocalChecked();
+
+    v8::Local<v8::Script> script;
+    if (!v8::Script::Compile(context, source).ToLocal(&script)) {
+        printf("V8: Failed to compile JavaScript\n");
+        return -1;
+    }
+
+    v8::TryCatch try_catch(global_isolate);
+    v8::Local<v8::Value> result;
+    if (!script->Run(context).ToLocal(&result)) {
+        if (try_catch.HasCaught()) {
+            v8::String::Utf8Value exception(global_isolate, try_catch.Exception());
+            printf("V8 Exception: %s\n", *exception);
+            v8::Local<v8::Message> message = try_catch.Message();
+            if (!message.IsEmpty()) {
+                v8::String::Utf8Value msg(global_isolate, message->Get());
+                printf("V8 Message: %s\n", *msg);
+            }
+        }
+        printf("V8: Failed to run JavaScript\n");
+        return -1;
+    }
+
+    // Handle Promise result from async function
+    if (result->IsPromise()) {
+        v8::Local<v8::Promise> promise = result.As<v8::Promise>();
+
+        // Run microtasks to resolve the promise
+        while (promise->State() == v8::Promise::kPending) {
+            global_isolate->PerformMicrotaskCheckpoint();
+        }
+
+        if (promise->State() == v8::Promise::kFulfilled) {
+            v8::Local<v8::Value> value = promise->Result();
+            if (value->IsNumber()) {
+                return value->IntegerValue(context).FromMaybe(0);
+            }
+        } else if (promise->State() == v8::Promise::kRejected) {
+            v8::Local<v8::Value> reason = promise->Result();
+            v8::String::Utf8Value utf8(global_isolate, reason);
+            printf("V8: Promise rejected: %s\n", *utf8);
+            return -1;
+        }
+    }
+
+    if (result->IsNumber()) {
+        int64 val = result->IntegerValue(context).FromMaybe(0);
+        printf("V8 result: %lld\n", val);
+        return val;
+    }
+
+    // Debug: print what type we got
+    v8::String::Utf8Value type_str(global_isolate, result->TypeOf(global_isolate));
+    printf("V8 result type: %s\n", *type_str);
+
+    return 0;
+}
+
+// Simple test function
+int test_v8_simple() {
+    init_v8();
+
+    v8::Isolate::Scope isolate_scope(global_isolate);
+    v8::HandleScope handle_scope(global_isolate);
+    v8::Local<v8::Context> context = v8::Context::New(global_isolate);
+    v8::Context::Scope context_scope(context);
+
+    // Simple add(3, 4) WASM module
+    const char js_code[] = R"(
         let bytes = new Uint8Array([
-          0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x07, 0x01,
-          0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f, 0x03, 0x02, 0x01, 0x00, 0x07,
-          0x07, 0x01, 0x03, 0x61, 0x64, 0x64, 0x00, 0x00, 0x0a, 0x09, 0x01,
-          0x07, 0x00, 0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b
+            0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x07, 0x01,
+            0x60, 0x02, 0x7f, 0x7f, 0x01, 0x7f, 0x03, 0x02, 0x01, 0x00, 0x07,
+            0x07, 0x01, 0x03, 0x61, 0x64, 0x64, 0x00, 0x00, 0x0a, 0x09, 0x01,
+            0x07, 0x00, 0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b
         ]);
         let module = new WebAssembly.Module(bytes);
         let instance = new WebAssembly.Instance(module);
         instance.exports.add(3, 4);
-			)";
+    )";
 
-			// Create a string containing the JavaScript source code.
-			v8::Local<v8::String> source = v8::String::NewFromUtf8Literal(isolate, csource);
+    v8::Local<v8::String> source = v8::String::NewFromUtf8Literal(global_isolate, js_code);
+    v8::Local<v8::Script> script = v8::Script::Compile(context, source).ToLocalChecked();
+    v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
 
-			// Compile the source code.
-			v8::Local<v8::Script> script = v8::Script::Compile(context, source).ToLocalChecked();
+    uint32_t number = result->Uint32Value(context).ToChecked();
+    printf("V8 test: 3 + 4 = %u\n", number);
 
-			// Run the script to get the result.
-			v8::Local<v8::Value> result = script->Run(context).ToLocalChecked();
-
-			// Convert the result to a uint32 and print it.
-			uint32_t number = result->Uint32Value(context).ToChecked();
-			printf("3 + 4 = %u\n", number);
-		}
-	}
-
-	// Dispose the isolate and tear down V8.
-	isolate->Dispose();
-	v8::V8::Dispose();
-//	v8::V8::ShutdownPlatform();
-	// delete create_params.array_buffer_allocator;
-	return 0;
-}
-#endif
-
-//#define own
-//
-// Print a Wasm value
-void wasm_val_print(wasm_val_t val) {
-    switch (val.kind) {
-        case WASM_I32: {
-            printf("%" PRIu32, val.of.i32);
-        }
-        break;
-        case WASM_I64: {
-            printf("%" PRIu64, val.of.i64);
-        }
-        break;
-        case WASM_F32: {
-            printf("%f", val.of.f32);
-        }
-        break;
-        case WASM_F64: {
-            printf("%g", val.of.f64);
-        }
-        break;
-        //        case WASM_ANYREF:
-        case WASM_FUNCREF: {
-            if (val.of.ref == NULL) {
-                printf("null");
-            } else {
-                printf("ref(%p)", val.of.ref);
-            }
-        }
-        break;
-    }
-}
-
-// A function to be called from Wasm code.
-own wasm_trap_t *print_callback(
-    const wasm_val_vec_t *args, wasm_val_vec_t *results
-) {
-    printf("Calling back...\n> ");
-    wasm_val_print(args->data[0]);
-    printf("\n");
-
-    wasm_val_copy(&results->data[0], &args->data[0]);
-    return NULL;
-}
-
-
-own wasm_trap_t *closure_callback(
-    const wasm_val_vec_t *args, wasm_val_vec_t *results
-) {
-    return NULL;
-}
-
-// A function closure.
-own wasm_trap_t *closure_callback1(
-    void *env, const wasm_val_vec_t *args, wasm_val_vec_t *results
-) {
-    int i = *(int *) env;
-    printf("Calling back closure...\n");
-    printf("> %d\n", i);
-
-    results->data[0].kind = WASM_I32;
-    results->data[0].of.i32 = (int32_t) i;
-    return NULL;
-}
-
-
-char *wasm_valtype_name(wasm_valtype_t *wasm_valtype) {
-    uint8_t wasm_valkind = wasm_valtype_kind(wasm_valtype);
-    switch (wasm_valkind) {
-        case WASM_I32:
-            return "i32";
-        default:
-            return "unknown";
-    }
-}
-
-
-// 2025-03 WORKS but takes 4 sec and imports/exports/calls VERY fragile so fuck it
-int test_v8() {
-    // Initialize.
-    if (!done)init_wasm();
-    // own wasm_engine_t *engine = wasm_engine_new();
-    // own wasm_store_t *store = wasm_store_new(engine);
-
-    // Load binary.
-    printf("Loading binary...\n");
-    FILE *file = fopen("samples/main.wasm", "rb");
-    if (!file) {
-        printf("> Error loading module!\n");
-        return 1;
-    }
-    fseek(file, 0L, SEEK_END);
-    size_t file_size = ftell(file);
-    fseek(file, 0L, SEEK_SET);
-    wasm_byte_vec_t binary;
-    wasm_byte_vec_new_uninitialized(&binary, file_size);
-    if (fread(binary.data, file_size, 1, file) != 1) {
-        printf("> Error loading module!\n");
-        return 1;
-    }
-    fclose(file);
-
-    // Compile.
-    printf("Compiling module...\n");
-    own wasm_module_t *module = wasm_module_new(store, &binary);
-    if (!module) {
-        printf("> Error compiling module!\n");
-        return 1;
-    } else {
-        printf("> Module compiled.\n");
-    }
-    // Instantiate.
-    printf("Instantiating module...\n");
-    own wasm_trap_t *trap = NULL;
-    own wasm_instance_t *instance = wasm_instance_new(store, module, NULL, &trap);
-    //    wasm_instance_new(store, module, NULL, NULL);
-    if (trap) {
-        printf("> Trapped!\n");
-        return 1;
-    } else {
-        printf("OK!\n");
-        // return 0;
-    }
-
-    // Extract export.
-    printf("Extracting export...\n");
-    own wasm_extern_vec_t exports;
-    wasm_instance_exports(instance, &exports);
-    if (exports.size == 0) {
-        printf("> Error accessing exports!\n");
-        return 1;
-    } else {
-        printf("> %zu exports\n", exports.size);
-    }
-    const wasm_func_t *run_func = wasm_extern_as_func(exports.data[1]);
-    if (run_func == NULL) {
-        printf("> Error accessing export!\n");
-        return 1;
-    }
-
-    wasm_module_delete(module);
-    wasm_instance_delete(instance);
-
-    // Call.
-    printf("Calling export...\n");
-    // wasm_val_t as[2] = {WASM_I32_VAL(3), WASM_I32_VAL(4)};
-    wasm_val_t as[0] = {};
-    wasm_val_t rs[1] = {WASM_INIT_VAL};
-    wasm_val_vec_t args = WASM_ARRAY_VEC(as);
-    wasm_val_vec_t results = WASM_ARRAY_VEC(rs);
-    if (wasm_func_call(run_func, &args, &results)) {
-        printf("> Error calling function!\n");
-        return 1;
-    }
-
-    wasm_extern_vec_delete(&exports);
-
-    // Print result.
-    printf("Printing result...\n");
-    printf("> %lld\n", rs[0].of.i64);
-    printf("> %u\n", rs[0].of.i32);
-    return 0; // OK
-}
-
-// int test_v8() {
-int test_v8_BROKEN() {
-    // Initialize.
-    // printf("Initializing...\n");
-    // own wasm_engine_t *engine = wasm_engine_new();
-    // own wasm_store_t *store = wasm_store_new(engine);
-    if (!done)init_wasm();
-
-    // Load binary.
-    printf("Loading binary...\n");
-    FILE *file = fopen("samples/callback.wasm", "rb");
-    if (!file) {
-        printf("> Error loading module!\n");
-        return 1;
-    }
-    fseek(file, 0L, SEEK_END);
-    size_t file_size = ftell(file);
-    fseek(file, 0L, SEEK_SET);
-    wasm_byte_vec_t binary;
-    wasm_byte_vec_new_uninitialized(&binary, file_size);
-    if (fread(binary.data, file_size, 1, file) != 1) {
-        printf("> Error loading module!\n");
-        return 1;
-    }
-    fclose(file);
-
-    // Compile.
-    printf("Compiling module...\n");
-    own wasm_module_t *module = wasm_module_new(store, &binary);
-    if (!module) {
-        printf("> Error compiling module!\n");
-        return 1;
-    } else {
-        printf("> Module compiled.\n");
-        wasm_importtype_vec_t imports;
-        wasm_module_imports(module, &imports);
-        printf("> Module imports: %zu\n", imports.size);
-        for (size_t i = 0; i < imports.size; ++i) {
-            wasm_importtype_t *import = imports.data[i];
-            wasm_name_t mod = *wasm_importtype_module(import);
-            wasm_name_t name = *wasm_importtype_name(import);
-            printf("> %zu. module=\"%s\", name=\"%s\"\n", i, mod.data, name.data);
-            const wasm_externtype_t *exttype = wasm_importtype_type(import);
-            const wasm_functype_t *functype = wasm_externtype_as_functype_const(exttype);
-            if (functype) {
-                const wasm_valtype_vec_t *params = wasm_functype_params(functype);
-                const wasm_valtype_vec_t *results = wasm_functype_results(functype);
-                printf("    params: ");
-                for (size_t j = 0; j < params->size; ++j) {
-                    wasm_valtype_t *wasm_valtype = params->data[j];
-                    printf("%s ", wasm_valtype_name(wasm_valtype));
-                    // printf("%d ", wasm_valtype_kind(wasm_valtype));
-                }
-                printf("| results: ");
-                for (size_t j = 0; j < results->size; ++j) {
-                    wasm_valtype_t *wasm_valtype = results->data[j];
-                    printf("%s ", wasm_valtype_name(wasm_valtype));
-                    // printf("%d ", wasm_valtype_kind(wasm_valtype));
-                }
-                printf("\n");
-            }
-            // const wasm_name_t* mod0 = wasm_importtype_module(import);
-            // const wasm_name_t* name0 = wasm_importtype_name(import);
-            // assert(mod0->size == 0 || strcmp(mod0->data, "") == 0);
-            // printf("> %zu. module=\"%s\", name=\"%s\"\n", i, mod0->data, name0->data);
-        }
-    }
-
-    //    wasm_byte_vec_delete(&binary);
-
-    // Create external print functions.
-    printf("Creating callback...\n");
-    own wasm_functype_t *print_type = wasm_functype_new_1_1(wasm_valtype_new_i32(), wasm_valtype_new_i32());
-    own wasm_func_t *print_func = wasm_func_new(store, print_type, print_callback);
-
-    // int i = 42;
-    int *pi = (int *) malloc(sizeof(int));
-    *pi = 42;
-    own wasm_functype_t *closure_type = wasm_functype_new_0_1(wasm_valtype_new_i32());
-    // own wasm_func_t *closure_func = wasm_func_new(store, closure_type, closure_callback);
-    // own wasm_func_t *closure_func = wasm_func_new_with_env(store, closure_type, closure_callback1, pi, NULL);
-    own wasm_func_t *closure_func = wasm_func_new_with_env(store, closure_type, closure_callback1, pi, free);
-
-    //    wasm_functype_delete(print_type);
-    //    wasm_functype_delete(closure_type);
-
-    // Instantiate.
-    printf("Instantiating module...\n");
-    wasm_extern_t *externs[] = {
-        wasm_func_as_extern(print_func), wasm_func_as_extern(closure_func)
-    };
-    wasm_extern_vec_t imports = WASM_ARRAY_VEC(externs);
-    //	own wasm_extern_vec_t imports;
-    //	wasm_extern_vec_new_empty(&imports);
-
-    assert(print_type != NULL);
-    assert(closure_type != NULL);
-    assert(wasm_func_as_extern(print_func) != NULL);
-    assert(wasm_func_as_extern(closure_func) != NULL);
-
-    // wasm_message_t message;
-    // message.size = 0;
-    // own wasm_trap_t *trap = wasm_trap_new(store, &message);
-    own wasm_trap_t *trap = NULL;
-    // __builtin_trap();
-    own wasm_instance_t *instance = wasm_instance_new(store, module, &imports, &trap);
-    __builtin_trap();
-
-    //    wasm_instance_new(store, module, NULL, NULL);
-    if (trap) {
-        printf("> Trapped!\n");
-        return 1;
-    }
-    if (!instance) {
-        printf("> Error instantiating module!\n");
-        return 1;
-    }
-    //
-    //    wasm_func_delete(print_func);
-    //    wasm_func_delete(closure_func);
-
-    // Extract export.
-    printf("Extracting export...\n");
-    own wasm_extern_vec_t exports;
-    wasm_instance_exports(instance, &exports);
-    if (exports.size == 0) {
-        printf("> Error accessing exports!\n");
-        return 1;
-    }
-    const wasm_func_t *run_func = wasm_extern_as_func(exports.data[0]);
-    if (run_func == NULL) {
-        printf("> Error accessing export!\n");
-        return 1;
-    }
-
-    wasm_module_delete(module);
-    wasm_instance_delete(instance);
-
-    // Call.
-    printf("Calling export...\n");
-    wasm_val_t as[2] = {WASM_I32_VAL(3), WASM_I32_VAL(4)};
-    wasm_val_t rs[1] = {WASM_INIT_VAL};
-    wasm_val_vec_t args = WASM_ARRAY_VEC(as);
-    wasm_val_vec_t results = WASM_ARRAY_VEC(rs);
-    if (wasm_func_call(run_func, &args, &results)) {
-        printf("> Error calling function!\n");
-        return 1;
-    }
-
-    wasm_extern_vec_delete(&exports);
-
-    // Print result.
-    printf("Printing result...\n");
-    printf("> %u\n", rs[0].of.i32);
-
-    // Shut down.
-    printf("Shutting down...\n");
-    wasm_store_delete(store);
-    wasm_engine_delete(engine);
-
-    // All done.
-    printf("Done.\n");
-    return 0;
-}
-
-namespace v8 {
-    namespace api_internal {
-        // Called when ToChecked is called on an empty Maybe.
-		V8_EXPORT void FromJustIsNothing() {
-        } //hack
-		V8_EXPORT void ToLocalEmpty() {
-        } //hack
-    } // namespace api_internal
-}
-
-//#include "wasm.hh"
-
-// A function to be called from Wasm code.
-//auto hello_callback(const wasm::Val args[], wasm::Val results[]) -> wasm::own<wasm::Trap*> {
-//	return 0;
-//}
-//namespace v8{
-//
-//int v8_cpp_api(size_t size,byte_t* data){
-//
-//	auto engine = wasm::Engine::make();
-//	wasm::Store *store = wasm::Store::make(engine);
-//	wasm::vec<byte_t> binary((size_t)size,(byte_t*)data);
-//	auto module = wasm::Module::make(store, binary);
-//	//	const vec<Extern*>& imports;
-//	//	wasm_extern_vec_t imports = WASM_EMPTY_VEC;
-//
-//	// Create external print functions.
-//	auto hello_type = wasm::FuncType::make(wasm::vec<wasm::own<wasm::ValType>>::make(), wasm::vec<wasm::own<wasm::ValType>>::make());
-//	wasm::Func::callback cb = &hello_callback;
-//	auto hello_func = wasm::Func::make(store, hello_type, cb);
-//
-//	// Instantiate.
-//	wasm::Extern* imports[] = {hello_func};
-//
-//
-//	auto mod = module;
-//	auto imports1 = mod->imports();
-//	wasm::own<wasm::Trap> trap;
-//	auto instance = wasm::Instance::make(store, mod, NULL, &trap);
-//	auto exports = instance->exports();
-//	wasm::vec<wasm::Val> args(1);
-//	wasm::vec<wasm::Val> returns(1);
-//	auto ok = exports[0]->func()->call(args,returns);
-//	printf("RESULT %d", returns[0].i32());
-//}
-//}
-
-
-
-
-
-void print_frame(wasm_frame_t *frame) {
-    printf("> %p @ 0x%zx = %d.0x%zx\n",
-           wasm_frame_instance(frame),
-           wasm_frame_module_offset(frame),
-           wasm_frame_func_index(frame),
-           wasm_frame_func_offset(frame)
-    );
-}
-
-
-extern "C" int64 run_wasm(bytes data, int size) {
-    //    test_V8_cpp_Javascript();
-    //    v8_cpp_api();
-    for (int i = 0; i < 100; i++) {
-        test_v8();
-    }
-    exit(0);
-    //    return 3;
-
-    if (!done)init_wasm();
-    wasm_byte_vec_t binary{(size_t) size, (wasm_byte_t *) data};
-    // Compile.
-    printf("Compiling module...\n");
-    own wasm_module_t *module = wasm_module_new(store, &binary);
-    if (!module) printf("> Error compiling module!\n");
-    wasm_byte_vec_delete(&binary);
-
-    // Instantiate.
-    printf("Instantiating module...\n");
-    wasm_extern_vec_t imports = WASM_EMPTY_VEC;
-
-    //	wasm_trap_t x{};// incomplete type
-    //	wasm_extern_t *externs[meta.import_count * 2];
-    //	wasm_extern_t *externs[] = {link_imports2(), link_global()};
-    //	linkImports(externs, meta);
-
-    own wasm_trap_t **traps = (wasm_trap_t **) malloc(1000);
-    traps[0] = (wasm_trap_t *) malloc(1000);
-    own wasm_trap_t *trap = traps[0];
-    own wasm_instance_t *instance = wasm_instance_new(store, module, &imports, &trap);
-
-    if (!instance) printf("> Error instantiating module, expected trap!\n");
-
-
-    wasm_module_delete(module);
-
-    // Print result.
-    printf("Printing message...\n");
-    own wasm_name_t message;
-    wasm_trap_message(trap, &message);
-    printf("> %s\n", message.data);
-
-    printf("Printing origin...\n");
-    own wasm_frame_t *frame = wasm_trap_origin(trap);
-    if (frame) {
-        print_frame(frame);
-        wasm_frame_delete(frame);
-    } else {
-        printf("> Empty origin.\n");
-    }
-
-    printf("Printing trace...\n");
-    own wasm_frame_vec_t trace;
-    wasm_trap_trace(trap, &trace);
-    if (trace.size > 0) {
-        for (size_t i = 0; i < trace.size; ++i) {
-            print_frame(trace.data[i]);
-        }
-    } else {
-        printf("> Empty trace.\n");
-    }
-
-    wasm_frame_vec_delete(&trace);
-    wasm_trap_delete(trap);
-    wasm_name_delete(&message);
-
-    // Shut down.
-    printf("Shutting down...\n");
-    wasm_store_delete(store);
-    wasm_engine_delete(engine);
-
-    // All done.
-    printf("Done.\n");
-    return 0;
+    return number == 7 ? 0 : 1;
 }

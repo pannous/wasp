@@ -109,7 +109,7 @@ if (NOT WASM)
         # ⚠️ NO engine has (c-api) support for wit / component model as of 2025-03 !!! ⚠️
         # https://github.com/bytecodealliance/wasmtime/issues/6987
         #        SET(WASMEDGE 1) # fastest, easiest
-        #        SET(V8 1) # full browser engine, slower startup
+        #        SET(V8 1) # full browser engine (limited: no wasm_memory for strings)
         set(WEBAPP 0)
         SET(WASMTIME 1) # fast, good debugging
         set(INCLUDE_MERGER 1) # works with WASI
@@ -828,18 +828,20 @@ elseif (WEBAPP)
         target_link_libraries(wasp-app PUBLIC -lcurl)
     endif ()
 elseif (V8)
-    MESSAGE("USING V8 (wasm-c-api)")
-    ADD_DEFINITIONS(-DV8)
+    MESSAGE("USING V8 (native JavaScript WebAssembly API)")
+    ADD_DEFINITIONS(-DUSE_V8)
     ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
+    ADD_DEFINITIONS(-DV8_ENABLE_SANDBOX)
     set(SOURCE_FILES ${SOURCE}/wasm_runner_v8.cpp ${SOURCE_FILES})
     add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
     if (APPLE)
         target_include_directories(wasp PUBLIC /opt/homebrew/opt/v8/include/)
+        target_include_directories(wasp PUBLIC /opt/homebrew/opt/v8/libexec/include/)
         target_link_directories(wasp PUBLIC /opt/homebrew/opt/v8/lib/)
-        target_link_libraries(wasp PRIVATE v8 v8_libplatform)
+        target_link_directories(wasp PUBLIC /opt/homebrew/opt/v8/libexec/)
+        target_link_libraries(wasp PRIVATE v8 v8_libplatform v8_libbase)
     elseif (LINUX)
-        target_link_libraries(wasp PRIVATE v8 v8_libplatform)
+        target_link_libraries(wasp PRIVATE v8 v8_libplatform v8_libbase)
     endif ()
     target_link_libraries(wasp PUBLIC -lcurl)
 else () # NORMAL:
