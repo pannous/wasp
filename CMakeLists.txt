@@ -36,9 +36,7 @@ set(STRICT 1) # ALL WARNINGS, AS ERRORS
 #set(SDL 1) # Graphics
 #set(WASM 1) # SET VIA TOOLCHAIN!
 set(INCLUDE_MERGER 1) # include wasm_linker.cpp
-#set(WABT_MERGE 1) # not the whole WABT though, heavy
 #ADD_DEFINITIONS(-DMULTI_VALUE) # change ABI to always return (value, type) tuple
-#ADD_DEFINITIONS(-DDEBUG_WASM3) # WASM3 best for development!
 #ADD_DEFINITIONS(-DWINDOWS)
 #ADD_COMPILE_DEFINITIONS(-DWINDOWS)
 # binaryen_wasm target : https://github.com/WebAssembly/binaryen/blob/main/CMakeLists.txt#L407.
@@ -95,13 +93,6 @@ else ()
 endif ()
 
 
-if (EMSCRIPTEN)
-    message("EMSCRIPTEN")
-    set(WASM 1)
-    ADD_DEFINITIONS(-DEMSCRIPTEN)
-endif ()
-
-
 if (NOT WASM)
     set(CONSOLE 1) # can't get readline to work in wasm
     # Enable native FFI (dynamic library loading via dlopen/dlsym) only on Mac/Linux
@@ -114,23 +105,12 @@ if (NOT WASM)
         # The WASP runtime can be bundled with WASM runtimes:
 
         # TO EXECUTE wasm provide _run_wasm :
-        # https://github.com/WebAssembly/wasm-c-api implemented by V8 Wabt Wasmtime Wasmer
-        # as of 2022-10 wasm-c-api encompasses multiple return values and reference types, but not yet threads.
+        # https://github.com/WebAssembly/wasm-c-api implemented by Wasmtime WasmEdge
         # ⚠️ NO engine has (c-api) support for wit / component model as of 2025-03 !!! ⚠️
         # https://github.com/bytecodealliance/wasmtime/issues/6987
-        #        SET(WASMEDGE 1) # fastest, easiest, bestest. todo smart multi-value returns
+        #        SET(WASMEDGE 1) # fastest, easiest
         set(WEBAPP 0)
-        SET(WASMTIME 1) # FASTEST but unstable / elusive bugs "object used with the wrong store" etc
-        #        SET(SPIN 0) c/c++ do NOT have support for spin SDK :( ❌ (only core / wasi) so serve requests via fd_write https://developer.fermyon.com/wasm-languages/webassembly-language-support
-        #        SET(SPIN 1) WebAssembly Gateway Interface (WAGI) OK: Write to STDOUT, ENV[QUERY_STRING] for input, uploads through STDIN
-        #  set(WEBAPP 1) # FAST!! WebView for electron like standalone apps and testing of browser features
-        #  set(WASM3 1) # GOOD (backtrace…) wasm_runner_wasm3.cpp BEST API but dying to Russia :( last release 2021
-        #        set(MICRO 1) # WAMR 2023-02 still NOT M1 READY! wasm-micro-runtime => wasm_runner_micro.cpp TODO: use AOT/JIT mode!?
-        #        SET(V8 1) # 2024-04 Exception: EXC_BAD_ACCESS (code=1, address=0x0) :( and VERY SLOW !?
-        #  set(WABT 1) # 2022-12 broken! EXTREMELY SLOW on Mac M1!  wasm_runner_wabt.cpp
-        #  set(WASMX 1)  # doesn't work: cannot insert imports or function types!
-        #  set(WASMER 1) # only good for calling tested code, otherwise it gives ZERO info on what went wrong! Hates GC…
-        # others: WAVM WAMR
+        SET(WASMTIME 1) # fast, good debugging
         set(INCLUDE_MERGER 1) # works with WASI
     endif ()
     #    include_directories(SYSTEM /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include)
@@ -214,13 +194,8 @@ if (WEBAPP)
 endif ()
 if (WASM)
     ADD_DEFINITIONS(-DWASM)
-    #    ADD_COMPILE_FLAG("-O0 -s WASM_BIGINT") should work in WebKit but we only use standard MVP features for now!
-    #    multi-value referenceTypes bulkMemory works in FF
-    REMOVE_DEFINITIONS(WASM3) # ?
-    SET(WASM3 0) # No wasm-VM inside wasm
-    SET(WEBAPP 0) # just be sure, don't pack browser into wasm ;)
+    SET(WEBAPP 0)
     SET(SDL 0) # no c++ graphics in wasm, use canvas!
-    # ^^ UNSET, or better don't set manually at all!
 endif ()
 
 if (SDL)
@@ -501,10 +476,8 @@ if (SANITIZE) #  OR TRACE
     message("Don't build with sanitizers.")
     message("Just -g and -fno-omit-frame-pointer are enough for Valgrind.")
     message("Mixing sanitizers and Valgrind usually doesn't work.")
-    if (NOT EMSCRIPTEN)
-        ADD_DEFINITIONS(-D_Backtrace_)
-        set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Backtrace.cpp)
-    endif ()
+    ADD_DEFINITIONS(-D_Backtrace_)
+    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/Backtrace.cpp)
 
     # Often gdb would be a better tool to debug this problem. Run `gdb wasp -ex r` until it crashes.
     # Then print stacktrace with bt to see what was going wrong.
@@ -580,15 +553,8 @@ if (WASM) # OR WASI)
     ADD_DEFINITIONS(-DWASM)
     set(CMAKE_OSX_ARCHITECTURES "")
     set(CMAKE_OSX_SYSROOT "")
-    if (EMSCRIPTEN)
-        ADD_COMPILE_FLAG("-sERROR_ON_UNDEFINED_SYMBOLS=0")
-        set(__aarch64__ 1)
-        ADD_DEFINITIONS(-D__aarch64__)
-    else ()
-        MESSAGE("USING PURE WASM without emscripten")
-        include(wasm.toolchain.cmake)
-        SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
-    endif ()
+    include(wasm.toolchain.cmake)
+    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot)
     #    ADD_COMPILE_FLAG("-Wno-address-of-temporary") # ok when there is no stack / GC
 
     if (WASI)
@@ -684,12 +650,7 @@ if (WASM) # OR WASI)
         ADD_COMPILE_FLAG("-Oz -Qn")
         ADD_COMPILE_FLAG("-Wl,-O3")
         ADD_COMPILE_FLAG("-O3")
-        # RELEASE optimize size 130kb as module, 180kb all tests+emitter OK
-        # todo ^^   warning: unknown warning option '-Ws,--lto-O3,-O3,--gc-sections'  --lto-O3,
         ADD_COMPILE_FLAG("-fno-inline") # helps https://developers.google.com/web/updates/2020/12/webassembly
-        if (EMCC) # emscripten
-            ADD_COMPILE_FLAG("-gseparate-dwarf=debug.wasm")
-        endif ()
     endif ()
     #    add_library(wasp SHARED ${SOURCE_FILES}) # libwasp.wasm.so todo: rename
     if (RUNTIME_ONLY AND RELEASE) # not tests, compiler, ... 100kb as of 2024-04
@@ -731,17 +692,8 @@ if (WASM) # OR WASI)
     endif ()
 elseif (WASI)
     MESSAGE("USING PURE WASI")
-    #    TODO "System is unknown to cmake"
     message(WASI)
-    ADD_DEFINITIONS(-DWASI) # same as -DWASI=1
-    #    only works with wasm.toolchain.cmake
-    #    if(NOT EMSCRIPTEN)
-    #    SET(CMAKE_CXX_COMPILER /opt/wasm/wasi-sdk/bin/clang)
-    #    SET(CMAKE_SYSROOT /opt/wasm/wasi-sdk/share/wasi-sysroot) # also for WASM include!
-    #    ADD_COMPILE_FLAG("--sysroot=/opt/wasm/wasi-sdk/share/wasi-sysroot")
-    #    endif()
-    #  ADD_COMPILE_FLAG("-Wl,--entry=main,--allow-undefined") # __cxa_throw ?
-    #${WAMR_ROOT_DIR}/wamr-sdk/app/libc-builtin-sysroot/include/ # stdbool :(
+    ADD_DEFINITIONS(-DWASI)
     add_executable(wasp ${SOURCE_FILES})
     add_custom_target(BuildWasi ALL DEPENDS wasp.wasm)
 elseif (CTESTS) # Enable CTest
@@ -775,86 +727,6 @@ elseif (CTESTS) # Enable CTest
     ADD_WASP_TEST(new)
     #    ADD_WASP_TEST(functions)
     #    ADD_WASP_TEST(variables)
-elseif (MICRO) # wasm-micro-vm:
-    MESSAGE("USING WASM MICRO VM")
-    if (WASI)
-        message(WASI and wasm-micro-vm no good!?)
-        return()
-    endif ()
-
-    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_micro.cpp)
-    message("USING INTERNAL WASM MICRO RUNTIME TO DEBUG (not Mac M1 ready!!)")
-    #    quit()
-    ADD_DEFINITIONS(-DWASM_ENABLE_INTERP)
-    set(WAMR_BUILD_INTERP 1)
-    SET(WAMR_ROOT_DIR Frameworks/wasm-micro-runtime)
-    if (APPLE)
-        add_definitions(-DBH_PLATFORM_DARWIN)
-        SET(WAMR_BUILD_PLATFORM darwin)
-    endif ()
-
-    # Reset default linker flags
-    set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
-    set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
-
-    # Build as X86_32 by default in 32-bit platform
-    #    set (WAMR_BUILD_TARGET "X86_32")
-    if (X86_64)
-        set(WAMR_BUILD_TARGET "X86_64")
-    else ()
-        set(WAMR_BUILD_TARGET "AARCH64")
-    endif ()
-    set(WAMR_BUILD_LIBC_BUILTIN 1)
-
-    ################  wasm-micro-runtime  ################
-    include(${WAMR_ROOT_DIR}/build-scripts/runtime_lib.cmake)
-    ################  application related  ################
-    include(${SHARED_DIR}/utils/uncommon/shared_uncommon.cmake)
-
-    add_library(vmlib ${WAMR_RUNTIME_LIB_SOURCE})
-
-    #    ADD_DEFINITIONS(-DWASM_ENABLE_FAST_INTERP)
-    ADD_DEFINITIONS(-DWAMR)
-    ADD_DEFINITIONS(-DMICRO)
-    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g -O0")#debug
-
-    add_executable(wasp ${SOURCE_FILES} ${UNCOMMON_SHARED_SOURCE})
-
-    target_link_libraries(wasp PUBLIC -lcurl)
-    target_link_libraries(wasp PUBLIC -liwasm) # libiwasm.a
-
-    #    add_custom_target(BuildEmitter ALL DEPENDS wasp) #.exe
-    target_include_directories(wasp PUBLIC
-            ${WAMR_ROOT_DIR}/core/iwasm/interpreter/
-            ${WAMR_ROOT_DIR}/include
-            ${WAMR_ROOT_DIR}/core/iwasm/
-            ${WAMR_ROOT_DIR}/core/iwasm/include/
-            ${WAMR_ROOT_DIR}/core/shared/utils
-            ${WAMR_ROOT_DIR}/core/shared/utils/uncommon
-            ${WAMR_ROOT_DIR}/core/shared/platform/include/
-            ${WAMR_ROOT_DIR}/core/shared/platform/darwin/
-            ${WAMR_ROOT_DIR}/core/shared/mem-alloc
-            #    VERSUS /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
-    )
-elseif (WABT)
-    message(WABT)
-    ADD_DEFINITIONS(-DWABT)
-    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
-    #        include(wabt/cmake_install.cmake)
-    #        add_subdirectory(wabt)
-    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_wabt.cpp)
-    add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC Frameworks/wabt/include/)
-    target_include_directories(wasp PUBLIC Frameworks/wabt/include/wabt)
-    target_include_directories(wasp PUBLIC Frameworks/wabt/)
-    target_include_directories(wasp PUBLIC Frameworks/wabt/src)
-    target_link_libraries(wasp PRIVATE wasm)  # libwabt is called libwasm.dylib DANGER!
-elseif (WASMER)
-    MESSAGE("USING WASMER")
-    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasmer_runner.cpp)
-    add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC Frameworks/wasmer-c-api)
-    target_link_libraries(wasp PRIVATE wasmer)
 elseif (WASMEDGE)
     MESSAGE("USING WASMEDGE")
     MESSAGE("${SOURCE}")
@@ -954,40 +826,6 @@ elseif (WEBAPP)
         target_link_libraries(wasp-app PUBLIC ${CURL_LIBRARIES})
         target_link_libraries(wasp-app PUBLIC -lcurl)
     endif ()
-elseif (WASM3)
-    MESSAGE("USING WASM3 - bombed by russians")
-    MESSAGE(wasm3 VM)
-    ADD_DEFINITIONS(-DWASM3)
-    ADD_COMPILE_FLAG("-dM -ferror-limit=5 -g")
-    #    add_subdirectory(Frameworks/wasm3/source ${CMAKE_BINARY_DIR}/m3) # wat?
-    include(Frameworks/uvwasi/cmake_install.cmake)
-    include(Frameworks/wasm3/cmake_install.cmake)    #    // 2022-12: last release on Jun 2, 2021
-    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_wasm3.cpp)
-    #    ${SOURCE}/types/Number.cpp ${SOURCE}/types/Number.h
-    add_executable(wasp ${SOURCE_FILES})
-    #    target_include_directories(wasp PUBLIC Frameworks/wasm3/platforms/cpp/wasm3_cpp/include/)
-    target_include_directories(wasp PUBLIC Frameworks/wasm3/source)
-    target_include_directories(wasp PUBLIC Frameworks/uvwasi/include)
-    target_link_libraries(wasp PRIVATE m3)
-    if (SDL)
-        target_link_libraries(wasp PRIVATE SDL2::SDL2)
-    endif ()
-    #    target_link_libraries(wasp ${SDL2_LIBRARIES})
-    #    add_custom_target(BuildWasm3 ALL DEPENDS angle) #.exe
-    #    TO EXECUTE wasm, add ONE of these: wasm_runner_console.cpp  wasm_runner_wasm3.cpp wasm_runner_wabt.cpp wasm_runner_wabt.cpp  wasm_runner_micro.cpp
-elseif (WASMX)
-    set(SOURCE_FILES ${SOURCE_FILES} ${SOURCE}/wasm_runner_console.cpp)
-    add_executable(wasp ${SOURCE_FILES})
-elseif (V8)
-    MESSAGE("USING V8")
-    ADD_DEFINITIONS(-DV8_COMPRESS_POINTERS)
-    set(SOURCE_FILES ${SOURCE}/wasm_runner_v8.cpp ${SOURCE_FILES} source/Context.h
-            ../../../wasp/source/wasmtime_runner.cpp)
-    add_executable(wasp ${SOURCE_FILES})
-    target_include_directories(wasp PUBLIC Frameworks/wasm-c-api/include/)
-    target_include_directories(wasp PUBLIC Frameworks/v8/include/)
-    target_link_libraries(wasp PRIVATE v8 v8_libplatform wasm)
-    target_link_libraries(wasp PUBLIC -lcurl)
 else () # NORMAL:
     message(NO WASM "${WASM}")
     if (RELEASE)
@@ -1011,15 +849,6 @@ endif ()
 if (NOT WASM)
     if (NOT LINUX)
         add_dependencies(wasp run_version_script)
-    endif ()
-    if (WABT_MERGE)
-        target_include_directories(wasp PUBLIC Frameworks/wabt)
-        target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt/src)
-        target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt_merge/)
-        target_include_directories(${PROJECT_NAME} PUBLIC Frameworks/wabt_merge/tools)
-        target_link_libraries(wasp PRIVATE wasm) #    libwabt is called libwasm.dylib DANGER!
-
-        #    target_include_directories(wasp PUBLIC Frameworks/wabt/src/interp)
     endif ()
 endif ()
 
