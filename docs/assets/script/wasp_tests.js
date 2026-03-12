@@ -3,16 +3,16 @@
 // class YieldThread { // unwind wasm, reenter through resume() after run_wasm finished
 // }
 
-// (A) ON RECEIVING DATA FROM "MAIN PAGE"
-onmessage = (evt) => {
-  // (A1) DO PROCESSING
-  console.log("Worker has received data");
-  console.log(evt.data);
-  testRun()
-  var result = parseInt(evt.data.a) + parseInt(evt.data.b);
-  // (A2) RESPOND BACK TO "MAIN PAGE"
-  postMessage(result);
-};
+// (A) ON RECEIVING DATA FROM "MAIN PAGE" — only in Worker context
+if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
+  onmessage = (evt) => {
+    console.log("Worker has received data");
+    console.log(evt.data);
+    testRun()
+    var result = parseInt(evt.data.a) + parseInt(evt.data.b);
+    postMessage(result);
+  };
+}
 
 // (B) OPTIONAL - HANDLE ERRORS
 onmessageerror = (err) => {
@@ -125,6 +125,10 @@ async function testRunAsync() {
 // ⚠️ this is a SINGLE CALL to wasm.testRun()!
 // for reentry use testAll (=> testRunAsync) instead!
 function testRun() {
+  if (typeof compiler_exports === 'undefined') {
+    console.warn("testRun: compiler_exports not yet loaded, skipping");
+    return;
+  }
   try {
     // resume = testRun // comeback here after first, 2ⁿᵈ … testRun
     expect_test_result = false // clear old
