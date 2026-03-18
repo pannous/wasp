@@ -460,14 +460,10 @@ Module &loadModule(String name) {
     todow("loadModule in WASM: "s + name);
     return *new Module();
 #else
-    if(is_native_library(name)) {
 #ifdef NATIVE_FFI
+    if(is_native_library(name))
         return *loadNativeLibrary(name);
-#else
-        error("Native library loading not available - NATIVE_FFI disabled");
-        return *new Module();
 #endif
-    }
     return read_wasm(name); // we need to read signatures!
 #endif
 }
