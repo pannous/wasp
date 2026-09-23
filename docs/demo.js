@@ -3,6 +3,18 @@
 // Module for wasm_to_wat functionality
 import * as binaryen from "./assets/script/binaryen-latest.js"
 
+const UPLOAD_TOKEN_KEY = "wasp_upload_token";
+
+// The lambda server only accepts uploads carrying its secret token (waspy/upload_guard.py)
+function uploadToken() {
+  let token = localStorage.getItem(UPLOAD_TOKEN_KEY);
+  if (!token) {
+    token = prompt("Upload token for the lambda server:") || "";
+    if (token) localStorage.setItem(UPLOAD_TOKEN_KEY, token);
+  }
+  return token;
+}
+
 // Deploy function
 function deploy() {
   let server;
@@ -20,8 +32,12 @@ function deploy() {
     formData.append('name', name);
     fetch(server + "upload?name=" + name, {
       method: 'POST',
+      headers: {Authorization: "Bearer " + uploadToken()},
       body: formData
-    }).then(response => response.text())
+    }).then(response => {
+        if (response.status === 401) localStorage.removeItem(UPLOAD_TOKEN_KEY);
+        return response.text();
+      })
       .then(data => {
         console.log('Success:', data);
         results.value = data;

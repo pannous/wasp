@@ -5,6 +5,7 @@ from flask_cors import CORS  # pip install flask-cors
 from mcp.server.fastmcp import FastMCP  # pip install "mcp[cli]"
 import threading, queue
 import waspy
+from upload_guard import save_upload, UploadRejected
 
 known_mcps = []
 
@@ -103,10 +104,10 @@ def fix_params(params, binary=None, func=""):
 
 @app.route('/upload', methods=['POST'])
 def upload():
-	file = request.files['file']
-	name = request.form.get('name') or file.filename.rsplit('.', 1)[0]
-	filename = f"./lambdas/{file.filename}"
-	file.save(filename)
+	try:
+		name, filename = save_upload(request)
+	except UploadRejected as rejected:
+		return str(rejected), rejected.status
 	wasm_files[name] = filename
 	register_exports_as_mcp(name, filename)
 	return redirect(url_for('index') + name)

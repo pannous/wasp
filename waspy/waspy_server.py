@@ -2,6 +2,7 @@
 from flask import Flask, request, redirect, url_for
 from flask_cors import CORS  # pip install flask-cors
 import waspy
+from upload_guard import save_upload, UploadRejected
 
 app = Flask(__name__)
 CORS(app)
@@ -55,10 +56,10 @@ def index(lib, func, args):
 
 @app.route('/upload', methods=['POST'])
 def upload():
-	file = request.files['file']
-	name = request.form.get('name') or file.filename.rsplit('.', 1)[0]
-	filename = f"./lambdas/{file.filename}"
-	file.save(filename)
+	try:
+		name, filename = save_upload(request)
+	except UploadRejected as rejected:
+		return str(rejected), rejected.status
 	wasm_files[name] = filename
 	return redirect(url_for('index') + name)
 
