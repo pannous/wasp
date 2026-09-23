@@ -1,0 +1,32 @@
+# lambda.pannous.com (gunicorn :8008) + mcp.pannous.com (FastMCP :3001), both behind Apache.
+# Runs unprivileged: the app used to run as root from a screen session, which
+# turned the old /upload path traversal into a root file write.
+# Install: cp wasp-lambda.service /etc/systemd/system/ && systemctl enable --now wasp-lambda
+[Unit]
+Description=wasp lambda + MCP server
+After=network.target
+
+[Service]
+User=wasp
+Group=wasp
+WorkingDirectory=/root/wasp/waspy
+ExecStart=/usr/bin/python3 -m gunicorn --bind 127.0.0.1:8008 waspy_server_mcp:application
+Restart=on-failure
+# The FastMCP thread is not a daemon thread, so the worker ignores a plain stop
+TimeoutStopSec=10
+KillMode=control-group
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/root/wasp/waspy/lambdas
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

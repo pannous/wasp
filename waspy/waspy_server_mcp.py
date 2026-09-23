@@ -10,7 +10,7 @@ from upload_guard import save_upload, UploadRejected
 known_mcps = []
 
 register_queue = queue.Queue()
-mcp = FastMCP("waspy", host="0.0.0.0", port=3001, debug=True, stateless_http=True)  # FastMCP instance for managing tools
+mcp = FastMCP("waspy", host="127.0.0.1", port=3001, debug=False, stateless_http=True)  # FastMCP instance for managing tools
 
 app = Flask(__name__)
 CORS(app)
